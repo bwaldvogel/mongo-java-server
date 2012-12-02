@@ -4,7 +4,6 @@ import java.util.Collections;
 
 import org.bson.BSONObject;
 
-import de.bwaldvogel.mongo.backend.MongoDatabase;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;

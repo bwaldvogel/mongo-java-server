@@ -9,7 +9,6 @@ import java.util.TreeMap;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 
-import de.bwaldvogel.mongo.backend.MongoDatabase;
 import de.bwaldvogel.mongo.backend.MongoServerBackend;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -33,14 +32,6 @@ public class MemoryBackend implements MongoServerBackend {
         String command = query.keySet().iterator().next();
 
         if ( command.equals( "ismaster" ) || command.equals( "isMaster" ) ) {
-            /*
-             * {
-             * "ismaster": true,
-             * "maxBsonObjectSize": 16777216,
-             * "localTime": ISODate("20121201T22:15:33.704Z"),
-             * "ok": 1
-             * }
-             */
             BSONObject reply = new BasicBSONObject( "ismaster" , Boolean.TRUE );
             reply.put( "maxBsonObjectSize", MAX_BSON_OBJECT_SIZE );
             reply.put( "localTime", new Date() );

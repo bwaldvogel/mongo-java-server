@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.backend;
+package de.bwaldvogel.mongo.backend.memory;
 
 import org.bson.BSONObject;
 

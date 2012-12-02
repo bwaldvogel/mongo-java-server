@@ -46,6 +46,7 @@ public class UniqueIndex extends Index {
         }
     }
 
+    @Override
     public synchronized void add( BSONObject document ) throws KeyConstraintException{
         checkAdd( document );
         Object value = getKeyValue( document );

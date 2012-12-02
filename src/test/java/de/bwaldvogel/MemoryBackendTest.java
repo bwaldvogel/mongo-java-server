@@ -242,4 +242,11 @@ public class MemoryBackendTest {
         assertThat( db.getCollectionNames() ).isEmpty();
     }
 
+    @Test
+    public void testReplicaSetInfo() throws Exception{
+//        ReplicaSetStatus status = mongo.getReplicaSetStatus();
+//        System.out.println(status);
+        //assertThat(status)
+    }
+
 }

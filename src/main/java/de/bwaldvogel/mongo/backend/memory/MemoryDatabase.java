@@ -74,6 +74,7 @@ public class MemoryDatabase extends CommonDatabase {
         lastExceptions.remove( Integer.valueOf( clientId ) );
     }
 
+    @Override
     protected BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException, NoSuchCommandException{
         if ( command.equals( "count" ) ) {
             String collection = query.get( command ).toString();
@@ -91,20 +92,21 @@ public class MemoryDatabase extends CommonDatabase {
         }
         else if ( command.equals( "getlasterror" ) ) {
             Iterator<String> it = query.keySet().iterator();
-            it.next();
-            String subCommand = it.next();
-            if ( subCommand.equals( "w" ) ) {
-                if ( lastExceptions != null ) {
-                    MongoServerException ex = lastExceptions.remove( Integer.valueOf( clientId ) );
-                    if ( ex != null )
-                        throw ex;
+            String cmd = it.next();
+            if ( !cmd.equals( command ) )
+                throw new IllegalStateException();
+            if ( it.hasNext() ) {
+                String subCommand = it.next();
+                if ( !subCommand.equals( "w" ) ) {
+                    throw new IllegalArgumentException( "unknown subcommand: " + subCommand );
                 }
-                BSONObject response = new BasicBSONObject();
-                return response;
             }
-            else {
-                log.error( "unknown query: " + query );
+            if ( lastExceptions != null ) {
+                MongoServerException ex = lastExceptions.remove( Integer.valueOf( clientId ) );
+                if ( ex != null )
+                    throw ex;
             }
+            return new BasicBSONObject( "ok" , Integer.valueOf( 1 ) );
         }
         else if ( command.equals( "drop" ) ) {
 
