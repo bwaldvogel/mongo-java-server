@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.wire.message;
 
 import org.bson.BSONObject;
 
-
 public class MongoDelete extends ClientRequest {
 
     private BSONObject selector;
@@ -12,12 +11,12 @@ public class MongoDelete extends ClientRequest {
         this.selector = selector;
     }
 
-    public BSONObject getSelector(){
+    public BSONObject getSelector() {
         return selector;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append( getClass().getSimpleName() ).append( "(" );
         sb.append( "header: " ).append( getHeader() );

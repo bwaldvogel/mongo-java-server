@@ -28,11 +28,11 @@ public enum OpCode {
         this.id = id;
     }
 
-    public int getId(){
+    public int getId() {
         return id;
     }
 
-    public static OpCode getById( int id ){
+    public static OpCode getById( int id ) {
         return byIdMap.get( Integer.valueOf( id ) );
     }
 

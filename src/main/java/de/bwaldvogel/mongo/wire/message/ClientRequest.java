@@ -12,25 +12,25 @@ public abstract class ClientRequest implements Message {
         this.fullCollectionName = fullCollectionName;
     }
 
-    public int getClientId(){
+    public int getClientId() {
         return clientId;
     }
 
-    public MessageHeader getHeader(){
+    public MessageHeader getHeader() {
         return header;
     }
 
-    public String getDatabaseName(){
+    public String getDatabaseName() {
         int index = fullCollectionName.indexOf( '.' );
         return fullCollectionName.substring( 0, index );
     }
 
-    public String getCollectionName(){
+    public String getCollectionName() {
         int index = fullCollectionName.indexOf( '.' );
         return fullCollectionName.substring( index + 1 );
     }
 
-    public String getFullCollectionName(){
+    public String getFullCollectionName() {
         return fullCollectionName;
     }
 }

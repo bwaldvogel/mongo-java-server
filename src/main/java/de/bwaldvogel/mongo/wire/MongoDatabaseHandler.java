@@ -34,7 +34,7 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void channelClosed( ChannelHandlerContext ctx , ChannelStateEvent e ) throws Exception{
+    public void channelClosed( ChannelHandlerContext ctx , ChannelStateEvent e ) throws Exception {
         int clientId = e.getChannel().getId().intValue();
         log.info( "client " + clientId + " closed" );
         mongoBackend.handleClose( clientId );
@@ -42,7 +42,7 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void messageReceived( ChannelHandlerContext ctx , MessageEvent event ){
+    public void messageReceived( ChannelHandlerContext ctx , MessageEvent event ) {
         int clientId = event.getChannel().getId().intValue();
         final Object object = event.getMessage();
         if ( object instanceof MongoQuery ) {

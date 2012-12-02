@@ -15,11 +15,11 @@ public class NoSuchCommandException extends Exception {
         this.command = command;
     }
 
-    public String getCommand(){
+    public String getCommand() {
         return command;
     }
 
-    public BSONObject createBSONObject( BSONObject query ){
+    public BSONObject createBSONObject( BSONObject query ) {
         BasicDBObject obj = new BasicDBObject( "errmsg" , getMessage() );
         obj.put( "bad cmd", query );
         obj.put( "ok", Integer.valueOf( 0 ) );

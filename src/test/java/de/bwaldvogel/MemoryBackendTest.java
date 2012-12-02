@@ -28,26 +28,26 @@ public class MemoryBackendTest {
     private MongoServer mongoServer;
 
     @Before
-    public void setUp() throws Exception{
+    public void setUp() throws Exception {
         mongoServer = new MongoServer( new MemoryBackend() );
         InetSocketAddress serverAddress = mongoServer.bind();
         mongo = new MongoClient( new ServerAddress( serverAddress ) );
     }
 
     @After
-    public void tearDown(){
+    public void tearDown() {
         mongo.close();
         mongoServer.shutdown();
     }
 
     @Test
-    public void testMaxBsonSize() throws Exception{
+    public void testMaxBsonSize() throws Exception {
         int maxBsonObjectSize = mongo.getMaxBsonObjectSize();
         assertThat( maxBsonObjectSize ).isEqualTo( 16777216 );
     }
 
     @Test
-    public void testListDatabaseNames() throws Exception{
+    public void testListDatabaseNames() throws Exception {
         assertThat( mongo.getDatabaseNames() ).isEmpty();
         mongo.getDB( "testdb" ).getCollection( "testcollection" ).insert( new BasicDBObject() );
         assertThat( mongo.getDatabaseNames() ).containsExactly( "testdb" );
@@ -56,7 +56,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testIllegalCommand() throws Exception{
+    public void testIllegalCommand() throws Exception {
         try {
             mongo.getDB( "testdb" ).command( "foo" ).throwOnError();
             fail( "MongoException expected" );
@@ -75,7 +75,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testQuery() throws Exception{
+    public void testQuery() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
         DBObject obj = collection.findOne( new BasicDBObject( "_id" , 1 ) );
         assertThat( obj ).isNull();
@@ -83,7 +83,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testQueryAll() throws Exception{
+    public void testQueryAll() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
 
         List<Object> inserted = new ArrayList<Object>();
@@ -98,7 +98,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testInsert() throws Exception{
+    public void testInsert() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
         assertThat( collection.count() ).isEqualTo( 0 );
 
@@ -110,7 +110,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testInsertDuplicate() throws Exception{
+    public void testInsertDuplicate() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
         assertThat( collection.count() ).isEqualTo( 0 );
 
@@ -137,7 +137,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testInsertQuery() throws Exception{
+    public void testInsertQuery() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
         assertThat( collection.count() ).isEqualTo( 0 );
 
@@ -155,7 +155,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testInsertRemove() throws Exception{
+    public void testInsertRemove() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
 
         for ( int i = 0; i < 10; i++ ) {
@@ -169,7 +169,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testUpdate() throws Exception{
+    public void testUpdate() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
 
         BasicDBObject object = new BasicDBObject( "_id" , 1 );
@@ -183,7 +183,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testUpsert() throws Exception{
+    public void testUpsert() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
 
         BasicDBObject object = new BasicDBObject( "_id" , 1 );
@@ -196,7 +196,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testDropDatabase() throws Exception{
+    public void testDropDatabase() throws Exception {
         mongo.getDB( "testdb" ).getCollection( "foo" ).insert( new BasicDBObject() );
         assertThat( mongo.getDatabaseNames() ).containsExactly( "testdb" );
         mongo.dropDatabase( "testdb" );
@@ -204,7 +204,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testDropCollection() throws Exception{
+    public void testDropCollection() throws Exception {
         DB db = mongo.getDB( "testdb" );
         db.getCollection( "foo" ).insert( new BasicDBObject() );
         assertThat( db.getCollectionNames() ).containsOnly( "foo" );
@@ -213,7 +213,7 @@ public class MemoryBackendTest {
     }
 
     @Test
-    public void testReplicaSetInfo() throws Exception{
+    public void testReplicaSetInfo() throws Exception {
         // ReplicaSetStatus status = mongo.getReplicaSetStatus();
         // System.out.println(status);
         // assertThat(status)

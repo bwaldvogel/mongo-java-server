@@ -37,12 +37,12 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    protected Iterable<BSONObject> doHandleQuery( MongoQuery query ) throws MongoServerException{
+    protected Iterable<BSONObject> doHandleQuery( MongoQuery query ) throws MongoServerException {
         MemoryCollection collection = resolveCollection( query );
         return collection.handleQuery( query.getQuery() );
     }
 
-    private synchronized MemoryCollection resolveCollection( ClientRequest request ) throws MongoServerException{
+    private synchronized MemoryCollection resolveCollection( ClientRequest request ) throws MongoServerException {
         String collectionName = request.getCollectionName();
         checkCollectionName( collectionName );
         MemoryCollection collection = collections.get( collectionName );
@@ -54,28 +54,28 @@ public class MemoryDatabase extends CommonDatabase {
         return collection;
     }
 
-    private void checkCollectionName( String collectionName ) throws MongoServerException{
+    private void checkCollectionName( String collectionName ) throws MongoServerException {
         if ( collectionName.contains( "$" ) ) {
             throw new ReservedCollectionNameException( collectionName );
         }
     }
 
-    public MongoServerException getLastException( int clientId ){
+    public MongoServerException getLastException( int clientId ) {
         return lastExceptions.get( Integer.valueOf( clientId ) );
     }
 
     @Override
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         return collections.isEmpty();
     }
 
     @Override
-    public void handleClose( int clientId ){
+    public void handleClose( int clientId ) {
         lastExceptions.remove( Integer.valueOf( clientId ) );
     }
 
     @Override
-    protected BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException, NoSuchCommandException{
+    protected BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException, NoSuchCommandException {
         if ( command.equals( "count" ) ) {
             String collection = query.get( command ).toString();
             BSONObject response = new BasicBSONObject();
@@ -140,7 +140,7 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public void handleInsert( MongoInsert insert ){
+    public void handleInsert( MongoInsert insert ) {
         try {
             MemoryCollection collection = resolveCollection( insert );
             collection.handleInsert( insert );
@@ -152,7 +152,7 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public void handleDelete( MongoDelete delete ){
+    public void handleDelete( MongoDelete delete ) {
         try {
             MemoryCollection collection = resolveCollection( delete );
             collection.handleDelete( delete );
@@ -164,7 +164,7 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public void handleUpdate( MongoUpdate update ){
+    public void handleUpdate( MongoUpdate update ) {
         try {
             MemoryCollection collection = resolveCollection( update );
             collection.handleUpdate( update );

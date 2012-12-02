@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.wire.message;
 
 import org.bson.BSONObject;
 
-
 public class MongoUpdate extends ClientRequest {
 
     private BSONObject selector;
@@ -19,24 +18,24 @@ public class MongoUpdate extends ClientRequest {
         this.multi = multi;
     }
 
-    public boolean isUpsert(){
+    public boolean isUpsert() {
         return upsert;
     }
 
-    public boolean isMulti(){
+    public boolean isMulti() {
         return multi;
     }
 
-    public BSONObject getSelector(){
+    public BSONObject getSelector() {
         return selector;
     }
 
-    public BSONObject getUpdate(){
+    public BSONObject getUpdate() {
         return update;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append( getClass().getSimpleName() ).append( "(" );
         sb.append( "header: " ).append( getHeader() );

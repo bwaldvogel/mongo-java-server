@@ -17,12 +17,12 @@ abstract class CommonDatabase implements MongoDatabase {
     }
 
     @Override
-    public final String getDatabaseName(){
+    public final String getDatabaseName() {
         return databaseName;
     }
 
     @Override
-    public final Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException, NoSuchCommandException{
+    public final Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException, NoSuchCommandException {
         String collectionName = query.getCollectionName();
         if ( collectionName.equals( "$cmd" ) ) {
             return Collections.singletonList( handleCommand( query.getClientId(), query.getQuery() ) );
@@ -30,7 +30,7 @@ abstract class CommonDatabase implements MongoDatabase {
         return doHandleQuery( query );
     }
 
-    private BSONObject handleCommand( int clientId , BSONObject query ) throws MongoServerException, NoSuchCommandException{
+    private BSONObject handleCommand( int clientId , BSONObject query ) throws MongoServerException, NoSuchCommandException {
         String command = query.keySet().iterator().next();
         return handleCommand( clientId, command, query );
     }

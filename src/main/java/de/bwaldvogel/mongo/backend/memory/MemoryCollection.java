@@ -36,15 +36,15 @@ public class MemoryCollection {
         indexes.add( new UniqueIndex( getFullName() , idField , idField ) );
     }
 
-    public String getFullName(){
+    public String getFullName() {
         return databaseName + "." + getCollectionName();
     }
 
-    public String getCollectionName(){
+    public String getCollectionName() {
         return collectionName;
     }
 
-    private static boolean matches( BSONObject query , BSONObject object ){
+    private static boolean matches( BSONObject query , BSONObject object ) {
         for ( String key : query.keySet() ) {
             Object queryValue = query.get( key );
             if ( queryValue == null ) {
@@ -72,7 +72,7 @@ public class MemoryCollection {
         return true;
     }
 
-    private Iterable<Object> matchDocuments( BSONObject query , Iterable<Object> keys ){
+    private Iterable<Object> matchDocuments( BSONObject query , Iterable<Object> keys ) {
         List<Object> answer = new ArrayList<Object>();
         for ( Object key : keys ) {
             BSONObject document = documents.get( key );
@@ -83,7 +83,7 @@ public class MemoryCollection {
         return answer;
     }
 
-    private Iterable<Object> matchKeys( BSONObject query ){
+    private Iterable<Object> matchKeys( BSONObject query ) {
         synchronized ( indexes ) {
             for ( Index index : indexes ) {
                 if ( index.canHandle( query ) ) {
@@ -95,7 +95,7 @@ public class MemoryCollection {
         return matchDocuments( query, documents.keySet() );
     }
 
-    void addDocument( BSONObject document ) throws KeyConstraintException{
+    void addDocument( BSONObject document ) throws KeyConstraintException {
         for ( Index index : indexes ) {
             index.checkAdd( document );
         }
@@ -105,18 +105,18 @@ public class MemoryCollection {
         documents.put( document.get( idField ), document );
     }
 
-    void removeDocument( BSONObject document ){
+    void removeDocument( BSONObject document ) {
         for ( Index index : indexes ) {
             index.remove( document );
         }
         documents.remove( document.get( idField ) );
     }
 
-    public synchronized int getCount(){
+    public synchronized int getCount() {
         return documents.size();
     }
 
-    public synchronized Iterable<BSONObject> handleQuery( BSONObject query ){
+    public synchronized Iterable<BSONObject> handleQuery( BSONObject query ) {
         if ( documents.isEmpty() ) {
             return Collections.emptyList();
         }
@@ -128,20 +128,20 @@ public class MemoryCollection {
         return objs;
     }
 
-    public synchronized void handleInsert( MongoInsert insert ) throws MongoServerException{
+    public synchronized void handleInsert( MongoInsert insert ) throws MongoServerException {
         for ( BSONObject document : insert.getDocuments() ) {
             addDocument( document );
             log.debug( "inserted " + document );
         }
     }
 
-    public synchronized void handleDelete( MongoDelete delete ){
+    public synchronized void handleDelete( MongoDelete delete ) {
         for ( BSONObject document : handleQuery( delete.getSelector() ) ) {
             removeDocument( document );
         }
     }
 
-    public synchronized void handleUpdate( MongoUpdate update ) throws MongoServerException{
+    public synchronized void handleUpdate( MongoUpdate update ) throws MongoServerException {
         BSONObject newDocument = update.getUpdate();
         int n = 0;
         for ( BSONObject documentToUpdate : handleQuery( update.getSelector() ) ) {
@@ -159,7 +159,7 @@ public class MemoryCollection {
         }
     }
 
-    public int getNumIndexes(){
+    public int getNumIndexes() {
         return indexes.size();
     }
 }

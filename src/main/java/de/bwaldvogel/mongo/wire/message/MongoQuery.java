@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.wire.message;
 
 import org.bson.BSONObject;
 
-
 public class MongoQuery extends ClientRequest {
 
     private final BSONObject query;
@@ -14,16 +13,16 @@ public class MongoQuery extends ClientRequest {
         this.returnFieldSelector = returnFieldSelector;
     }
 
-    public BSONObject getQuery(){
+    public BSONObject getQuery() {
         return query;
     }
 
-    public BSONObject getReturnFieldSelector(){
+    public BSONObject getReturnFieldSelector() {
         return returnFieldSelector;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append( getClass().getSimpleName() ).append( "(" );
         sb.append( "header: " ).append( getHeader() );

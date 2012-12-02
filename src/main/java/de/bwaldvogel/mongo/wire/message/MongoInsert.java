@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.bson.BSONObject;
 
-
 public class MongoInsert extends ClientRequest {
 
     private final List<BSONObject> documents;
@@ -17,7 +16,7 @@ public class MongoInsert extends ClientRequest {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append( getClass().getSimpleName() ).append( "(" );
         sb.append( "header: " ).append( getHeader() );
@@ -27,7 +26,7 @@ public class MongoInsert extends ClientRequest {
         return sb.toString();
     }
 
-    public List<BSONObject> getDocuments(){
+    public List<BSONObject> getDocuments() {
         return Collections.unmodifiableList( documents );
     }
 

@@ -40,13 +40,13 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     }
 
     @Override
-    public void exceptionCaught( ChannelHandlerContext ctx , ExceptionEvent e ) throws Exception{
+    public void exceptionCaught( ChannelHandlerContext ctx , ExceptionEvent e ) throws Exception {
         log.error( "exception for client " + e.getChannel().getId(), e.getCause() );
         e.getChannel().close();
     }
 
     @Override
-    protected Object decode( ChannelHandlerContext ctx , Channel channel , ChannelBuffer buffer ) throws Exception{
+    protected Object decode( ChannelHandlerContext ctx , Channel channel , ChannelBuffer buffer ) throws Exception {
 
         if ( buffer.readableBytes() < 4 ) {
             return null;
@@ -91,7 +91,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return ret;
     }
 
-    private Object handleDelete( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException{
+    private Object handleDelete( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException {
 
         buffer.skipBytes( 4 ); // reserved
 
@@ -106,7 +106,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoDelete( clientId , header , fullCollectionName , selector );
     }
 
-    private Object handleUpdate( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException{
+    private Object handleUpdate( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException {
 
         buffer.skipBytes( 4 ); // reserved
 
@@ -122,7 +122,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoUpdate( clientId , header , fullCollectionName , selector , update , upsert , multi );
     }
 
-    private Object handleInsert( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException{
+    private Object handleInsert( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException {
 
         final int flags = buffer.readInt();
         if ( flags != 0 )
@@ -142,7 +142,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoInsert( clientId , header , fullCollectionName , documents );
     }
 
-    private Object handleQuery( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException{
+    private Object handleQuery( int clientId , MessageHeader header , ChannelBuffer buffer , int endIndex ) throws IOException {
 
         final int flags = buffer.readInt();
         if ( flags != 0 )
@@ -167,7 +167,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoQuery( clientId , header , fullCollectionName , query , returnFieldSelector );
     }
 
-    private BSONObject readBSON( ChannelBuffer buffer ) throws IOException{
+    private BSONObject readBSON( ChannelBuffer buffer ) throws IOException {
         // TODO read BSON using Netty
         final int length = buffer.getInt( buffer.readerIndex() );
         final InputStream inputStream = new ByteArrayInputStream( buffer.array() , buffer.readerIndex() , length );
@@ -176,7 +176,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return object;
     }
 
-    private String readCString( ChannelBuffer buffer ){
+    private String readCString( ChannelBuffer buffer ) {
         final StringBuilder sb = new StringBuilder( 32 );
         while ( true ) {
             final char b = (char) buffer.readByte();

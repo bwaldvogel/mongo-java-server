@@ -12,7 +12,7 @@ public abstract class Index {
         this.name = name;
     }
 
-    public final String getName(){
+    public final String getName() {
         return name;
     }
 

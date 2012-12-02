@@ -38,14 +38,14 @@ public class MongoServer {
         this.backend = backend;
     }
 
-    public void bind( SocketAddress socketAddress ){
+    public void bind( SocketAddress socketAddress ) {
         factory = new NioServerSocketChannelFactory( Executors.newCachedThreadPool() , Executors.newCachedThreadPool() );
         final ServerBootstrap bootstrap = new ServerBootstrap( factory );
         bootstrap.setOption( "child.bufferFactory", new HeapChannelBufferFactory( ByteOrder.LITTLE_ENDIAN ) );
 
         // Set up the pipeline factory.
         bootstrap.setPipelineFactory( new ChannelPipelineFactory() {
-            public ChannelPipeline getPipeline() throws Exception{
+            public ChannelPipeline getPipeline() throws Exception {
                 return Channels.pipeline( new MongoWireEncoder(), new MongoWireProtocolHandler(), new MongoDatabaseHandler( backend ) );
             }
         } );
@@ -55,15 +55,15 @@ public class MongoServer {
 
     /**
      * starts and binds the server on a local random port
-     *
+     * 
      * @return the random local address the server was bound to
      */
-    public InetSocketAddress bind(){
+    public InetSocketAddress bind() {
         bind( new InetSocketAddress( "localhost" , 0 ) );
         return (InetSocketAddress) serverChannel.getLocalAddress();
     }
 
-    public void shutdown(){
+    public void shutdown() {
         if ( serverChannel != null ) {
             serverChannel.close().awaitUninterruptibly();
             serverChannel = null;

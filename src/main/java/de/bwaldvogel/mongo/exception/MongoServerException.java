@@ -14,11 +14,11 @@ public class MongoServerException extends Exception {
         this.errorCode = errorCode;
     }
 
-    public int getErrorCode(){
+    public int getErrorCode() {
         return errorCode;
     }
 
-    public BSONObject createBSONObject( int clientId ){
+    public BSONObject createBSONObject( int clientId ) {
         BasicDBObject obj = new BasicDBObject( "err" , getMessage() );
         obj.put( "code", Integer.valueOf( getErrorCode() ) );
         obj.put( "connectionId", Integer.valueOf( clientId ) );

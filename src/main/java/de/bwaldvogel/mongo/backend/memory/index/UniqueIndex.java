@@ -21,7 +21,7 @@ public class UniqueIndex extends Index {
         this.idField = idField;
     }
 
-    private synchronized Object getKeyValue( BSONObject document ){
+    private synchronized Object getKeyValue( BSONObject document ) {
         Object value = document.get( key );
         if ( value instanceof Number ) {
             value = Double.valueOf( ( (Number) value ).doubleValue() );
@@ -30,13 +30,13 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public synchronized void remove( BSONObject document ){
+    public synchronized void remove( BSONObject document ) {
         Object value = getKeyValue( document );
         index.remove( value );
     }
 
     @Override
-    public synchronized void checkAdd( BSONObject document ) throws KeyConstraintException{
+    public synchronized void checkAdd( BSONObject document ) throws KeyConstraintException {
         Object value = getKeyValue( document );
         if ( value == null )
             return;
@@ -47,7 +47,7 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public synchronized void add( BSONObject document ) throws KeyConstraintException{
+    public synchronized void add( BSONObject document ) throws KeyConstraintException {
         checkAdd( document );
         Object value = getKeyValue( document );
         if ( value != null ) {
@@ -56,12 +56,12 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public synchronized boolean canHandle( BSONObject query ){
+    public synchronized boolean canHandle( BSONObject query ) {
         return query.containsField( key );
     }
 
     @Override
-    public synchronized Iterable<Object> getKeys( BSONObject query ){
+    public synchronized Iterable<Object> getKeys( BSONObject query ) {
         Object object = index.get( getKeyValue( query ) );
         if ( object == null ) {
             return Collections.emptyList();

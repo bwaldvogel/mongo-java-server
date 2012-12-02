@@ -18,7 +18,7 @@ public class MongoWireEncoder extends OneToOneEncoder {
     private static final Logger _log = Logger.getLogger( MongoWireEncoder.class );
 
     @Override
-    protected Object encode( ChannelHandlerContext ctx , Channel channel , Object msg ) throws Exception{
+    protected Object encode( ChannelHandlerContext ctx , Channel channel , Object msg ) throws Exception {
 
         final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer( ByteOrder.LITTLE_ENDIAN, 32 );
         buffer.writeInt( 0 ); // write length later

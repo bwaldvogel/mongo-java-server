@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.bson.BSONObject;
 
-
 public class MongoReply {
     private final MessageHeader header;
     private final List<? extends BSONObject> documents;
@@ -23,28 +22,28 @@ public class MongoReply {
         this.documents = documents;
     }
 
-    public MessageHeader getHeader(){
+    public MessageHeader getHeader() {
         return header;
     }
 
-    public List<BSONObject> getDocuments(){
+    public List<BSONObject> getDocuments() {
         return Collections.unmodifiableList( documents );
     }
 
-    public long getCursorId(){
+    public long getCursorId() {
         return cursorId;
     }
 
-    public int getStartingFrom(){
+    public int getStartingFrom() {
         return startingFrom;
     }
 
-    public int getFlags(){
+    public int getFlags() {
         return flags;
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append( getClass().getSimpleName() );
         sb.append( "(" );

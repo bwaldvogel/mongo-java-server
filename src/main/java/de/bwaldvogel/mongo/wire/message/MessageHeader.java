@@ -10,23 +10,23 @@ public class MessageHeader {
         this.responseTo = responseTo;
     }
 
-    public int getRequestID(){
+    public int getRequestID() {
         return requestID;
     }
 
-    public int getResponseTo(){
+    public int getResponseTo() {
         return responseTo;
     }
 
     @Override
     public String toString() {
-       StringBuilder sb=new StringBuilder();
-       sb.append(getClass().getSimpleName());
-       sb.append("(");
-       sb.append("request: ").append(requestID);
-       sb.append(", responseTo: ").append(responseTo);
-       sb.append(")");
-       return sb.toString();
+        StringBuilder sb = new StringBuilder();
+        sb.append( getClass().getSimpleName() );
+        sb.append( "(" );
+        sb.append( "request: " ).append( requestID );
+        sb.append( ", responseTo: " ).append( responseTo );
+        sb.append( ")" );
+        return sb.toString();
     }
 
 }

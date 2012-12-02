@@ -27,7 +27,7 @@ public class MemoryBackend implements MongoBackend {
     public MemoryBackend() {
     }
 
-    protected BSONObject handleAdminCommand( BSONObject query ) throws NoSuchCommandException{
+    protected BSONObject handleAdminCommand( BSONObject query ) throws NoSuchCommandException {
 
         String command = query.keySet().iterator().next();
 
@@ -55,7 +55,7 @@ public class MemoryBackend implements MongoBackend {
         }
     }
 
-    private synchronized MongoDatabase resolveDatabase( Message message ){
+    private synchronized MongoDatabase resolveDatabase( Message message ) {
         String database = message.getDatabaseName();
         MongoDatabase db = databases.get( database );
         if ( db == null ) {
@@ -66,14 +66,14 @@ public class MemoryBackend implements MongoBackend {
     }
 
     @Override
-    public void handleClose( int clientId ){
+    public void handleClose( int clientId ) {
         for ( MongoDatabase db : databases.values() ) {
             db.handleClose( clientId );
         }
     }
 
     @Override
-    public Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException, NoSuchCommandException{
+    public Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException, NoSuchCommandException {
         if ( query.getFullCollectionName().equals( "admin.$cmd" ) ) {
             return Collections.singletonList( handleAdminCommand( query.getQuery() ) );
         }
@@ -82,24 +82,24 @@ public class MemoryBackend implements MongoBackend {
     }
 
     @Override
-    public void handleInsert( MongoInsert insert ){
+    public void handleInsert( MongoInsert insert ) {
         MongoDatabase db = resolveDatabase( insert );
         db.handleInsert( insert );
     }
 
     @Override
-    public void handleDelete( MongoDelete delete ){
+    public void handleDelete( MongoDelete delete ) {
         MongoDatabase db = resolveDatabase( delete );
         db.handleDelete( delete );
     }
 
     @Override
-    public void handleUpdate( MongoUpdate update ){
+    public void handleUpdate( MongoUpdate update ) {
         MongoDatabase db = resolveDatabase( update );
         db.handleUpdate( update );
     }
 
-    public void dropDatabase( MemoryDatabase memoryDatabase ){
+    public void dropDatabase( MemoryDatabase memoryDatabase ) {
         databases.remove( memoryDatabase.getDatabaseName() );
     }
 
