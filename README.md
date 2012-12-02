@@ -4,7 +4,7 @@ Stub implementation of the core mongodb server using Java and Netty
 
 ### Ideas ###
 
-Allow implementation of different backends. An in-memory backend should be
+Allow implementation of different backends. An in-memory backend is the
 default such that mongo-java-server can easily be used in unit tests.
 Another backend could proxy a real database instance.
 

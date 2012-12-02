@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo;
+package de.bwaldvogel.mongo.wire.message;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -6,11 +6,10 @@ import java.util.List;
 
 import org.bson.BSONObject;
 
-import de.bwaldvogel.mongo.wire.MessageHeader;
 
 public class MongoReply {
     private final MessageHeader header;
-    private final List<BSONObject> documents;
+    private final List<? extends BSONObject> documents;
     private long cursorId;
     private int startingFrom;
     private int flags;
@@ -19,7 +18,7 @@ public class MongoReply {
         this( header , Arrays.asList( document ) );
     }
 
-    public MongoReply(MessageHeader header , List<BSONObject> documents) {
+    public MongoReply(MessageHeader header , List<? extends BSONObject> documents) {
         this.header = header;
         this.documents = documents;
     }
@@ -42,5 +41,15 @@ public class MongoReply {
 
     public int getFlags(){
         return flags;
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        sb.append( getClass().getSimpleName() );
+        sb.append( "(" );
+        sb.append( "documents: " ).append( getDocuments() );
+        sb.append( ")" );
+        return sb.toString();
     }
 }

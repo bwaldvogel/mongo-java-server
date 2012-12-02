@@ -12,7 +12,7 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
-import de.bwaldvogel.mongo.MongoReply;
+import de.bwaldvogel.mongo.wire.message.MongoReply;
 
 public class MongoWireEncoder extends OneToOneEncoder {
     private static final Logger _log = Logger.getLogger( MongoWireEncoder.class );
@@ -39,7 +39,7 @@ public class MongoWireEncoder extends OneToOneEncoder {
             buffer.writeBytes( BSON.encode( bsonObject ) );
         }
 
-        _log.info( "wrote reply" );
+        _log.debug( "wrote reply: " + reply );
 
         // now set the length
         final int writerIndex = buffer.writerIndex();

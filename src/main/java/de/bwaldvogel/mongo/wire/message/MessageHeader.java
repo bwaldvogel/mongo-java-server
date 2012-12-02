@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.wire;
+package de.bwaldvogel.mongo.wire.message;
 
 public class MessageHeader {
 
@@ -16,6 +16,17 @@ public class MessageHeader {
 
     public int getResponseTo(){
         return responseTo;
+    }
+
+    @Override
+    public String toString() {
+       StringBuilder sb=new StringBuilder();
+       sb.append(getClass().getSimpleName());
+       sb.append("(");
+       sb.append("request: ").append(requestID);
+       sb.append(", responseTo: ").append(responseTo);
+       sb.append(")");
+       return sb.toString();
     }
 
 }
