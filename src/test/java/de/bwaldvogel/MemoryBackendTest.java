@@ -4,20 +4,9 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.HeapChannelBufferFactory;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,45 +20,24 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
 
-import de.bwaldvogel.mongo.backend.MongoServerBackend;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
-import de.bwaldvogel.mongo.wire.MongoDatabaseHandler;
-import de.bwaldvogel.mongo.wire.MongoWireEncoder;
-import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.MongoServer;
 
 public class MemoryBackendTest {
-    private ChannelFactory factory;
-    private Channel serverChannel;
     private Mongo mongo;
+    private MongoServer mongoServer;
 
     @Before
     public void setUp() throws Exception{
-        MongoServerBackend backend = new MemoryBackend();
-        final MongoServer mongoServer = new MongoServer( backend );
-
-        factory = new NioServerSocketChannelFactory( Executors.newCachedThreadPool() , Executors.newCachedThreadPool() );
-        final ServerBootstrap bootstrap = new ServerBootstrap( factory );
-        bootstrap.setOption( "child.bufferFactory", new HeapChannelBufferFactory( ByteOrder.LITTLE_ENDIAN ) );
-
-        // Set up the pipeline factory.
-        bootstrap.setPipelineFactory( new ChannelPipelineFactory() {
-            public ChannelPipeline getPipeline() throws Exception{
-                return Channels.pipeline( new MongoWireEncoder(), new MongoWireProtocolHandler(), new MongoDatabaseHandler( mongoServer ) );
-            }
-        } );
-
-        serverChannel = bootstrap.bind( new InetSocketAddress( "localhost" , 0 ) );
-        SocketAddress serverAddress = serverChannel.getLocalAddress();
-        assertThat( serverAddress ).isInstanceOf( InetSocketAddress.class );
-        mongo = new MongoClient( new ServerAddress( (InetSocketAddress) serverAddress ) );
+        mongoServer = new MongoServer( new MemoryBackend() );
+        InetSocketAddress serverAddress = mongoServer.bind();
+        mongo = new MongoClient( new ServerAddress( serverAddress ) );
     }
 
     @After
     public void tearDown(){
         mongo.close();
-        serverChannel.close().awaitUninterruptibly();
-        factory.releaseExternalResources();
+        mongoServer.shutdown();
     }
 
     @Test

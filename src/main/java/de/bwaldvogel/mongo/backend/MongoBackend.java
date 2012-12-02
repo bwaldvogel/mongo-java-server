@@ -9,7 +9,7 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
-public interface MongoServerBackend {
+public interface MongoBackend {
 
     void handleClose( int clientId );
 

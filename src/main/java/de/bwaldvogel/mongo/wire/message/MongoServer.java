@@ -1,37 +1,78 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import org.bson.BSONObject;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteOrder;
+import java.util.concurrent.Executors;
 
-import de.bwaldvogel.mongo.backend.MongoServerBackend;
-import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.buffer.HeapChannelBufferFactory;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+
+import de.bwaldvogel.mongo.backend.MongoBackend;
+import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
+import de.bwaldvogel.mongo.wire.MongoDatabaseHandler;
+import de.bwaldvogel.mongo.wire.MongoWireEncoder;
+import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 
 public class MongoServer {
 
-    private final MongoServerBackend backend;
+    private MongoBackend backend;
 
-    public MongoServer(MongoServerBackend backend) {
+    private ChannelFactory factory;
+    private Channel serverChannel;
+
+    /**
+     * creates a mongo server with in-memory backend
+     */
+    public MongoServer() {
+        this( new MemoryBackend() );
+    }
+
+    public MongoServer(MongoBackend backend) {
         this.backend = backend;
     }
 
-    public void handleClose( int clientId ){
-        backend.handleClose( clientId );
+    public void bind( SocketAddress socketAddress ){
+        factory = new NioServerSocketChannelFactory( Executors.newCachedThreadPool() , Executors.newCachedThreadPool() );
+        final ServerBootstrap bootstrap = new ServerBootstrap( factory );
+        bootstrap.setOption( "child.bufferFactory", new HeapChannelBufferFactory( ByteOrder.LITTLE_ENDIAN ) );
+
+        // Set up the pipeline factory.
+        bootstrap.setPipelineFactory( new ChannelPipelineFactory() {
+            public ChannelPipeline getPipeline() throws Exception{
+                return Channels.pipeline( new MongoWireEncoder(), new MongoWireProtocolHandler(), new MongoDatabaseHandler( backend ) );
+            }
+        } );
+
+        serverChannel = bootstrap.bind( socketAddress );
     }
 
-    public Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException, NoSuchCommandException{
-        return backend.handleQuery( query );
+    /**
+     * starts and binds the server on a local random port
+     *
+     * @return the random local address the server was bound to
+     */
+    public InetSocketAddress bind(){
+        bind( new InetSocketAddress( "localhost" , 0 ) );
+        return (InetSocketAddress) serverChannel.getLocalAddress();
     }
 
-    public void handleInsert( MongoInsert insert ){
-        backend.handleInsert( insert );
-    }
+    public void shutdown(){
+        if ( serverChannel != null ) {
+            serverChannel.close().awaitUninterruptibly();
+            serverChannel = null;
+        }
 
-    public void handleDelete( MongoDelete delete ){
-        backend.handleDelete( delete );
-    }
-
-    public void handleUpdate( MongoUpdate update ){
-        backend.handleUpdate( update );
+        if ( factory != null ) {
+            factory.releaseExternalResources();
+            factory = null;
+        }
     }
 
 }

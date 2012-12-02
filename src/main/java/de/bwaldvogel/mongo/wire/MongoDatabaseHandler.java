@@ -12,6 +12,7 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 
+import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
@@ -19,25 +20,24 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
-import de.bwaldvogel.mongo.wire.message.MongoServer;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
 
     private final AtomicInteger idSequence = new AtomicInteger();
-    private final MongoServer mongoServer;
+    private final MongoBackend mongoBackend;
 
     private static final Logger log = Logger.getLogger( MongoWireProtocolHandler.class );
 
-    public MongoDatabaseHandler(MongoServer mongoServer) {
-        this.mongoServer = mongoServer;
+    public MongoDatabaseHandler(MongoBackend mongoBackend) {
+        this.mongoBackend = mongoBackend;
     }
 
     @Override
     public void channelClosed( ChannelHandlerContext ctx , ChannelStateEvent e ) throws Exception{
         int clientId = e.getChannel().getId().intValue();
         log.info( "client " + clientId + " closed" );
-        mongoServer.handleClose( clientId );
+        mongoBackend.handleClose( clientId );
         super.channelClosed( ctx, e );
     }
 
@@ -50,7 +50,7 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
             List<BSONObject> documents = new ArrayList<BSONObject>();
             MessageHeader header = new MessageHeader( idSequence.incrementAndGet() , query.getHeader().getRequestID() );
             try {
-                for ( BSONObject obj : mongoServer.handleQuery( query ) ) {
+                for ( BSONObject obj : mongoBackend.handleQuery( query ) ) {
                     documents.add( obj );
                 }
             }
@@ -74,15 +74,15 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
         }
         else if ( object instanceof MongoInsert ) {
             MongoInsert insert = (MongoInsert) object;
-            mongoServer.handleInsert( insert );
+            mongoBackend.handleInsert( insert );
         }
         else if ( object instanceof MongoDelete ) {
             MongoDelete delete = (MongoDelete) object;
-            mongoServer.handleDelete( delete );
+            mongoBackend.handleDelete( delete );
         }
         else if ( object instanceof MongoUpdate ) {
             MongoUpdate update = (MongoUpdate) object;
-            mongoServer.handleUpdate( update );
+            mongoBackend.handleUpdate( update );
         }
         else {
             throw new UnsupportedOperationException( object.toString() );

@@ -9,7 +9,7 @@ import java.util.TreeMap;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 
-import de.bwaldvogel.mongo.backend.MongoServerBackend;
+import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.Message;
@@ -18,7 +18,7 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
-public class MemoryBackend implements MongoServerBackend {
+public class MemoryBackend implements MongoBackend {
 
     private static final Integer MAX_BSON_OBJECT_SIZE = Integer.valueOf( 16777216 );
 
