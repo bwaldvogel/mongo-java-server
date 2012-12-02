@@ -4,6 +4,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+import com.mongodb.ServerAddress;
 
 import de.bwaldvogel.mongo.backend.MongoServerBackend;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
@@ -37,7 +39,6 @@ import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.MongoServer;
 
 public class MemoryBackendTest {
-    private static final int PORT = 37017;
     private ChannelFactory factory;
     private Channel serverChannel;
     private Mongo mongo;
@@ -58,8 +59,10 @@ public class MemoryBackendTest {
             }
         } );
 
-        serverChannel = bootstrap.bind( new InetSocketAddress( PORT ) );
-        mongo = new MongoClient( "localhost" , PORT );
+        serverChannel = bootstrap.bind( new InetSocketAddress( "localhost" , 0 ) );
+        SocketAddress serverAddress = serverChannel.getLocalAddress();
+        assertThat( serverAddress ).isInstanceOf( InetSocketAddress.class );
+        mongo = new MongoClient( new ServerAddress( (InetSocketAddress) serverAddress ) );
     }
 
     @After
