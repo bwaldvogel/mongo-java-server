@@ -39,6 +39,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         super( maxFrameLength , lengthFieldOffset , lengthFieldLength );
     }
 
+    @Override
     public void exceptionCaught( ChannelHandlerContext ctx , ExceptionEvent e ) throws Exception{
         log.error( "exception for client " + e.getChannel().getId(), e.getCause() );
         e.getChannel().close();
