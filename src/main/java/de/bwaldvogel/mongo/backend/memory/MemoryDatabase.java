@@ -86,7 +86,7 @@ public class MemoryDatabase extends CommonDatabase {
                 response.put( "n", Integer.valueOf( 0 ) );
             }
             else {
-                response.put( "n", Integer.valueOf( coll.getCount() ) );
+                response.put( "n", Integer.valueOf( coll.count( (BSONObject) query.get( "query" ) ) ) );
             }
             response.put( "ok", Integer.valueOf( 1 ) );
             return response;

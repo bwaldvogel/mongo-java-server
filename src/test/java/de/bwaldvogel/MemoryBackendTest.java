@@ -109,6 +109,21 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testQueryCount() throws Exception {
+        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+
+        for ( int i = 0; i < 100; i++ ) {
+            collection.insert( new BasicDBObject() );
+        }
+        assertThat( collection.count() ).isEqualTo( 100 );
+
+        BasicDBObject obj = new BasicDBObject( "_id" , 1 );
+        assertThat( collection.find( obj ).count() ).isEqualTo( 0 );
+        collection.insert( obj );
+        assertThat( collection.find( obj ).count() ).isEqualTo( 1 );
+    }
+
+    @Test
     public void testQueryAll() throws Exception {
         DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
 

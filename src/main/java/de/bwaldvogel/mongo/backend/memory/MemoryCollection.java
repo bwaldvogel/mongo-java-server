@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -253,5 +254,19 @@ public class MemoryCollection {
             indexSize += index.getCount();
         }
         return indexSize;
+    }
+
+    public int count( BSONObject query ) {
+        if ( query.keySet().isEmpty() ) {
+            return getCount();
+        }
+
+        int count = 0;
+        Iterator<Integer> it = matchKeys( query ).iterator();
+        while ( it.hasNext() ) {
+            it.next();
+            count++;
+        }
+        return count;
     }
 }
