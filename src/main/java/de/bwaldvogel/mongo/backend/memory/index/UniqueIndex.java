@@ -6,8 +6,8 @@ import java.util.TreeMap;
 
 import org.bson.BSONObject;
 
-import de.bwaldvogel.mongo.exception.DuplicateKeyException;
-import de.bwaldvogel.mongo.exception.KeyConstraintException;
+import de.bwaldvogel.mongo.exception.DuplicateKeyError;
+import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
 public class UniqueIndex extends Index {
 
@@ -36,18 +36,18 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public synchronized void checkAdd( BSONObject document ) throws KeyConstraintException {
+    public synchronized void checkAdd( BSONObject document ) throws KeyConstraintError {
         Object value = getKeyValue( document );
         if ( value == null )
             return;
 
         if ( index.containsKey( value ) ) {
-            throw new DuplicateKeyException( this , value );
+            throw new DuplicateKeyError( this , value );
         }
     }
 
     @Override
-    public synchronized void add( BSONObject document ) throws KeyConstraintException {
+    public synchronized void add( BSONObject document ) throws KeyConstraintError {
         checkAdd( document );
         Object value = getKeyValue( document );
         if ( value != null ) {

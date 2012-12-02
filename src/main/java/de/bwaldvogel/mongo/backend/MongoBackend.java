@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend;
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -13,12 +12,14 @@ public interface MongoBackend {
 
     void handleClose( int clientId );
 
-    Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException, NoSuchCommandException;
+    BSONObject handleCommand( int clientId , String database , String command, BSONObject query ) throws MongoServerException;
 
-    void handleInsert( MongoInsert insert );
+    Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException;
 
-    void handleDelete( MongoDelete delete );
+    void handleInsert( MongoInsert insert ) throws MongoServerException;
 
-    void handleUpdate( MongoUpdate update );
+    void handleDelete( MongoDelete delete ) throws MongoServerException;
+
+    void handleUpdate( MongoUpdate update ) throws MongoServerException;
 
 }

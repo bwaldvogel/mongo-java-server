@@ -8,9 +8,10 @@ import org.apache.log4j.Logger;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
-import de.bwaldvogel.mongo.exception.ReservedCollectionNameException;
+import de.bwaldvogel.mongo.exception.ReservedCollectionNameError;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -24,7 +25,7 @@ public class MemoryDatabase extends CommonDatabase {
     private static final String ID_FIELD = "_id";
 
     private Map<String, MemoryCollection> collections = new HashMap<String, MemoryCollection>();
-    private Map<Integer, MongoServerException> lastExceptions = new HashMap<Integer, MongoServerException>();
+    private Map<Integer, MongoServerError> lastExceptions = new HashMap<Integer, MongoServerError>();
     private MemoryCollection namespaces;
 
     private MemoryBackend backend;
@@ -36,13 +37,7 @@ public class MemoryDatabase extends CommonDatabase {
         collections.put( "system.namespaces", namespaces );
     }
 
-    @Override
-    protected Iterable<BSONObject> doHandleQuery( MongoQuery query ) throws MongoServerException {
-        MemoryCollection collection = resolveCollection( query );
-        return collection.handleQuery( query.getQuery() );
-    }
-
-    private synchronized MemoryCollection resolveCollection( ClientRequest request ) throws MongoServerException {
+    private synchronized MemoryCollection resolveCollection( ClientRequest request ) throws MongoServerError {
         String collectionName = request.getCollectionName();
         checkCollectionName( collectionName );
         MemoryCollection collection = collections.get( collectionName );
@@ -54,13 +49,13 @@ public class MemoryDatabase extends CommonDatabase {
         return collection;
     }
 
-    private void checkCollectionName( String collectionName ) throws MongoServerException {
+    private void checkCollectionName( String collectionName ) throws MongoServerError {
         if ( collectionName.contains( "$" ) ) {
-            throw new ReservedCollectionNameException( collectionName );
+            throw new ReservedCollectionNameError( collectionName );
         }
     }
 
-    public MongoServerException getLastException( int clientId ) {
+    public MongoServerError getLastException( int clientId ) {
         return lastExceptions.get( Integer.valueOf( clientId ) );
     }
 
@@ -70,12 +65,18 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
+    public Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException {
+        MemoryCollection collection = resolveCollection( query );
+        return collection.handleQuery( query.getQuery() );
+    }
+
+    @Override
     public void handleClose( int clientId ) {
         lastExceptions.remove( Integer.valueOf( clientId ) );
     }
 
     @Override
-    protected BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException, NoSuchCommandException {
+    public BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException {
         if ( command.equals( "count" ) ) {
             String collection = query.get( command ).toString();
             BSONObject response = new BasicBSONObject();
@@ -102,7 +103,7 @@ public class MemoryDatabase extends CommonDatabase {
                 }
             }
             if ( lastExceptions != null ) {
-                MongoServerException ex = lastExceptions.remove( Integer.valueOf( clientId ) );
+                MongoServerError ex = lastExceptions.remove( Integer.valueOf( clientId ) );
                 if ( ex != null )
                     throw ex;
             }
@@ -145,7 +146,7 @@ public class MemoryDatabase extends CommonDatabase {
             MemoryCollection collection = resolveCollection( insert );
             collection.handleInsert( insert );
         }
-        catch ( MongoServerException e ) {
+        catch ( MongoServerError e ) {
             log.error( "failed to insert " + insert, e );
             lastExceptions.put( Integer.valueOf( insert.getClientId() ), e );
         }
@@ -157,7 +158,7 @@ public class MemoryDatabase extends CommonDatabase {
             MemoryCollection collection = resolveCollection( delete );
             collection.handleDelete( delete );
         }
-        catch ( MongoServerException e ) {
+        catch ( MongoServerError e ) {
             log.error( "failed to delete " + delete, e );
             lastExceptions.put( Integer.valueOf( delete.getClientId() ), e );
         }
@@ -169,7 +170,7 @@ public class MemoryDatabase extends CommonDatabase {
             MemoryCollection collection = resolveCollection( update );
             collection.handleUpdate( update );
         }
-        catch ( MongoServerException e ) {
+        catch ( MongoServerError e ) {
             log.error( "failed to update " + update, e );
             lastExceptions.put( Integer.valueOf( update.getClientId() ), e );
         }

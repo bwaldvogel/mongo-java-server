@@ -10,8 +10,8 @@ import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
-import de.bwaldvogel.mongo.exception.KeyConstraintException;
-import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.KeyConstraintError;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
@@ -95,7 +95,7 @@ public class MemoryCollection {
         return matchDocuments( query, documents.keySet() );
     }
 
-    void addDocument( BSONObject document ) throws KeyConstraintException {
+    void addDocument( BSONObject document ) throws KeyConstraintError {
         for ( Index index : indexes ) {
             index.checkAdd( document );
         }
@@ -128,7 +128,7 @@ public class MemoryCollection {
         return objs;
     }
 
-    public synchronized void handleInsert( MongoInsert insert ) throws MongoServerException {
+    public synchronized void handleInsert( MongoInsert insert ) throws MongoServerError {
         for ( BSONObject document : insert.getDocuments() ) {
             addDocument( document );
             log.debug( "inserted " + document );
@@ -141,12 +141,12 @@ public class MemoryCollection {
         }
     }
 
-    public synchronized void handleUpdate( MongoUpdate update ) throws MongoServerException {
+    public synchronized void handleUpdate( MongoUpdate update ) throws MongoServerError {
         BSONObject newDocument = update.getUpdate();
         int n = 0;
         for ( BSONObject documentToUpdate : handleQuery( update.getSelector() ) ) {
             if ( n > 0 && !update.isMulti() ) {
-                throw new MongoServerException( 0 , "no multi flag" );
+                throw new MongoServerError( 0 , "no multi flag" );
             }
             // TODO: allow update operations like '$set'
             removeDocument( documentToUpdate );

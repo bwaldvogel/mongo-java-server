@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend.memory.index;
 
 import org.bson.BSONObject;
 
-import de.bwaldvogel.mongo.exception.KeyConstraintException;
+import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
 public abstract class Index {
 
@@ -16,9 +16,9 @@ public abstract class Index {
         return name;
     }
 
-    public abstract void checkAdd( BSONObject document ) throws KeyConstraintException;
+    public abstract void checkAdd( BSONObject document ) throws KeyConstraintError;
 
-    public abstract void add( BSONObject document ) throws KeyConstraintException;
+    public abstract void add( BSONObject document ) throws KeyConstraintError;
 
     public abstract void remove( BSONObject document );
 

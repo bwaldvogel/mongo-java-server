@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.TreeMap;
@@ -56,7 +55,10 @@ public class MemoryBackend implements MongoBackend {
     }
 
     private synchronized MongoDatabase resolveDatabase( Message message ) {
-        String database = message.getDatabaseName();
+        return resolveDatabase( message.getDatabaseName() );
+    }
+
+    private synchronized MongoDatabase resolveDatabase( String database ) {
         MongoDatabase db = databases.get( database );
         if ( db == null ) {
             db = new MemoryDatabase( this , database );
@@ -73,28 +75,36 @@ public class MemoryBackend implements MongoBackend {
     }
 
     @Override
-    public Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException, NoSuchCommandException {
-        if ( query.getFullCollectionName().equals( "admin.$cmd" ) ) {
-            return Collections.singletonList( handleAdminCommand( query.getQuery() ) );
+    public BSONObject handleCommand( int clientId , String databaseName , String command , BSONObject query ) throws MongoServerException {
+        if ( databaseName.equals( "admin" ) ) {
+            return handleAdminCommand( query );
         }
+        else {
+            MongoDatabase db = resolveDatabase( databaseName );
+            return db.handleCommand( clientId, command, query );
+        }
+    }
+
+    @Override
+    public Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException {
         MongoDatabase db = resolveDatabase( query );
         return db.handleQuery( query );
     }
 
     @Override
-    public void handleInsert( MongoInsert insert ) {
+    public void handleInsert( MongoInsert insert ) throws MongoServerException {
         MongoDatabase db = resolveDatabase( insert );
         db.handleInsert( insert );
     }
 
     @Override
-    public void handleDelete( MongoDelete delete ) {
+    public void handleDelete( MongoDelete delete ) throws MongoServerException {
         MongoDatabase db = resolveDatabase( delete );
         db.handleDelete( delete );
     }
 
     @Override
-    public void handleUpdate( MongoUpdate update ) {
+    public void handleUpdate( MongoUpdate update ) throws MongoServerException {
         MongoDatabase db = resolveDatabase( update );
         db.handleUpdate( update );
     }

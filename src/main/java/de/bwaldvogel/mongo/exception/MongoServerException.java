@@ -1,28 +1,20 @@
 package de.bwaldvogel.mongo.exception;
 
 import org.bson.BSONObject;
-
-import com.mongodb.BasicDBObject;
+import org.bson.BasicBSONObject;
 
 public class MongoServerException extends Exception {
 
-    private static final long serialVersionUID = 4998311355923688257L;
-    private int errorCode;
+    private static final long serialVersionUID = 3357301041846925271L;
 
-    public MongoServerException(int errorCode , String message) {
+    public MongoServerException(String message) {
         super( message );
-        this.errorCode = errorCode;
     }
 
-    public int getErrorCode() {
-        return errorCode;
-    }
-
-    public BSONObject createBSONObject( int clientId ) {
-        BasicDBObject obj = new BasicDBObject( "err" , getMessage() );
-        obj.put( "code", Integer.valueOf( getErrorCode() ) );
-        obj.put( "connectionId", Integer.valueOf( clientId ) );
-        obj.put( "ok", Integer.valueOf( 1 ) );
+    public BSONObject createBSONObject( BSONObject query ) {
+        BSONObject obj = new BasicBSONObject();
+        obj.put( "err", getMessage() );
+        obj.put( "ok", Integer.valueOf( 0 ) );
         return obj;
     }
 

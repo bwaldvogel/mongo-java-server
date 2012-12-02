@@ -4,7 +4,7 @@ import org.bson.BSONObject;
 
 import com.mongodb.BasicDBObject;
 
-public class NoSuchCommandException extends Exception {
+public class NoSuchCommandException extends MongoServerException {
 
     private static final long serialVersionUID = 772416798455878545L;
 
@@ -19,6 +19,7 @@ public class NoSuchCommandException extends Exception {
         return command;
     }
 
+    @Override
     public BSONObject createBSONObject( BSONObject query ) {
         BasicDBObject obj = new BasicDBObject( "errmsg" , getMessage() );
         obj.put( "bad cmd", query );
