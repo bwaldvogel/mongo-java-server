@@ -3,10 +3,12 @@ package de.bwaldvogel.mongo.backend.memory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.bson.BSONObject;
+
+import com.mongodb.DefaultDBEncoder;
 
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
@@ -21,19 +23,20 @@ public class MemoryCollection {
     private static final Logger log = Logger.getLogger( CommonDatabase.class );
 
     private String collectionName;
+
     private List<Index> indexes = new ArrayList<Index>();
-    private TreeMap<Object, BSONObject> documents = new TreeMap<Object, BSONObject>();
+
+    private AtomicLong dataSize = new AtomicLong();
+
+    private List<BSONObject> documents = new ArrayList<BSONObject>();
     private String databaseName;
 
-    private String idField;
-
     public MemoryCollection(String databaseName , String collectionName , String idField) {
-        this.idField = idField;
         this.databaseName = databaseName;
         if ( collectionName.startsWith( "$" ) )
             throw new IllegalArgumentException( "illegal collection name: " + collectionName );
         this.collectionName = collectionName;
-        indexes.add( new UniqueIndex( getFullName() , idField , idField ) );
+        indexes.add( new UniqueIndex( getFullName() , idField ) );
     }
 
     public String getFullName() {
@@ -72,59 +75,119 @@ public class MemoryCollection {
         return true;
     }
 
-    private Iterable<Object> matchDocuments( BSONObject query , Iterable<Object> keys ) {
-        List<Object> answer = new ArrayList<Object>();
-        for ( Object key : keys ) {
-            BSONObject document = documents.get( key );
+    private Iterable<Integer> matchDocuments( BSONObject query , Iterable<Integer> positions ) {
+        List<Integer> answer = new ArrayList<Integer>();
+        for ( Integer pos : positions ) {
+            BSONObject document = documents.get( pos.intValue() );
             if ( matches( query, document ) ) {
-                answer.add( key );
+                answer.add( pos );
             }
         }
         return answer;
     }
 
-    private Iterable<Object> matchKeys( BSONObject query ) {
+    private Iterable<Integer> matchDocuments( BSONObject query ) {
+        List<Integer> answer = new ArrayList<Integer>();
+        for ( int i = 0; i < documents.size(); i++ ) {
+            BSONObject document = documents.get( i );
+            if ( matches( query, document ) ) {
+                answer.add( Integer.valueOf( i ) );
+            }
+        }
+        return answer;
+    }
+
+    private Iterable<Integer> matchKeys( BSONObject query ) {
         synchronized ( indexes ) {
             for ( Index index : indexes ) {
                 if ( index.canHandle( query ) ) {
-                    return matchDocuments( query, index.getKeys( query ) );
+                    return matchDocuments( query, index.getPositions( query ) );
                 }
             }
         }
 
-        return matchDocuments( query, documents.keySet() );
+        return matchDocuments( query );
     }
 
     void addDocument( BSONObject document ) throws KeyConstraintError {
+
+        Integer pos = Integer.valueOf( documents.size() );
+
         for ( Index index : indexes ) {
             index.checkAdd( document );
         }
         for ( Index index : indexes ) {
-            index.add( document );
+            index.add( document, pos );
         }
-        documents.put( document.get( idField ), document );
+        dataSize.addAndGet( calculateSize( document ) );
+        documents.add( document );
+    }
+
+    private static long calculateSize( BSONObject document ) {
+        return new DefaultDBEncoder().encode( document ).length;
     }
 
     void removeDocument( BSONObject document ) {
+        Integer pos = null;
         for ( Index index : indexes ) {
-            index.remove( document );
+            pos = index.remove( document );
         }
-        documents.remove( document.get( idField ) );
+        if ( pos == null ) {
+            // not found
+            return;
+        }
+        dataSize.addAndGet( -calculateSize( document ) );
+        documents.remove( pos.intValue() );
     }
 
     public synchronized int getCount() {
         return documents.size();
     }
 
-    public synchronized Iterable<BSONObject> handleQuery( BSONObject query ) {
+    public synchronized Iterable<BSONObject> handleQuery( BSONObject obj ) {
+
+        BSONObject query;
+        BSONObject orderby = null;
+
+        if ( obj.containsField( "query" ) ) {
+            query = (BSONObject) obj.get( "query" );
+            orderby = (BSONObject) obj.get( "orderby" );
+        }
+        else if ( obj.containsField( "$query" ) ) {
+            throw new UnsupportedOperationException();
+        }
+        else {
+            query = obj;
+        }
+
         if ( documents.isEmpty() ) {
             return Collections.emptyList();
         }
 
-        List<BSONObject> objs = new ArrayList<BSONObject>();
-        for ( Object key : matchKeys( query ) ) {
-            objs.add( documents.get( key ) );
+        Iterable<Integer> keys = matchKeys( query );
+
+        if ( orderby == null || orderby.keySet().isEmpty() ) {
+
         }
+        else if ( orderby.keySet().size() == 1 ) {
+            if ( orderby.keySet().iterator().next().equals( "$natural" ) ) {
+                if ( ( (Number) orderby.get( "$natural" ) ).intValue() == -1 ) {
+                    throw new UnsupportedOperationException();
+                }
+            }
+            else {
+                throw new UnsupportedOperationException();
+            }
+        }
+        else if ( orderby.keySet().size() > 1 ) {
+            throw new UnsupportedOperationException();
+        }
+
+        List<BSONObject> objs = new ArrayList<BSONObject>();
+        for ( Integer pos : keys ) {
+            objs.add( documents.get( pos.intValue() ) );
+        }
+
         return objs;
     }
 
@@ -144,22 +207,51 @@ public class MemoryCollection {
     public synchronized void handleUpdate( MongoUpdate update ) throws MongoServerError {
         BSONObject newDocument = update.getUpdate();
         int n = 0;
-        for ( BSONObject documentToUpdate : handleQuery( update.getSelector() ) ) {
+        for ( Integer position : matchKeys( update.getSelector() ) ) {
             if ( n > 0 && !update.isMulti() ) {
                 throw new MongoServerError( 0 , "no multi flag" );
             }
-            // TODO: allow update operations like '$set'
-            removeDocument( documentToUpdate );
-            addDocument( newDocument );
+
             n++;
+
+            BSONObject document = documents.get( position.intValue() );
+            for ( String key : newDocument.keySet() ) {
+                if ( key.contains( "$" ) ) {
+                    if ( key.equals( "$set" ) ) {
+                        document.putAll( (BSONObject) newDocument.get( "$set" ) );
+                        continue;
+                    }
+                    else {
+                        throw new IllegalArgumentException( key );
+                    }
+                }
+                else {
+                    document.put( key, newDocument.get( key ) );
+                }
+            }
         }
 
+        // insert?
         if ( n == 0 && update.isUpsert() ) {
+            // TODO: check keys for $
             addDocument( newDocument );
         }
     }
 
     public int getNumIndexes() {
         return indexes.size();
+    }
+
+    public long getDataSize() {
+        return dataSize.get();
+    }
+
+    public long getIndexSize() {
+        long indexSize = 0;
+        for ( Index index : indexes ) {
+            // actually the data size is expected. we return the count instead
+            indexSize += index.getCount();
+        }
+        return indexSize;
     }
 }

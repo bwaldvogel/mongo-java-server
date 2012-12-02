@@ -11,6 +11,7 @@ import org.bson.BasicBSONObject;
 import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -18,8 +19,6 @@ import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MemoryBackend implements MongoBackend {
-
-    private static final Integer MAX_BSON_OBJECT_SIZE = Integer.valueOf( 16777216 );
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
 
@@ -32,7 +31,7 @@ public class MemoryBackend implements MongoBackend {
 
         if ( command.equals( "ismaster" ) || command.equals( "isMaster" ) ) {
             BSONObject reply = new BasicBSONObject( "ismaster" , Boolean.TRUE );
-            reply.put( "maxBsonObjectSize", MAX_BSON_OBJECT_SIZE );
+            reply.put( "maxBsonObjectSize", Integer.valueOf( MongoWireProtocolHandler.MAX_BSON_OBJECT_SIZE ) );
             reply.put( "localTime", new Date() );
             reply.put( "ok", Integer.valueOf( "1" ) );
             return reply;

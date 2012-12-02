@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.CommandResult;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
@@ -47,6 +48,13 @@ public class ReadOnlyProxyTest {
     public void testMaxBsonSize() throws Exception {
         int maxBsonObjectSize = readOnlyClient.getMaxBsonObjectSize();
         assertThat( maxBsonObjectSize ).isEqualTo( 16777216 );
+    }
+
+    @Test
+    public void testStats() throws Exception {
+        CommandResult stats = readOnlyClient.getDB( "testdb" ).getStats();
+        stats.throwOnError();
+        assertThat( ( (Number) stats.get( "objects" ) ).longValue() ).isEqualTo( 0 );
     }
 
     @Test

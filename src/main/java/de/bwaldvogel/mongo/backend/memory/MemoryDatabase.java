@@ -134,6 +134,37 @@ public class MemoryDatabase extends CommonDatabase {
             response.put( "ok", Integer.valueOf( 1 ) );
             return response;
         }
+        else if ( command.equals( "dbstats" ) ) {
+            BSONObject response = new BasicBSONObject( "db" , getDatabaseName() );
+            response.put( "collections", Integer.valueOf( collections.size() ) );
+
+            int indexes = 0;
+            long indexSize = 0;
+            long objects = 0;
+            long dataSize = 0;
+            double averageObjectSize = 0;
+            for ( MemoryCollection collection : collections.values() ) {
+                objects += collection.getCount();
+                dataSize += collection.getDataSize();
+                indexes += collection.getNumIndexes();
+                indexSize += collection.getIndexSize();
+            }
+            if ( objects > 0 ) {
+                averageObjectSize = dataSize / ( (double) objects );
+            }
+
+            response.put( "objects", Long.valueOf( objects ) );
+            response.put( "avgObjSize", Double.valueOf( averageObjectSize ) );
+            response.put( "dataSize", Long.valueOf( dataSize ) );
+            response.put( "storageSize", Long.valueOf( 0 ) );
+            response.put( "numExtents", Integer.valueOf( 0 ) );
+            response.put( "indexes", Integer.valueOf( indexes ) );
+            response.put( "indexSize", Long.valueOf( indexSize ) );
+            response.put( "fileSize", Integer.valueOf( 0 ) );
+            response.put( "nsSizeMB", Integer.valueOf( 0 ) );
+            response.put( "ok", Integer.valueOf( 1 ) );
+            return response;
+        }
         else {
             log.error( "unknown query: " + query );
         }

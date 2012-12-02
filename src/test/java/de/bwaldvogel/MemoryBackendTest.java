@@ -5,13 +5,17 @@ import static org.fest.assertions.Fail.fail;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
+import org.bson.BSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
@@ -44,6 +48,28 @@ public class MemoryBackendTest {
     public void testMaxBsonSize() throws Exception {
         int maxBsonObjectSize = mongo.getMaxBsonObjectSize();
         assertThat( maxBsonObjectSize ).isEqualTo( 16777216 );
+    }
+
+    @Test
+    public void testStats() throws Exception {
+        CommandResult stats = mongo.getDB( "testdb" ).getStats();
+        stats.throwOnError();
+        assertThat( ( (Number) stats.get( "objects" ) ).longValue() ).isEqualTo( 0 );
+        assertThat( ( (Number) stats.get( "collections" ) ).longValue() ).isEqualTo( 1 );
+        assertThat( ( (Number) stats.get( "indexes" ) ).longValue() ).isEqualTo( 1 );
+        assertThat( ( (Number) stats.get( "dataSize" ) ).longValue() ).isEqualTo( 0 );
+
+        mongo.getDB( "testdb" ).getCollection( "foo" ).insert( new BasicDBObject() );
+        mongo.getDB( "testdb" ).getCollection( "foo" ).insert( new BasicDBObject() );
+        mongo.getDB( "testdb" ).getCollection( "bar" ).insert( new BasicDBObject() );
+
+        stats = mongo.getDB( "testdb" ).getStats();
+        stats.throwOnError();
+
+        assertThat( ( (Number) stats.get( "objects" ) ).longValue() ).isEqualTo( 5 );
+        assertThat( ( (Number) stats.get( "collections" ) ).longValue() ).isEqualTo( 3 );
+        assertThat( ( (Number) stats.get( "indexes" ) ).longValue() ).isEqualTo( 3 );
+        assertThat( ( (Number) stats.get( "dataSize" ) ).longValue() ).isEqualTo( 118 );
     }
 
     @Test
@@ -107,6 +133,12 @@ public class MemoryBackendTest {
         }
 
         assertThat( collection.count() ).isEqualTo( 3 );
+
+        collection.insert( new BasicDBObject( "foo" , Arrays.asList( 1, 2, 3 ) ) );
+        collection.insert( new BasicDBObject( "foo" , new byte[10] ) );
+        BasicDBObject insertedObject = new BasicDBObject( "foo" , UUID.randomUUID() );
+        collection.insert( insertedObject );
+        assertThat( collection.findOne( insertedObject ) ).isEqualTo( insertedObject );
     }
 
     @Test
@@ -180,6 +212,26 @@ public class MemoryBackendTest {
         collection.insert( object );
         collection.update( object, newObject );
         assertThat( collection.findOne( object ) ).isEqualTo( newObject );
+    }
+
+    @Test
+    public void testUpdateSet() throws Exception {
+        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+
+        BasicDBObject object = new BasicDBObject( "_id" , 1 );
+
+        collection.insert( object );
+        assertThat( collection.findOne( object ) ).isEqualTo( object );
+
+        collection.update( object, new BasicDBObject( "$set" , new BasicDBObject( "foo" , "bar" ) ) );
+
+        BasicDBObject expected = new BasicDBObject();
+        expected.putAll( (BSONObject) object );
+        expected.put( "foo", "bar" );
+
+        collection.update( object, new BasicDBObject( "$set" , new BasicDBObject( "bar" , "bla" ) ) );
+        expected.put( "bar", "bla" );
+        assertThat( collection.findOne( object ) ).isEqualTo( expected );
     }
 
     @Test

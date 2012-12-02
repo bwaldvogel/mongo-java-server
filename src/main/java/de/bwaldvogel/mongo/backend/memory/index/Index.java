@@ -18,12 +18,14 @@ public abstract class Index {
 
     public abstract void checkAdd( BSONObject document ) throws KeyConstraintError;
 
-    public abstract void add( BSONObject document ) throws KeyConstraintError;
+    public abstract void add( BSONObject document , Integer position ) throws KeyConstraintError;
 
-    public abstract void remove( BSONObject document );
+    public abstract Integer remove( BSONObject document );
 
     public abstract boolean canHandle( BSONObject query );
 
-    public abstract Iterable<Object> getKeys( BSONObject query );
+    public abstract Iterable<Integer> getPositions( BSONObject query );
+
+    public abstract long getCount();
 
 }
