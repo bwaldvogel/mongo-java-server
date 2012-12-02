@@ -26,8 +26,8 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import com.mongodb.WriteConcern;
 
 import de.bwaldvogel.mongo.backend.MongoServerBackend;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
@@ -59,8 +59,7 @@ public class MemoryBackendTest {
         } );
 
         serverChannel = bootstrap.bind( new InetSocketAddress( PORT ) );
-        mongo = new Mongo( "localhost" , PORT );
-        mongo.setWriteConcern( WriteConcern.SAFE );
+        mongo = new MongoClient( "localhost" , PORT );
     }
 
     @After
@@ -244,9 +243,9 @@ public class MemoryBackendTest {
 
     @Test
     public void testReplicaSetInfo() throws Exception{
-//        ReplicaSetStatus status = mongo.getReplicaSetStatus();
-//        System.out.println(status);
-        //assertThat(status)
+        // ReplicaSetStatus status = mongo.getReplicaSetStatus();
+        // System.out.println(status);
+        // assertThat(status)
     }
 
 }
