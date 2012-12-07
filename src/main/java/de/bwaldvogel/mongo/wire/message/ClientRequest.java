@@ -14,8 +14,8 @@ public abstract class ClientRequest implements Message {
         this.fullCollectionName = fullCollectionName;
     }
 
-    public int getClientId() {
-        return channel.getId().intValue();
+    public Channel getChannel() {
+        return channel;
     }
 
     public MessageHeader getHeader() {

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
+import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -25,7 +26,7 @@ public class MemoryDatabase extends CommonDatabase {
     private static final String ID_FIELD = "_id";
 
     private Map<String, MemoryCollection> collections = new HashMap<String, MemoryCollection>();
-    private Map<Integer, MongoServerError> lastExceptions = new HashMap<Integer, MongoServerError>();
+    private Map<Channel, MongoServerError> lastExceptions = new HashMap<Channel, MongoServerError>();
     private MemoryCollection namespaces;
 
     private MemoryBackend backend;
@@ -71,8 +72,8 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public void handleClose( int clientId ) {
-        lastExceptions.remove( Integer.valueOf( clientId ) );
+    public void handleClose( Channel channel ) {
+        lastExceptions.remove( channel );
     }
 
     @Override
@@ -83,7 +84,7 @@ public class MemoryDatabase extends CommonDatabase {
         }
         catch ( MongoServerError e ) {
             log.error( "failed to insert " + insert, e );
-            lastExceptions.put( Integer.valueOf( insert.getClientId() ), e );
+            lastExceptions.put( insert.getChannel(), e );
         }
     }
 
@@ -95,7 +96,7 @@ public class MemoryDatabase extends CommonDatabase {
         }
         catch ( MongoServerError e ) {
             log.error( "failed to delete " + delete, e );
-            lastExceptions.put( Integer.valueOf( delete.getClientId() ), e );
+            lastExceptions.put( delete.getChannel(), e );
         }
     }
 
@@ -107,17 +108,17 @@ public class MemoryDatabase extends CommonDatabase {
         }
         catch ( MongoServerError e ) {
             log.error( "failed to update " + update, e );
-            lastExceptions.put( Integer.valueOf( update.getClientId() ), e );
+            lastExceptions.put( update.getChannel(), e );
         }
     }
 
     @Override
-    public BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException {
+    public BSONObject handleCommand( Channel channel , String command , BSONObject query ) throws MongoServerException {
         if ( command.equals( "count" ) ) {
             return commandCount( command, query );
         }
         else if ( command.equals( "getlasterror" ) ) {
-            return commandGetLastError( clientId, command, query );
+            return commandGetLastError( channel, command, query );
         }
         else if ( command.equals( "drop" ) ) {
             return commandDrop( query );
@@ -192,7 +193,7 @@ public class MemoryDatabase extends CommonDatabase {
         return response;
     }
 
-    private BSONObject commandGetLastError( int clientId , String command , BSONObject query ) throws MongoServerError {
+    private BSONObject commandGetLastError( Channel channel , String command , BSONObject query ) throws MongoServerError {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
         if ( !cmd.equals( command ) )
@@ -204,7 +205,7 @@ public class MemoryDatabase extends CommonDatabase {
             }
         }
         if ( lastExceptions != null ) {
-            MongoServerError ex = lastExceptions.remove( Integer.valueOf( clientId ) );
+            MongoServerError ex = lastExceptions.remove( channel );
             if ( ex != null )
                 throw ex;
         }

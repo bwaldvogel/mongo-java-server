@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.exception;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
+import org.jboss.netty.channel.Channel;
 
 public class MongoServerException extends Exception {
 
@@ -15,7 +16,7 @@ public class MongoServerException extends Exception {
         super( message , cause );
     }
 
-    public BSONObject createBSONObject( int clientId , BSONObject query ) {
+    public BSONObject createBSONObject( Channel channel , BSONObject query ) {
         BSONObject obj = new BasicBSONObject();
         obj.put( "err", getMessage() );
         obj.put( "ok", Integer.valueOf( 0 ) );

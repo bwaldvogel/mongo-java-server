@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bson.BSONObject;
+import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -40,20 +41,14 @@ public class ReadOnlyProxy implements MongoBackend {
 
     }
 
-    @Override
-    public void handleConnect( int clientId ) {
-        backend.handleConnect( clientId );
+    public void handleClose( Channel channel ) {
+        backend.handleClose( channel );
     }
 
     @Override
-    public void handleClose( int clientId ) {
-        backend.handleClose( clientId );
-    }
-
-    @Override
-    public BSONObject handleCommand( int clientId , String database , String command , BSONObject query ) throws MongoServerException {
+    public BSONObject handleCommand( Channel channel , String database , String command , BSONObject query ) throws MongoServerException {
         if ( allowedCommands.contains( command ) ) {
-            return backend.handleCommand( clientId, database, command, query );
+            return backend.handleCommand( channel, database, command, query );
         }
         throw new NoSuchCommandException( command );
     }

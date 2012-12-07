@@ -12,6 +12,8 @@ import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.group.ChannelGroup;
+import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 
 import de.bwaldvogel.mongo.backend.MongoBackend;
@@ -27,6 +29,7 @@ public class MongoServer {
     private MongoBackend backend;
 
     private ChannelFactory factory;
+    private ChannelGroup channelGroup = new DefaultChannelGroup( getClass().getSimpleName() );
     private Channel serverChannel;
 
     /**
@@ -48,7 +51,7 @@ public class MongoServer {
         // Set up the pipeline factory.
         bootstrap.setPipelineFactory( new ChannelPipelineFactory() {
             public ChannelPipeline getPipeline() throws Exception {
-                return Channels.pipeline( new MongoWireEncoder(), new MongoWireProtocolHandler(), new MongoDatabaseHandler( backend ) );
+                return Channels.pipeline( new MongoWireEncoder(), new MongoWireProtocolHandler(), new MongoDatabaseHandler( backend, channelGroup ) );
             }
         } );
 
@@ -75,6 +78,16 @@ public class MongoServer {
             factory.releaseExternalResources();
             factory = null;
         }
+    }
+
+    public void shutdownNow() {
+        shutdown();
+        closeClients();
+    }
+
+    private void closeClients() {
+        // TODO Auto-generated method stub
+
     }
 
 }

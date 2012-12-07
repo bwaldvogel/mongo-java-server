@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import org.bson.BSONObject;
+import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
@@ -12,9 +13,9 @@ public interface MongoDatabase {
 
     String getDatabaseName();
 
-    void handleClose( int clientId );
+    void handleClose( Channel channel );
 
-    BSONObject handleCommand( int clientId , String command, BSONObject query ) throws MongoServerException;
+    BSONObject handleCommand( Channel channel , String command , BSONObject query ) throws MongoServerException;
 
     Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException;
 
