@@ -42,7 +42,7 @@ public class MemoryBackendTest {
     @After
     public void tearDown() {
         mongo.close();
-        mongoServer.shutdown();
+        mongoServer.shutdownNow();
     }
 
     @Test

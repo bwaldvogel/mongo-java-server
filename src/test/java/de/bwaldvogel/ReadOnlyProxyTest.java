@@ -40,8 +40,8 @@ public class ReadOnlyProxyTest {
     public void tearDown() {
         writeClient.close();
         readOnlyClient.close();
-        mongoServer.shutdown();
-        writeableServer.shutdown();
+        mongoServer.shutdownNow();
+        writeableServer.shutdownNow();
     }
 
     @Test

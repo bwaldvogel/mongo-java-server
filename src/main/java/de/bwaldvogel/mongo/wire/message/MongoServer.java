@@ -5,6 +5,7 @@ import java.net.SocketAddress;
 import java.nio.ByteOrder;
 import java.util.concurrent.Executors;
 
+import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.HeapChannelBufferFactory;
 import org.jboss.netty.channel.Channel;
@@ -23,6 +24,8 @@ import de.bwaldvogel.mongo.wire.MongoWireEncoder;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 
 public class MongoServer {
+
+    private static final Logger log = Logger.getLogger( MongoServer.class );
 
     public static final String VERSION = "0.1";
 
@@ -51,11 +54,12 @@ public class MongoServer {
         // Set up the pipeline factory.
         bootstrap.setPipelineFactory( new ChannelPipelineFactory() {
             public ChannelPipeline getPipeline() throws Exception {
-                return Channels.pipeline( new MongoWireEncoder(), new MongoWireProtocolHandler(), new MongoDatabaseHandler( backend, channelGroup ) );
+                return Channels.pipeline( new MongoWireEncoder(), new MongoWireProtocolHandler(), new MongoDatabaseHandler( backend , channelGroup ) );
             }
         } );
 
         serverChannel = bootstrap.bind( socketAddress );
+        log.info( "started " + this );
     }
 
     /**
@@ -65,6 +69,12 @@ public class MongoServer {
      */
     public InetSocketAddress bind() {
         bind( new InetSocketAddress( "localhost" , 0 ) );
+        return getLocalAddress();
+    }
+
+    protected InetSocketAddress getLocalAddress() {
+        if ( serverChannel == null )
+            return null;
         return (InetSocketAddress) serverChannel.getLocalAddress();
     }
 
@@ -78,6 +88,8 @@ public class MongoServer {
             factory.releaseExternalResources();
             factory = null;
         }
+
+        log.info( "completed shutdown of " + this );
     }
 
     public void shutdownNow() {
@@ -86,8 +98,21 @@ public class MongoServer {
     }
 
     private void closeClients() {
-        // TODO Auto-generated method stub
-
+        if ( !channelGroup.isEmpty() ) {
+            log.warn( channelGroup.size() + " channels still open. closing now..." );
+            channelGroup.close().awaitUninterruptibly();
+        }
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder( getClass().getSimpleName() );
+        sb.append( "(" );
+        InetSocketAddress socketAddress = getLocalAddress();
+        if ( socketAddress != null ) {
+            sb.append( "port: " ).append( socketAddress.getPort() );
+        }
+        sb.append( ")" );
+        return sb.toString();
+    }
 }
