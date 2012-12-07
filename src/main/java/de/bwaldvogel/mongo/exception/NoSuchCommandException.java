@@ -20,7 +20,7 @@ public class NoSuchCommandException extends MongoServerException {
     }
 
     @Override
-    public BSONObject createBSONObject( BSONObject query ) {
+    public BSONObject createBSONObject( int clientId , BSONObject query ) {
         BasicDBObject obj = new BasicDBObject( "errmsg" , getMessage() );
         obj.put( "bad cmd", query );
         obj.put( "ok", Integer.valueOf( 0 ) );

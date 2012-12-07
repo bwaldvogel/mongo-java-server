@@ -76,102 +76,6 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException {
-        if ( command.equals( "count" ) ) {
-            String collection = query.get( command ).toString();
-            BSONObject response = new BasicBSONObject();
-            MemoryCollection coll = collections.get( collection );
-            if ( coll == null ) {
-                response.put( "missing", Boolean.TRUE );
-                response.put( "n", Integer.valueOf( 0 ) );
-            }
-            else {
-                response.put( "n", Integer.valueOf( coll.count( (BSONObject) query.get( "query" ) ) ) );
-            }
-            response.put( "ok", Integer.valueOf( 1 ) );
-            return response;
-        }
-        else if ( command.equals( "getlasterror" ) ) {
-            Iterator<String> it = query.keySet().iterator();
-            String cmd = it.next();
-            if ( !cmd.equals( command ) )
-                throw new IllegalStateException();
-            if ( it.hasNext() ) {
-                String subCommand = it.next();
-                if ( !subCommand.equals( "w" ) ) {
-                    throw new IllegalArgumentException( "unknown subcommand: " + subCommand );
-                }
-            }
-            if ( lastExceptions != null ) {
-                MongoServerError ex = lastExceptions.remove( Integer.valueOf( clientId ) );
-                if ( ex != null )
-                    throw ex;
-            }
-            return new BasicBSONObject( "ok" , Integer.valueOf( 1 ) );
-        }
-        else if ( command.equals( "drop" ) ) {
-
-            String collectionName = query.get( "drop" ).toString();
-            MemoryCollection collection = collections.remove( collectionName );
-
-            BSONObject response = new BasicBSONObject();
-            if ( collection == null ) {
-                response.put( "errmsg", "ns not found" );
-                response.put( "ok", Integer.valueOf( 0 ) );
-            }
-            else {
-                namespaces.removeDocument( new BasicBSONObject( "name" , collection.getFullName() ) );
-                response.put( "nIndexesWas", Integer.valueOf( collection.getNumIndexes() ) );
-                response.put( "ns", collection.getFullName() );
-                response.put( "ok", Integer.valueOf( 1 ) );
-            }
-
-            return response;
-        }
-        else if ( command.equals( "dropDatabase" ) ) {
-            backend.dropDatabase( this );
-            BSONObject response = new BasicBSONObject( "dropped" , getDatabaseName() );
-            response.put( "ok", Integer.valueOf( 1 ) );
-            return response;
-        }
-        else if ( command.equals( "dbstats" ) ) {
-            BSONObject response = new BasicBSONObject( "db" , getDatabaseName() );
-            response.put( "collections", Integer.valueOf( collections.size() ) );
-
-            int indexes = 0;
-            long indexSize = 0;
-            long objects = 0;
-            long dataSize = 0;
-            double averageObjectSize = 0;
-            for ( MemoryCollection collection : collections.values() ) {
-                objects += collection.getCount();
-                dataSize += collection.getDataSize();
-                indexes += collection.getNumIndexes();
-                indexSize += collection.getIndexSize();
-            }
-            if ( objects > 0 ) {
-                averageObjectSize = dataSize / ( (double) objects );
-            }
-
-            response.put( "objects", Long.valueOf( objects ) );
-            response.put( "avgObjSize", Double.valueOf( averageObjectSize ) );
-            response.put( "dataSize", Long.valueOf( dataSize ) );
-            response.put( "storageSize", Long.valueOf( 0 ) );
-            response.put( "numExtents", Integer.valueOf( 0 ) );
-            response.put( "indexes", Integer.valueOf( indexes ) );
-            response.put( "indexSize", Long.valueOf( indexSize ) );
-            response.put( "fileSize", Integer.valueOf( 0 ) );
-            response.put( "nsSizeMB", Integer.valueOf( 0 ) );
-            response.put( "ok", Integer.valueOf( 1 ) );
-            return response;
-        }
-        else {
-            log.error( "unknown query: " + query );
-        }
-        throw new NoSuchCommandException( command );
-    }
-
-    @Override
     public void handleInsert( MongoInsert insert ) {
         try {
             MemoryCollection collection = resolveCollection( insert );
@@ -205,5 +109,120 @@ public class MemoryDatabase extends CommonDatabase {
             log.error( "failed to update " + update, e );
             lastExceptions.put( Integer.valueOf( update.getClientId() ), e );
         }
+    }
+
+    @Override
+    public BSONObject handleCommand( int clientId , String command , BSONObject query ) throws MongoServerException {
+        if ( command.equals( "count" ) ) {
+            return commandCount( command, query );
+        }
+        else if ( command.equals( "getlasterror" ) ) {
+            return commandGetLastError( clientId, command, query );
+        }
+        else if ( command.equals( "drop" ) ) {
+            return commandDrop( query );
+        }
+        else if ( command.equals( "dropDatabase" ) ) {
+            return commandDropDatabase();
+        }
+        else if ( command.equals( "dbstats" ) ) {
+            return commandDBStats();
+        }
+        else {
+            log.error( "unknown query: " + query );
+        }
+        throw new NoSuchCommandException( command );
+    }
+
+    private BSONObject commandDBStats() {
+        BSONObject response = new BasicBSONObject( "db" , getDatabaseName() );
+        response.put( "collections", Integer.valueOf( collections.size() ) );
+
+        int indexes = 0;
+        long indexSize = 0;
+        long objects = 0;
+        long dataSize = 0;
+        double averageObjectSize = 0;
+        for ( MemoryCollection collection : collections.values() ) {
+            objects += collection.getCount();
+            dataSize += collection.getDataSize();
+            indexes += collection.getNumIndexes();
+            indexSize += collection.getIndexSize();
+        }
+        if ( objects > 0 ) {
+            averageObjectSize = dataSize / ( (double) objects );
+        }
+
+        response.put( "objects", Long.valueOf( objects ) );
+        response.put( "avgObjSize", Double.valueOf( averageObjectSize ) );
+        response.put( "dataSize", Long.valueOf( dataSize ) );
+        response.put( "storageSize", Long.valueOf( 0 ) );
+        response.put( "numExtents", Integer.valueOf( 0 ) );
+        response.put( "indexes", Integer.valueOf( indexes ) );
+        response.put( "indexSize", Long.valueOf( indexSize ) );
+        response.put( "fileSize", Integer.valueOf( 0 ) );
+        response.put( "nsSizeMB", Integer.valueOf( 0 ) );
+        response.put( "ok", Integer.valueOf( 1 ) );
+        return response;
+    }
+
+    private BSONObject commandDropDatabase() {
+        backend.dropDatabase( this );
+        BSONObject response = new BasicBSONObject( "dropped" , getDatabaseName() );
+        response.put( "ok", Integer.valueOf( 1 ) );
+        return response;
+    }
+
+    private BSONObject commandDrop( BSONObject query ) {
+        String collectionName = query.get( "drop" ).toString();
+        MemoryCollection collection = collections.remove( collectionName );
+
+        BSONObject response = new BasicBSONObject();
+        if ( collection == null ) {
+            response.put( "errmsg", "ns not found" );
+            response.put( "ok", Integer.valueOf( 0 ) );
+        }
+        else {
+            namespaces.removeDocument( new BasicBSONObject( "name" , collection.getFullName() ) );
+            response.put( "nIndexesWas", Integer.valueOf( collection.getNumIndexes() ) );
+            response.put( "ns", collection.getFullName() );
+            response.put( "ok", Integer.valueOf( 1 ) );
+        }
+
+        return response;
+    }
+
+    private BSONObject commandGetLastError( int clientId , String command , BSONObject query ) throws MongoServerError {
+        Iterator<String> it = query.keySet().iterator();
+        String cmd = it.next();
+        if ( !cmd.equals( command ) )
+            throw new IllegalStateException();
+        if ( it.hasNext() ) {
+            String subCommand = it.next();
+            if ( !subCommand.equals( "w" ) ) {
+                throw new IllegalArgumentException( "unknown subcommand: " + subCommand );
+            }
+        }
+        if ( lastExceptions != null ) {
+            MongoServerError ex = lastExceptions.remove( Integer.valueOf( clientId ) );
+            if ( ex != null )
+                throw ex;
+        }
+        return new BasicBSONObject( "ok" , Integer.valueOf( 1 ) );
+    }
+
+    private BSONObject commandCount( String command , BSONObject query ) {
+        String collection = query.get( command ).toString();
+        BSONObject response = new BasicBSONObject();
+        MemoryCollection coll = collections.get( collection );
+        if ( coll == null ) {
+            response.put( "missing", Boolean.TRUE );
+            response.put( "n", Integer.valueOf( 0 ) );
+        }
+        else {
+            response.put( "n", Integer.valueOf( coll.count( (BSONObject) query.get( "query" ) ) ) );
+        }
+        response.put( "ok", Integer.valueOf( 1 ) );
+        return response;
     }
 }

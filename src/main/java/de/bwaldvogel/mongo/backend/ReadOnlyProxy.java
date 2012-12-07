@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,6 +21,7 @@ public class ReadOnlyProxy implements MongoBackend {
         allowedCommands.add( "listDatabases" );
         allowedCommands.add( "count" );
         allowedCommands.add( "dbstats" );
+        allowedCommands.add( "serverStatus" );
     }
 
     private MongoBackend backend;
@@ -39,6 +41,11 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
+    public void handleConnect( int clientId ) {
+        backend.handleConnect( clientId );
+    }
+
+    @Override
     public void handleClose( int clientId ) {
         backend.handleClose( clientId );
     }
@@ -51,18 +58,27 @@ public class ReadOnlyProxy implements MongoBackend {
         throw new NoSuchCommandException( command );
     }
 
+    @Override
+    public Collection<BSONObject> getCurrentOperations( MongoQuery query ) {
+        return backend.getCurrentOperations( query );
+    }
+
+    @Override
     public Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException {
         return backend.handleQuery( query );
     }
 
+    @Override
     public void handleInsert( MongoInsert insert ) throws MongoServerException {
         throw new ReadOnlyException( "insert not allowed" );
     }
 
+    @Override
     public void handleDelete( MongoDelete delete ) throws MongoServerException {
         throw new ReadOnlyException( "delete not allowed" );
     }
 
+    @Override
     public void handleUpdate( MongoUpdate update ) throws MongoServerException {
         throw new ReadOnlyException( "update not allowed" );
     }

@@ -1,9 +1,17 @@
 package de.bwaldvogel.mongo.backend.memory;
 
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
@@ -16,13 +24,18 @@ import de.bwaldvogel.mongo.wire.message.Message;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
+import de.bwaldvogel.mongo.wire.message.MongoServer;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MemoryBackend implements MongoBackend {
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
+    private long started;
+    private Set<Long> connections = new HashSet<Long>();
+    private Set<Object> cursors = new HashSet<Object>();
 
     public MemoryBackend() {
+        started = System.nanoTime();
     }
 
     protected BSONObject handleAdminCommand( BSONObject query ) throws NoSuchCommandException {
@@ -67,14 +80,23 @@ public class MemoryBackend implements MongoBackend {
     }
 
     @Override
+    public void handleConnect( int clientId ) {
+        connections.add( Long.valueOf( clientId ) );
+    }
+
+    @Override
     public void handleClose( int clientId ) {
         for ( MongoDatabase db : databases.values() ) {
             db.handleClose( clientId );
         }
+        connections.remove( Long.valueOf( clientId ) );
     }
 
     @Override
     public BSONObject handleCommand( int clientId , String databaseName , String command , BSONObject query ) throws MongoServerException {
+        if ( command.equals( "serverStatus" ) ) {
+            return getServerStatus();
+        }
         if ( databaseName.equals( "admin" ) ) {
             return handleAdminCommand( query );
         }
@@ -82,6 +104,51 @@ public class MemoryBackend implements MongoBackend {
             MongoDatabase db = resolveDatabase( databaseName );
             return db.handleCommand( clientId, command, query );
         }
+    }
+
+    @Override
+    public Collection<BSONObject> getCurrentOperations( MongoQuery query ) {
+        // TODO
+        return Collections.emptyList();
+    }
+
+    private BSONObject getServerStatus() throws MongoServerException {
+        BSONObject serverStatus = new BasicBSONObject();
+        try {
+            serverStatus.put( "host", InetAddress.getLocalHost().getHostName() );
+        }
+        catch ( UnknownHostException e ) {
+            throw new MongoServerException( "failed to get hostname" , e );
+        }
+        serverStatus.put( "version", MongoServer.VERSION );
+        serverStatus.put( "process", "java" );
+        serverStatus.put( "pid", getProcessId() );
+
+        serverStatus.put( "uptime", Integer.valueOf( (int) TimeUnit.NANOSECONDS.toSeconds( System.nanoTime() - started ) ) );
+        serverStatus.put( "uptimeMillis", Long.valueOf( TimeUnit.NANOSECONDS.toMillis( System.nanoTime() - started ) ) );
+        serverStatus.put( "localTime", new Date() );
+
+        BSONObject connections = new BasicBSONObject();
+        connections.put( "current", Integer.valueOf( this.connections.size() ) );
+
+        serverStatus.put( "connections", connections );
+
+        BSONObject cursors = new BasicBSONObject();
+        cursors.put( "totalOpen", Integer.valueOf( this.cursors.size() ) );
+
+        serverStatus.put( "cursors", cursors );
+
+        serverStatus.put( "ok", Integer.valueOf( 1 ) );
+
+        return serverStatus;
+    }
+
+    private Integer getProcessId() {
+        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
+        if ( runtimeName.contains( "@" ) ) {
+            return Integer.valueOf( runtimeName.substring( 0, runtimeName.indexOf( '@' ) ) );
+        }
+        return Integer.valueOf( 0 );
     }
 
     @Override

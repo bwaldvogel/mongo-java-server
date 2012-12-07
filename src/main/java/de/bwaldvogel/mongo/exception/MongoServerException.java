@@ -11,7 +11,11 @@ public class MongoServerException extends Exception {
         super( message );
     }
 
-    public BSONObject createBSONObject( BSONObject query ) {
+    public MongoServerException(String message , Throwable cause) {
+        super( message , cause );
+    }
+
+    public BSONObject createBSONObject( int clientId , BSONObject query ) {
         BSONObject obj = new BasicBSONObject();
         obj.put( "err", getMessage() );
         obj.put( "ok", Integer.valueOf( 0 ) );

@@ -18,7 +18,8 @@ public class MongoServerError extends MongoServerException {
         return errorCode;
     }
 
-    public BSONObject createBSONObject( int clientId ) {
+    @Override
+    public BSONObject createBSONObject( int clientId , BSONObject query ) {
         BasicDBObject obj = new BasicDBObject( "err" , getMessage() );
         obj.put( "code", Integer.valueOf( getErrorCode() ) );
         obj.put( "connectionId", Integer.valueOf( clientId ) );

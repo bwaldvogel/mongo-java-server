@@ -22,6 +22,8 @@ import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 
 public class MongoServer {
 
+    public static final String VERSION = "0.1";
+
     private MongoBackend backend;
 
     private ChannelFactory factory;
@@ -55,7 +57,7 @@ public class MongoServer {
 
     /**
      * starts and binds the server on a local random port
-     * 
+     *
      * @return the random local address the server was bound to
      */
     public InetSocketAddress bind() {

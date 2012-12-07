@@ -6,6 +6,7 @@ public class MongoQuery extends ClientRequest {
 
     private final BSONObject query;
     private final BSONObject returnFieldSelector;
+    private boolean slaveOk;
 
     public MongoQuery(int clientId , MessageHeader header , String fullCollectionName , BSONObject query , BSONObject returnFieldSelector) {
         super( clientId , header , fullCollectionName );
@@ -31,6 +32,14 @@ public class MongoQuery extends ClientRequest {
         sb.append( ", returnFieldSelector: " ).append( returnFieldSelector );
         sb.append( ")" );
         return sb.toString();
+    }
+
+    public void setSlaveOk( boolean slaveOk ) {
+        this.slaveOk = slaveOk;
+    }
+
+    public boolean isSlaveOk() {
+        return slaveOk;
     }
 
 }

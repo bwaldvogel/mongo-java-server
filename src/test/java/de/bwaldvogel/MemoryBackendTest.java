@@ -6,6 +6,7 @@ import static org.fest.assertions.Fail.fail;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,6 +49,30 @@ public class MemoryBackendTest {
     public void testMaxBsonSize() throws Exception {
         int maxBsonObjectSize = mongo.getMaxBsonObjectSize();
         assertThat( maxBsonObjectSize ).isEqualTo( 16777216 );
+    }
+
+    @Test
+    public void testServerStatus() throws Exception {
+        Date before = new Date();
+        CommandResult serverStatus = mongo.getDB( "admin" ).command( "serverStatus" );
+        serverStatus.throwOnError();
+        assertThat( serverStatus.get( "uptime" ) ).isInstanceOf( Integer.class );
+        assertThat( serverStatus.get( "uptimeMillis" ) ).isInstanceOf( Long.class );
+        Date serverTime = (Date) serverStatus.get( "localTime" );
+        assertThat( serverTime ).isNotNull();
+        assertThat( serverTime.after( new Date() ) ).isFalse();
+        assertThat( before.after( serverTime ) ).isFalse();
+
+        BSONObject connections = (BSONObject) serverStatus.get( "connections" );
+        assertThat( connections.get( "current" ) ).isEqualTo( Integer.valueOf( 1 ) );
+        System.out.println( connections );
+    }
+
+    @Test
+    public void testCurrentOperations() throws Exception {
+        DBObject currentOperations = mongo.getDB( "admin" ).getCollection( "$cmd.sys.inprog" ).findOne();
+        assertThat( currentOperations ).isNotNull();
+        assertThat( currentOperations.get( "inprog" ) ).isInstanceOf( List.class );
     }
 
     @Test
@@ -282,8 +307,7 @@ public class MemoryBackendTest {
     @Test
     public void testReplicaSetInfo() throws Exception {
         // ReplicaSetStatus status = mongo.getReplicaSetStatus();
-        // System.out.println(status);
-        // assertThat(status)
+        // System.out.println( status );
+        // assertThat( status );
     }
-
 }

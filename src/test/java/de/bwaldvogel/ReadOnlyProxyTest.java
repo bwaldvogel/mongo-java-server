@@ -51,6 +51,18 @@ public class ReadOnlyProxyTest {
     }
 
     @Test
+    public void testServerStatus() throws Exception {
+        CommandResult serverStatus = readOnlyClient.getDB( "admin" ).command( "serverStatus" );
+        serverStatus.throwOnError();
+    }
+
+    @Test
+    public void testCurrentOperations() throws Exception {
+        DBObject currentOperations = readOnlyClient.getDB( "admin" ).getCollection( "$cmd.sys.inprog" ).findOne();
+        assertThat( currentOperations ).isNotNull();
+    }
+
+    @Test
     public void testStats() throws Exception {
         CommandResult stats = readOnlyClient.getDB( "testdb" ).getStats();
         stats.throwOnError();

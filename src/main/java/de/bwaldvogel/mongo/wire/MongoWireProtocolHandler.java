@@ -37,6 +37,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
     private static final int FLAG_UPSERT = 1 << 0;
     private static final int FLAG_MULTI_UPDATE = 1 << 1;
+    private static final int FLAG_SLAVE_OK = 1 << 2;
 
     public MongoWireProtocolHandler() {
         super( maxFrameLength , lengthFieldOffset , lengthFieldLength , lengthAdjustment , initialBytesToStrip );
@@ -157,9 +158,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
     private Object handleQuery( int clientId , MessageHeader header , ChannelBuffer buffer ) throws IOException {
 
-        final int flags = buffer.readInt();
-        if ( flags != 0 )
-            throw new UnsupportedOperationException( "flags=" + flags + " not yet supported" );
+        int flags = buffer.readInt();
 
         final String fullCollectionName = readCString( buffer );
         log.debug( "query " + header.getRequestID() + " @ " + fullCollectionName );
@@ -177,7 +176,18 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         if ( buffer.readable() ) {
             returnFieldSelector = readBSON( buffer );
         }
-        return new MongoQuery( clientId , header , fullCollectionName , query , returnFieldSelector );
+
+        MongoQuery mongoQuery = new MongoQuery( clientId , header , fullCollectionName , query , returnFieldSelector );
+
+        if ( ( flags & FLAG_SLAVE_OK ) == FLAG_SLAVE_OK ) {
+            mongoQuery.setSlaveOk( true );
+            flags -= FLAG_SLAVE_OK;
+        }
+
+        if ( flags != 0 )
+            throw new UnsupportedOperationException( "flags=" + flags + " not yet supported" );
+
+        return mongoQuery;
     }
 
     private BSONObject readBSON( ChannelBuffer buffer ) throws IOException {
