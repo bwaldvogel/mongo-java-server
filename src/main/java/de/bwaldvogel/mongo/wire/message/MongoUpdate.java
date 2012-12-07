@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.wire.message;
 
 import org.bson.BSONObject;
+import org.jboss.netty.channel.Channel;
 
 public class MongoUpdate extends ClientRequest {
 
@@ -9,9 +10,9 @@ public class MongoUpdate extends ClientRequest {
     private boolean upsert;
     private boolean multi;
 
-    public MongoUpdate(int clientId , MessageHeader header , String fullCollectionName , BSONObject selector , BSONObject update , boolean upsert ,
+    public MongoUpdate(Channel channel , MessageHeader header , String fullCollectionName , BSONObject selector , BSONObject update , boolean upsert ,
             boolean multi) {
-        super( clientId , header , fullCollectionName );
+        super( channel , header , fullCollectionName );
         this.selector = selector;
         this.update = update;
         this.upsert = upsert;

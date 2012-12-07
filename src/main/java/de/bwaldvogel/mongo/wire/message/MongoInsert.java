@@ -5,13 +5,14 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bson.BSONObject;
+import org.jboss.netty.channel.Channel;
 
 public class MongoInsert extends ClientRequest {
 
     private final List<BSONObject> documents;
 
-    public MongoInsert(int clientId , MessageHeader header , String fullCollectionName , List<BSONObject> documents) {
-        super( clientId , header , fullCollectionName );
+    public MongoInsert(Channel channel , MessageHeader header , String fullCollectionName , List<BSONObject> documents) {
+        super( channel , header , fullCollectionName );
         this.documents = new ArrayList<BSONObject>( documents );
     }
 

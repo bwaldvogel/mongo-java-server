@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.wire.message;
 
 import org.bson.BSONObject;
+import org.jboss.netty.channel.Channel;
 
 public class MongoQuery extends ClientRequest {
 
@@ -8,8 +9,8 @@ public class MongoQuery extends ClientRequest {
     private final BSONObject returnFieldSelector;
     private boolean slaveOk;
 
-    public MongoQuery(int clientId , MessageHeader header , String fullCollectionName , BSONObject query , BSONObject returnFieldSelector) {
-        super( clientId , header , fullCollectionName );
+    public MongoQuery(Channel channel , MessageHeader header , String fullCollectionName , BSONObject query , BSONObject returnFieldSelector) {
+        super( channel , header , fullCollectionName );
         this.query = query;
         this.returnFieldSelector = returnFieldSelector;
     }

@@ -23,6 +23,11 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
+/**
+ * Based on information from <a
+ * href="http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol"
+ * >http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol</a>
+ */
 public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
     public static final int MAX_BSON_OBJECT_SIZE = 16777216;
@@ -34,10 +39,6 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     private static final int lengthFieldLength = 4;
     private static final int lengthAdjustment = -lengthFieldLength;
     private static final int initialBytesToStrip = 0;
-
-    private static final int FLAG_UPSERT = 1 << 0;
-    private static final int FLAG_MULTI_UPDATE = 1 << 1;
-    private static final int FLAG_SLAVE_OK = 1 << 2;
 
     public MongoWireProtocolHandler() {
         super( maxFrameLength , lengthFieldOffset , lengthFieldLength , lengthAdjustment , initialBytesToStrip );
@@ -78,21 +79,20 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new IOException( "opCode " + opCodeId + " not supported" );
         }
 
-        int clientId = channel.getId().intValue();
         Object ret;
 
         switch ( opCode ) {
             case OP_QUERY:
-                ret = handleQuery( clientId, header, buffer );
+                ret = handleQuery( channel, header, buffer );
                 break;
             case OP_INSERT:
-                ret = handleInsert( clientId, header, buffer );
+                ret = handleInsert( channel, header, buffer );
                 break;
             case OP_DELETE:
-                ret = handleDelete( clientId, header, buffer );
+                ret = handleDelete( channel, header, buffer );
                 break;
             case OP_UPDATE:
-                ret = handleUpdate( clientId, header, buffer );
+                ret = handleUpdate( channel, header, buffer );
                 break;
             default:
                 throw new UnsupportedOperationException( "unsupported opcode: " + opCode );
@@ -105,7 +105,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return ret;
     }
 
-    private Object handleDelete( int clientId , MessageHeader header , ChannelBuffer buffer ) throws IOException {
+    private Object handleDelete( Channel channel , MessageHeader header , ChannelBuffer buffer ) throws IOException {
 
         buffer.skipBytes( 4 ); // reserved
 
@@ -117,10 +117,10 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new UnsupportedOperationException( "flags=" + flags + " not yet supported" );
 
         BSONObject selector = readBSON( buffer );
-        return new MongoDelete( clientId , header , fullCollectionName , selector );
+        return new MongoDelete( channel , header , fullCollectionName , selector );
     }
 
-    private Object handleUpdate( int clientId , MessageHeader header , ChannelBuffer buffer ) throws IOException {
+    private Object handleUpdate( Channel channel , MessageHeader header , ChannelBuffer buffer ) throws IOException {
 
         buffer.skipBytes( 4 ); // reserved
 
@@ -128,15 +128,15 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         log.debug( "update " + header.getRequestID() + " @ " + fullCollectionName );
 
         final int flags = buffer.readInt();
-        boolean upsert = ( ( flags & FLAG_UPSERT ) == FLAG_UPSERT );
-        boolean multi = ( ( flags & FLAG_MULTI_UPDATE ) == FLAG_MULTI_UPDATE );
+        boolean upsert = UpdateFlag.UPSERT.isSet( flags );
+        boolean multi = UpdateFlag.MULTI_UPDATE.isSet( flags );
 
         BSONObject selector = readBSON( buffer );
         BSONObject update = readBSON( buffer );
-        return new MongoUpdate( clientId , header , fullCollectionName , selector , update , upsert , multi );
+        return new MongoUpdate( channel , header , fullCollectionName , selector , update , upsert , multi );
     }
 
-    private Object handleInsert( int clientId , MessageHeader header , ChannelBuffer buffer ) throws IOException {
+    private Object handleInsert( Channel channel , MessageHeader header , ChannelBuffer buffer ) throws IOException {
 
         final int flags = buffer.readInt();
         if ( flags != 0 )
@@ -153,10 +153,10 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             }
             documents.add( document );
         }
-        return new MongoInsert( clientId , header , fullCollectionName , documents );
+        return new MongoInsert( channel , header , fullCollectionName , documents );
     }
 
-    private Object handleQuery( int clientId , MessageHeader header , ChannelBuffer buffer ) throws IOException {
+    private Object handleQuery( Channel channel , MessageHeader header , ChannelBuffer buffer ) throws IOException {
 
         int flags = buffer.readInt();
 
@@ -177,11 +177,10 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             returnFieldSelector = readBSON( buffer );
         }
 
-        MongoQuery mongoQuery = new MongoQuery( clientId , header , fullCollectionName , query , returnFieldSelector );
+        MongoQuery mongoQuery = new MongoQuery( channel , header , fullCollectionName , query , returnFieldSelector );
 
-        if ( ( flags & FLAG_SLAVE_OK ) == FLAG_SLAVE_OK ) {
-            mongoQuery.setSlaveOk( true );
-            flags -= FLAG_SLAVE_OK;
+        if ( QueryFlag.SLAVE_OK.isSet( flags ) ) {
+            flags = QueryFlag.SLAVE_OK.removeFrom( flags );
         }
 
         if ( flags != 0 )

@@ -1,13 +1,14 @@
 package de.bwaldvogel.mongo.wire.message;
 
 import org.bson.BSONObject;
+import org.jboss.netty.channel.Channel;
 
 public class MongoDelete extends ClientRequest {
 
     private BSONObject selector;
 
-    public MongoDelete(int clientId , MessageHeader header , String fullCollectionName , BSONObject selector) {
-        super( clientId , header , fullCollectionName );
+    public MongoDelete(Channel channel , MessageHeader header , String fullCollectionName , BSONObject selector) {
+        super( channel , header , fullCollectionName );
         this.selector = selector;
     }
 
