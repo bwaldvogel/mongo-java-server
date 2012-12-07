@@ -31,8 +31,6 @@ public class MemoryCollection {
 
     public MemoryCollection(String databaseName , String collectionName , String idField) {
         this.databaseName = databaseName;
-        if ( collectionName.startsWith( "$" ) )
-            throw new IllegalArgumentException( "illegal collection name: " + collectionName );
         this.collectionName = collectionName;
         indexes.add( new UniqueIndex( getFullName() , idField ) );
     }
@@ -145,11 +143,11 @@ public class MemoryCollection {
     public synchronized Iterable<BSONObject> handleQuery( BSONObject queryObject , int numberToSkip , int numberToReturn ) {
 
         BSONObject query;
-        BSONObject orderby = null;
+        BSONObject orderBy = null;
 
         if ( queryObject.containsField( "query" ) ) {
             query = (BSONObject) queryObject.get( "query" );
-            orderby = (BSONObject) queryObject.get( "orderby" );
+            orderBy = (BSONObject) queryObject.get( "orderby" );
         }
         else if ( queryObject.containsField( "$query" ) ) {
             throw new UnsupportedOperationException();
@@ -164,23 +162,6 @@ public class MemoryCollection {
 
         Iterable<Integer> keys = matchKeys( query );
 
-        if ( orderby == null || orderby.keySet().isEmpty() ) {
-
-        }
-        else if ( orderby.keySet().size() == 1 ) {
-            if ( orderby.keySet().iterator().next().equals( "$natural" ) ) {
-                if ( ( (Number) orderby.get( "$natural" ) ).intValue() == -1 ) {
-                    throw new UnsupportedOperationException();
-                }
-            }
-            else {
-                throw new UnsupportedOperationException();
-            }
-        }
-        else if ( orderby.keySet().size() > 1 ) {
-            throw new UnsupportedOperationException();
-        }
-
         List<BSONObject> objs = new ArrayList<BSONObject>();
         for ( Integer pos : keys ) {
             if ( numberToSkip-- > 0 ) {
@@ -189,6 +170,20 @@ public class MemoryCollection {
             objs.add( documents.get( pos.intValue() ) );
             if ( numberToReturn > 0 && objs.size() == numberToReturn )
                 break;
+        }
+
+        if ( orderBy != null && !orderBy.keySet().isEmpty() ) {
+            if ( orderBy.keySet().iterator().next().equals( "$natural" ) ) {
+                if ( orderBy.get( "$natural" ).equals( Integer.valueOf( 1 ) ) ) {
+                    // keep it as is
+                }
+                else if ( orderBy.get( "$natural" ).equals( Integer.valueOf( -1 ) ) ) {
+                    Collections.reverse( objs );
+                }
+            }
+            else {
+                Collections.sort( objs, new BSONComparator( orderBy ) );
+            }
         }
 
         return objs;

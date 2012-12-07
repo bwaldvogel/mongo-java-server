@@ -9,8 +9,10 @@ import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
 
+import de.bwaldvogel.mongo.exception.InvalidNSError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.NSNameTooLongError;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.exception.ReservedCollectionNameError;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
@@ -25,6 +27,8 @@ public class MemoryDatabase extends CommonDatabase {
 
     private static final String ID_FIELD = "_id";
 
+    private static final int MAX_NS_LENGTH = 128;
+
     private Map<String, MemoryCollection> collections = new HashMap<String, MemoryCollection>();
     private Map<Channel, MongoServerError> lastExceptions = new HashMap<Channel, MongoServerError>();
     private MemoryCollection namespaces;
@@ -38,11 +42,11 @@ public class MemoryDatabase extends CommonDatabase {
         collections.put( "system.namespaces", namespaces );
     }
 
-    private synchronized MemoryCollection resolveCollection( ClientRequest request ) throws MongoServerError {
+    private synchronized MemoryCollection resolveCollection( ClientRequest request ) throws MongoServerException {
         String collectionName = request.getCollectionName();
-        checkCollectionName( collectionName );
         MemoryCollection collection = collections.get( collectionName );
         if ( collection == null ) {
+            checkCollectionName( collectionName, request.getFullCollectionName() );
             collection = new MemoryCollection( getDatabaseName() , collectionName , ID_FIELD );
             collections.put( collectionName, collection );
             namespaces.addDocument( new BasicBSONObject( "name" , collection.getFullName() ) );
@@ -50,10 +54,19 @@ public class MemoryDatabase extends CommonDatabase {
         return collection;
     }
 
-    private void checkCollectionName( String collectionName ) throws MongoServerError {
-        if ( collectionName.contains( "$" ) ) {
-            throw new ReservedCollectionNameError( collectionName );
-        }
+    private void checkCollectionName( String collectionName , String fullCollectionName ) throws MongoServerException {
+
+        if ( collectionName.contains( "$" ) )
+            throw new ReservedCollectionNameError( "illegal collection name: " + collectionName );
+
+        if ( collectionName.startsWith( "system." ) )
+            throw new ReservedCollectionNameError( "illegal collection name: " + collectionName );
+
+        if ( collectionName.length() > MAX_NS_LENGTH )
+            throw new NSNameTooLongError( MAX_NS_LENGTH );
+
+        if ( collectionName.isEmpty() )
+            throw new InvalidNSError( fullCollectionName );
     }
 
     public MongoServerError getLastException( int clientId ) {
@@ -77,7 +90,7 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public void handleInsert( MongoInsert insert ) {
+    public void handleInsert( MongoInsert insert ) throws MongoServerException {
         try {
             MemoryCollection collection = resolveCollection( insert );
             collection.handleInsert( insert );
@@ -89,7 +102,7 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public void handleDelete( MongoDelete delete ) {
+    public void handleDelete( MongoDelete delete ) throws MongoServerException {
         try {
             MemoryCollection collection = resolveCollection( delete );
             collection.handleDelete( delete );
@@ -101,7 +114,7 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     @Override
-    public void handleUpdate( MongoUpdate update ) {
+    public void handleUpdate( MongoUpdate update ) throws MongoServerException {
         try {
             MemoryCollection collection = resolveCollection( update );
             collection.handleUpdate( update );

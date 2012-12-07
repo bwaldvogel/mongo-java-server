@@ -19,11 +19,11 @@ public interface MongoDatabase {
 
     Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException;
 
-    void handleInsert( MongoInsert insert );
+    void handleInsert( MongoInsert insert ) throws MongoServerException;
 
-    void handleDelete( MongoDelete delete );
+    void handleDelete( MongoDelete delete ) throws MongoServerException;
 
-    void handleUpdate( MongoUpdate update );
+    void handleUpdate( MongoUpdate update ) throws MongoServerException;
 
     boolean isEmpty();
 

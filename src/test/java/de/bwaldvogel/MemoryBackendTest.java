@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 import org.bson.BSONObject;
@@ -108,6 +109,45 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testReservedCollectionNames() throws Exception {
+
+        DB db = mongo.getDB( "testdb" );
+        try {
+            db.getCollection( "foo$bar" ).insert( new BasicDBObject() );
+            fail( "MongoException expected" );
+        }
+        catch ( MongoException e ) {
+            assertThat( e.getMessage() ).contains( "illegal collection name" );
+        }
+
+        try {
+            db.getCollection( "" ).insert( new BasicDBObject() );
+            fail( "MongoException expected" );
+        }
+        catch ( MongoException e ) {
+            assertThat( e.getMessage().toLowerCase() ).contains( "invalid ns" );
+        }
+
+        try {
+            db.getCollection( "system.bla" ).insert( new BasicDBObject() );
+            fail( "MongoException expected" );
+        }
+        catch ( MongoException e ) {
+            assertThat( e.getMessage() ).contains( "illegal collection name" );
+        }
+
+        try {
+            db.getCollection(
+                    "verylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstring" )
+                    .insert( new BasicDBObject() );
+            fail( "MongoException expected" );
+        }
+        catch ( MongoException e ) {
+            assertThat( e.getMessage() ).contains( "name too long" );
+        }
+    }
+
+    @Test
     public void testIllegalCommand() throws Exception {
         try {
             mongo.getDB( "testdb" ).command( "foo" ).throwOnError();
@@ -175,6 +215,32 @@ public class MemoryBackendTest {
 
         cursor = collection.find().skip( 3 ).limit( 5 );
         assertThat( cursor.itcount() ).isEqualTo( 5 );
+    }
+
+    @Test
+    public void testQuerySort() throws Exception {
+        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        Random random = new Random( 4711 );
+        for ( int i = 0; i < 10; i++ ) {
+            collection.insert( new BasicDBObject( "_id" , Double.valueOf( random.nextDouble() ) ) );
+        }
+
+        List<DBObject> objects = collection.find().sort( new BasicDBObject( "_id" , Integer.valueOf( 1 ) ) ).toArray();
+        double before = Double.MIN_VALUE;
+        for ( DBObject dbObject : objects ) {
+            double value = ( (Number) dbObject.get( "_id" ) ).doubleValue();
+            assertThat( value ).isGreaterThanOrEqualTo( before );
+            before = value;
+        }
+
+        // reverse sort
+        objects = collection.find().sort( new BasicDBObject( "_id" , Integer.valueOf( -1 ) ) ).toArray();
+        before = Double.MAX_VALUE;
+        for ( DBObject dbObject : objects ) {
+            double value = ( (Number) dbObject.get( "_id" ) ).doubleValue();
+            assertThat( value ).isLessThanOrEqualTo( before );
+            before = value;
+        }
     }
 
     @Test
