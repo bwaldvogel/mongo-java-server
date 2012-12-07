@@ -8,11 +8,24 @@ public class MongoQuery extends ClientRequest {
     private final BSONObject query;
     private final BSONObject returnFieldSelector;
     private boolean slaveOk;
+    private int numberToSkip;
+    private int numberToReturn;
 
-    public MongoQuery(Channel channel , MessageHeader header , String fullCollectionName , BSONObject query , BSONObject returnFieldSelector) {
+    public MongoQuery(Channel channel , MessageHeader header , String fullCollectionName , int numberToSkip , int numberToReturn , BSONObject query ,
+            BSONObject returnFieldSelector) {
         super( channel , header , fullCollectionName );
+        this.numberToSkip = numberToSkip;
+        this.numberToReturn = numberToReturn;
         this.query = query;
         this.returnFieldSelector = returnFieldSelector;
+    }
+
+    public int getNumberToSkip() {
+        return numberToSkip;
+    }
+
+    public int getNumberToReturn() {
+        return numberToReturn;
     }
 
     public BSONObject getQuery() {

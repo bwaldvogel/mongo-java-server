@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.log4j.Logger;
 import org.bson.BSONObject;
 
 import com.mongodb.DefaultDBEncoder;
@@ -20,8 +19,6 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MemoryCollection {
-
-    private static final Logger log = Logger.getLogger( CommonDatabase.class );
 
     private String collectionName;
 
@@ -145,20 +142,20 @@ public class MemoryCollection {
         return documents.size();
     }
 
-    public synchronized Iterable<BSONObject> handleQuery( BSONObject obj ) {
+    public synchronized Iterable<BSONObject> handleQuery( BSONObject queryObject , int numberToSkip , int numberToReturn ) {
 
         BSONObject query;
         BSONObject orderby = null;
 
-        if ( obj.containsField( "query" ) ) {
-            query = (BSONObject) obj.get( "query" );
-            orderby = (BSONObject) obj.get( "orderby" );
+        if ( queryObject.containsField( "query" ) ) {
+            query = (BSONObject) queryObject.get( "query" );
+            orderby = (BSONObject) queryObject.get( "orderby" );
         }
-        else if ( obj.containsField( "$query" ) ) {
+        else if ( queryObject.containsField( "$query" ) ) {
             throw new UnsupportedOperationException();
         }
         else {
-            query = obj;
+            query = queryObject;
         }
 
         if ( documents.isEmpty() ) {
@@ -186,7 +183,12 @@ public class MemoryCollection {
 
         List<BSONObject> objs = new ArrayList<BSONObject>();
         for ( Integer pos : keys ) {
+            if ( numberToSkip-- > 0 ) {
+                continue;
+            }
             objs.add( documents.get( pos.intValue() ) );
+            if ( numberToReturn > 0 && objs.size() == numberToReturn )
+                break;
         }
 
         return objs;
@@ -195,12 +197,11 @@ public class MemoryCollection {
     public synchronized void handleInsert( MongoInsert insert ) throws MongoServerError {
         for ( BSONObject document : insert.getDocuments() ) {
             addDocument( document );
-            log.debug( "inserted " + document );
         }
     }
 
     public synchronized void handleDelete( MongoDelete delete ) {
-        for ( BSONObject document : handleQuery( delete.getSelector() ) ) {
+        for ( BSONObject document : handleQuery( delete.getSelector(), 0, Integer.MAX_VALUE ) ) {
             removeDocument( document );
         }
     }

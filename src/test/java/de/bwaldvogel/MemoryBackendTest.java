@@ -19,6 +19,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
@@ -161,6 +162,29 @@ public class MemoryBackendTest {
         assertThat( collection.count() ).isEqualTo( 10 );
 
         assertThat( collection.find().toArray() ).isEqualTo( inserted );
+    }
+
+    @Test
+    public void testQuerySkipLimit() throws Exception {
+        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        for ( int i = 0; i < 10; i++ ) {
+            collection.insert( new BasicDBObject() );
+        }
+        DBCursor cursor = collection.find().skip( 3 );
+        assertThat( cursor.itcount() ).isEqualTo( 7 );
+
+        cursor = collection.find().skip( 3 ).limit( 5 );
+        assertThat( cursor.itcount() ).isEqualTo( 5 );
+    }
+
+    @Test
+    public void testQueryLimit() throws Exception {
+        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        for ( int i = 0; i < 5; i++ ) {
+            collection.insert( new BasicDBObject() );
+        }
+        List<DBObject> objects = collection.find().limit( 1 ).toArray();
+        assertThat( objects.size() ).isEqualTo( 1 );
     }
 
     @Test
