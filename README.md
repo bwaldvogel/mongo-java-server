@@ -28,11 +28,11 @@ Fuzzing the wire protocol could be used to check the robustness of client driver
 	client.close();
 	server.shutdown();
 
-See [examples/][1] for more examples.
+See [examples][1] for more examples.
 
 ### Similar Projects ###
 
 * [jmockmongo][2] shares the basic idea but focuses on unit testing
 
-[1]: mongo-java-server/examples/
+[1]: https://github.com/bwaldvogel/mongo-java-server/tree/master/examples
 [2]: https://github.com/thiloplanz/jmockmongo
