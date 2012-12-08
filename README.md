@@ -34,5 +34,5 @@ See [examples/][1] for more examples.
 
 * [jmockmongo][2] shares the basic idea but focuses on unit testing
 
-[1]: examples/
+[1]: mongo-java-server/examples/
 [2]: https://github.com/thiloplanz/jmockmongo
