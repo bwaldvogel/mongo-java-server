@@ -13,8 +13,26 @@ error. One backend could be used to frequently timeout or let queries fail.
 
 Fuzzing the wire protocol could be used to check the robustness of client drivers.
 
+### Example ###
+
+	MongoServer server = new MongoServer( new MemoryBackend() );
+	// bind on a random local port
+	InetSocketAddress serverAddress = server.bind();
+
+	MongoClient client = new MongoClient( new ServerAddress( serverAddress ) );
+
+	DBCollection collection = client.getDB( "testdb" ).getCollection( "testcollection" );
+	// creates the database and collection in memory and inserts the object
+	collection.insert( new BasicDBObject( "key" , "value" ) );
+
+	client.close();
+	server.shutdown();
+
+See [examples/][1] for more examples.
+
 ### Similar Projects ###
 
-* [jmockmongo][1] shares the basic idea but focuses on unit testing
+* [jmockmongo][2] shares the basic idea but focuses on unit testing
 
-[1]: https://github.com/thiloplanz/jmockmongo
+[1]: examples/
+[2]: https://github.com/thiloplanz/jmockmongo
