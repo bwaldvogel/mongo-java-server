@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.wire.message;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteOrder;
@@ -34,6 +35,18 @@ public class MongoServer {
     private ChannelFactory factory;
     private ChannelGroup channelGroup = new DefaultChannelGroup( getClass().getSimpleName() );
     private Channel serverChannel;
+
+    public static void main( String[] args ) throws Exception {
+        final MongoServer mongoServer = new MongoServer();
+        mongoServer.bind( new InetSocketAddress( InetAddress.getByAddress( new byte[] { 0 , 0 , 0 , 0 } ) , 27017 ) );
+        Runtime.getRuntime().addShutdownHook( new Thread() {
+            @Override
+            public void run() {
+                log.info( "shutting down " + mongoServer );
+                mongoServer.shutdownNow();
+            }
+        } );
+    }
 
     /**
      * creates a mongo server with in-memory backend

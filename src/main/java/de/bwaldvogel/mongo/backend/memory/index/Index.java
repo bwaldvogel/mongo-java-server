@@ -28,4 +28,6 @@ public abstract class Index {
 
     public abstract long getCount();
 
+    public abstract long getDataSize();
+
 }

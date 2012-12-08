@@ -43,10 +43,13 @@ public class MemoryDatabase extends CommonDatabase {
     }
 
     private synchronized MemoryCollection resolveCollection( ClientRequest request ) throws MongoServerException {
-        String collectionName = request.getCollectionName();
+        return resolveCollection( request.getCollectionName() );
+    }
+
+    private synchronized MemoryCollection resolveCollection( String collectionName ) throws MongoServerException {
         MemoryCollection collection = collections.get( collectionName );
         if ( collection == null ) {
-            checkCollectionName( collectionName, request.getFullCollectionName() );
+            checkCollectionName( collectionName );
             collection = new MemoryCollection( getDatabaseName() , collectionName , ID_FIELD );
             collections.put( collectionName, collection );
             namespaces.addDocument( new BasicBSONObject( "name" , collection.getFullName() ) );
@@ -54,7 +57,7 @@ public class MemoryDatabase extends CommonDatabase {
         return collection;
     }
 
-    private void checkCollectionName( String collectionName , String fullCollectionName ) throws MongoServerException {
+    private void checkCollectionName( String collectionName ) throws MongoServerException {
 
         if ( collectionName.contains( "$" ) )
             throw new ReservedCollectionNameError( "illegal collection name: " + collectionName );
@@ -66,7 +69,7 @@ public class MemoryDatabase extends CommonDatabase {
             throw new NSNameTooLongError( MAX_NS_LENGTH );
 
         if ( collectionName.isEmpty() )
-            throw new InvalidNSError( fullCollectionName );
+            throw new InvalidNSError( getDatabaseName() + "." + collectionName );
     }
 
     public MongoServerError getLastException( int clientId ) {
@@ -140,7 +143,12 @@ public class MemoryDatabase extends CommonDatabase {
             return commandDropDatabase();
         }
         else if ( command.equals( "dbstats" ) ) {
-            return commandDBStats();
+            return commandDatabaseStats();
+        }
+        else if ( command.equals( "collstats" ) ) {
+            String collectionName = query.get( "collstats" ).toString();
+            MemoryCollection collection = resolveCollection( collectionName );
+            return collection.getStats();
         }
         else {
             log.error( "unknown query: " + query );
@@ -148,7 +156,7 @@ public class MemoryDatabase extends CommonDatabase {
         throw new NoSuchCommandException( command );
     }
 
-    private BSONObject commandDBStats() {
+    private BSONObject commandDatabaseStats() {
         BSONObject response = new BasicBSONObject( "db" , getDatabaseName() );
         response.put( "collections", Integer.valueOf( collections.size() ) );
 

@@ -31,32 +31,40 @@ import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import de.bwaldvogel.mongo.wire.message.MongoServer;
 
 public class MemoryBackendTest {
-    private Mongo mongo;
+    private Mongo client;
     private MongoServer mongoServer;
+    private DB db;
+    private DB admin;
 
     @Before
     public void setUp() throws Exception {
         mongoServer = new MongoServer( new MemoryBackend() );
         InetSocketAddress serverAddress = mongoServer.bind();
-        mongo = new MongoClient( new ServerAddress( serverAddress ) );
+        client = new MongoClient( new ServerAddress( serverAddress ) );
+        db = client.getDB( "testdb" );
+        admin = client.getDB( "admin" );
     }
 
     @After
     public void tearDown() {
-        mongo.close();
+        client.close();
         mongoServer.shutdownNow();
+    }
+
+    private CommandResult command( String command ) {
+        return admin.command( command );
     }
 
     @Test
     public void testMaxBsonSize() throws Exception {
-        int maxBsonObjectSize = mongo.getMaxBsonObjectSize();
+        int maxBsonObjectSize = client.getMaxBsonObjectSize();
         assertThat( maxBsonObjectSize ).isEqualTo( 16777216 );
     }
 
     @Test
     public void testServerStatus() throws Exception {
         Date before = new Date();
-        CommandResult serverStatus = mongo.getDB( "admin" ).command( "serverStatus" );
+        CommandResult serverStatus = command( "serverStatus" );
         serverStatus.throwOnError();
         assertThat( serverStatus.get( "uptime" ) ).isInstanceOf( Integer.class );
         assertThat( serverStatus.get( "uptimeMillis" ) ).isInstanceOf( Long.class );
@@ -72,25 +80,25 @@ public class MemoryBackendTest {
 
     @Test
     public void testCurrentOperations() throws Exception {
-        DBObject currentOperations = mongo.getDB( "admin" ).getCollection( "$cmd.sys.inprog" ).findOne();
+        DBObject currentOperations = admin.getCollection( "$cmd.sys.inprog" ).findOne();
         assertThat( currentOperations ).isNotNull();
         assertThat( currentOperations.get( "inprog" ) ).isInstanceOf( List.class );
     }
 
     @Test
-    public void testStats() throws Exception {
-        CommandResult stats = mongo.getDB( "testdb" ).getStats();
+    public void testDatabaseStats() throws Exception {
+        CommandResult stats = db.getStats();
         stats.throwOnError();
         assertThat( ( (Number) stats.get( "objects" ) ).longValue() ).isEqualTo( 0 );
         assertThat( ( (Number) stats.get( "collections" ) ).longValue() ).isEqualTo( 1 );
         assertThat( ( (Number) stats.get( "indexes" ) ).longValue() ).isEqualTo( 1 );
         assertThat( ( (Number) stats.get( "dataSize" ) ).longValue() ).isEqualTo( 0 );
 
-        mongo.getDB( "testdb" ).getCollection( "foo" ).insert( new BasicDBObject() );
-        mongo.getDB( "testdb" ).getCollection( "foo" ).insert( new BasicDBObject() );
-        mongo.getDB( "testdb" ).getCollection( "bar" ).insert( new BasicDBObject() );
+        db.getCollection( "foo" ).insert( new BasicDBObject() );
+        db.getCollection( "foo" ).insert( new BasicDBObject() );
+        db.getCollection( "bar" ).insert( new BasicDBObject() );
 
-        stats = mongo.getDB( "testdb" ).getStats();
+        stats = db.getStats();
         stats.throwOnError();
 
         assertThat( ( (Number) stats.get( "objects" ) ).longValue() ).isEqualTo( 5 );
@@ -100,18 +108,33 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testCollectionStats() throws Exception {
+        DBCollection collection = db.getCollection( "test" );
+        CommandResult stats = collection.getStats();
+        stats.throwOnError();
+        assertThat( ( (Number) stats.get( "count" ) ).longValue() ).isEqualTo( 0 );
+        assertThat( ( (Number) stats.get( "size" ) ).longValue() ).isEqualTo( 0 );
+
+        collection.insert( new BasicDBObject() );
+        collection.insert( new BasicDBObject( "abc" , "foo" ) );
+        stats = collection.getStats();
+        stats.throwOnError();
+        assertThat( ( (Number) stats.get( "count" ) ).longValue() ).isEqualTo( 2 );
+        assertThat( ( (Number) stats.get( "size" ) ).longValue() ).isEqualTo( 57 );
+        assertThat( ( (Number) stats.get( "avgObjSize" ) ).doubleValue() ).isEqualTo( 28.5 );
+    }
+
+    @Test
     public void testListDatabaseNames() throws Exception {
-        assertThat( mongo.getDatabaseNames() ).isEmpty();
-        mongo.getDB( "testdb" ).getCollection( "testcollection" ).insert( new BasicDBObject() );
-        assertThat( mongo.getDatabaseNames() ).containsExactly( "testdb" );
-        mongo.getDB( "bar" ).getCollection( "testcollection" ).insert( new BasicDBObject() );
-        assertThat( mongo.getDatabaseNames() ).containsExactly( "bar", "testdb" );
+        assertThat( client.getDatabaseNames() ).isEmpty();
+        db.getCollection( "testcollection" ).insert( new BasicDBObject() );
+        assertThat( client.getDatabaseNames() ).containsExactly( "testdb" );
+        client.getDB( "bar" ).getCollection( "testcollection" ).insert( new BasicDBObject() );
+        assertThat( client.getDatabaseNames() ).containsExactly( "bar", "testdb" );
     }
 
     @Test
     public void testReservedCollectionNames() throws Exception {
-
-        DB db = mongo.getDB( "testdb" );
         try {
             db.getCollection( "foo$bar" ).insert( new BasicDBObject() );
             fail( "MongoException expected" );
@@ -150,7 +173,7 @@ public class MemoryBackendTest {
     @Test
     public void testIllegalCommand() throws Exception {
         try {
-            mongo.getDB( "testdb" ).command( "foo" ).throwOnError();
+            command( "foo" ).throwOnError();
             fail( "MongoException expected" );
         }
         catch ( MongoException e ) {
@@ -158,7 +181,7 @@ public class MemoryBackendTest {
         }
 
         try {
-            mongo.getDB( "bar" ).command( "foo" ).throwOnError();
+            client.getDB( "bar" ).command( "foo" ).throwOnError();
             fail( "MongoException expected" );
         }
         catch ( MongoException e ) {
@@ -168,7 +191,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testQuery() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
         DBObject obj = collection.findOne( new BasicDBObject( "_id" , 1 ) );
         assertThat( obj ).isNull();
         assertThat( collection.count() ).isEqualTo( 0 );
@@ -176,7 +199,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryCount() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
 
         for ( int i = 0; i < 100; i++ ) {
             collection.insert( new BasicDBObject() );
@@ -191,7 +214,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryAll() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
 
         List<Object> inserted = new ArrayList<Object>();
         for ( int i = 0; i < 10; i++ ) {
@@ -206,7 +229,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testQuerySkipLimit() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
         for ( int i = 0; i < 10; i++ ) {
             collection.insert( new BasicDBObject() );
         }
@@ -219,7 +242,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testQuerySort() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
         Random random = new Random( 4711 );
         for ( int i = 0; i < 10; i++ ) {
             collection.insert( new BasicDBObject( "_id" , Double.valueOf( random.nextDouble() ) ) );
@@ -245,7 +268,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryLimit() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
         for ( int i = 0; i < 5; i++ ) {
             collection.insert( new BasicDBObject() );
         }
@@ -255,7 +278,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsert() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
         assertThat( collection.count() ).isEqualTo( 0 );
 
         for ( int i = 0; i < 3; i++ ) {
@@ -273,7 +296,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsertDuplicate() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
         assertThat( collection.count() ).isEqualTo( 0 );
 
         collection.insert( new BasicDBObject( "_id" , 1 ) );
@@ -300,7 +323,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsertQuery() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
         assertThat( collection.count() ).isEqualTo( 0 );
 
         BasicDBObject insertedObject = new BasicDBObject( "_id" , 1 );
@@ -318,7 +341,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsertRemove() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
 
         for ( int i = 0; i < 10; i++ ) {
             collection.insert( new BasicDBObject( "_id" , 1 ) );
@@ -332,7 +355,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpdate() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
 
         BasicDBObject object = new BasicDBObject( "_id" , 1 );
 
@@ -346,7 +369,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpdateSet() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
 
         BasicDBObject object = new BasicDBObject( "_id" , 1 );
 
@@ -366,7 +389,7 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpsert() throws Exception {
-        DBCollection collection = mongo.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = db.getCollection( "testcollection" );
 
         BasicDBObject object = new BasicDBObject( "_id" , 1 );
 
@@ -379,15 +402,14 @@ public class MemoryBackendTest {
 
     @Test
     public void testDropDatabase() throws Exception {
-        mongo.getDB( "testdb" ).getCollection( "foo" ).insert( new BasicDBObject() );
-        assertThat( mongo.getDatabaseNames() ).containsExactly( "testdb" );
-        mongo.dropDatabase( "testdb" );
-        assertThat( mongo.getDatabaseNames() ).isEmpty();
+        db.getCollection( "foo" ).insert( new BasicDBObject() );
+        assertThat( client.getDatabaseNames() ).containsExactly( "testdb" );
+        client.dropDatabase( "testdb" );
+        assertThat( client.getDatabaseNames() ).isEmpty();
     }
 
     @Test
     public void testDropCollection() throws Exception {
-        DB db = mongo.getDB( "testdb" );
         db.getCollection( "foo" ).insert( new BasicDBObject() );
         assertThat( db.getCollectionNames() ).containsOnly( "foo" );
         db.getCollection( "foo" ).drop();

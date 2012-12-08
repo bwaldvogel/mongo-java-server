@@ -14,9 +14,18 @@ public class UniqueIndex extends Index {
     private final String key;
     private Map<Object, Integer> index = new HashMap<Object, Integer>();
 
-    public UniqueIndex(String name , String key) {
-        super( name );
+    public UniqueIndex(String key) {
+        super( determineName( key, true ) );
         this.key = key;
+    }
+
+    private static String determineName( String key , boolean ascending ) {
+        if ( key.equals( "_id" ) ) {
+            return "_id_";
+        }
+        else {
+            return key + "_" + ( ascending ? "1" : "-1" );
+        }
     }
 
     private synchronized Object getKeyValue( BSONObject document ) {
@@ -73,5 +82,10 @@ public class UniqueIndex extends Index {
     @Override
     public long getCount() {
         return index.size();
+    }
+
+    @Override
+    public long getDataSize() {
+        return getCount(); // TODO
     }
 }

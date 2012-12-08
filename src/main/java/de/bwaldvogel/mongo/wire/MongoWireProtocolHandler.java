@@ -219,6 +219,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
                 case 0x05: // data
                     value = readBinary( buffer );
                     break;
+                case 0x06: // undefined (deprecated)
+                    value = null;
+                    break;
                 case 0x07: // object id
                     value = readObjectId( buffer );
                     break;

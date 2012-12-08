@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
 
 import com.mongodb.DefaultDBEncoder;
 
@@ -32,7 +33,7 @@ public class MemoryCollection {
     public MemoryCollection(String databaseName , String collectionName , String idField) {
         this.databaseName = databaseName;
         this.collectionName = collectionName;
-        indexes.add( new UniqueIndex( getFullName() , idField ) );
+        indexes.add( new UniqueIndex( idField ) );
     }
 
     public String getFullName() {
@@ -264,5 +265,28 @@ public class MemoryCollection {
             count++;
         }
         return count;
+    }
+
+    public BSONObject getStats() {
+        BSONObject response = new BasicBSONObject( "ns" , getFullName() );
+        response.put( "count", Integer.valueOf( documents.size() ) );
+        response.put( "size", Long.valueOf( dataSize.get() ) );
+
+        double averageSize = 0;
+        if ( !documents.isEmpty() ) {
+            averageSize = dataSize.get() / (double) documents.size();
+        }
+        response.put( "avgObjSize", Double.valueOf( averageSize ) );
+        response.put( "storageSize", Integer.valueOf( 0 ) );
+        response.put( "numExtents", Integer.valueOf( 0 ) );
+        response.put( "nindexes", Integer.valueOf( indexes.size() ) );
+        BSONObject indexSizes = new BasicBSONObject();
+        for ( Index index : indexes ) {
+            indexSizes.put( index.getName(), Long.valueOf( index.getDataSize() ) );
+        }
+
+        response.put( "indexSize", indexSizes );
+        response.put( "ok", Integer.valueOf( 1 ) );
+        return response;
     }
 }
