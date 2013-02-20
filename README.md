@@ -9,16 +9,17 @@ The in-memory backend is the default, such that mongo-java-server can be used
 as stub in unit tests. It doesn't support all features of the original MongoDB,
 and probably never will.
 
-### Ideas ###
+### Ideas for other backends ###
 
-Allow implementation of different backends. An in-memory backend is the
-default, such that mongo-java-server can easily be used in unit tests.
-Another backend could proxy a real database instance.
+#### Faulty backend ####
 
-Important when testing client code is to check the behavior in case of an
-error. One backend could be used to frequently timeout or let queries fail.
+A faulty backend could randomly fail queries or cause timeouts. This could be
+used to test the client for error resilience.
 
-Fuzzing the wire protocol could be used to check the robustness of client drivers.
+#### Fuzzy backend ####
+
+Fuzzing the wire protocol could be used to check the robustness of client
+drivers.
 
 ### Unit test example ###
 
