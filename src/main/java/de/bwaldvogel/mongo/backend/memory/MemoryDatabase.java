@@ -9,6 +9,7 @@ import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
 
+import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.exception.InvalidNSError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -24,10 +25,6 @@ import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 public class MemoryDatabase extends CommonDatabase {
 
     private static final Logger log = Logger.getLogger(MemoryDatabase.class);
-
-    private static final String ID_FIELD = "_id";
-
-    private static final int MAX_NS_LENGTH = 128;
 
     private Map<String, MemoryCollection> collections = new HashMap<String, MemoryCollection>();
     private Map<Channel, MongoServerError> lastExceptions = new HashMap<Channel, MongoServerError>();
@@ -50,7 +47,7 @@ public class MemoryDatabase extends CommonDatabase {
         MemoryCollection collection = collections.get(collectionName);
         if (collection == null) {
             checkCollectionName(collectionName);
-            collection = new MemoryCollection(getDatabaseName(), collectionName, ID_FIELD);
+            collection = new MemoryCollection(getDatabaseName(), collectionName, Constants.ID_FIELD);
             collections.put(collectionName, collection);
             namespaces.addDocument(new BasicBSONObject("name", collection.getFullName()));
         }
@@ -65,8 +62,8 @@ public class MemoryDatabase extends CommonDatabase {
         if (collectionName.startsWith("system."))
             throw new ReservedCollectionNameError("illegal collection name: " + collectionName);
 
-        if (collectionName.length() > MAX_NS_LENGTH)
-            throw new NSNameTooLongError(MAX_NS_LENGTH);
+        if (collectionName.length() > Constants.MAX_NS_LENGTH)
+            throw new NSNameTooLongError(Constants.MAX_NS_LENGTH);
 
         if (collectionName.isEmpty())
             throw new InvalidNSError(getDatabaseName() + "." + collectionName);

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.bson.BSONObject;
 
+import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
@@ -20,8 +21,8 @@ public class UniqueIndex extends Index {
     }
 
     private static String determineName(String key, boolean ascending) {
-        if (key.equals("_id")) {
-            return "_id_";
+        if (key.equals(Constants.ID_FIELD)) {
+            return Constants.ID_INDEX_NAME;
         } else {
             return key + "_" + (ascending ? "1" : "-1");
         }

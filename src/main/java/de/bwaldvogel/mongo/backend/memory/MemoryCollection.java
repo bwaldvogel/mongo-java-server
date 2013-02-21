@@ -11,9 +11,13 @@ import org.bson.BasicBSONObject;
 
 import com.mongodb.DefaultDBEncoder;
 
+import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
+import de.bwaldvogel.mongo.exception.CannotChangeIdOfDocumentError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
+import de.bwaldvogel.mongo.exception.ModFieldNotAllowedError;
+import de.bwaldvogel.mongo.exception.ModifiedFieldNameMayNotStartWithDollarError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -46,6 +50,7 @@ public class MemoryCollection {
 
     private static boolean matches(BSONObject query, BSONObject object) {
         for (String key : query.keySet()) {
+
             Object queryValue = query.get(key);
             if (queryValue == null) {
                 continue;
@@ -210,14 +215,9 @@ public class MemoryCollection {
             BSONObject document = documents.get(position.intValue());
             for (String key : newDocument.keySet()) {
                 if (key.contains("$")) {
-                    if (key.equals("$set")) {
-                        document.putAll((BSONObject) newDocument.get("$set"));
-                        continue;
-                    } else {
-                        throw new IllegalArgumentException(key);
-                    }
+                    modifyField(document, key, (BSONObject) newDocument.get(key));
                 } else {
-                    document.put(key, newDocument.get(key));
+                    updateField(document, newDocument, key);
                 }
             }
         }
@@ -227,6 +227,57 @@ public class MemoryCollection {
             // TODO: check keys for $
             addDocument(newDocument);
         }
+    }
+
+    private void modifyField(BSONObject document, String modifier, BSONObject change) throws MongoServerError {
+        if (modifier.equals("$set")) {
+            for (String key : change.keySet()) {
+                Object newValue = change.get(key);
+                Object oldValue = document.get(key);
+
+                if (nullAwareEquals(newValue, oldValue)) {
+                    // no change
+                    continue;
+                }
+
+                if (key.equals(Constants.ID_FIELD)) {
+                    throw new ModFieldNotAllowedError(key);
+                }
+
+                document.put(key, newValue);
+            }
+        } else {
+            throw new IllegalArgumentException("modified " + modifier + " not yet supported");
+        }
+
+    }
+
+    private boolean nullAwareEquals(Object newValue, Object oldValue) {
+        if (newValue == oldValue)
+            return true;
+
+        if (newValue != null) {
+            return newValue.equals(oldValue);
+        }
+
+        return newValue == oldValue;
+    }
+
+    private void updateField(BSONObject document, BSONObject newDocument, String key) throws MongoServerError {
+
+        if (key.startsWith("$")) {
+            throw new ModifiedFieldNameMayNotStartWithDollarError();
+        }
+        
+        if (nullAwareEquals(newDocument.get(key), document.get(key))) {
+            return;
+        }
+
+        if (key.equals(Constants.ID_FIELD)) {
+            throw new CannotChangeIdOfDocumentError(document, newDocument);
+        }
+
+        document.put(key, newDocument.get(key));
     }
 
     public int getNumIndexes() {

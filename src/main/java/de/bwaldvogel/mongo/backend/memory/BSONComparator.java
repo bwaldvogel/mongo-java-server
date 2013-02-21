@@ -39,7 +39,7 @@ public class BSONComparator implements Comparator<BSONObject> {
             throw new IllegalArgumentException();
         }
         if (orderBy.keySet().size() > 1) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("compound indices not yet implemented");
         }
 
         this.orderBy = orderBy;
