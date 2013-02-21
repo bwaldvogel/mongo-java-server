@@ -10,9 +10,9 @@ public class MongoUpdate extends ClientRequest {
     private boolean upsert;
     private boolean multi;
 
-    public MongoUpdate(Channel channel , MessageHeader header , String fullCollectionName , BSONObject selector , BSONObject update , boolean upsert ,
-            boolean multi) {
-        super( channel , header , fullCollectionName );
+    public MongoUpdate(Channel channel, MessageHeader header, String fullCollectionName, BSONObject selector,
+            BSONObject update, boolean upsert, boolean multi) {
+        super(channel, header, fullCollectionName);
         this.selector = selector;
         this.update = update;
         this.upsert = upsert;
@@ -38,12 +38,12 @@ public class MongoUpdate extends ClientRequest {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append( getClass().getSimpleName() ).append( "(" );
-        sb.append( "header: " ).append( getHeader() );
-        sb.append( ", collection: " ).append( getFullCollectionName() );
-        sb.append( ", selector: " ).append( selector );
-        sb.append( ", update: " ).append( update );
-        sb.append( ")" );
+        sb.append(getClass().getSimpleName()).append("(");
+        sb.append("header: ").append(getHeader());
+        sb.append(", collection: ").append(getFullCollectionName());
+        sb.append(", selector: ").append(selector);
+        sb.append(", update: ").append(update);
+        sb.append(")");
         return sb.toString();
     }
 

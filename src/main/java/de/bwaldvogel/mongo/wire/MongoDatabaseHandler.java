@@ -35,12 +35,12 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
     private final AtomicInteger idSequence = new AtomicInteger();
     private final MongoBackend mongoBackend;
 
-    private static final Logger log = Logger.getLogger( MongoWireProtocolHandler.class );
+    private static final Logger log = Logger.getLogger(MongoWireProtocolHandler.class);
     private ChannelGroup channelGroup;
     private long started;
     private Date startDate;
 
-    public MongoDatabaseHandler(MongoBackend mongoBackend , ChannelGroup channelGroup) {
+    public MongoDatabaseHandler(MongoBackend mongoBackend, ChannelGroup channelGroup) {
         this.mongoBackend = mongoBackend;
         this.channelGroup = channelGroup;
         this.started = System.nanoTime();
@@ -48,41 +48,37 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
     }
 
     @Override
-    public void channelOpen( ChannelHandlerContext ctx , ChannelStateEvent e ) throws Exception {
+    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         Channel channel = e.getChannel();
-        channelGroup.add( channel );
-        log.info( "client " + channel + " connected" );
-        super.channelClosed( ctx, e );
+        channelGroup.add(channel);
+        log.info("client " + channel + " connected");
+        super.channelClosed(ctx, e);
     }
 
     @Override
-    public void channelClosed( ChannelHandlerContext ctx , ChannelStateEvent e ) throws Exception {
+    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         Channel channel = e.getChannel();
-        log.info( "channel " + channel + " closed" );
-        mongoBackend.handleClose( channel );
-        super.channelClosed( ctx, e );
+        log.info("channel " + channel + " closed");
+        mongoBackend.handleClose(channel);
+        super.channelClosed(ctx, e);
     }
 
     @Override
-    public void messageReceived( ChannelHandlerContext ctx , MessageEvent event ) throws MongoServerException {
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws MongoServerException {
         final Object object = event.getMessage();
-        if ( object instanceof MongoQuery ) {
-            event.getChannel().write( handleQuery( event.getChannel(), (MongoQuery) object ) );
-        }
-        else if ( object instanceof MongoInsert ) {
+        if (object instanceof MongoQuery) {
+            event.getChannel().write(handleQuery(event.getChannel(), (MongoQuery) object));
+        } else if (object instanceof MongoInsert) {
             MongoInsert insert = (MongoInsert) object;
-            mongoBackend.handleInsert( insert );
-        }
-        else if ( object instanceof MongoDelete ) {
+            mongoBackend.handleInsert(insert);
+        } else if (object instanceof MongoDelete) {
             MongoDelete delete = (MongoDelete) object;
-            mongoBackend.handleDelete( delete );
-        }
-        else if ( object instanceof MongoUpdate ) {
+            mongoBackend.handleDelete(delete);
+        } else if (object instanceof MongoUpdate) {
             MongoUpdate update = (MongoUpdate) object;
-            mongoBackend.handleUpdate( update );
-        }
-        else {
-            throw new MongoServerException( "unknown message: " + object );
+            mongoBackend.handleUpdate(update);
+        } else {
+            throw new MongoServerException("unknown message: " + object);
         }
     }
 
@@ -90,83 +86,80 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
         return startDate;
     }
 
-    protected MongoReply handleQuery( Channel channel , MongoQuery query ) {
+    protected MongoReply handleQuery(Channel channel, MongoQuery query) {
         List<BSONObject> documents = new ArrayList<BSONObject>();
-        MessageHeader header = new MessageHeader( idSequence.incrementAndGet() , query.getHeader().getRequestID() );
+        MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
-            if ( query.getCollectionName().startsWith( "$cmd" ) ) {
-                documents.add( handleCommand( channel, query, documents ) );
-            }
-            else {
-                for ( BSONObject obj : mongoBackend.handleQuery( query ) ) {
-                    documents.add( obj );
+            if (query.getCollectionName().startsWith("$cmd")) {
+                documents.add(handleCommand(channel, query, documents));
+            } else {
+                for (BSONObject obj : mongoBackend.handleQuery(query)) {
+                    documents.add(obj);
                 }
             }
-        }
-        catch ( MongoServerException e ) {
-            log.error( "failed to handle query " + query, e );
-            documents.add( e.createBSONObject( channel, query.getQuery() ) );
+        } catch (MongoServerException e) {
+            log.error("failed to handle query " + query, e);
+            documents.add(e.createBSONObject(channel, query.getQuery()));
         }
 
-        return new MongoReply( header , documents );
+        return new MongoReply(header, documents);
     }
 
-    protected BSONObject handleCommand( Channel channel , MongoQuery query , List<BSONObject> documents ) throws MongoServerException {
+    protected BSONObject handleCommand(Channel channel, MongoQuery query, List<BSONObject> documents)
+            throws MongoServerException {
         String collectionName = query.getCollectionName();
-        if ( collectionName.equals( "$cmd.sys.inprog" ) ) {
-            Collection<BSONObject> currentOperations = mongoBackend.getCurrentOperations( query );
-            return new BasicBSONObject( "inprog" , currentOperations );
+        if (collectionName.equals("$cmd.sys.inprog")) {
+            Collection<BSONObject> currentOperations = mongoBackend.getCurrentOperations(query);
+            return new BasicBSONObject("inprog", currentOperations);
         }
 
-        if ( collectionName.equals( "$cmd" ) ) {
+        if (collectionName.equals("$cmd")) {
             String command = query.getQuery().keySet().iterator().next();
-            if ( command.equals( "serverStatus" ) ) {
+            if (command.equals("serverStatus")) {
                 return getServerStatus();
-            }
-            else {
-                return mongoBackend.handleCommand( channel, query.getDatabaseName(), command, query.getQuery() );
+            } else {
+                return mongoBackend.handleCommand(channel, query.getDatabaseName(), command, query.getQuery());
             }
         }
 
-        throw new MongoServerException( "unknown collection: " + collectionName );
+        throw new MongoServerException("unknown collection: " + collectionName);
     }
 
     private BSONObject getServerStatus() throws MongoServerException {
         BSONObject serverStatus = new BasicBSONObject();
         try {
-            serverStatus.put( "host", InetAddress.getLocalHost().getHostName() );
+            serverStatus.put("host", InetAddress.getLocalHost().getHostName());
+        } catch (UnknownHostException e) {
+            throw new MongoServerException("failed to get hostname", e);
         }
-        catch ( UnknownHostException e ) {
-            throw new MongoServerException( "failed to get hostname" , e );
-        }
-        serverStatus.put( "version", MongoServer.VERSION );
-        serverStatus.put( "process", "java" );
-        serverStatus.put( "pid", getProcessId() );
+        serverStatus.put("version", MongoServer.VERSION);
+        serverStatus.put("process", "java");
+        serverStatus.put("pid", getProcessId());
 
-        serverStatus.put( "uptime", Integer.valueOf( (int) TimeUnit.NANOSECONDS.toSeconds( System.nanoTime() - started ) ) );
-        serverStatus.put( "uptimeMillis", Long.valueOf( TimeUnit.NANOSECONDS.toMillis( System.nanoTime() - started ) ) );
-        serverStatus.put( "localTime", new Date() );
+        serverStatus.put("uptime", Integer.valueOf((int) TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - started)));
+        serverStatus.put("uptimeMillis", Long.valueOf(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)));
+        serverStatus.put("localTime", new Date());
 
         BSONObject connections = new BasicBSONObject();
-        connections.put( "current", Integer.valueOf( channelGroup.size() ) );
+        connections.put("current", Integer.valueOf(channelGroup.size()));
 
-        serverStatus.put( "connections", connections );
+        serverStatus.put("connections", connections);
 
         BSONObject cursors = new BasicBSONObject();
-        cursors.put( "totalOpen", Integer.valueOf( 0 ) ); // TODO
+        cursors.put("totalOpen", Integer.valueOf(0)); // TODO
 
-        serverStatus.put( "cursors", cursors );
+        serverStatus.put("cursors", cursors);
 
-        serverStatus.put( "ok", Integer.valueOf( 1 ) );
+        serverStatus.put("ok", Integer.valueOf(1));
 
         return serverStatus;
     }
 
     private Integer getProcessId() {
         String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
-        if ( runtimeName.contains( "@" ) ) {
-            return Integer.valueOf( runtimeName.substring( 0, runtimeName.indexOf( '@' ) ) );
+        if (runtimeName.contains("@")) {
+            return Integer.valueOf(runtimeName.substring(0, runtimeName.indexOf('@')));
         }
-        return Integer.valueOf( 0 );
+        return Integer.valueOf(0);
     }
 }

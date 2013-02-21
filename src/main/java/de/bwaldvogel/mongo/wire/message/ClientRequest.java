@@ -8,7 +8,7 @@ public abstract class ClientRequest implements Message {
     private final String fullCollectionName;
     private Channel channel;
 
-    public ClientRequest(Channel channel , MessageHeader header , String fullCollectionName) {
+    public ClientRequest(Channel channel, MessageHeader header, String fullCollectionName) {
         this.channel = channel;
         this.header = header;
         this.fullCollectionName = fullCollectionName;
@@ -23,13 +23,13 @@ public abstract class ClientRequest implements Message {
     }
 
     public String getDatabaseName() {
-        int index = fullCollectionName.indexOf( '.' );
-        return fullCollectionName.substring( 0, index );
+        int index = fullCollectionName.indexOf('.');
+        return fullCollectionName.substring(0, index);
     }
 
     public String getCollectionName() {
-        int index = fullCollectionName.indexOf( '.' );
-        return fullCollectionName.substring( index + 1 );
+        int index = fullCollectionName.indexOf('.');
+        return fullCollectionName.substring(index + 1);
     }
 
     public String getFullCollectionName() {

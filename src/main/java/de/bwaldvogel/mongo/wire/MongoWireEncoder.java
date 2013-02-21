@@ -15,35 +15,35 @@ import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 
 public class MongoWireEncoder extends OneToOneEncoder {
-    private static final Logger _log = Logger.getLogger( MongoWireEncoder.class );
+    private static final Logger _log = Logger.getLogger(MongoWireEncoder.class);
 
     @Override
-    protected Object encode( ChannelHandlerContext ctx , Channel channel , Object msg ) throws Exception {
+    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
 
-        final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer( ByteOrder.LITTLE_ENDIAN, 32 );
-        buffer.writeInt( 0 ); // write length later
+        final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(ByteOrder.LITTLE_ENDIAN, 32);
+        buffer.writeInt(0); // write length later
 
         final MongoReply reply = (MongoReply) msg;
 
-        buffer.writeInt( reply.getHeader().getRequestID() );
-        buffer.writeInt( reply.getHeader().getResponseTo() );
-        buffer.writeInt( OpCode.OP_REPLY.getId() );
+        buffer.writeInt(reply.getHeader().getRequestID());
+        buffer.writeInt(reply.getHeader().getResponseTo());
+        buffer.writeInt(OpCode.OP_REPLY.getId());
 
-        buffer.writeInt( reply.getFlags() );
-        buffer.writeLong( reply.getCursorId() );
-        buffer.writeInt( reply.getStartingFrom() );
+        buffer.writeInt(reply.getFlags());
+        buffer.writeLong(reply.getCursorId());
+        buffer.writeInt(reply.getStartingFrom());
         final List<BSONObject> documents = reply.getDocuments();
-        buffer.writeInt( documents.size() );
+        buffer.writeInt(documents.size());
 
-        for ( final BSONObject bsonObject : documents ) {
-            buffer.writeBytes( BSON.encode( bsonObject ) );
+        for (final BSONObject bsonObject : documents) {
+            buffer.writeBytes(BSON.encode(bsonObject));
         }
 
-        _log.debug( "wrote reply: " + reply );
+        _log.debug("wrote reply: " + reply);
 
         // now set the length
         final int writerIndex = buffer.writerIndex();
-        buffer.setInt( 0, writerIndex );
+        buffer.setInt(0, writerIndex);
         return buffer;
     }
 }

@@ -19,8 +19,8 @@ public enum OpCode {
     private static Map<Integer, OpCode> byIdMap = new HashMap<Integer, OpCode>();
 
     static {
-        for ( final OpCode opCode : values() ) {
-            byIdMap.put( Integer.valueOf( opCode.id ), opCode );
+        for (final OpCode opCode : values()) {
+            byIdMap.put(Integer.valueOf(opCode.id), opCode);
         }
     }
 
@@ -32,8 +32,8 @@ public enum OpCode {
         return id;
     }
 
-    public static OpCode getById( int id ) {
-        return byIdMap.get( Integer.valueOf( id ) );
+    public static OpCode getById(int id) {
+        return byIdMap.get(Integer.valueOf(id));
     }
 
 }

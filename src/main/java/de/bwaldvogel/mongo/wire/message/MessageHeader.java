@@ -5,7 +5,7 @@ public class MessageHeader {
     private final int requestID;
     private final int responseTo;
 
-    public MessageHeader(int requestID , int responseTo) {
+    public MessageHeader(int requestID, int responseTo) {
         this.requestID = requestID;
         this.responseTo = responseTo;
     }
@@ -21,11 +21,11 @@ public class MessageHeader {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append( getClass().getSimpleName() );
-        sb.append( "(" );
-        sb.append( "request: " ).append( requestID );
-        sb.append( ", responseTo: " ).append( responseTo );
-        sb.append( ")" );
+        sb.append(getClass().getSimpleName());
+        sb.append("(");
+        sb.append("request: ").append(requestID);
+        sb.append(", responseTo: ").append(responseTo);
+        sb.append(")");
         return sb.toString();
     }
 

@@ -13,11 +13,11 @@ public class MongoReply {
     private int startingFrom;
     private int flags;
 
-    public MongoReply(MessageHeader header , BSONObject document) {
-        this( header , Arrays.asList( document ) );
+    public MongoReply(MessageHeader header, BSONObject document) {
+        this(header, Arrays.asList(document));
     }
 
-    public MongoReply(MessageHeader header , List<? extends BSONObject> documents) {
+    public MongoReply(MessageHeader header, List<? extends BSONObject> documents) {
         this.header = header;
         this.documents = documents;
     }
@@ -27,7 +27,7 @@ public class MongoReply {
     }
 
     public List<BSONObject> getDocuments() {
-        return Collections.unmodifiableList( documents );
+        return Collections.unmodifiableList(documents);
     }
 
     public long getCursorId() {
@@ -45,10 +45,10 @@ public class MongoReply {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append( getClass().getSimpleName() );
-        sb.append( "(" );
-        sb.append( "documents: " ).append( getDocuments() );
-        sb.append( ")" );
+        sb.append(getClass().getSimpleName());
+        sb.append("(");
+        sb.append("documents: ").append(getDocuments());
+        sb.append(")");
         return sb.toString();
     }
 }

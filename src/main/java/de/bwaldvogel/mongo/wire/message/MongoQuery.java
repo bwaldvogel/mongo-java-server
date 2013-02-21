@@ -11,9 +11,9 @@ public class MongoQuery extends ClientRequest {
     private int numberToSkip;
     private int numberToReturn;
 
-    public MongoQuery(Channel channel , MessageHeader header , String fullCollectionName , int numberToSkip , int numberToReturn , BSONObject query ,
-            BSONObject returnFieldSelector) {
-        super( channel , header , fullCollectionName );
+    public MongoQuery(Channel channel, MessageHeader header, String fullCollectionName, int numberToSkip,
+            int numberToReturn, BSONObject query, BSONObject returnFieldSelector) {
+        super(channel, header, fullCollectionName);
         this.numberToSkip = numberToSkip;
         this.numberToReturn = numberToReturn;
         this.query = query;
@@ -39,16 +39,16 @@ public class MongoQuery extends ClientRequest {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append( getClass().getSimpleName() ).append( "(" );
-        sb.append( "header: " ).append( getHeader() );
-        sb.append( ", collection: " ).append( getFullCollectionName() );
-        sb.append( ", query: " ).append( query );
-        sb.append( ", returnFieldSelector: " ).append( returnFieldSelector );
-        sb.append( ")" );
+        sb.append(getClass().getSimpleName()).append("(");
+        sb.append("header: ").append(getHeader());
+        sb.append(", collection: ").append(getFullCollectionName());
+        sb.append(", query: ").append(query);
+        sb.append(", returnFieldSelector: ").append(returnFieldSelector);
+        sb.append(")");
         return sb.toString();
     }
 
-    public void setSlaveOk( boolean slaveOk ) {
+    public void setSlaveOk(boolean slaveOk) {
         this.slaveOk = slaveOk;
     }
 

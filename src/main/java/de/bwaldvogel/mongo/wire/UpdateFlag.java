@@ -10,12 +10,12 @@ public enum UpdateFlag implements Flag {
     }
 
     @Override
-    public boolean isSet( int flags ) {
-        return ( flags & value ) == value;
+    public boolean isSet(int flags) {
+        return (flags & value) == value;
     }
 
     @Override
-    public int removeFrom( int flags ) {
+    public int removeFrom(int flags) {
         return flags - value;
     }
 }

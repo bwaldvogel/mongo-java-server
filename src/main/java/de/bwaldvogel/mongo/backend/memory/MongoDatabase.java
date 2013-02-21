@@ -13,17 +13,17 @@ public interface MongoDatabase {
 
     String getDatabaseName();
 
-    void handleClose( Channel channel );
+    void handleClose(Channel channel);
 
-    BSONObject handleCommand( Channel channel , String command , BSONObject query ) throws MongoServerException;
+    BSONObject handleCommand(Channel channel, String command, BSONObject query) throws MongoServerException;
 
-    Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException;
+    Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException;
 
-    void handleInsert( MongoInsert insert ) throws MongoServerException;
+    void handleInsert(MongoInsert insert) throws MongoServerException;
 
-    void handleDelete( MongoDelete delete ) throws MongoServerException;
+    void handleDelete(MongoDelete delete) throws MongoServerException;
 
-    void handleUpdate( MongoUpdate update ) throws MongoServerException;
+    void handleUpdate(MongoUpdate update) throws MongoServerException;
 
     boolean isEmpty();
 

@@ -29,11 +29,11 @@ public class ReadOnlyProxyTest {
     @Before
     public void setUp() throws Exception {
         MemoryBackend memoryBackend = new MemoryBackend();
-        writeableServer = new MongoServer( memoryBackend );
-        writeClient = new MongoClient( new ServerAddress( writeableServer.bind() ) );
+        writeableServer = new MongoServer(memoryBackend);
+        writeClient = new MongoClient(new ServerAddress(writeableServer.bind()));
 
-        mongoServer = new MongoServer( new ReadOnlyProxy( memoryBackend ) );
-        readOnlyClient = new MongoClient( new ServerAddress( mongoServer.bind() ) );
+        mongoServer = new MongoServer(new ReadOnlyProxy(memoryBackend));
+        readOnlyClient = new MongoClient(new ServerAddress(mongoServer.bind()));
     }
 
     @After
@@ -47,102 +47,97 @@ public class ReadOnlyProxyTest {
     @Test
     public void testMaxBsonSize() throws Exception {
         int maxBsonObjectSize = readOnlyClient.getMaxBsonObjectSize();
-        assertThat( maxBsonObjectSize ).isEqualTo( 16777216 );
+        assertThat(maxBsonObjectSize).isEqualTo(16777216);
     }
 
     @Test
     public void testServerStatus() throws Exception {
-        CommandResult serverStatus = readOnlyClient.getDB( "admin" ).command( "serverStatus" );
+        CommandResult serverStatus = readOnlyClient.getDB("admin").command("serverStatus");
         serverStatus.throwOnError();
     }
 
     @Test
     public void testCurrentOperations() throws Exception {
-        DBObject currentOperations = readOnlyClient.getDB( "admin" ).getCollection( "$cmd.sys.inprog" ).findOne();
-        assertThat( currentOperations ).isNotNull();
+        DBObject currentOperations = readOnlyClient.getDB("admin").getCollection("$cmd.sys.inprog").findOne();
+        assertThat(currentOperations).isNotNull();
     }
 
     @Test
     public void testStats() throws Exception {
-        CommandResult stats = readOnlyClient.getDB( "testdb" ).getStats();
+        CommandResult stats = readOnlyClient.getDB("testdb").getStats();
         stats.throwOnError();
-        assertThat( ( (Number) stats.get( "objects" ) ).longValue() ).isEqualTo( 0 );
+        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(0);
     }
 
     @Test
     public void testListDatabaseNames() throws Exception {
-        assertThat( readOnlyClient.getDatabaseNames() ).isEmpty();
-        writeClient.getDB( "testdb" ).getCollection( "testcollection" ).insert( new BasicDBObject() );
-        assertThat( readOnlyClient.getDatabaseNames() ).containsExactly( "testdb" );
-        writeClient.getDB( "bar" ).getCollection( "testcollection" ).insert( new BasicDBObject() );
-        assertThat( readOnlyClient.getDatabaseNames() ).containsExactly( "bar", "testdb" );
+        assertThat(readOnlyClient.getDatabaseNames()).isEmpty();
+        writeClient.getDB("testdb").getCollection("testcollection").insert(new BasicDBObject());
+        assertThat(readOnlyClient.getDatabaseNames()).containsExactly("testdb");
+        writeClient.getDB("bar").getCollection("testcollection").insert(new BasicDBObject());
+        assertThat(readOnlyClient.getDatabaseNames()).containsExactly("bar", "testdb");
     }
 
     @Test
     public void testIllegalCommand() throws Exception {
         try {
-            readOnlyClient.getDB( "testdb" ).command( "foo" ).throwOnError();
-            fail( "MongoException expected" );
-        }
-        catch ( MongoException e ) {
-            assertThat( e.getMessage() ).contains( "no such cmd" );
+            readOnlyClient.getDB("testdb").command("foo").throwOnError();
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getMessage()).contains("no such cmd");
         }
 
         try {
-            readOnlyClient.getDB( "bar" ).command( "foo" ).throwOnError();
-            fail( "MongoException expected" );
-        }
-        catch ( MongoException e ) {
-            assertThat( e.getMessage() ).contains( "no such cmd" );
+            readOnlyClient.getDB("bar").command("foo").throwOnError();
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getMessage()).contains("no such cmd");
         }
     }
 
     @Test
     public void testQuery() throws Exception {
-        DBCollection collection = readOnlyClient.getDB( "testdb" ).getCollection( "testcollection" );
-        DBObject obj = collection.findOne( new BasicDBObject( "_id" , 1 ) );
-        assertThat( obj ).isNull();
-        assertThat( collection.count() ).isEqualTo( 0 );
+        DBCollection collection = readOnlyClient.getDB("testdb").getCollection("testcollection");
+        DBObject obj = collection.findOne(new BasicDBObject("_id", 1));
+        assertThat(obj).isNull();
+        assertThat(collection.count()).isEqualTo(0);
     }
 
     @Test
     public void testInsert() throws Exception {
-        DBCollection collection = readOnlyClient.getDB( "testdb" ).getCollection( "testcollection" );
-        assertThat( collection.count() ).isEqualTo( 0 );
+        DBCollection collection = readOnlyClient.getDB("testdb").getCollection("testcollection");
+        assertThat(collection.count()).isEqualTo(0);
         try {
-            collection.insert( new BasicDBObject() );
-            fail( "exception expected" );
-        }
-        catch ( MongoException e ) {
+            collection.insert(new BasicDBObject());
+            fail("exception expected");
+        } catch (MongoException e) {
             // okay
         }
     }
 
     @Test
     public void testUpdate() throws Exception {
-        DBCollection collection = readOnlyClient.getDB( "testdb" ).getCollection( "testcollection" );
-        BasicDBObject object = new BasicDBObject( "_id" , 1 );
-        BasicDBObject newObject = new BasicDBObject( "_id" , 1 );
+        DBCollection collection = readOnlyClient.getDB("testdb").getCollection("testcollection");
+        BasicDBObject object = new BasicDBObject("_id", 1);
+        BasicDBObject newObject = new BasicDBObject("_id", 1);
         try {
-            collection.update( object, newObject );
-            fail( "MongoException expected" );
-        }
-        catch ( MongoException e ) {
+            collection.update(object, newObject);
+            fail("MongoException expected");
+        } catch (MongoException e) {
             // okay
         }
     }
 
     @Test
     public void testUpsert() throws Exception {
-        DBCollection collection = readOnlyClient.getDB( "testdb" ).getCollection( "testcollection" );
+        DBCollection collection = readOnlyClient.getDB("testdb").getCollection("testcollection");
 
-        BasicDBObject object = new BasicDBObject( "_id" , 1 );
-        BasicDBObject newObject = new BasicDBObject( "_id" , 1 );
+        BasicDBObject object = new BasicDBObject("_id", 1);
+        BasicDBObject newObject = new BasicDBObject("_id", 1);
         try {
-            collection.update( object, newObject, true, false );
-            fail( "MongoException expected" );
-        }
-        catch ( MongoException e ) {
+            collection.update(object, newObject, true, false);
+            fail("MongoException expected");
+        } catch (MongoException e) {
             // okay
         }
     }
@@ -150,22 +145,20 @@ public class ReadOnlyProxyTest {
     @Test
     public void testDropDatabase() throws Exception {
         try {
-            readOnlyClient.dropDatabase( "testdb" );
-            fail( "MongoException expected" );
-        }
-        catch ( MongoException e ) {
+            readOnlyClient.dropDatabase("testdb");
+            fail("MongoException expected");
+        } catch (MongoException e) {
             // okay
         }
     }
 
     @Test
     public void testDropCollection() throws Exception {
-        DBCollection collection = readOnlyClient.getDB( "testdb" ).getCollection( "foo" );
+        DBCollection collection = readOnlyClient.getDB("testdb").getCollection("foo");
         try {
             collection.drop();
-            fail( "MongoException expected" );
-        }
-        catch ( MongoException e ) {
+            fail("MongoException expected");
+        } catch (MongoException e) {
             // okay
         }
     }

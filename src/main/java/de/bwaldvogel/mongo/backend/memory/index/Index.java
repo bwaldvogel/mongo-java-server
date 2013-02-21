@@ -16,15 +16,15 @@ public abstract class Index {
         return name;
     }
 
-    public abstract void checkAdd( BSONObject document ) throws KeyConstraintError;
+    public abstract void checkAdd(BSONObject document) throws KeyConstraintError;
 
-    public abstract void add( BSONObject document , Integer position ) throws KeyConstraintError;
+    public abstract void add(BSONObject document, Integer position) throws KeyConstraintError;
 
-    public abstract Integer remove( BSONObject document );
+    public abstract Integer remove(BSONObject document);
 
-    public abstract boolean canHandle( BSONObject query );
+    public abstract boolean canHandle(BSONObject query);
 
-    public abstract Iterable<Integer> getPositions( BSONObject query );
+    public abstract Iterable<Integer> getPositions(BSONObject query);
 
     public abstract long getCount();
 

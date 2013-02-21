@@ -13,18 +13,19 @@ import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public interface MongoBackend {
 
-    void handleClose( Channel channel );
+    void handleClose(Channel channel);
 
-    BSONObject handleCommand( Channel channel , String database , String command , BSONObject query ) throws MongoServerException;
+    BSONObject handleCommand(Channel channel, String database, String command, BSONObject query)
+            throws MongoServerException;
 
-    Iterable<BSONObject> handleQuery( MongoQuery query ) throws MongoServerException;
+    Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException;
 
-    void handleInsert( MongoInsert insert ) throws MongoServerException;
+    void handleInsert(MongoInsert insert) throws MongoServerException;
 
-    void handleDelete( MongoDelete delete ) throws MongoServerException;
+    void handleDelete(MongoDelete delete) throws MongoServerException;
 
-    void handleUpdate( MongoUpdate update ) throws MongoServerException;
+    void handleUpdate(MongoUpdate update) throws MongoServerException;
 
-    Collection<BSONObject> getCurrentOperations( MongoQuery query );
+    Collection<BSONObject> getCurrentOperations(MongoQuery query);
 
 }

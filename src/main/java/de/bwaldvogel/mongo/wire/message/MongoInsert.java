@@ -11,24 +11,24 @@ public class MongoInsert extends ClientRequest {
 
     private final List<BSONObject> documents;
 
-    public MongoInsert(Channel channel , MessageHeader header , String fullCollectionName , List<BSONObject> documents) {
-        super( channel , header , fullCollectionName );
-        this.documents = new ArrayList<BSONObject>( documents );
+    public MongoInsert(Channel channel, MessageHeader header, String fullCollectionName, List<BSONObject> documents) {
+        super(channel, header, fullCollectionName);
+        this.documents = new ArrayList<BSONObject>(documents);
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append( getClass().getSimpleName() ).append( "(" );
-        sb.append( "header: " ).append( getHeader() );
-        sb.append( ", collection: " ).append( getFullCollectionName() );
-        sb.append( ", #documents: " ).append( documents.size() );
-        sb.append( ")" );
+        sb.append(getClass().getSimpleName()).append("(");
+        sb.append("header: ").append(getHeader());
+        sb.append(", collection: ").append(getFullCollectionName());
+        sb.append(", #documents: ").append(documents.size());
+        sb.append(")");
         return sb.toString();
     }
 
     public List<BSONObject> getDocuments() {
-        return Collections.unmodifiableList( documents );
+        return Collections.unmodifiableList(documents);
     }
 
 }
