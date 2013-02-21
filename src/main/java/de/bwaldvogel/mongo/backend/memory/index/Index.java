@@ -30,4 +30,6 @@ public abstract class Index {
 
     public abstract long getDataSize();
 
+    protected abstract Object getKeyValue(BSONObject document);
+
 }

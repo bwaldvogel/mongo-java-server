@@ -314,13 +314,20 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testQueryNull() throws Exception {
+        DBCollection collection = db.getCollection("testcollection");
+        BasicDBObject object = new BasicDBObject("_id", 1);
+        collection.insert(object);
+        assertThat(collection.findOne(new BasicDBObject("foo", null))).isEqualTo(object);
+    }
+
+    @Test
     public void testInsertQuery() throws Exception {
         DBCollection collection = db.getCollection("testcollection");
         assertThat(collection.count()).isEqualTo(0);
 
         BasicDBObject insertedObject = new BasicDBObject("_id", 1);
         insertedObject.put("foo", "bar");
-
         collection.insert(insertedObject);
 
         assertThat(collection.findOne(insertedObject)).isEqualTo(insertedObject);
@@ -328,7 +335,6 @@ public class MemoryBackendTest {
         assertThat(collection.findOne(new BasicDBObject("_id", 1.0))).isEqualTo(insertedObject);
         assertThat(collection.findOne(new BasicDBObject("_id", 1.0001))).isNull();
         assertThat(collection.findOne(new BasicDBObject("foo", "bar"))).isEqualTo(insertedObject);
-        assertThat(collection.findOne(new BasicDBObject("foo", null))).isEqualTo(insertedObject);
     }
 
     @Test

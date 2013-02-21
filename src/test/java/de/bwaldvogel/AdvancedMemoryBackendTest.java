@@ -103,7 +103,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testFindOneIn() {
         collection.insert(new BasicDBObject("_id", 1));
         DBObject result = collection.findOne(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2))));
@@ -152,7 +151,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testIdInQueryResultsInIndexOrder() {
         collection.insert(new BasicDBObject("_id", 4));
         collection.insert(new BasicDBObject("_id", 3));
@@ -332,7 +330,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testUpdateWithIdInMulti() {
         collection.insert(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
         collection.update(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2))), new BasicDBObject(

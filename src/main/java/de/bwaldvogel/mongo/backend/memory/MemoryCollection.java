@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.bson.BasicBSONObject;
 import com.mongodb.DefaultDBEncoder;
 
 import de.bwaldvogel.mongo.backend.Constants;
+import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
 import de.bwaldvogel.mongo.exception.CannotChangeIdOfDocumentError;
@@ -23,7 +25,7 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
-public class MemoryCollection {
+public class MemoryCollection extends MongoCollection {
 
     private String collectionName;
 
@@ -50,30 +52,46 @@ public class MemoryCollection {
 
     private static boolean matches(BSONObject query, BSONObject object) {
         for (String key : query.keySet()) {
-
-            Object queryValue = query.get(key);
-            if (queryValue == null) {
-                continue;
-            }
-
-            if (!object.containsField(key))
-                return false;
-
-            Object value = object.get(key);
-            if (value.equals(queryValue)) {
-                continue;
-            }
-
-            if (value instanceof Number && queryValue instanceof Number) {
-                if (((Number) value).doubleValue() != ((Number) queryValue).doubleValue()) {
-                    return false;
-                }
-            } else {
+            if (!checkMatch(query, key, object)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static boolean checkMatch(BSONObject query, String key, BSONObject object) {
+        Object queryValue = query.get(key);
+
+        Object value = object.get(key);
+
+        if (queryValue instanceof BSONObject) {
+            BSONObject expressionObject = (BSONObject) queryValue;
+            if (expressionObject.keySet().size() != 1) {
+                throw new UnsupportedOperationException("illegal query expression: " + expressionObject);
+            }
+
+            String expression = expressionObject.keySet().iterator().next();
+            if (expression.startsWith("$")) {
+                return checkExpressionMatch(value, expressionObject.get(expression), expression);
+            }
+        }
+
+        return nullAwareEquals(value, queryValue);
+    }
+
+    private static boolean checkExpressionMatch(Object value, Object expressionObject, String expression) {
+        if (expression.equals("$in")) {
+            Collection<?> queriedObjects = (Collection<?>) expressionObject;
+            for (Object o : queriedObjects) {
+                if (MongoCollection.nullAwareEquals(o, value)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            throw new UnsupportedOperationException("unsupported query expression: " + expression);
+        }
     }
 
     private Iterable<Integer> matchDocuments(BSONObject query, Iterable<Integer> positions) {
@@ -167,7 +185,8 @@ public class MemoryCollection {
 
         List<BSONObject> objs = new ArrayList<BSONObject>();
         for (Integer pos : keys) {
-            if (numberToSkip-- > 0) {
+            if (numberToSkip > 0) {
+                numberToSkip--;
                 continue;
             }
             objs.add(documents.get(pos.intValue()));
@@ -252,23 +271,12 @@ public class MemoryCollection {
 
     }
 
-    private boolean nullAwareEquals(Object newValue, Object oldValue) {
-        if (newValue == oldValue)
-            return true;
-
-        if (newValue != null) {
-            return newValue.equals(oldValue);
-        }
-
-        return newValue == oldValue;
-    }
-
     private void updateField(BSONObject document, BSONObject newDocument, String key) throws MongoServerError {
 
         if (key.startsWith("$")) {
             throw new ModifiedFieldNameMayNotStartWithDollarError();
         }
-        
+
         if (nullAwareEquals(newDocument.get(key), document.get(key))) {
             return;
         }

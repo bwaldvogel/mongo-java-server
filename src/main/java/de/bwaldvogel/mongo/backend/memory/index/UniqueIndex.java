@@ -1,12 +1,17 @@
 package de.bwaldvogel.mongo.backend.memory.index;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.backend.Constants;
+import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
@@ -28,14 +33,9 @@ public class UniqueIndex extends Index {
         }
     }
 
-    private synchronized Object getKeyValue(BSONObject document) {
-        Object value = document.get(key);
-
-        if (value instanceof Number) {
-            return Double.valueOf(((Number) value).doubleValue());
-        } else {
-            return value;
-        }
+    @Override
+    protected Object getKeyValue(BSONObject document) {
+        return MongoCollection.normalizeValue(document.get(key));
     }
 
     @Override
@@ -71,11 +71,43 @@ public class UniqueIndex extends Index {
 
     @Override
     public synchronized Iterable<Integer> getPositions(BSONObject query) {
-        Integer object = index.get(getKeyValue(query));
+        Object key = getKeyValue(query);
+
+        if (key instanceof BSONObject) {
+            BSONObject keyObj = (BSONObject) key;
+            if (keyObj.keySet().size() != 1) {
+                throw new UnsupportedOperationException("illegal query key: " + key);
+            }
+
+            String expression = keyObj.keySet().iterator().next();
+            if (expression.startsWith("$")) {
+                return getPositionsForExpression(keyObj, expression);
+            }
+        }
+
+        Integer object = index.get(key);
         if (object == null) {
             return Collections.emptyList();
         }
         return Collections.singletonList(object);
+    }
+
+    private Iterable<Integer> getPositionsForExpression(BSONObject keyObj, String expression) {
+        if (expression.equals("$in")) {
+            Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(expression));
+            List<Integer> allPositions = new ArrayList<Integer>();
+            for (Object object : queriedObjects) {
+                Object value = MongoCollection.normalizeValue(object);
+                Integer pos = index.get(value);
+                if (pos != null) {
+                    allPositions.add(pos);
+                }
+            }
+
+            return allPositions;
+        } else {
+            throw new UnsupportedOperationException("unsupported query expression: " + expression);
+        }
     }
 
     @Override
