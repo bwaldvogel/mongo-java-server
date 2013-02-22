@@ -345,12 +345,16 @@ public class MemoryBackendTest {
 
         for (int i = 0; i < 10; i++) {
             collection.insert(new BasicDBObject("_id", 1));
+            assertThat(collection.count()).isEqualTo(1);
             collection.remove(new BasicDBObject("_id", 1));
+            assertThat(collection.count()).isZero();
+
             collection.insert(new BasicDBObject("_id", i));
             collection.remove(new BasicDBObject("_id", i));
         }
+        assertThat(collection.count()).isZero();
         collection.remove(new BasicDBObject("doesnt exist", 1));
-        assertThat(collection.count()).isEqualTo(0);
+        assertThat(collection.count()).isZero();
     }
 
     @Test

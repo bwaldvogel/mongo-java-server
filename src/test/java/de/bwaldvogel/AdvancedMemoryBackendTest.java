@@ -63,7 +63,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject());
         assertNotNull(collection.getDB());
         assertSame("getDB should be idempotent", collection.getDB(), client.getDB(db.getName()));
-        assertEquals(Arrays.asList(db.getName()), client.getDatabaseNames());
+        assertThat(client.getDatabaseNames()).containsExactly(db.getName());
     }
 
     @Test
@@ -78,7 +78,7 @@ public class AdvancedMemoryBackendTest {
 
     @Test
     public void testCountCommand() {
-        assertEquals(0, collection.count());
+        assertThat(collection.count()).isZero();
     }
 
     @Test
@@ -86,28 +86,37 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("n", 1));
         collection.insert(new BasicDBObject("n", 2));
         collection.insert(new BasicDBObject("n", 2));
-        assertEquals(2, collection.count(new BasicDBObject("n", 2)));
+        assertThat(collection.count(new BasicDBObject("n", 2))).isEqualTo(2);
     }
 
     @Test
     public void testInsertIncrementsCount() {
-        collection.insert(new BasicDBObject("name", "jon"));
-        assertEquals(1, collection.count());
+        assertThat(collection.count()).isZero();
+        collection.insert(new BasicDBObject("key", "value"));
+        assertThat(collection.count()).isEqualTo(1);
+    }
+
+    @Test
+    public void testDeleteDecrementsCount() {
+        collection.insert(new BasicDBObject("key", "value"));
+        assertThat(collection.count()).isEqualTo(1);
+        collection.remove(new BasicDBObject());
+        assertThat(collection.count()).isZero();
     }
 
     @Test
     public void testFindOne() {
-        collection.insert(new BasicDBObject("name", "jon"));
+        collection.insert(new BasicDBObject("key", "value"));
         DBObject result = collection.findOne();
-        assertNotNull(result);
-        assertNotNull("should have an _id", result.get("_id"));
+        assertThat(result).isNotNull();
+        assertThat(result.get("_id")).isNotNull();
     }
 
     @Test
     public void testFindOneIn() {
         collection.insert(new BasicDBObject("_id", 1));
         DBObject result = collection.findOne(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2))));
-        assertEquals(new BasicDBObject("_id", 1), result);
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 1));
     }
 
     @Test
@@ -306,7 +315,8 @@ public class AdvancedMemoryBackendTest {
         // query: { "_id" : { "$in" : [ 1]}}
         DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(1)).pop().get();
 
-        // update: { "$push" : { "n" : { "_id" : 2 , "u" : 3}} , "$inc" : { "c" : 4}}
+        // update: { "$push" : { "n" : { "_id" : 2 , "u" : 3}} , "$inc" : { "c"
+        // : 4}}
         DBObject update = new BasicDBObjectBuilder().push("$push").push("n").append("_id", 2).append("u", 3).pop()
                 .pop().push("$inc").append("c", 4).pop().get();
 
@@ -315,7 +325,8 @@ public class AdvancedMemoryBackendTest {
 
         collection.update(query, update, true, false);
 
-        // the ID generation actually differs from official MongoDB which just create a random object id
+        // the ID generation actually differs from official MongoDB which just
+        // create a random object id
         DBObject actual = collection.findOne();
         assertThat(actual).isEqualTo(expected);
     }
@@ -572,6 +583,7 @@ public class AdvancedMemoryBackendTest {
         WriteResult result = collection.insert(new BasicDBObject("_id", new BasicDBObject("n", 1)));
         assertEquals(1, result.getN());
     }
+
     @Test
     public void testRemoveReturnsModifiedDocumentCount() {
         collection.insert(new BasicDBObject());

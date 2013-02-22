@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.BSONObject;
@@ -40,6 +42,7 @@ public class MemoryCollection extends MongoCollection {
     private AtomicLong dataSize = new AtomicLong();
 
     private List<BSONObject> documents = new ArrayList<BSONObject>();
+    private Queue<Integer> emptyPositions = new LinkedList<Integer>();
 
     private String databaseName;
 
@@ -75,7 +78,7 @@ public class MemoryCollection extends MongoCollection {
         List<Integer> answer = new ArrayList<Integer>();
         for (int i = 0; i < documents.size(); i++) {
             BSONObject document = documents.get(i);
-            if (matcher.matches(document, query)) {
+            if (document != null && matcher.matches(document, query)) {
                 answer.add(Integer.valueOf(i));
             }
         }
@@ -235,9 +238,11 @@ public class MemoryCollection extends MongoCollection {
         return newDocument;
     }
 
-    void addDocument(BSONObject document) throws KeyConstraintError {
+    synchronized void addDocument(BSONObject document) throws KeyConstraintError {
 
-        Integer pos = Integer.valueOf(documents.size());
+        Integer pos = emptyPositions.poll();
+        if (pos == null)
+            pos = Integer.valueOf(documents.size());
 
         for (Index index : indexes) {
             index.checkAdd(document);
@@ -246,10 +251,14 @@ public class MemoryCollection extends MongoCollection {
             index.add(document, pos);
         }
         dataSize.addAndGet(Utils.calculateSize(document));
-        documents.add(document);
+        if (pos == documents.size()) {
+            documents.add(document);
+        } else {
+            documents.set(pos.intValue(), document);
+        }
     }
 
-    void removeDocument(BSONObject document) {
+    synchronized void removeDocument(BSONObject document) {
         Integer pos = null;
         for (Index index : indexes) {
             pos = index.remove(document);
@@ -260,10 +269,11 @@ public class MemoryCollection extends MongoCollection {
         }
         dataSize.addAndGet(-Utils.calculateSize(document));
         documents.set(pos, null);
+        emptyPositions.add(pos);
     }
 
     public synchronized int getCount() {
-        return documents.size();
+        return documents.size() - emptyPositions.size();
     }
 
     public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn) {
