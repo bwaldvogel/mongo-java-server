@@ -163,6 +163,11 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, new BasicBSONObject("c", 1))).isFalse();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 1))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 2))).isFalse();
+
+        document.put("a", new BasicBSONObject("b", new BasicBSONObject("c", new BasicBSONObject("d", 1))));
+        assertThat(matcher.matches(document, new BasicBSONObject("a.b.c.d", 1))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("a.b", 1))).isFalse();
+        assertThat(matcher.matches(document, new BasicBSONObject("a.b.c", new BasicBSONObject("d", 1)))).isTrue();
     }
 
     @Test
