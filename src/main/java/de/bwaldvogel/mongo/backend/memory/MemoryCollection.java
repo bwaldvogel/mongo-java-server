@@ -259,7 +259,7 @@ public class MemoryCollection extends MongoCollection {
             return;
         }
         dataSize.addAndGet(-Utils.calculateSize(document));
-        documents.remove(pos.intValue());
+        documents.set(pos, null);
     }
 
     public synchronized int getCount() {
