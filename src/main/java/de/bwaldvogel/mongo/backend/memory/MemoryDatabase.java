@@ -28,6 +28,7 @@ public class MemoryDatabase extends CommonDatabase {
 
     private Map<String, MemoryCollection> collections = new HashMap<String, MemoryCollection>();
     private Map<Channel, MongoServerError> lastExceptions = new HashMap<Channel, MongoServerError>();
+    private Map<Channel, Integer> lastUpdates = new HashMap<Channel, Integer>();
     private MemoryCollection namespaces;
 
     private MemoryBackend backend;
@@ -73,6 +74,10 @@ public class MemoryDatabase extends CommonDatabase {
         return lastExceptions.get(Integer.valueOf(clientId));
     }
 
+    public Integer getLastUpdates(int clientId) {
+        return lastUpdates.get(Integer.valueOf(clientId));
+    }
+
     @Override
     public boolean isEmpty() {
         return collections.isEmpty();
@@ -87,13 +92,16 @@ public class MemoryDatabase extends CommonDatabase {
     @Override
     public void handleClose(Channel channel) {
         lastExceptions.remove(channel);
+        lastUpdates.remove(channel);
     }
 
     @Override
     public void handleInsert(MongoInsert insert) throws MongoServerException {
+        lastUpdates.remove(insert.getChannel());
         try {
             MemoryCollection collection = resolveCollection(insert);
-            collection.handleInsert(insert);
+            int n = collection.handleInsert(insert);
+            lastUpdates.put(insert.getChannel(), Integer.valueOf(n));
         } catch (MongoServerError e) {
             log.error("failed to insert " + insert, e);
             lastExceptions.put(insert.getChannel(), e);
@@ -102,9 +110,11 @@ public class MemoryDatabase extends CommonDatabase {
 
     @Override
     public void handleDelete(MongoDelete delete) throws MongoServerException {
+        lastUpdates.remove(delete.getChannel());
         try {
             MemoryCollection collection = resolveCollection(delete);
-            collection.handleDelete(delete);
+            int n = collection.handleDelete(delete);
+            lastUpdates.put(delete.getChannel(), Integer.valueOf(n));
         } catch (MongoServerError e) {
             log.error("failed to delete " + delete, e);
             lastExceptions.put(delete.getChannel(), e);
@@ -113,9 +123,11 @@ public class MemoryDatabase extends CommonDatabase {
 
     @Override
     public void handleUpdate(MongoUpdate update) throws MongoServerException {
+        lastUpdates.remove(update.getChannel());
         try {
             MemoryCollection collection = resolveCollection(update);
-            collection.handleUpdate(update);
+            int n = collection.handleUpdate(update);
+            lastUpdates.put(update.getChannel(), Integer.valueOf(n));
         } catch (MongoServerError e) {
             log.error("failed to update " + update, e);
             lastExceptions.put(update.getChannel(), e);
@@ -212,12 +224,21 @@ public class MemoryDatabase extends CommonDatabase {
                 throw new IllegalArgumentException("unknown subcommand: " + subCommand);
             }
         }
+
+        BSONObject result = new BasicBSONObject("ok", Integer.valueOf(1));
+
         if (lastExceptions != null) {
             MongoServerError ex = lastExceptions.remove(channel);
-            if (ex != null)
+            if (ex != null) {
                 throw ex;
+            }
+
+            Integer numUpdates = lastUpdates.remove(channel);
+            if (numUpdates != null) {
+                result.put("n", numUpdates);
+            }
         }
-        return new BasicBSONObject("ok", Integer.valueOf(1));
+        return result;
     }
 
     private BSONObject commandCount(String command, BSONObject query) {

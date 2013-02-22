@@ -568,29 +568,35 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
-    public void testInsertReturnModifiedDocumentCount() {
+    public void testInsertReturnsModifiedDocumentCount() {
         WriteResult result = collection.insert(new BasicDBObject("_id", new BasicDBObject("n", 1)));
         assertEquals(1, result.getN());
     }
-
     @Test
-    @Ignore("not yet implemented")
-    public void testUpdateWithIdInMultiReturnModifiedDocumentCount() {
-        collection.insert(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
-        WriteResult result = collection.update(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2))),
-                new BasicDBObject("$set", new BasicDBObject("n", 1)), false, true);
+    public void testRemoveReturnsModifiedDocumentCount() {
+        collection.insert(new BasicDBObject());
+        collection.insert(new BasicDBObject());
+
+        WriteResult result = collection.remove(new BasicDBObject());
         assertEquals(2, result.getN());
     }
 
     @Test
-    @Ignore("not yet implemented")
+    public void testUpdateWithIdInMultiReturnModifiedDocumentCount() {
+        collection.insert(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
+        BasicDBObject query = new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2)));
+        BasicDBObject update = new BasicDBObject("$set", new BasicDBObject("n", 1));
+        WriteResult result = collection.update(query, update, false, true);
+        assertThat(result.getN()).isEqualTo(2);
+    }
+
+    @Test
     public void testUpdateWithObjectIdReturnModifiedDocumentCount() {
         collection.insert(new BasicDBObject("_id", new BasicDBObject("n", 1)));
         DBObject query = new BasicDBObject("_id", new BasicDBObject("n", 1));
         DBObject update = new BasicDBObject("$set", new BasicDBObject("a", 1));
         WriteResult result = collection.update(query, update, false, false);
-        assertEquals(1, result.getN());
+        assertThat(result.getN()).isEqualTo(1);
     }
 
     /**

@@ -312,19 +312,25 @@ public class MemoryCollection extends MongoCollection {
         return objs;
     }
 
-    public synchronized void handleInsert(MongoInsert insert) throws MongoServerError {
+    public synchronized int handleInsert(MongoInsert insert) throws MongoServerError {
+        int n = 0;
         for (BSONObject document : insert.getDocuments()) {
             addDocument(document);
+            n++;
         }
+        return n;
     }
 
-    public synchronized void handleDelete(MongoDelete delete) {
+    public synchronized int handleDelete(MongoDelete delete) {
+        int n = 0;
         for (BSONObject document : handleQuery(delete.getSelector(), 0, Integer.MAX_VALUE)) {
             removeDocument(document);
+            n++;
         }
+        return n;
     }
 
-    public synchronized void handleUpdate(MongoUpdate update) throws MongoServerError {
+    public synchronized int handleUpdate(MongoUpdate update) throws MongoServerError {
         BSONObject updateQuery = update.getUpdate();
         int n = 0;
         BSONObject selector = update.getSelector();
@@ -368,7 +374,10 @@ public class MemoryCollection extends MongoCollection {
                 newDocument.put(idField, deriveDocumentId(selector));
             }
             addDocument(newDocument);
+            n++;
         }
+
+        return n;
     }
 
     public int getNumIndexes() {
