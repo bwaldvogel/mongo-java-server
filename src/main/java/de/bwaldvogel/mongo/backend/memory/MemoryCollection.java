@@ -371,23 +371,48 @@ public class MemoryCollection extends MongoCollection {
 
         // insert?
         if (n == 0 && update.isUpsert()) {
-            BSONObject document = new BasicBSONObject();
-            for (String key : selector.keySet()) {
-                Object value = selector.get(key);
-                if (!Utils.containsQueryExpression(value)) {
-                    document.put(key, value);
-                }
-            }
-
-            BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
-            if (newDocument.get(idField) == null) {
-                newDocument.put(idField, deriveDocumentId(selector));
-            }
-            addDocument(newDocument);
+            handleUpsert(updateQuery, selector);
             n++;
         }
 
         return n;
+    }
+
+    private void handleUpsert(BSONObject updateQuery, BSONObject selector) throws MongoServerError, KeyConstraintError {
+        BSONObject document = convertSelectorToDocument(selector);
+
+        BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
+        if (newDocument.get(idField) == null) {
+            newDocument.put(idField, deriveDocumentId(selector));
+        }
+        addDocument(newDocument);
+    }
+
+    /**
+     * convert selector used in an upsert statement into a document
+     */
+    BSONObject convertSelectorToDocument(BSONObject selector) {
+        BSONObject document = new BasicBSONObject();
+        for (String key : selector.keySet()) {
+            if (key.startsWith("$"))
+                continue;
+
+            Object value = selector.get(key);
+
+            String[] keys = key.split("\\.");
+            for (int i = keys.length - 1; i > 0; i--) {
+                value = new BasicBSONObject(keys[i], value);
+            }
+
+            if (keys.length > 1) {
+                key = keys[0];
+            }
+
+            if (!Utils.containsQueryExpression(value)) {
+                document.put(key, value);
+            }
+        }
+        return document;
     }
 
     public int getNumIndexes() {

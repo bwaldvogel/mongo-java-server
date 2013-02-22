@@ -21,6 +21,32 @@ public class MemoryCollectionTest {
     }
 
     @Test
+    public void testConvertSelector() throws Exception {
+        BasicBSONObject selector = new BasicBSONObject();
+
+        assertThat(collection.convertSelectorToDocument(selector)) //
+                .isEqualTo(new BasicBSONObject());
+
+        selector = new BasicBSONObject("_id", 1);
+        assertThat(collection.convertSelectorToDocument(selector)) //
+                .isEqualTo(new BasicBSONObject("_id", 1));
+
+        selector = new BasicBSONObject("_id", 1).append("$set", new BasicBSONObject("foo", "bar"));
+        assertThat(collection.convertSelectorToDocument(selector)) //
+                .isEqualTo(new BasicBSONObject("_id", 1));
+
+        selector = new BasicBSONObject("_id", 1).append("e.i", 14);
+        assertThat(collection.convertSelectorToDocument(selector)) //
+                .isEqualTo(new BasicBSONObject("_id", 1).append("e", new BasicBSONObject("i", 14)));
+
+        selector = new BasicBSONObject("_id", 1).append("e.i.y", new BasicBSONObject("foo", "bar"));
+        assertThat(collection.convertSelectorToDocument(selector)) //
+                .isEqualTo(new BasicBSONObject("_id", 1).append("e", //
+                        new BasicBSONObject("i", new BasicBSONObject("y", //
+                                new BasicBSONObject("foo", "bar")))));
+    }
+
+    @Test
     public void testDeriveDocumentId() throws Exception {
         assertThat(collection.deriveDocumentId(new BasicBSONObject())).isInstanceOf(ObjectId.class);
 

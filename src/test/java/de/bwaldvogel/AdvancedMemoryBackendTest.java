@@ -423,20 +423,19 @@ public class AdvancedMemoryBackendTest {
                 Arrays.asList(new BasicDBObject("a", 1).append("b", 2), //
                         new BasicDBObject("a", 3).append("b", 4)));
 
-        assertEquals(expected, collection.findOne(new BasicDBObject("c.a", 3).append("c.b", 4)));
+        assertThat(collection.findOne(new BasicDBObject("c.a", 3).append("c.b", 4))).isEqualTo(expected);
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testUpsertWithEmbeddedQuery() {
         DBObject update = BasicDBObjectBuilder.start().push("$set").append("a", 1).pop().get();
 
         collection.update(new BasicDBObject("_id", 1).append("e.i", 1), update, true, false);
 
-        DBObject expected = BasicDBObjectBuilder.start().append("_id", 1).push("e").append("i", 1).pop().append("a", 1)
-                .get();
+        DBObject expected = BasicDBObjectBuilder.start().append("_id", 1).push("e") //
+                .append("i", 1).pop().append("a", 1).get();
 
-        assertEquals(expected, collection.findOne(new BasicDBObject("_id", 1)));
+        assertThat(collection.findOne(new BasicDBObject("_id", 1))).isEqualTo(expected);
     }
 
     @Test
@@ -446,8 +445,8 @@ public class AdvancedMemoryBackendTest {
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), false, false);
 
-        assertEquals(new BasicDBObject("_id", 1).append("a", 1), result);
-        assertEquals(new BasicDBObject("_id", 1).append("a", 2), collection.findOne());
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 1).append("a", 1));
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("a", 2));
     }
 
     @Test
