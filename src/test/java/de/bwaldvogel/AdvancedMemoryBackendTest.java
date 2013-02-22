@@ -286,7 +286,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testUpsert() {
         collection.update(new BasicDBObject("_id", 1).append("n", "jon"), new BasicDBObject("$inc", new BasicDBObject(
                 "a", 1)), true, false);
@@ -346,7 +345,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testUpdateWithIdQuery() {
         collection.insert(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
         collection.update(new BasicDBObject("_id", new BasicDBObject("$gt", 1)), new BasicDBObject("$set",

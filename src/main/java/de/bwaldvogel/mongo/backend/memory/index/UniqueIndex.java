@@ -92,7 +92,23 @@ public class UniqueIndex extends Index {
 
     @Override
     public synchronized boolean canHandle(BSONObject query) {
-        return query.containsField(key);
+
+        if (!query.keySet().equals(Collections.singleton(key))) {
+            return false;
+        }
+
+        Object queryValue = query.get(key);
+        if (queryValue instanceof BSONObject) {
+            for (String key : ((BSONObject) queryValue).keySet()) {
+                if (key.equals("$in")) {
+                    // okay
+                } else if (key.startsWith("$")) {
+                    // not yet supported
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -118,9 +134,9 @@ public class UniqueIndex extends Index {
         return Collections.singletonList(object);
     }
 
-    private Iterable<Integer> getPositionsForExpression(BSONObject keyObj, String expression) {
-        if (expression.equals("$in")) {
-            Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(expression));
+    private Iterable<Integer> getPositionsForExpression(BSONObject keyObj, String operator) {
+        if (operator.equals("$in")) {
+            Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(operator));
             List<Integer> allPositions = new ArrayList<Integer>();
             for (Object object : queriedObjects) {
                 Object value = Utils.normalizeValue(object);
@@ -132,7 +148,7 @@ public class UniqueIndex extends Index {
 
             return allPositions;
         } else {
-            throw new UnsupportedOperationException("unsupported query expression: " + expression);
+            throw new UnsupportedOperationException("unsupported query expression: " + operator);
         }
     }
 
