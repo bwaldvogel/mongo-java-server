@@ -17,26 +17,44 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return true;
     }
 
-    private boolean checkMatch(Object queryValue, String key, Object value) {
+    private boolean checkMatch(Object queryValue, String key, Object document) {
 
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
-            if (value == null || !(value instanceof BSONObject)) {
+            if (document == null || !(document instanceof BSONObject)) {
                 return false;
             }
 
-            Object subObject = ((BSONObject) value).get(mainKey);
+            Object subObject = ((BSONObject) document).get(mainKey);
             return checkMatch(queryValue, subKey, subObject);
         }
 
-        if (value instanceof Collection<?>) {
-            return checkMatchesAny(queryValue, key, value);
+        if (document instanceof Collection<?>) {
+            return checkMatchesAnyDocument(queryValue, key, document);
         }
 
-        value = ((BSONObject) value).get(key);
+        Object value = ((BSONObject) document).get(key);
 
+        if (value instanceof Collection<?>) {
+            return checkMatchesAnyValue(queryValue, value);
+        }
+
+        return checkMatchesValue(queryValue, value);
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean checkMatchesAnyDocument(Object queryValue, String key, Object document) {
+        for (Object object : (Collection<Object>)document) {
+            if (checkMatch(queryValue, key, object)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean checkMatchesValue(Object queryValue, Object value) {
         if (queryValue instanceof BSONObject) {
             BSONObject expressionObject = (BSONObject) queryValue;
             if (expressionObject.keySet().size() != 1) {
@@ -53,9 +71,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAny(Object queryValue, String key, Object value) {
-        for (Object object : (Collection<Object>) value) {
-            if (checkMatch(queryValue, key, object)) {
+    private boolean checkMatchesAnyValue(Object queryValue, Object values) {
+        for (Object value : (Collection<Object>) values) {
+            if (checkMatchesValue(queryValue, value)) {
                 return true;
             }
         }
