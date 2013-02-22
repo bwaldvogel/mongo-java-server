@@ -2,8 +2,9 @@
 
 ## MongoDB Java Server ##
 
-Implementation of the core [MongoDB][mongodb] server using Java and [Netty][netty] with
-different possible backends.
+Implementation of the core [MongoDB][mongodb] server using Java with different
+possible backends. The [MongoDB Wire Protocol][wire-protocol] is implemented
+using [Netty][netty].
 
 ### In-Memory backend ###
 
@@ -52,6 +53,7 @@ drivers.
 	* currently used in [nosql-unit][nosql-unit]
 
 [mongodb]: http://www.mongodb.org/
+[wire-protocol]: http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol
 [netty]: https://netty.io/
 [jmockmongo]: https://github.com/thiloplanz/jmockmongo/
 [jongo]: https://github.com/foursquare/fongo/
