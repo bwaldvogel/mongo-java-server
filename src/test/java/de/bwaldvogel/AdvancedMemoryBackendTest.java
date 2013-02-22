@@ -293,10 +293,10 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testUpsertWithConditional() {
-        collection.update(new BasicDBObject("_id", 1).append("b", new BasicDBObject("$gt", 5)), new BasicDBObject(
-                "$inc", new BasicDBObject("a", 1)), true, false);
+        DBObject query = new BasicDBObject("_id", 1).append("b", new BasicDBObject("$gt", 5));
+        BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject("a", 1));
+        collection.update(query, update, true, false);
         assertEquals(new BasicDBObject("_id", 1).append("a", 1), collection.findOne());
     }
 

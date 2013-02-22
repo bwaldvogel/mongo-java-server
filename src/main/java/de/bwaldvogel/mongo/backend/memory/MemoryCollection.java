@@ -325,14 +325,33 @@ public class MemoryCollection extends MongoCollection {
         if (n == 0 && update.isUpsert()) {
             BSONObject document = new BasicBSONObject();
             for (String key : selector.keySet()) {
-                if (!key.startsWith("$")) {
-                    document.put(key, selector.get(key));
+                Object value = selector.get(key);
+                if (!containsQueryExpression(value)) {
+                    document.put(key, value);
                 }
             }
 
             BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
             addDocument(newDocument);
         }
+    }
+
+    private boolean containsQueryExpression(Object value) {
+        if (value == null)
+            return false;
+        if (!(value instanceof BSONObject)) {
+            return false;
+        }
+        BSONObject doc = (BSONObject) value;
+        for (String key : doc.keySet()) {
+            if (key.startsWith("$")) {
+                return true;
+            }
+            if (containsQueryExpression(doc.get(key))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int getNumIndexes() {
