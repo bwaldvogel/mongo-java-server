@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -8,12 +9,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
+import org.bson.types.ObjectId;
 
 import com.mongodb.BasicDBObject;
 
-import de.bwaldvogel.mongo.backend.DocumentComparator;
-import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
+import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.backend.QueryMatcher;
 import de.bwaldvogel.mongo.backend.Utils;
@@ -39,11 +40,15 @@ public class MemoryCollection extends MongoCollection {
     private AtomicLong dataSize = new AtomicLong();
 
     private List<BSONObject> documents = new ArrayList<BSONObject>();
+
     private String databaseName;
+
+    private String idField;
 
     public MemoryCollection(String databaseName, String collectionName, String idField) {
         this.databaseName = databaseName;
         this.collectionName = collectionName;
+        this.idField = idField;
         indexes.add(new UniqueIndex(idField));
     }
 
@@ -100,7 +105,7 @@ public class MemoryCollection extends MongoCollection {
                     continue;
                 }
 
-                if (key.equals(Constants.ID_FIELD)) {
+                if (key.equals(idField)) {
                     throw new ModFieldNotAllowedError(key);
                 }
 
@@ -161,21 +166,48 @@ public class MemoryCollection extends MongoCollection {
             return;
         }
 
-        Object oldId = oldDocument.get(Constants.ID_FIELD);
-        Object newId = newDocument.get(Constants.ID_FIELD);
+        Object oldId = oldDocument.get(idField);
+        Object newId = newDocument.get(idField);
 
         if (newId != null && !Utils.nullAwareEquals(oldId, newId)) {
-            throw new CannotChangeIdOfDocumentError(oldDocument, newDocument);
+            throw new CannotChangeIdOfDocumentError(oldDocument, newDocument, idField);
         }
 
         if (newId == null) {
             if (oldId == null) {
                 throw new IllegalArgumentException("document to update has no _id: " + oldDocument);
             }
-            newDocument.put(Constants.ID_FIELD, oldId);
+            newDocument.put(idField, oldId);
         }
 
         oldDocument.putAll(newDocument);
+    }
+
+    Object deriveDocumentId(BSONObject selector) {
+        Object value = selector.get(idField);
+        if (value != null) {
+            if (!Utils.containsQueryExpression(value)) {
+                return value;
+            } else {
+                return deriveIdFromExpression(value);
+            }
+        }
+        return new ObjectId();
+    }
+
+    private Object deriveIdFromExpression(Object value) {
+        BSONObject expression = (BSONObject) value;
+        for (String key : expression.keySet()) {
+            Object expressionValue = expression.get(key);
+            if (key.equals("$in")) {
+                Collection<?> list = (Collection<?>) expressionValue;
+                if (!list.isEmpty()) {
+                    return list.iterator().next();
+                }
+            }
+        }
+        // fallback to random object id
+        return new ObjectId();
     }
 
     private BSONObject calculateUpdateDocument(BSONObject oldDocument, BSONObject update) throws MongoServerError {
@@ -187,7 +219,7 @@ public class MemoryCollection extends MongoCollection {
             }
         }
 
-        BSONObject newDocument = new BasicDBObject(Constants.ID_FIELD, oldDocument.get(Constants.ID_FIELD));
+        BSONObject newDocument = new BasicDBObject(idField, oldDocument.get(idField));
 
         if (numStartsWithDollar == update.keySet().size()) {
             newDocument.putAll(oldDocument);
@@ -326,32 +358,17 @@ public class MemoryCollection extends MongoCollection {
             BSONObject document = new BasicBSONObject();
             for (String key : selector.keySet()) {
                 Object value = selector.get(key);
-                if (!containsQueryExpression(value)) {
+                if (!Utils.containsQueryExpression(value)) {
                     document.put(key, value);
                 }
             }
 
             BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
+            if (newDocument.get(idField) == null) {
+                newDocument.put(idField, deriveDocumentId(selector));
+            }
             addDocument(newDocument);
         }
-    }
-
-    private boolean containsQueryExpression(Object value) {
-        if (value == null)
-            return false;
-        if (!(value instanceof BSONObject)) {
-            return false;
-        }
-        BSONObject doc = (BSONObject) value;
-        for (String key : doc.keySet()) {
-            if (key.startsWith("$")) {
-                return true;
-            }
-            if (containsQueryExpression(doc.get(key))) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public int getNumIndexes() {

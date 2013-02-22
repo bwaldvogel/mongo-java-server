@@ -54,4 +54,24 @@ public class Utils {
         return (List<Object>) value;
     }
 
+    public static boolean containsQueryExpression(Object value) {
+        if (value == null)
+            return false;
+
+        if (!(value instanceof BSONObject)) {
+            return false;
+        }
+
+        BSONObject doc = (BSONObject) value;
+        for (String key : doc.keySet()) {
+            if (key.startsWith("$")) {
+                return true;
+            }
+            if (containsQueryExpression(doc.get(key))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

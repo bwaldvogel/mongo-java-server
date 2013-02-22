@@ -1,5 +1,6 @@
 package de.bwaldvogel;
 
+import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -301,15 +302,22 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
-    public void testUpsertWithIdIn() {
+    public void testUpsertWithIdIn() throws Exception {
+        // query: { "_id" : { "$in" : [ 1]}}
         DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(1)).pop().get();
+
+        // update: { "$push" : { "n" : { "_id" : 2 , "u" : 3}} , "$inc" : { "c" : 4}}
         DBObject update = new BasicDBObjectBuilder().push("$push").push("n").append("_id", 2).append("u", 3).pop()
                 .pop().push("$inc").append("c", 4).pop().get();
+
         DBObject expected = new BasicDBObjectBuilder().append("_id", 1)
                 .append("n", Arrays.asList(new BasicDBObject("_id", 2).append("u", 3))).append("c", 4).get();
+
         collection.update(query, update, true, false);
-        assertEquals(expected, collection.findOne());
+
+        // the ID generation actually differs from official MongoDB which just create a random object id
+        DBObject actual = collection.findOne();
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
@@ -374,7 +382,7 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
+    @Ignore("not yet implemented (illegal query key)")
     public void testAnotherUpsert() {
         BasicDBObjectBuilder queryBuilder = BasicDBObjectBuilder.start().push("_id").append("f", "ca").push("1")
                 .append("l", 2).pop().push("t").append("t", 11).pop().pop();

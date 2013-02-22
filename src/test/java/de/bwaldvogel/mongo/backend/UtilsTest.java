@@ -4,9 +4,8 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Date;
 
+import org.bson.BasicBSONObject;
 import org.junit.Test;
-
-import com.mongodb.BasicDBObject;
 
 public class UtilsTest {
 
@@ -40,8 +39,8 @@ public class UtilsTest {
 
     @Test
     public void testCalculateSize() {
-        assertThat(Utils.calculateSize(new BasicDBObject())).isEqualTo(5);
-        assertThat(Utils.calculateSize(new BasicDBObject("_id", 7))).isEqualTo(14);
+        assertThat(Utils.calculateSize(new BasicBSONObject())).isEqualTo(5);
+        assertThat(Utils.calculateSize(new BasicBSONObject("_id", 7))).isEqualTo(14);
     }
 
 }
