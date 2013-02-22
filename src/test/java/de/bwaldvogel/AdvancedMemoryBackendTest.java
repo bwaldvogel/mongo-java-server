@@ -306,7 +306,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testUpdateWithIdIn() {
         collection.insert(new BasicDBObject("_id", 1));
         DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(1)).pop().get();

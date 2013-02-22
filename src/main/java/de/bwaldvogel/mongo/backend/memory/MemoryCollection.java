@@ -310,10 +310,68 @@ public class MemoryCollection extends MongoCollection {
 
                 document.put(key, newValue);
             }
+        } else if (modifier.equals("$push")) {
+            // http://docs.mongodb.org/manual/reference/operator/push/
+            if (change.keySet().size() != 1) {
+                throw new UnsupportedOperationException();
+            }
+            String key = change.keySet().iterator().next();
+
+            Object value = document.get(key);
+            List<Object> list;
+            if (value == null) {
+                list = new ArrayList<Object>();
+            } else if (value instanceof List<?>) {
+                list = asList(value);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            list.add(change.get(key));
+            document.put(key, list);
+        } else if (modifier.equals("$inc")) {
+            // http://docs.mongodb.org/manual/reference/operator/inc/
+            if (change.keySet().size() != 1) {
+                throw new UnsupportedOperationException();
+            }
+            String key = change.keySet().iterator().next();
+
+            Object value = document.get(key);
+            Number number;
+            if (value == null) {
+                number = Integer.valueOf(0);
+            } else if (value instanceof Number) {
+                number = (Number) value;
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            document.put(key, addNumbers(number, (Number) change.get(key)));
         } else {
             throw new IllegalArgumentException("modified " + modifier + " not yet supported");
         }
 
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Object> asList(Object value) {
+        return (List<Object>) value;
+    }
+
+    private Number addNumbers(Number a, Number b) {
+        if (a instanceof Double || b instanceof Double) {
+            return Double.valueOf(a.doubleValue() + b.doubleValue());
+        } else if (a instanceof Float || b instanceof Float) {
+            return Float.valueOf(a.floatValue() + b.floatValue());
+        } else if (a instanceof Long || b instanceof Long) {
+            return Long.valueOf(a.longValue() + b.longValue());
+        } else if (a instanceof Integer || b instanceof Integer) {
+            return Integer.valueOf(a.intValue() + b.intValue());
+        } else if (a instanceof Short || b instanceof Short) {
+            return Short.valueOf((short) (a.shortValue() + b.shortValue()));
+        } else {
+            throw new UnsupportedOperationException("can not add " + a + " and " + b);
+        }
     }
 
     public int getNumIndexes() {
