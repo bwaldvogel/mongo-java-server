@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend.memory.index;
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public abstract class Index {
 
@@ -31,5 +32,9 @@ public abstract class Index {
     public abstract long getDataSize();
 
     protected abstract Object getKeyValue(BSONObject document);
+
+    public abstract void checkUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError;
+
+    public abstract void update(BSONObject oldDocument, BSONObject newDocument, Integer position) throws KeyConstraintError;
 
 }

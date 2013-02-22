@@ -211,7 +211,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testBasicUpdate() {
         collection.insert(new BasicDBObject("_id", 1));
         collection.insert(new BasicDBObject("_id", 2).append("b", 5));
@@ -224,7 +223,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testFullUpdateWithSameId() throws Exception {
         collection.insert(new BasicDBObject("_id", 1));
         collection.insert(new BasicDBObject("_id", 2).append("b", 5));
@@ -584,7 +582,7 @@ public class AdvancedMemoryBackendTest {
     /**
      * Test that ObjectId is getting generated even if _id is present in
      * DBObject but it's value is null
-     * 
+     *
      * @throws Exception
      */
     @Test

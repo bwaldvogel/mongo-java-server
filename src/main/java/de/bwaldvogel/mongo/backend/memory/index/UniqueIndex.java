@@ -14,6 +14,7 @@ import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class UniqueIndex extends Index {
 
@@ -61,6 +62,31 @@ public class UniqueIndex extends Index {
         Object value = getKeyValue(document);
         if (value != null) {
             index.put(value, position);
+        }
+    }
+
+    @Override
+    public void checkUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError {
+        if (nullAwareEqualsKeys(oldDocument, newDocument)) {
+            return;
+        }
+        checkAdd(newDocument);
+    }
+
+    private boolean nullAwareEqualsKeys(BSONObject oldDocument, BSONObject newDocument) {
+        Object oldKey = getKeyValue(oldDocument);
+        Object newKey = getKeyValue(newDocument);
+        return MongoCollection.nullAwareEquals(oldKey, newKey);
+    }
+
+    @Override
+    public void update(BSONObject oldDocument, BSONObject newDocument, Integer position) throws KeyConstraintError {
+        if (nullAwareEqualsKeys(oldDocument, newDocument)) {
+            return;
+        }
+        synchronized (this) {
+            remove(oldDocument);
+            add(newDocument, position);
         }
     }
 

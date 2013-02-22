@@ -128,6 +128,42 @@ public class MemoryCollection extends MongoCollection {
         return matchDocuments(query);
     }
 
+    void updateDocument(Integer position, BSONObject oldDocument, BSONObject newDocument) throws MongoServerError {
+
+        for (String key : newDocument.keySet()) {
+            if (key.startsWith("$")) {
+                throw new ModifiedFieldNameMayNotStartWithDollarError();
+            }
+        }
+
+        if (newDocument.equals(oldDocument)) {
+            return;
+        }
+
+        Object oldId = oldDocument.get(Constants.ID_FIELD);
+        Object newId = newDocument.get(Constants.ID_FIELD);
+
+        if (newId != null && !nullAwareEquals(oldId, newId)) {
+            throw new CannotChangeIdOfDocumentError(oldDocument, newDocument);
+        }
+
+        if (newId == null) {
+            newDocument.put(Constants.ID_FIELD, oldId);
+        }
+
+        for (Index index : indexes) {
+            index.checkUpdate(oldDocument, newDocument);
+        }
+        for (Index index : indexes) {
+            index.update(oldDocument, newDocument, position);
+        }
+
+        long oldSize = calculateSize(oldDocument);
+        long newSize = calculateSize(newDocument);
+        dataSize.addAndGet(newSize - oldSize);
+        documents.set(position.intValue(), newDocument);
+    }
+
     void addDocument(BSONObject document) throws KeyConstraintError {
 
         Integer pos = Integer.valueOf(documents.size());
@@ -231,13 +267,22 @@ public class MemoryCollection extends MongoCollection {
 
             n++;
 
-            BSONObject document = documents.get(position.intValue());
+            int numStartsWithDollar = 0;
             for (String key : newDocument.keySet()) {
-                if (key.contains("$")) {
-                    modifyField(document, key, (BSONObject) newDocument.get(key));
-                } else {
-                    updateField(document, newDocument, key);
+                if (key.startsWith("$")) {
+                    numStartsWithDollar++;
                 }
+            }
+
+            BSONObject document = documents.get(position.intValue());
+            if (numStartsWithDollar == newDocument.keySet().size()) {
+                for (String key : newDocument.keySet()) {
+                    modifyField(document, key, (BSONObject) newDocument.get(key));
+                }
+            } else if (numStartsWithDollar == 0) {
+                updateDocument(position, document, newDocument);
+            } else {
+                throw new UnsupportedOperationException("illegal update: " + newDocument);
             }
         }
 
@@ -269,23 +314,6 @@ public class MemoryCollection extends MongoCollection {
             throw new IllegalArgumentException("modified " + modifier + " not yet supported");
         }
 
-    }
-
-    private void updateField(BSONObject document, BSONObject newDocument, String key) throws MongoServerError {
-
-        if (key.startsWith("$")) {
-            throw new ModifiedFieldNameMayNotStartWithDollarError();
-        }
-
-        if (nullAwareEquals(newDocument.get(key), document.get(key))) {
-            return;
-        }
-
-        if (key.equals(Constants.ID_FIELD)) {
-            throw new CannotChangeIdOfDocumentError(document, newDocument);
-        }
-
-        document.put(key, newDocument.get(key));
     }
 
     public int getNumIndexes() {
