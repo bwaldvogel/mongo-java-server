@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -10,10 +9,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 
-import com.mongodb.DefaultDBEncoder;
+import com.mongodb.BasicDBObject;
 
 import de.bwaldvogel.mongo.backend.Constants;
+import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
 import de.bwaldvogel.mongo.backend.MongoCollection;
+import de.bwaldvogel.mongo.backend.QueryMatcher;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
 import de.bwaldvogel.mongo.exception.CannotChangeIdOfDocumentError;
@@ -30,6 +32,8 @@ public class MemoryCollection extends MongoCollection {
     private String collectionName;
 
     private List<Index> indexes = new ArrayList<Index>();
+
+    private QueryMatcher matcher = new DefaultQueryMatcher();
 
     private AtomicLong dataSize = new AtomicLong();
 
@@ -50,55 +54,11 @@ public class MemoryCollection extends MongoCollection {
         return collectionName;
     }
 
-    private static boolean matches(BSONObject query, BSONObject object) {
-        for (String key : query.keySet()) {
-            if (!checkMatch(query, key, object)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean checkMatch(BSONObject query, String key, BSONObject object) {
-        Object queryValue = query.get(key);
-
-        Object value = object.get(key);
-
-        if (queryValue instanceof BSONObject) {
-            BSONObject expressionObject = (BSONObject) queryValue;
-            if (expressionObject.keySet().size() != 1) {
-                throw new UnsupportedOperationException("illegal query expression: " + expressionObject);
-            }
-
-            String expression = expressionObject.keySet().iterator().next();
-            if (expression.startsWith("$")) {
-                return checkExpressionMatch(value, expressionObject.get(expression), expression);
-            }
-        }
-
-        return nullAwareEquals(value, queryValue);
-    }
-
-    private static boolean checkExpressionMatch(Object value, Object expressionObject, String expression) {
-        if (expression.equals("$in")) {
-            Collection<?> queriedObjects = (Collection<?>) expressionObject;
-            for (Object o : queriedObjects) {
-                if (MongoCollection.nullAwareEquals(o, value)) {
-                    return true;
-                }
-            }
-            return false;
-        } else {
-            throw new UnsupportedOperationException("unsupported query expression: " + expression);
-        }
-    }
-
     private Iterable<Integer> matchDocuments(BSONObject query, Iterable<Integer> positions) {
         List<Integer> answer = new ArrayList<Integer>();
         for (Integer pos : positions) {
             BSONObject document = documents.get(pos.intValue());
-            if (matches(query, document)) {
+            if (matcher.matches(document, query)) {
                 answer.add(pos);
             }
         }
@@ -109,7 +69,7 @@ public class MemoryCollection extends MongoCollection {
         List<Integer> answer = new ArrayList<Integer>();
         for (int i = 0; i < documents.size(); i++) {
             BSONObject document = documents.get(i);
-            if (matches(query, document)) {
+            if (matcher.matches(document, query)) {
                 answer.add(Integer.valueOf(i));
             }
         }
@@ -128,7 +88,67 @@ public class MemoryCollection extends MongoCollection {
         return matchDocuments(query);
     }
 
-    void updateDocument(Integer position, BSONObject oldDocument, BSONObject newDocument) throws MongoServerError {
+    private void modifyField(BSONObject document, String modifier, BSONObject change) throws MongoServerError {
+        if (modifier.equals("$set")) {
+            for (String key : change.keySet()) {
+                Object newValue = change.get(key);
+                Object oldValue = document.get(key);
+
+                if (Utils.nullAwareEquals(newValue, oldValue)) {
+                    // no change
+                    continue;
+                }
+
+                if (key.equals(Constants.ID_FIELD)) {
+                    throw new ModFieldNotAllowedError(key);
+                }
+
+                document.put(key, newValue);
+            }
+        } else if (modifier.equals("$push")) {
+            // http://docs.mongodb.org/manual/reference/operator/push/
+            if (change.keySet().size() != 1) {
+                throw new UnsupportedOperationException();
+            }
+            String key = change.keySet().iterator().next();
+
+            Object value = document.get(key);
+            List<Object> list;
+            if (value == null) {
+                list = new ArrayList<Object>();
+            } else if (value instanceof List<?>) {
+                list = Utils.asList(value);
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            list.add(change.get(key));
+            document.put(key, list);
+        } else if (modifier.equals("$inc")) {
+            // http://docs.mongodb.org/manual/reference/operator/inc/
+            if (change.keySet().size() != 1) {
+                throw new UnsupportedOperationException();
+            }
+            String key = change.keySet().iterator().next();
+
+            Object value = document.get(key);
+            Number number;
+            if (value == null) {
+                number = Integer.valueOf(0);
+            } else if (value instanceof Number) {
+                number = (Number) value;
+            } else {
+                throw new UnsupportedOperationException();
+            }
+
+            document.put(key, Utils.addNumbers(number, (Number) change.get(key)));
+        } else {
+            throw new IllegalArgumentException("modified " + modifier + " not yet supported");
+        }
+
+    }
+
+    private void applyUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError {
 
         for (String key : newDocument.keySet()) {
             if (key.startsWith("$")) {
@@ -143,25 +163,43 @@ public class MemoryCollection extends MongoCollection {
         Object oldId = oldDocument.get(Constants.ID_FIELD);
         Object newId = newDocument.get(Constants.ID_FIELD);
 
-        if (newId != null && !nullAwareEquals(oldId, newId)) {
+        if (newId != null && !Utils.nullAwareEquals(oldId, newId)) {
             throw new CannotChangeIdOfDocumentError(oldDocument, newDocument);
         }
 
         if (newId == null) {
+            if (oldId == null) {
+                throw new IllegalArgumentException("document to update has no _id: " + oldDocument);
+            }
             newDocument.put(Constants.ID_FIELD, oldId);
         }
 
-        for (Index index : indexes) {
-            index.checkUpdate(oldDocument, newDocument);
-        }
-        for (Index index : indexes) {
-            index.update(oldDocument, newDocument, position);
+        oldDocument.putAll(newDocument);
+    }
+
+    private BSONObject calculateUpdateDocument(BSONObject oldDocument, BSONObject update) throws MongoServerError {
+
+        int numStartsWithDollar = 0;
+        for (String key : update.keySet()) {
+            if (key.startsWith("$")) {
+                numStartsWithDollar++;
+            }
         }
 
-        long oldSize = calculateSize(oldDocument);
-        long newSize = calculateSize(newDocument);
-        dataSize.addAndGet(newSize - oldSize);
-        documents.set(position.intValue(), newDocument);
+        BSONObject newDocument = new BasicDBObject(Constants.ID_FIELD, oldDocument.get(Constants.ID_FIELD));
+
+        if (numStartsWithDollar == update.keySet().size()) {
+            newDocument.putAll(oldDocument);
+            for (String key : update.keySet()) {
+                modifyField(newDocument, key, (BSONObject) update.get(key));
+            }
+        } else if (numStartsWithDollar == 0) {
+            applyUpdate(newDocument, update);
+        } else {
+            throw new UnsupportedOperationException("illegal update: " + update);
+        }
+
+        return newDocument;
     }
 
     void addDocument(BSONObject document) throws KeyConstraintError {
@@ -174,12 +212,8 @@ public class MemoryCollection extends MongoCollection {
         for (Index index : indexes) {
             index.add(document, pos);
         }
-        dataSize.addAndGet(calculateSize(document));
+        dataSize.addAndGet(Utils.calculateSize(document));
         documents.add(document);
-    }
-
-    private static long calculateSize(BSONObject document) {
-        return new DefaultDBEncoder().encode(document).length;
     }
 
     void removeDocument(BSONObject document) {
@@ -191,7 +225,7 @@ public class MemoryCollection extends MongoCollection {
             // not found
             return;
         }
-        dataSize.addAndGet(-calculateSize(document));
+        dataSize.addAndGet(-Utils.calculateSize(document));
         documents.remove(pos.intValue());
     }
 
@@ -258,119 +292,45 @@ public class MemoryCollection extends MongoCollection {
     }
 
     public synchronized void handleUpdate(MongoUpdate update) throws MongoServerError {
-        BSONObject newDocument = update.getUpdate();
+        BSONObject updateQuery = update.getUpdate();
         int n = 0;
-        for (Integer position : matchKeys(update.getSelector())) {
+        BSONObject selector = update.getSelector();
+        for (Integer position : matchKeys(selector)) {
             if (n > 0 && !update.isMulti()) {
                 throw new MongoServerError(0, "no multi flag");
             }
 
             n++;
 
-            int numStartsWithDollar = 0;
-            for (String key : newDocument.keySet()) {
-                if (key.startsWith("$")) {
-                    numStartsWithDollar++;
-                }
-            }
+            BSONObject oldDocument = documents.get(position.intValue());
+            BSONObject newDocument = calculateUpdateDocument(oldDocument, updateQuery);
 
-            BSONObject document = documents.get(position.intValue());
-            if (numStartsWithDollar == newDocument.keySet().size()) {
-                for (String key : newDocument.keySet()) {
-                    modifyField(document, key, (BSONObject) newDocument.get(key));
+            if (!newDocument.equals(oldDocument)) {
+                for (Index index : indexes) {
+                    index.checkUpdate(oldDocument, newDocument);
                 }
-            } else if (numStartsWithDollar == 0) {
-                updateDocument(position, document, newDocument);
-            } else {
-                throw new UnsupportedOperationException("illegal update: " + newDocument);
+                for (Index index : indexes) {
+                    index.update(oldDocument, newDocument, position);
+                }
+
+                long oldSize = Utils.calculateSize(oldDocument);
+                long newSize = Utils.calculateSize(newDocument);
+                dataSize.addAndGet(newSize - oldSize);
+                documents.set(position.intValue(), newDocument);
             }
         }
 
         // insert?
         if (n == 0 && update.isUpsert()) {
-            // TODO: check keys for $
+            BSONObject document = new BasicBSONObject();
+            for (String key : selector.keySet()) {
+                if (!key.startsWith("$")) {
+                    document.put(key, selector.get(key));
+                }
+            }
+
+            BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
             addDocument(newDocument);
-        }
-    }
-
-    private void modifyField(BSONObject document, String modifier, BSONObject change) throws MongoServerError {
-        if (modifier.equals("$set")) {
-            for (String key : change.keySet()) {
-                Object newValue = change.get(key);
-                Object oldValue = document.get(key);
-
-                if (nullAwareEquals(newValue, oldValue)) {
-                    // no change
-                    continue;
-                }
-
-                if (key.equals(Constants.ID_FIELD)) {
-                    throw new ModFieldNotAllowedError(key);
-                }
-
-                document.put(key, newValue);
-            }
-        } else if (modifier.equals("$push")) {
-            // http://docs.mongodb.org/manual/reference/operator/push/
-            if (change.keySet().size() != 1) {
-                throw new UnsupportedOperationException();
-            }
-            String key = change.keySet().iterator().next();
-
-            Object value = document.get(key);
-            List<Object> list;
-            if (value == null) {
-                list = new ArrayList<Object>();
-            } else if (value instanceof List<?>) {
-                list = asList(value);
-            } else {
-                throw new UnsupportedOperationException();
-            }
-
-            list.add(change.get(key));
-            document.put(key, list);
-        } else if (modifier.equals("$inc")) {
-            // http://docs.mongodb.org/manual/reference/operator/inc/
-            if (change.keySet().size() != 1) {
-                throw new UnsupportedOperationException();
-            }
-            String key = change.keySet().iterator().next();
-
-            Object value = document.get(key);
-            Number number;
-            if (value == null) {
-                number = Integer.valueOf(0);
-            } else if (value instanceof Number) {
-                number = (Number) value;
-            } else {
-                throw new UnsupportedOperationException();
-            }
-
-            document.put(key, addNumbers(number, (Number) change.get(key)));
-        } else {
-            throw new IllegalArgumentException("modified " + modifier + " not yet supported");
-        }
-
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Object> asList(Object value) {
-        return (List<Object>) value;
-    }
-
-    private Number addNumbers(Number a, Number b) {
-        if (a instanceof Double || b instanceof Double) {
-            return Double.valueOf(a.doubleValue() + b.doubleValue());
-        } else if (a instanceof Float || b instanceof Float) {
-            return Float.valueOf(a.floatValue() + b.floatValue());
-        } else if (a instanceof Long || b instanceof Long) {
-            return Long.valueOf(a.longValue() + b.longValue());
-        } else if (a instanceof Integer || b instanceof Integer) {
-            return Integer.valueOf(a.intValue() + b.intValue());
-        } else if (a instanceof Short || b instanceof Short) {
-            return Short.valueOf((short) (a.shortValue() + b.shortValue()));
-        } else {
-            throw new UnsupportedOperationException("can not add " + a + " and " + b);
         }
     }
 

@@ -383,19 +383,32 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testUpsertOnIdWithPush() {
-        DBObject update1 = BasicDBObjectBuilder.start().push("$push").push("c").append("a", 1).append("b", 2).pop()
-                .pop().get();
+        DBObject update1 = BasicDBObjectBuilder.start().push("$push").push("c").append("a", 1) //
+                .append("b", 2).pop().pop().get();
 
-        DBObject update2 = BasicDBObjectBuilder.start().push("$push").push("c").append("a", 3).append("b", 4).pop()
-                .pop().get();
+        System.out.println("update1: " + update1);
+
+        DBObject update2 = BasicDBObjectBuilder.start().push("$push").push("c").append("a", 3) //
+                .append("b", 4).pop().pop().get();
 
         collection.update(new BasicDBObject("_id", 1), update1, true, false);
+
+        System.out.println("after update1: " + update1);
+        for (DBObject o : collection.find()) {
+            System.out.println(o);
+        }
+
         collection.update(new BasicDBObject("_id", 1), update2, true, false);
 
+        System.out.println("after update2: " + update2);
+        for (DBObject o : collection.find()) {
+            System.out.println(o);
+        }
+
         DBObject expected = new BasicDBObject("_id", 1).append("c",
-                Arrays.asList(new BasicDBObject("a", 1).append("b", 2), new BasicDBObject("a", 3).append("b", 4)));
+                Arrays.asList(new BasicDBObject("a", 1).append("b", 2), //
+                        new BasicDBObject("a", 3).append("b", 4)));
 
         assertEquals(expected, collection.findOne(new BasicDBObject("c.a", 3).append("c.b", 4)));
     }
@@ -581,7 +594,7 @@ public class AdvancedMemoryBackendTest {
     /**
      * Test that ObjectId is getting generated even if _id is present in
      * DBObject but it's value is null
-     *
+     * 
      * @throws Exception
      */
     @Test
@@ -607,8 +620,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject());
         collection.drop();
         assertEquals("Collection should have no data", 0, collection.count());
-        assertFalse("Collection shouldn't exist in DB",
-                db.getCollectionNames().contains(collection.getName()));
+        assertFalse("Collection shouldn't exist in DB", db.getCollectionNames().contains(collection.getName()));
     }
 
     @Test

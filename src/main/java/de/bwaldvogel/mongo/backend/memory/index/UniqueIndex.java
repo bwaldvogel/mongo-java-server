@@ -11,7 +11,7 @@ import java.util.TreeSet;
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.backend.Constants;
-import de.bwaldvogel.mongo.backend.MongoCollection;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -36,7 +36,7 @@ public class UniqueIndex extends Index {
 
     @Override
     protected Object getKeyValue(BSONObject document) {
-        return MongoCollection.normalizeValue(document.get(key));
+        return Utils.normalizeValue(document.get(key));
     }
 
     @Override
@@ -76,7 +76,7 @@ public class UniqueIndex extends Index {
     private boolean nullAwareEqualsKeys(BSONObject oldDocument, BSONObject newDocument) {
         Object oldKey = getKeyValue(oldDocument);
         Object newKey = getKeyValue(newDocument);
-        return MongoCollection.nullAwareEquals(oldKey, newKey);
+        return Utils.nullAwareEquals(oldKey, newKey);
     }
 
     @Override
@@ -123,7 +123,7 @@ public class UniqueIndex extends Index {
             Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(expression));
             List<Integer> allPositions = new ArrayList<Integer>();
             for (Object object : queriedObjects) {
-                Object value = MongoCollection.normalizeValue(object);
+                Object value = Utils.normalizeValue(object);
                 Integer pos = index.get(value);
                 if (pos != null) {
                     allPositions.add(pos);
