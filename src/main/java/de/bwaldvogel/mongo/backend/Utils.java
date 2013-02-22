@@ -7,7 +7,7 @@ import org.bson.BSONObject;
 import com.mongodb.DefaultDBEncoder;
 
 public class Utils {
-    
+
     public static Number addNumbers(Number a, Number b) {
         if (a instanceof Double || b instanceof Double) {
             return Double.valueOf(a.doubleValue() + b.doubleValue());
@@ -23,7 +23,7 @@ public class Utils {
             throw new UnsupportedOperationException("can not add " + a + " and " + b);
         }
     }
-    
+
     public static Object normalizeValue(Object value) {
         if (value == null)
             return null;

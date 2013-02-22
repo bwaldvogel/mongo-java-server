@@ -6,6 +6,8 @@ import org.bson.BSONObject;
 
 public class DefaultQueryMatcher implements QueryMatcher {
 
+    private ValueComparator comparator = new ValueComparator();
+
     @Override
     public boolean matches(BSONObject document, BSONObject query) {
         for (String key : query.keySet()) {
@@ -46,7 +48,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     @SuppressWarnings("unchecked")
     private boolean checkMatchesAnyDocument(Object queryValue, String key, Object document) {
-        for (Object object : (Collection<Object>)document) {
+        for (Object object : (Collection<Object>) document) {
             if (checkMatch(queryValue, key, object)) {
                 return true;
             }
@@ -80,17 +82,43 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    private boolean checkExpressionMatch(Object value, Object expressionObject, String expression) {
-        if (expression.equals("$in")) {
-            Collection<?> queriedObjects = (Collection<?>) expressionObject;
+    private boolean checkExpressionMatch(Object value, Object expressionValue, String operator) {
+        if (operator.equals("$in")) {
+            Collection<?> queriedObjects = (Collection<?>) expressionValue;
             for (Object o : queriedObjects) {
                 if (Utils.nullAwareEquals(o, value)) {
                     return true;
                 }
             }
             return false;
+
+        } else if (operator.equals("$gt")) {
+            if (!comparableTypes(value, expressionValue))
+                return false;
+            return comparator.compare(value, expressionValue) > 0;
+        } else if (operator.equals("$gte")) {
+            if (!comparableTypes(value, expressionValue))
+                return false;
+            return comparator.compare(value, expressionValue) >= 0;
+        } else if (operator.equals("$lt")) {
+            if (!comparableTypes(value, expressionValue))
+                return false;
+            return comparator.compare(value, expressionValue) < 0;
+        } else if (operator.equals("$lte")) {
+            if (!comparableTypes(value, expressionValue))
+                return false;
+            return comparator.compare(value, expressionValue) <= 0;
         } else {
-            throw new UnsupportedOperationException("unsupported query expression: " + expression);
+            throw new UnsupportedOperationException("unsupported query expression: " + operator);
         }
+    }
+
+    private boolean comparableTypes(Object value1, Object value2) {
+        value1 = Utils.normalizeValue(value1);
+        value2 = Utils.normalizeValue(value2);
+        if (value1 == null || value2 == null)
+            return false;
+
+        return value1.getClass().equals(value2.getClass());
     }
 }

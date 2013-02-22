@@ -222,11 +222,13 @@ public class MemoryBackendTest {
     }
 
     @Test
+    @SuppressWarnings("resource")
     public void testQuerySkipLimit() throws Exception {
         DBCollection collection = db.getCollection("testcollection");
         for (int i = 0; i < 10; i++) {
             collection.insert(new BasicDBObject());
         }
+
         DBCursor cursor = collection.find().skip(3);
         assertThat(cursor.itcount()).isEqualTo(7);
 

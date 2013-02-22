@@ -124,6 +124,8 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("name", "leo"));
         collection.insert(new BasicDBObject("name", "neil"));
         collection.insert(new BasicDBObject("name", "neil"));
+
+        @SuppressWarnings("resource")
         DBCursor cursor = collection.find(new BasicDBObject("name", "neil"));
         assertEquals("should have two neils", 2, cursor.toArray().size());
     }
@@ -135,6 +137,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("_id", 3));
         collection.insert(new BasicDBObject("_id", 4));
 
+        @SuppressWarnings("resource")
         DBCursor cursor = collection.find().limit(2);
         assertEquals(Arrays.asList(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2)), cursor.toArray());
     }
@@ -146,6 +149,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("_id", 3));
         collection.insert(new BasicDBObject("_id", 4));
 
+        @SuppressWarnings("resource")
         DBCursor cursor = collection.find().limit(2).skip(2);
         assertEquals(Arrays.asList(new BasicDBObject("_id", 3), new BasicDBObject("_id", 4)), cursor.toArray());
     }
@@ -157,6 +161,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("_id", 1));
         collection.insert(new BasicDBObject("_id", 2));
 
+        @SuppressWarnings("resource")
         DBCursor cursor = collection.find(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(3, 2, 1))));
         assertEquals(
                 Arrays.asList(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2), new BasicDBObject("_id", 3)),
@@ -171,6 +176,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("a", 3).append("_id", 3));
         collection.insert(new BasicDBObject("a", 4).append("_id", 4));
 
+        @SuppressWarnings("resource")
         DBCursor cursor = collection.find().sort(new BasicDBObject("a", -1));
         assertEquals(Arrays.asList(new BasicDBObject("a", 4).append("_id", 4),
                 new BasicDBObject("a", 3).append("_id", 3), new BasicDBObject("a", 2).append("_id", 2),
@@ -186,6 +192,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("a", 2).append("_id", 4));
         collection.insert(new BasicDBObject("a", 1).append("_id", 3));
 
+        @SuppressWarnings("resource")
         DBCursor cursor = collection.find().sort(new BasicDBObject("a", 1).append("_id", -1));
         assertEquals(Arrays.asList(new BasicDBObject("a", 1).append("_id", 3),
                 new BasicDBObject("a", 1).append("_id", 2), new BasicDBObject("a", 1).append("_id", 1),
@@ -202,6 +209,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("_id", 4).append("counts", new BasicDBObject("done", 1)));
         collection.insert(new BasicDBObject("_id", 5).append("counts", new BasicDBObject("done", 2)));
 
+        @SuppressWarnings("resource")
         DBCursor cursor = collection.find(new BasicDBObject("c", new BasicDBObject("$ne", true))).sort(
                 new BasicDBObject("counts.done", -1));
         assertEquals(Arrays.asList(new BasicDBObject("_id", 5).append("counts", new BasicDBObject("done", 2)),

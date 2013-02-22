@@ -33,24 +33,95 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesInQuery() {
+        assertThat(matcher.matches(new BasicDBObject(), //
+                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
+                .isFalse();
+
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
+                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
+                .isFalse();
+
         assertThat(matcher.matches(new BasicDBObject("a", 1), //
                 new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
                 .isTrue();
-        
+
         assertThat(matcher.matches(new BasicDBObject("a", 2), //
                 new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
                 .isTrue();
-        
+
         assertThat(matcher.matches(new BasicDBObject("a", 4), //
                 new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
                 .isFalse();
-        
+
         assertThat(matcher.matches(new BasicDBObject("a", 1.0), //
                 new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
                 .isTrue();
-        
+
         assertThat(matcher.matches(new BasicDBObject("a", 1), //
                 new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3.0, 2.0, 1.00001))))) //
+                .isFalse();
+    }
+
+
+    @Test
+    public void testMatchesGreaterThanQuery() {
+        assertThat(matcher.matches(new BasicDBObject(), //
+                new BasicBSONObject("a", new BasicDBObject("$gt", -1)))) //
+                .isFalse();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$gt", 0.9)))) //
+                .isTrue();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$gt", 0)))) //
+                .isTrue();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$gt", 1)))) //
+                .isFalse();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$gte", 1)))) //
+                .isTrue();
+
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
+                new BasicBSONObject("a", new BasicDBObject("$gt", 1)))) //
+                .isFalse();
+
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
+                new BasicBSONObject("a", new BasicDBObject("$gte", 1)))) //
+                .isFalse();
+    }
+
+    @Test
+    public void testMatchesLessThanQuery() {
+        assertThat(matcher.matches(new BasicDBObject(), //
+                new BasicBSONObject("a", new BasicDBObject("$lt", -1)))) //
+                .isFalse();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$lt", 1.001)))) //
+                .isTrue();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$lt", 2)))) //
+                .isTrue();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$lt", 1)))) //
+                .isFalse();
+
+        assertThat(matcher.matches(new BasicDBObject("a", 1), //
+                new BasicBSONObject("a", new BasicDBObject("$lte", 1)))) //
+                .isTrue();
+
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
+                new BasicBSONObject("a", new BasicDBObject("$lt", 1)))) //
+                .isFalse();
+
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
+                new BasicBSONObject("a", new BasicDBObject("$lte", 1)))) //
                 .isFalse();
     }
 

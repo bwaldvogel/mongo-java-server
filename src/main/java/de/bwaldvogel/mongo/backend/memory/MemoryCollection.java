@@ -11,6 +11,7 @@ import org.bson.BasicBSONObject;
 
 import com.mongodb.BasicDBObject;
 
+import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
 import de.bwaldvogel.mongo.backend.MongoCollection;
@@ -272,7 +273,7 @@ public class MemoryCollection extends MongoCollection {
                     Collections.reverse(objs);
                 }
             } else {
-                Collections.sort(objs, new BSONComparator(orderBy));
+                Collections.sort(objs, new DocumentComparator(orderBy));
             }
         }
 
