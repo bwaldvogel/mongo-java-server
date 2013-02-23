@@ -55,7 +55,7 @@ public class MemoryDatabase extends CommonDatabase {
     private void checkCollectionName(String collectionName) throws MongoServerException {
 
         if (collectionName.contains("$") || collectionName.startsWith("system."))
-            throw new MongoServerError(10093, "illegal collection name: " + collectionName);
+            throw new MongoServerError(10093, "cannot insert into reserved $ collection");
 
         if (collectionName.length() > Constants.MAX_NS_LENGTH)
             throw new MongoServerError(10080, "ns name too long, max size is " + Constants.MAX_NS_LENGTH);
@@ -130,17 +130,17 @@ public class MemoryDatabase extends CommonDatabase {
 
     @Override
     public BSONObject handleCommand(Channel channel, String command, BSONObject query) throws MongoServerException {
-        if (command.equals("count")) {
+        if (command.equalsIgnoreCase("count")) {
             return commandCount(command, query);
-        } else if (command.equals("getlasterror")) {
+        } else if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
-        } else if (command.equals("drop")) {
+        } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query);
-        } else if (command.equals("dropDatabase")) {
+        } else if (command.equalsIgnoreCase("dropDatabase")) {
             return commandDropDatabase();
-        } else if (command.equals("dbstats")) {
+        } else if (command.equalsIgnoreCase("dbstats")) {
             return commandDatabaseStats();
-        } else if (command.equals("collstats")) {
+        } else if (command.equalsIgnoreCase("collstats")) {
             String collectionName = query.get("collstats").toString();
             MemoryCollection collection = resolveCollection(collectionName);
             return collection.getStats();
@@ -211,7 +211,7 @@ public class MemoryDatabase extends CommonDatabase {
         return response;
     }
 
-    private BSONObject commandGetLastError(Channel channel, String command, BSONObject query) throws MongoServerError {
+    private BSONObject commandGetLastError(Channel channel, String command, BSONObject query) {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
         if (!cmd.equals(command))
@@ -228,7 +228,11 @@ public class MemoryDatabase extends CommonDatabase {
         if (lastExceptions != null) {
             MongoServerError ex = lastExceptions.remove(channel);
             if (ex != null) {
-                throw ex;
+                BSONObject  obj = new BasicBSONObject("err", ex.getMessage());
+                obj.put("code", Integer.valueOf(ex.getErrorCode()));
+                obj.put("connectionId", channel.getId());
+                obj.put("ok", Integer.valueOf(1));
+                return obj;
             }
 
             Integer numUpdates = lastUpdates.remove(channel);

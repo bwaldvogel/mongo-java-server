@@ -66,7 +66,7 @@ public class MemoryBackendTest {
         Date before = new Date();
         CommandResult serverStatus = command("serverStatus");
         serverStatus.throwOnError();
-        assertThat(serverStatus.get("uptime")).isInstanceOf(Integer.class);
+        assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);
         Date serverTime = (Date) serverStatus.get("localTime");
         assertThat(serverTime).isNotNull();
@@ -75,7 +75,6 @@ public class MemoryBackendTest {
 
         BSONObject connections = (BSONObject) serverStatus.get("connections");
         assertThat(connections.get("current")).isEqualTo(Integer.valueOf(1));
-        System.out.println(connections);
     }
 
     @Test
@@ -139,7 +138,7 @@ public class MemoryBackendTest {
             db.getCollection("foo$bar").insert(new BasicDBObject());
             fail("MongoException expected");
         } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("illegal collection name");
+            assertThat(e.getMessage()).contains("cannot insert into reserved $ collection");
         }
 
         try {
@@ -147,13 +146,6 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getMessage().toLowerCase()).contains("invalid ns");
-        }
-
-        try {
-            db.getCollection("system.bla").insert(new BasicDBObject());
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("illegal collection name");
         }
 
         try {
@@ -172,14 +164,14 @@ public class MemoryBackendTest {
             command("foo").throwOnError();
             fail("MongoException expected");
         } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("no such cmd");
+            assertThat(e.getMessage()).contains("no such cmd: foo");
         }
 
         try {
             client.getDB("bar").command("foo").throwOnError();
             fail("MongoException expected");
         } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("no such cmd");
+            assertThat(e.getMessage()).contains("no such cmd: foo");
         }
     }
 
@@ -420,10 +412,4 @@ public class MemoryBackendTest {
         assertThat(db.getCollectionNames()).isEmpty();
     }
 
-    @Test
-    public void testReplicaSetInfo() throws Exception {
-        // ReplicaSetStatus status = mongo.getReplicaSetStatus();
-        // System.out.println( status );
-        // assertThat( status );
-    }
 }

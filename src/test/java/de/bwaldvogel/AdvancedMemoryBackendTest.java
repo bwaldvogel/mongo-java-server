@@ -370,6 +370,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(idObj);
         try {
             collection.update(idObj, new BasicDBObject("$pushAll", new BasicDBObject("field", "value")));
+            fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10153);
             assertThat(e.getMessage()).isEqualTo("Modifier $pushAll/pullAll allowed for arrays only");
@@ -387,6 +388,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(obj);
         try {
             collection.update(obj, new BasicDBObject("$unset", new BasicDBObject("_id", "")));
+            fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10148);
             assertThat(e.getMessage()).isEqualTo("Mod on _id not allowed");
@@ -449,7 +451,6 @@ public class AdvancedMemoryBackendTest {
         for (BasicDBObject dbo : toUpsert) {
             collection.update(dbo, ((BasicDBObject) dbo.copy()).append("foo", "bar"), true, false);
         }
-        System.out.println(collection.find().toArray());
         List<DBObject> results = collection.find(query).toArray();
         assertEquals(Arrays.<DBObject> asList(
                 new BasicDBObject("_id", new BasicDBObject("n", "a").append("t", 1)).append("foo", "bar"),
@@ -514,6 +515,14 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
+    public void testFindAndModifyCommandEmpty() throws Exception {
+        DBObject cmd = new BasicDBObject("findandmodify", collection.getName());
+        CommandResult result = db.command(cmd);
+        assertThat(result.getErrorMessage()).isEqualTo("need remove or update");
+        assertThat(result.ok()).isFalse();
+    }
+
+    @Test
     public void testFindAndModifyCommandUpdate() throws Exception {
         collection.insert(new BasicDBObject("_id", 1));
 
@@ -545,6 +554,22 @@ public class AdvancedMemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10148);
+            assertThat(e.getMessage()).contains("Mod on _id not allowed");
+        }
+    }
+
+    @Test
+    public void testFindAndModifyError() throws Exception {
+
+        collection.insert(new BasicDBObject("_id", 1).append("a", 1));
+
+        try {
+            collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject("$inc",
+                    new BasicDBObject("_id", 1)), false, false);
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10148);
+            assertThat(e.getMessage()).contains("command failed [findandmodify]");
             assertThat(e.getMessage()).contains("Mod on _id not allowed");
         }
     }

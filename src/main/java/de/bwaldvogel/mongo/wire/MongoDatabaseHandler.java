@@ -21,7 +21,9 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 
 import de.bwaldvogel.mongo.backend.MongoBackend;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -97,9 +99,26 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
                     documents.add(obj);
                 }
             }
+        } catch (NoSuchCommandException e) {
+            log.error("unknown command: " + query, e);
+            BSONObject obj = new BasicBSONObject();
+            obj.put("errmsg", "no such cmd: " + e.getCommand());
+            obj.put("bad cmd", query.getQuery());
+            obj.put("ok", Integer.valueOf(0));
+            documents.add(obj);
+        } catch (MongoServerError e) {
+            log.error("failed to handle query " + query, e);
+            BSONObject obj = new BasicBSONObject();
+            obj.put("errmsg", e.getMessage());
+            obj.put("code", e.getErrorCode());
+            obj.put("ok", Integer.valueOf(0));
+            documents.add(obj);
         } catch (MongoServerException e) {
             log.error("failed to handle query " + query, e);
-            documents.add(e.createBSONObject(channel, query.getQuery()));
+            BSONObject obj = new BasicBSONObject();
+            obj.put("errmsg", e.getMessage());
+            obj.put("ok", Integer.valueOf(0));
+            documents.add(obj);
         }
 
         return new MongoReply(header, documents);
