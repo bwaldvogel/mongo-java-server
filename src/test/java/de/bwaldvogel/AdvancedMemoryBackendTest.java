@@ -312,16 +312,17 @@ public class AdvancedMemoryBackendTest {
 
     @Test
     public void testUpsertWithIdIn() throws Exception {
-        // query: { "_id" : { "$in" : [ 1]}}
+        // {_id: {$in: [1]}}
         DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(1)).pop().get();
 
-        // update: { "$push" : { "n" : { "_id" : 2 , "u" : 3}} , "$inc" : { "c"
-        // : 4}}
-        DBObject update = new BasicDBObjectBuilder().push("$push").push("n").append("_id", 2).append("u", 3).pop()
-                .pop().push("$inc").append("c", 4).pop().get();
+        // {$push: {n: {_id: 2 ,u : 3}}, $inc: {c: 4}}
+        DBObject update = new BasicDBObjectBuilder().push("$push").push("n") //
+                .append("_id", 2).append("u", 3).pop().pop() //
+                .push("$inc").append("c", 4).pop().get();
 
         DBObject expected = new BasicDBObjectBuilder().append("_id", 1)
-                .append("n", Arrays.asList(new BasicDBObject("_id", 2).append("u", 3))).append("c", 4).get();
+                .append("n", Arrays.asList(new BasicDBObject("_id", 2) //
+                        .append("u", 3))).append("c", 4).get();
 
         collection.update(query, update, true, false);
 
@@ -329,6 +330,41 @@ public class AdvancedMemoryBackendTest {
         // create a random object id
         DBObject actual = collection.findOne();
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    public void testUpdatePush() throws Exception {
+        BasicDBObject idObj = new BasicDBObject("_id", 1);
+        collection.insert(idObj);
+        collection.update(idObj, new BasicDBObject("$push", new BasicDBObject("field", "value")));
+        DBObject expected = new BasicDBObject("_id", 1).append("field", Arrays.asList("value"));
+        assertThat(collection.findOne(idObj)).isEqualTo(expected);
+
+        // push to non-array
+        collection.update(idObj, new BasicDBObject("$set", new BasicDBObject("field", "value")));
+        try {
+            collection.update(idObj, new BasicDBObject("$push", new BasicDBObject("field", "value")));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10141);
+            assertThat(e.getMessage()).isEqualTo("Cannot apply $push/$pushAll modifier to non-array");
+        }
+
+        // push with multiple fields
+
+        DBObject pushObj = new BasicDBObject("$push", new BasicDBObject("field1", "value").append("field2", "value2"));
+        collection.update(idObj, pushObj);
+
+        expected = new BasicDBObject("_id", 1).append("field", "value") //
+                .append("field1", Arrays.asList("value")) //
+                .append("field2", Arrays.asList("value2"));
+        assertThat(collection.findOne(idObj)).isEqualTo(expected);
+
+        // push duplicate
+        pushObj = new BasicDBObject("$push", new BasicDBObject("field1", "value"));
+        collection.update(idObj, pushObj);
+        expected.put("field1", Arrays.asList("value", "value"));
+        assertThat(collection.findOne(idObj)).isEqualTo(expected);
     }
 
     @Test

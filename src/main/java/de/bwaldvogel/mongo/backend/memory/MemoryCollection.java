@@ -113,23 +113,20 @@ public class MemoryCollection extends MongoCollection {
             }
         } else if (modifier.equals("$push")) {
             // http://docs.mongodb.org/manual/reference/operator/push/
-            if (change.keySet().size() != 1) {
-                throw new UnsupportedOperationException();
-            }
-            String key = change.keySet().iterator().next();
+            for (String key : change.keySet()) {
+                Object value = document.get(key);
+                List<Object> list;
+                if (value == null) {
+                    list = new ArrayList<Object>();
+                } else if (value instanceof List<?>) {
+                    list = Utils.asList(value);
+                } else {
+                    throw new MongoServerError(10141, "Cannot apply $push/$pushAll modifier to non-array");
+                }
 
-            Object value = document.get(key);
-            List<Object> list;
-            if (value == null) {
-                list = new ArrayList<Object>();
-            } else if (value instanceof List<?>) {
-                list = Utils.asList(value);
-            } else {
-                throw new UnsupportedOperationException();
+                list.add(change.get(key));
+                document.put(key, list);
             }
-
-            list.add(change.get(key));
-            document.put(key, list);
         } else if (modifier.equals("$inc")) {
             // http://docs.mongodb.org/manual/reference/operator/inc/
             if (change.keySet().size() != 1) {
