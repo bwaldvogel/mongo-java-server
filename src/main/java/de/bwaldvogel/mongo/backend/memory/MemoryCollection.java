@@ -3,10 +3,12 @@ package de.bwaldvogel.mongo.backend.memory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.BSONObject;
@@ -24,6 +26,7 @@ import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
@@ -82,7 +85,7 @@ public class MemoryCollection extends MongoCollection {
         return answer;
     }
 
-    private Iterable<Integer> matchKeys(BSONObject query) {
+    private Iterable<Integer> queryDocuments(BSONObject query) {
         synchronized (indexes) {
             for (Index index : indexes) {
                 if (index.canHandle(query)) {
@@ -142,22 +145,21 @@ public class MemoryCollection extends MongoCollection {
             }
         } else if (modifier.equals("$inc")) {
             // http://docs.mongodb.org/manual/reference/operator/inc/
-            if (change.keySet().size() != 1) {
-                throw new UnsupportedOperationException();
-            }
-            String key = change.keySet().iterator().next();
+            for (String key : change.keySet()) {
+                assertNotKeyField(key);
 
-            Object value = document.get(key);
-            Number number;
-            if (value == null) {
-                number = Integer.valueOf(0);
-            } else if (value instanceof Number) {
-                number = (Number) value;
-            } else {
-                throw new UnsupportedOperationException();
-            }
+                Object value = document.get(key);
+                Number number;
+                if (value == null) {
+                    number = Integer.valueOf(0);
+                } else if (value instanceof Number) {
+                    number = (Number) value;
+                } else {
+                    throw new UnsupportedOperationException();
+                }
 
-            document.put(key, Utils.addNumbers(number, (Number) change.get(key)));
+                document.put(key, Utils.addNumbers(number, (Number) change.get(key)));
+            }
         } else {
             throw new IllegalArgumentException("modifier " + modifier + " not yet supported");
         }
@@ -291,6 +293,79 @@ public class MemoryCollection extends MongoCollection {
         return documents.size() - emptyPositions.size();
     }
 
+    public synchronized BSONObject findAndModify(BSONObject query) throws MongoServerException {
+        BSONObject queryObject = new BasicBSONObject();
+        if (query.containsField("query"))
+            queryObject.put("query", query.get("query"));
+        if (query.containsField("sort"))
+            queryObject.put("orderby", query.get("sort"));
+
+        boolean returnNew = Utils.isFieldTrue(query, "new");
+
+        if (!query.containsField("remove") && !query.containsField("update")) {
+            throw new MongoServerException("need remove or update");
+        }
+
+        BSONObject lastErrorObject = null;
+        BSONObject returnDocument = null;
+        int num = 0;
+        for (BSONObject document : handleQuery(queryObject, 0, 1)) {
+            num++;
+            if (Utils.isFieldTrue(query, "remove")) {
+                removeDocument(document);
+                returnDocument = document;
+            } else if (query.get("update") != null) {
+                BSONObject updateQuery = (BSONObject) query.get("update");
+                BSONObject oldDocument = updateDocument(document, updateQuery);
+                if (returnNew) {
+                    returnDocument = document;
+                } else {
+                    returnDocument = oldDocument;
+                }
+                lastErrorObject = new BasicDBObject("updatedExisting", Boolean.TRUE);
+                lastErrorObject.put("n", 1);
+            }
+        }
+        if (num == 0 && Utils.isFieldTrue(query, "upsert")) {
+            BSONObject selector = (BSONObject) query.get("query");
+            BSONObject updateQuery = (BSONObject) query.get("update");
+            BSONObject newDocument = handleUpsert(updateQuery, selector);
+            if (returnNew) {
+                returnDocument = newDocument;
+            } else {
+                returnDocument = new BasicBSONObject();
+            }
+            num++;
+        }
+
+        if (query.get("fields") != null) {
+            BSONObject fields = (BSONObject) query.get("fields");
+            returnDocument = projectDocument(returnDocument, fields);
+        }
+
+        BSONObject result = new BasicBSONObject();
+        if (lastErrorObject != null) {
+            result.put("lastErrorObject", lastErrorObject);
+        }
+        result.put("value", returnDocument);
+        result.put("ok", Integer.valueOf(1));
+        return result;
+    }
+
+    private BSONObject projectDocument(BSONObject document, BSONObject fields) {
+        if (document == null)
+            return null;
+        BSONObject newDocument = new BasicBSONObject();
+        for (String key : fields.keySet()) {
+            if (Utils.normalizeValue(fields.get(key)).equals(Double.valueOf(1.0))) {
+                if (document.containsField(key)) {
+                    newDocument.put(key, document.get(key));
+                }
+            }
+        }
+        return newDocument;
+    }
+
     public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn) {
 
         BSONObject query;
@@ -309,7 +384,7 @@ public class MemoryCollection extends MongoCollection {
             return Collections.emptyList();
         }
 
-        Iterable<Integer> keys = matchKeys(query);
+        Iterable<Integer> keys = queryDocuments(query);
 
         List<BSONObject> objs = new ArrayList<BSONObject>();
         for (Integer pos : keys) {
@@ -359,29 +434,13 @@ public class MemoryCollection extends MongoCollection {
         BSONObject updateQuery = update.getUpdate();
         int n = 0;
         BSONObject selector = update.getSelector();
-        for (Integer position : matchKeys(selector)) {
+        for (Integer position : queryDocuments(selector)) {
             if (n > 0 && !update.isMulti()) {
                 throw new MongoServerError(0, "no multi flag");
             }
 
             n++;
-
-            BSONObject oldDocument = documents.get(position.intValue());
-            BSONObject newDocument = calculateUpdateDocument(oldDocument, updateQuery);
-
-            if (!newDocument.equals(oldDocument)) {
-                for (Index index : indexes) {
-                    index.checkUpdate(oldDocument, newDocument);
-                }
-                for (Index index : indexes) {
-                    index.update(oldDocument, newDocument, position);
-                }
-
-                long oldSize = Utils.calculateSize(oldDocument);
-                long newSize = Utils.calculateSize(newDocument);
-                dataSize.addAndGet(newSize - oldSize);
-                documents.set(position.intValue(), newDocument);
-            }
+            updateDocument(documents.get(position.intValue()), updateQuery);
         }
 
         // insert?
@@ -393,7 +452,45 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
-    private void handleUpsert(BSONObject updateQuery, BSONObject selector) throws MongoServerError, KeyConstraintError {
+    private BSONObject updateDocument(BSONObject document, BSONObject updateQuery) throws MongoServerError,
+            KeyConstraintError {
+        synchronized (document) {
+            // copy document
+            BSONObject oldDocument = new BasicBSONObject();
+            oldDocument.putAll(document);
+
+            BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
+
+            if (!newDocument.equals(oldDocument)) {
+                for (Index index : indexes) {
+                    index.checkUpdate(oldDocument, newDocument);
+                }
+                for (Index index : indexes) {
+                    index.updateInPlace(oldDocument, newDocument);
+                }
+
+                long oldSize = Utils.calculateSize(oldDocument);
+                long newSize = Utils.calculateSize(newDocument);
+                dataSize.addAndGet(newSize - oldSize);
+
+                // only keep fields that are also in the updated document
+                Set<String> fields = new HashSet<String>(document.keySet());
+                fields.removeAll(newDocument.keySet());
+                for (String key : fields) {
+                    document.removeField(key);
+                }
+
+                // update the fields
+                for (String key : newDocument.keySet()) {
+                    document.put(key, newDocument.get(key));
+                }
+            }
+            return oldDocument;
+        }
+    }
+
+    private BSONObject handleUpsert(BSONObject updateQuery, BSONObject selector) throws MongoServerError,
+            KeyConstraintError {
         BSONObject document = convertSelectorToDocument(selector);
 
         BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
@@ -401,6 +498,7 @@ public class MemoryCollection extends MongoCollection {
             newDocument.put(idField, deriveDocumentId(selector));
         }
         addDocument(newDocument);
+        return newDocument;
     }
 
     /**
@@ -453,7 +551,7 @@ public class MemoryCollection extends MongoCollection {
         }
 
         int count = 0;
-        Iterator<Integer> it = matchKeys(query).iterator();
+        Iterator<Integer> it = queryDocuments(query).iterator();
         while (it.hasNext()) {
             it.next();
             count++;

@@ -80,14 +80,11 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public void update(BSONObject oldDocument, BSONObject newDocument, Integer position) throws KeyConstraintError {
+    public void updateInPlace(BSONObject oldDocument, BSONObject newDocument) throws KeyConstraintError {
         if (nullAwareEqualsKeys(oldDocument, newDocument)) {
             return;
         }
-        synchronized (this) {
-            remove(oldDocument);
-            add(newDocument, position);
-        }
+        // no change necessary
     }
 
     @Override

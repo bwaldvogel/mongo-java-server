@@ -504,7 +504,52 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
+    public void testFindAndModifyNotFound() throws Exception {
+        collection.insert(new BasicDBObject("_id", 1).append("a", 1));
+        DBObject result = collection.findAndModify(new BasicDBObject("_id", 2), null, null, false, new BasicDBObject(
+                "$inc", new BasicDBObject("a", 1)), false, false);
+
+        assertThat(result).isNull();
+        assertThat(collection.count()).isEqualTo(1);
+    }
+
+    @Test
+    public void testFindAndModifyCommandUpdate() throws Exception {
+        collection.insert(new BasicDBObject("_id", 1));
+
+        DBObject cmd = new BasicDBObject("findAndModify", collection.getName());
+        cmd.put("query", new BasicDBObject("_id", 1));
+        cmd.put("update", new BasicDBObject("$inc", new BasicDBObject("a", 1)));
+
+        CommandResult result = db.command(cmd);
+        assertThat(result.get("lastErrorObject")).isEqualTo(
+                new BasicDBObject("updatedExisting", Boolean.TRUE).append("n", 1));
+
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("a", 1));
+        assertThat(result.ok()).isTrue();
+    }
+
+    @Test
+    public void testFindAndModifyCommandIllegalOp() throws Exception {
+        collection.insert(new BasicDBObject("_id", 1));
+
+        DBObject cmd = new BasicDBObject("findAndModify", collection.getName());
+        cmd.put("query", new BasicDBObject("_id", 1));
+        cmd.put("update", new BasicDBObject("$inc", new BasicDBObject("_id", 1)));
+
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1));
+
+        CommandResult result = db.command(cmd);
+        try {
+            result.throwOnError();
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10148);
+            assertThat(e.getMessage()).contains("Mod on _id not allowed");
+        }
+    }
+
+    @Test
     public void testFindAndModifyReturnOld() {
         collection.insert(new BasicDBObject("_id", 1).append("a", 1));
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
@@ -515,7 +560,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testFindAndModifyReturnNew() {
         collection.insert(new BasicDBObject("_id", 1).append("a", 1));
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
@@ -525,7 +569,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testFindAndModifyUpsert() {
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), true, true);
@@ -535,7 +578,6 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testFindAndModifyUpsertReturnNewFalse() {
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), false, true);
@@ -545,22 +587,21 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testFindAndRemoveFromEmbeddedList() {
         BasicDBObject obj = new BasicDBObject("_id", 1).append("a", Arrays.asList(1));
         collection.insert(obj);
         DBObject result = collection.findAndRemove(new BasicDBObject("_id", 1));
-        assertEquals(obj, result);
+        assertThat(result).isEqualTo(obj);
+        assertThat(collection.count()).isZero();
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testFindAndModifyRemove() {
         collection.insert(new BasicDBObject("_id", 1).append("a", 1));
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, true, null, false, false);
 
-        assertEquals(new BasicDBObject("_id", 1).append("a", 1), result);
-        assertEquals(null, collection.findOne());
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 1).append("a", 1));
+        assertThat(collection.count()).isZero();
     }
 
     @Test

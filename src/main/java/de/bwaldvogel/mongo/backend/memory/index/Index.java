@@ -35,6 +35,6 @@ public abstract class Index {
 
     public abstract void checkUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError;
 
-    public abstract void update(BSONObject oldDocument, BSONObject newDocument, Integer position) throws KeyConstraintError;
+    public abstract void updateInPlace(BSONObject oldDocument, BSONObject newDocument) throws KeyConstraintError;
 
 }
