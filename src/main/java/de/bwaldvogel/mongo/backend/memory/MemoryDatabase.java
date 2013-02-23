@@ -10,12 +10,9 @@ import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.backend.Constants;
-import de.bwaldvogel.mongo.exception.InvalidNSError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.exception.NSNameTooLongError;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
-import de.bwaldvogel.mongo.exception.ReservedCollectionNameError;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -57,17 +54,14 @@ public class MemoryDatabase extends CommonDatabase {
 
     private void checkCollectionName(String collectionName) throws MongoServerException {
 
-        if (collectionName.contains("$"))
-            throw new ReservedCollectionNameError("illegal collection name: " + collectionName);
-
-        if (collectionName.startsWith("system."))
-            throw new ReservedCollectionNameError("illegal collection name: " + collectionName);
+        if (collectionName.contains("$") || collectionName.startsWith("system."))
+            throw new MongoServerError(10093, "illegal collection name: " + collectionName);
 
         if (collectionName.length() > Constants.MAX_NS_LENGTH)
-            throw new NSNameTooLongError(Constants.MAX_NS_LENGTH);
+            throw new MongoServerError(10080, "ns name too long, max size is " + Constants.MAX_NS_LENGTH);
 
         if (collectionName.isEmpty())
-            throw new InvalidNSError(getDatabaseName() + "." + collectionName);
+            throw new MongoServerError(16256, "Invalid ns [" + collectionName + "]");
     }
 
     public MongoServerError getLastException(int clientId) {

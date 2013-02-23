@@ -22,10 +22,7 @@ import de.bwaldvogel.mongo.backend.QueryMatcher;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
-import de.bwaldvogel.mongo.exception.CannotChangeIdOfDocumentError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
-import de.bwaldvogel.mongo.exception.ModFieldNotAllowedError;
-import de.bwaldvogel.mongo.exception.ModifiedFieldNameMayNotStartWithDollarError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -109,7 +106,7 @@ public class MemoryCollection extends MongoCollection {
                 }
 
                 if (key.equals(idField)) {
-                    throw new ModFieldNotAllowedError(key);
+                    throw new MongoServerError(10148, "Mod on " + key + " not allowed");
                 }
 
                 document.put(key, newValue);
@@ -161,7 +158,7 @@ public class MemoryCollection extends MongoCollection {
 
         for (String key : newDocument.keySet()) {
             if (key.startsWith("$")) {
-                throw new ModifiedFieldNameMayNotStartWithDollarError();
+                throw new MongoServerError(15896, "Modified field name may not start with $");
             }
         }
 
@@ -173,7 +170,9 @@ public class MemoryCollection extends MongoCollection {
         Object newId = newDocument.get(idField);
 
         if (newId != null && !Utils.nullAwareEquals(oldId, newId)) {
-            throw new CannotChangeIdOfDocumentError(oldDocument, newDocument, idField);
+            oldId = new BasicBSONObject(idField, oldId);
+            newId = new BasicBSONObject(idField, newId);
+            throw new MongoServerError(13596, "cannot change _id of a document old:" + oldId + " new:" + newId);
         }
 
         if (newId == null) {
