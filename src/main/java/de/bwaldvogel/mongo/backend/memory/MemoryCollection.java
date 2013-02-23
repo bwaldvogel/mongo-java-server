@@ -105,11 +105,14 @@ public class MemoryCollection extends MongoCollection {
                     continue;
                 }
 
-                if (key.equals(idField)) {
-                    throw new MongoServerError(10148, "Mod on " + key + " not allowed");
-                }
+                assertNotKeyField(key);
 
                 document.put(key, newValue);
+            }
+        } else if (modifier.equals("$unset")) {
+            for (String key : change.keySet()) {
+                assertNotKeyField(key);
+                document.removeField(key);
             }
         } else if (modifier.equals("$push") || modifier.equals("$pushAll")) {
             // http://docs.mongodb.org/manual/reference/operator/push/
@@ -133,7 +136,7 @@ public class MemoryCollection extends MongoCollection {
                     Collection<Object> pushValueList = (Collection<Object>) pushValue;
                     list.addAll(pushValueList);
                 } else {
-                list.add(pushValue);
+                    list.add(pushValue);
                 }
                 document.put(key, list);
             }
@@ -156,9 +159,15 @@ public class MemoryCollection extends MongoCollection {
 
             document.put(key, Utils.addNumbers(number, (Number) change.get(key)));
         } else {
-            throw new IllegalArgumentException("modified " + modifier + " not yet supported");
+            throw new IllegalArgumentException("modifier " + modifier + " not yet supported");
         }
 
+    }
+
+    private void assertNotKeyField(String key) throws MongoServerError {
+        if (key.equals(idField)) {
+            throw new MongoServerError(10148, "Mod on " + idField + " not allowed");
+        }
     }
 
     private void applyUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError {

@@ -385,6 +385,21 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
+    public void testUpdateUnset() throws Exception {
+        DBObject obj = new BasicDBObject("_id", 1).append("a", 1).append("b", null).append("c", "value");
+        collection.insert(obj);
+        try {
+            collection.update(obj, new BasicDBObject("$unset", new BasicDBObject("_id", "")));
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10148);
+            assertThat(e.getMessage()).isEqualTo("Mod on _id not allowed");
+        }
+        collection.update(obj, new BasicDBObject("$unset", new BasicDBObject("a", "").append("b", "")));
+        DBObject expected = new BasicDBObject("_id", 1).append("c", "value");
+        assertThat(collection.findOne()).isEqualTo(expected);
+    }
+
+    @Test
     public void testUpdateWithIdIn() {
         collection.insert(new BasicDBObject("_id", 1));
         DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(1)).pop().get();
