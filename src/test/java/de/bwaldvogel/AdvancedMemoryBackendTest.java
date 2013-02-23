@@ -368,6 +368,23 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
+    public void testUpdatePushAll() throws Exception {
+        BasicDBObject idObj = new BasicDBObject("_id", 1);
+        collection.insert(idObj);
+        try {
+            collection.update(idObj, new BasicDBObject("$pushAll", new BasicDBObject("field", "value")));
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10153);
+            assertThat(e.getMessage()).isEqualTo("Modifier $pushAll/pullAll allowed for arrays only");
+        }
+
+        collection.update(idObj, new BasicDBObject("$pushAll", //
+                new BasicDBObject("field", Arrays.asList("value", "value2"))));
+        DBObject expected = new BasicDBObject("_id", 1).append("field", Arrays.asList("value", "value2"));
+        assertThat(collection.findOne(idObj)).isEqualTo(expected);
+    }
+
+    @Test
     public void testUpdateWithIdIn() {
         collection.insert(new BasicDBObject("_id", 1));
         DBObject query = new BasicDBObjectBuilder().push("_id").append("$in", Arrays.asList(1)).pop().get();

@@ -111,7 +111,7 @@ public class MemoryCollection extends MongoCollection {
 
                 document.put(key, newValue);
             }
-        } else if (modifier.equals("$push")) {
+        } else if (modifier.equals("$push") || modifier.equals("$pushAll")) {
             // http://docs.mongodb.org/manual/reference/operator/push/
             for (String key : change.keySet()) {
                 Object value = document.get(key);
@@ -124,7 +124,17 @@ public class MemoryCollection extends MongoCollection {
                     throw new MongoServerError(10141, "Cannot apply $push/$pushAll modifier to non-array");
                 }
 
-                list.add(change.get(key));
+                Object pushValue = change.get(key);
+                if (modifier.equals("$pushAll")) {
+                    if (!(pushValue instanceof Collection<?>)) {
+                        throw new MongoServerError(10153, "Modifier $pushAll/pullAll allowed for arrays only");
+                    }
+                    @SuppressWarnings("unchecked")
+                    Collection<Object> pushValueList = (Collection<Object>) pushValue;
+                    list.addAll(pushValueList);
+                } else {
+                list.add(pushValue);
+                }
                 document.put(key, list);
             }
         } else if (modifier.equals("$inc")) {
