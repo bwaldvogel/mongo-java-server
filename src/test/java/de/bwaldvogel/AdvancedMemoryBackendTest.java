@@ -2,17 +2,13 @@ package de.bwaldvogel;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
+import org.bson.types.ObjectId;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -61,8 +57,8 @@ public class AdvancedMemoryBackendTest {
     @Test
     public void testGetDb() {
         collection.insert(new BasicDBObject());
-        assertNotNull(collection.getDB());
-        assertSame("getDB should be idempotent", collection.getDB(), client.getDB(db.getName()));
+        assertThat(collection.getDB()).isNotNull();
+        assertThat(collection.getDB()).isSameAs(client.getDB(db.getName()));
         assertThat(client.getDatabaseNames()).containsExactly(db.getName());
     }
 
@@ -70,10 +66,11 @@ public class AdvancedMemoryBackendTest {
     public void testGetCollection() {
         DBCollection collection = db.getCollection("coll");
         db.getCollection("coll").insert(new BasicDBObject());
-        assertNotNull(collection);
-        assertSame("getCollection should be idempotent", collection, db.getCollection("coll"));
-        assertSame("getCollection should be idempotent", collection, db.getCollectionFromString("coll"));
-        assertEquals(new HashSet<String>(Arrays.asList("coll")), db.getCollectionNames());
+
+        assertThat(collection).isNotNull();
+        assertThat(db.getCollection("coll")).isSameAs(collection);
+        assertThat(db.getCollectionFromString("coll")).isSameAs(collection);
+        assertThat(db.getCollectionNames()).containsOnly("coll");
     }
 
     @Test
@@ -369,7 +366,7 @@ public class AdvancedMemoryBackendTest {
 
     @Test
     public void testUpdatePushAll() throws Exception {
-        BasicDBObject idObj = new BasicDBObject("_id", 1);
+        DBObject idObj = new BasicDBObject("_id", 1);
         collection.insert(idObj);
         try {
             collection.update(idObj, new BasicDBObject("$pushAll", new BasicDBObject("field", "value")));
@@ -593,12 +590,12 @@ public class AdvancedMemoryBackendTest {
     public void testGetLastError() {
         collection.insert(new BasicDBObject("_id", 1));
         CommandResult error = db.getLastError();
-        assertTrue(error.ok());
+        assertThat(error.ok()).isTrue();
 
-        assertFalse(db.command("illegalCommand").ok());
+        assertThat(db.command("illegalCommand").ok()).isFalse();
 
         // getlasterror must succeed again
-        assertTrue(db.getLastError().ok());
+        assertThat(db.getLastError().ok()).isTrue();
     }
 
     @Test
@@ -692,31 +689,31 @@ public class AdvancedMemoryBackendTest {
 
         collection.save(toSave);
         DBObject result = collection.findOne(new BasicDBObject("name", "test"));
-        assertNotNull("Expected _id to be generated" + result.get(Constants.ID_FIELD));
+        assertThat(result.get(Constants.ID_FIELD)).isInstanceOf(ObjectId.class);
     }
 
     @Test
     public void testDropDatabaseAlsoDropsCollectionData() throws Exception {
         collection.insert(new BasicDBObject());
         db.dropDatabase();
-        assertEquals("Collection should have no data", 0, collection.count());
+        assertThat(collection.count()).isZero();
     }
 
     @Test
     public void testDropCollectionAlsoDropsFromDB() throws Exception {
         collection.insert(new BasicDBObject());
         collection.drop();
-        assertEquals("Collection should have no data", 0, collection.count());
-        assertFalse("Collection shouldn't exist in DB", db.getCollectionNames().contains(collection.getName()));
+        assertThat(collection.count()).isZero();
+        assertThat(db.getCollectionNames()).excludes(collection.getName());
     }
 
     @Test
     public void testDropDatabaseDropsAllData() throws Exception {
         collection.insert(new BasicDBObject());
         client.dropDatabase(db.getName());
-        assertFalse("DB shouldn't exist", client.getDatabaseNames().contains(db.getName()));
-        assertEquals("Collection should have no data", 0, collection.count());
-        assertFalse("Collection shouldn't exist in DB", db.getCollectionNames().contains(collection.getName()));
+        assertThat(client.getDatabaseNames()).excludes(db.getName());
+        assertThat(collection.count()).isZero();
+        assertThat(db.getCollectionNames()).excludes(collection.getName());
     }
 
 }
