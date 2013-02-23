@@ -7,6 +7,8 @@ import java.util.Date;
 import org.bson.BasicBSONObject;
 import org.junit.Test;
 
+import com.mongodb.BasicDBObject;
+
 public class UtilsTest {
 
     @Test
@@ -18,6 +20,16 @@ public class UtilsTest {
         assertThat(Utils.addNumbers((short) 4, (short) 7)).isEqualTo(Short.valueOf((short) 11));
         assertThat(Utils.addNumbers(4l, 7.3)).isEqualTo(Double.valueOf(11.3));
         assertThat(Utils.addNumbers(100000000000000l, 100000000000000l)).isEqualTo(Long.valueOf(200000000000000l));
+    }
+
+    @Test
+    public void testIsFieldTrue() throws Exception {
+        assertThat(Utils.isFieldTrue(new BasicDBObject(), "foo")).isFalse();
+        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", null), "foo")).isFalse();
+        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", true), "foo")).isTrue();
+        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", 1), "foo")).isTrue();
+        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", 1.0), "foo")).isTrue();
+        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", 0), "foo")).isFalse();
     }
 
     @Test

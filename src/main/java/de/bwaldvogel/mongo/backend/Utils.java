@@ -24,6 +24,17 @@ public class Utils {
         }
     }
 
+    public static boolean isFieldTrue(BSONObject document, String field) {
+        Object value = document.get(field);
+        if (value == null)
+            return false;
+
+        if (value.equals(Boolean.TRUE)) {
+            return true;
+        }
+        return normalizeValue(value).equals(Double.valueOf(1.0));
+    }
+
     public static Object normalizeValue(Object value) {
         if (value == null)
             return null;
