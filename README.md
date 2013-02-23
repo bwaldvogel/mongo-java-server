@@ -26,22 +26,44 @@ drivers.
 
 ### Unit test example ###
 
-	MongoServer server = new MongoServer( new MemoryBackend() );
-	// bind on a random local port
-	InetSocketAddress serverAddress = server.bind();
+```java
+public class SimpleTest {
 
-	MongoClient client = new MongoClient( new ServerAddress( serverAddress ) );
+	private DBCollection collection;
+	private MongoClient client;
+	private MongoServer server;
 
-	DBCollection collection = client.getDB( "testdb" ).getCollection( "testcollection" );
-	// creates the database and collection in memory and inserts the object
-	collection.insert( new BasicDBObject( "key" , "value" ) );
+	@Before
+	public void setUp() {
+		server = new MongoServer(new MemoryBackend());
 
-	assertEquals( 1, collection.count() );
+		// bind on a random local port
+		InetSocketAddress serverAddress = server.bind();
 
-	assertEquals( "value", collection.find().toArray().get( 0 ).get( "key" ) );
+		client = new MongoClient(new ServerAddress(serverAddress));
+		collection = client.getDB("testdb").getCollection("testcollection");
+	}
 
-	client.close();
-	server.shutdown();
+	@After
+	public void tearDown() {
+		client.close();
+		server.shutdown();
+	}
+
+	@Test
+	public void testSimpleInsertQuery() throws Exception {
+		assertEquals(0, collection.count());
+
+		// creates the database and collection in memory and insert the object
+		DBObject obj = new BasicDBObject("_id", 1).append("key", "value");
+		collection.insert(obj);
+
+		assertEquals(1, collection.count());
+		assertEquals(obj, collection.findOne());
+	}
+
+}
+```
 
 ### Similar Projects ###
 
