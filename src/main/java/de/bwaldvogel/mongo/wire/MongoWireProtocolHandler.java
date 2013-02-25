@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.bson.BSONObject;
@@ -244,6 +245,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             case 0x0A: // null
                 value = null;
                 break;
+            case 0x0B: // regex
+                value = readPattern(buffer);
+                break;
             case 0x10: // int32
                 value = Integer.valueOf(buffer.readInt());
                 break;
@@ -259,6 +263,35 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             object.put(name, value);
         }
         throw new IOException("illegal BSON object");
+    }
+
+    private Object readPattern(ChannelBuffer buffer) throws IOException {
+        String regex = readCString(buffer);
+        String options = readCString(buffer);
+        int flags = 0;
+        for (char flag : options.toCharArray()) {
+            switch (flag) {
+            case 'i':
+                flags |= Pattern.CASE_INSENSITIVE;
+                break;
+            case 'm':
+                flags |= Pattern.MULTILINE;
+                break;
+            case 'x':
+                flags |= Pattern.COMMENTS;
+                break;
+            case 's':
+                flags |= Pattern.DOTALL;
+                break;
+            case 'u':
+                flags |= Pattern.UNICODE_CASE;
+                break;
+            default:
+                throw new IOException("unknown pattern flag: '" + flag + "'");
+            }
+
+        }
+        return Pattern.compile(regex, flags);
     }
 
     private List<Object> readArray(ChannelBuffer buffer) throws IOException {

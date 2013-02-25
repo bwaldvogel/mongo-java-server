@@ -5,6 +5,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
@@ -29,6 +30,15 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, new BasicBSONObject("foo", "bar"))).isFalse();
         document.put("foo", "bar");
         assertThat(matcher.matches(document, new BasicBSONObject("foo", "bar"))).isTrue();
+    }
+
+    @Test
+    public void testMatchesPattern() {
+        BSONObject document = new BasicDBObject("name", "john");
+        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("jo.*")))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("Jo.*", Pattern.CASE_INSENSITIVE)))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("marta")))).isFalse();
+        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("John")))).isFalse();
     }
 
     @Test

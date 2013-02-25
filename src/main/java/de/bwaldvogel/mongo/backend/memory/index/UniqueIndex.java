@@ -6,7 +6,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
 
@@ -110,21 +113,31 @@ public class UniqueIndex extends Index {
 
     @Override
     public synchronized Iterable<Integer> getPositions(BSONObject query) {
-        Object key = getKeyValue(query);
+        Object keyValue = getKeyValue(query);
 
-        if (key instanceof BSONObject) {
-            BSONObject keyObj = (BSONObject) key;
+        if (keyValue instanceof BSONObject) {
+            BSONObject keyObj = (BSONObject) keyValue;
             if (keyObj.keySet().size() != 1) {
-                throw new UnsupportedOperationException("illegal query key: " + key);
+                throw new UnsupportedOperationException("illegal query key: " + keyValue);
             }
 
             String expression = keyObj.keySet().iterator().next();
             if (expression.startsWith("$")) {
                 return getPositionsForExpression(keyObj, expression);
             }
+        } else if (keyValue instanceof Pattern) {
+            List<Integer> positions = new ArrayList<Integer>();
+            for (Entry<Object, Integer> entry : index.entrySet()) {
+                Object obj = entry.getKey();
+                Matcher matcher = ((Pattern) keyValue).matcher(obj.toString());
+                if (matcher.find()) {
+                    positions.add(entry.getValue());
+                }
+            }
+            return positions;
         }
 
-        Integer object = index.get(key);
+        Integer object = index.get(keyValue);
         if (object == null) {
             return Collections.emptyList();
         }

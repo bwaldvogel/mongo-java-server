@@ -1,6 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
 
@@ -67,6 +69,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
             if (expression.startsWith("$")) {
                 return checkExpressionMatch(value, expressionObject.get(expression), expression);
             }
+        }
+
+        if (value != null && queryValue instanceof Pattern) {
+            Matcher matcher = ((Pattern) queryValue).matcher(value.toString());
+            return matcher.find();
         }
 
         return Utils.nullAwareEquals(value, queryValue);

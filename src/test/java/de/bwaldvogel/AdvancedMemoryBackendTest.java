@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.bson.types.ObjectId;
 import org.junit.After;
@@ -173,6 +174,24 @@ public class AdvancedMemoryBackendTest {
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find().limit(2).skip(2);
         assertThat(cursor.toArray()).containsExactly(new BasicDBObject("_id", 5));
+    }
+
+    @Test
+    public void testFindWithPattern() {
+        collection.insert(new BasicDBObject("_id", "marta"));
+        collection.insert(new BasicDBObject("_id", "john").append("foo", "bar"));
+        collection.insert(new BasicDBObject("_id", "jon").append("foo", "ba"));
+        collection.insert(new BasicDBObject("_id", "jo"));
+
+        assertThat(collection.find(new BasicDBObject("_id", Pattern.compile("mart"))).toArray()).containsExactly(
+                new BasicDBObject("_id", "marta"));
+
+        assertThat(collection.find(new BasicDBObject("foo", Pattern.compile("ba"))).toArray()).containsExactly(
+                new BasicDBObject("_id", "john").append("foo", "bar"),
+                new BasicDBObject("_id", "jon").append("foo", "ba"));
+
+        assertThat(collection.find(new BasicDBObject("foo", Pattern.compile("ba$"))).toArray()).containsExactly(
+                new BasicDBObject("_id", "jon").append("foo", "ba"));
     }
 
     @Test
