@@ -5,7 +5,7 @@
 	<artifactId>mongo-java-server</artifactId>
 	<version>0.1-SNAPSHOT</version>
 	<name>mongo-java-server</name>
-	<description>Stub implementation of the core mongodb server using Java and Netty</description>
+	<description>Stub implementation of MongoDB in Java, that speaks the wire protocol</description>
 
 	<build>
 		<plugins>
