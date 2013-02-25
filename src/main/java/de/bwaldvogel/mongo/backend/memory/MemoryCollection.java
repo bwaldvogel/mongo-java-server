@@ -15,8 +15,6 @@ import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.bson.types.ObjectId;
 
-import com.mongodb.BasicDBObject;
-
 import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.MongoCollection;
@@ -239,7 +237,7 @@ public class MemoryCollection extends MongoCollection {
             }
         }
 
-        BSONObject newDocument = new BasicDBObject(idField, oldDocument.get(idField));
+        BSONObject newDocument = new BasicBSONObject(idField, oldDocument.get(idField));
 
         if (numStartsWithDollar == update.keySet().size()) {
             newDocument.putAll(oldDocument);
@@ -294,16 +292,23 @@ public class MemoryCollection extends MongoCollection {
     }
 
     public synchronized BSONObject findAndModify(BSONObject query) throws MongoServerException {
-        BSONObject queryObject = new BasicBSONObject();
-        if (query.containsField("query"))
-            queryObject.put("query", query.get("query"));
-        if (query.containsField("sort"))
-            queryObject.put("orderby", query.get("sort"));
 
         boolean returnNew = Utils.isFieldTrue(query, "new");
 
         if (!query.containsField("remove") && !query.containsField("update")) {
             throw new MongoServerException("need remove or update");
+        }
+
+        BSONObject queryObject = new BasicBSONObject();
+
+        if (query.containsField("query")) {
+            queryObject.put("query", query.get("query"));
+        } else {
+            queryObject.put("query", new BasicBSONObject());
+        }
+
+        if (query.containsField("sort")) {
+            queryObject.put("orderby", query.get("sort"));
         }
 
         BSONObject lastErrorObject = null;
@@ -322,7 +327,7 @@ public class MemoryCollection extends MongoCollection {
                 } else {
                     returnDocument = oldDocument;
                 }
-                lastErrorObject = new BasicDBObject("updatedExisting", Boolean.TRUE);
+                lastErrorObject = new BasicBSONObject("updatedExisting", Boolean.TRUE);
                 lastErrorObject.put("n", 1);
             }
         }
@@ -393,8 +398,6 @@ public class MemoryCollection extends MongoCollection {
                 continue;
             }
             objs.add(documents.get(pos.intValue()));
-            if (numberToReturn > 0 && objs.size() == numberToReturn)
-                break;
         }
 
         if (orderBy != null && !orderBy.keySet().isEmpty()) {
@@ -408,6 +411,9 @@ public class MemoryCollection extends MongoCollection {
                 Collections.sort(objs, new DocumentComparator(orderBy));
             }
         }
+
+        if (numberToReturn > 0 && objs.size() > numberToReturn)
+            objs = objs.subList(0, numberToReturn);
 
         return objs;
     }

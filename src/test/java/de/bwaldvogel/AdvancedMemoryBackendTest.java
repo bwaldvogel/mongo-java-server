@@ -609,6 +609,37 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
+    public void testFindAndModifyFields() throws Exception {
+        client = new MongoClient("localhost");
+        db = client.getDB("test");
+        collection = db.getCollection("test");
+        collection.drop();
+        collection.insert(new BasicDBObject("_id", 1).append("a", 1));
+        DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), new BasicDBObject("_id", 1), null,
+                false, new BasicDBObject("$inc", new BasicDBObject("a", 1)), true, false);
+
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 1));
+    }
+
+    @Test
+    public void testFindAndModifySorted() throws Exception {
+        collection.insert(new BasicDBObject("_id", 1).append("a", 15));
+        collection.insert(new BasicDBObject("_id", 2).append("a", 10));
+        collection.insert(new BasicDBObject("_id", 3).append("a", 20));
+
+        DBObject order = new BasicDBObject("a", 1);
+        DBObject result = collection.findAndModify(new BasicDBObject(), null, order, false, new BasicDBObject("$inc",
+                new BasicDBObject("a", 1)), true, false);
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 2).append("a", 11));
+
+        order = new BasicDBObject("a", -1);
+        result = collection.findAndModify(new BasicDBObject(), null, order, false, new BasicDBObject("$inc",
+                new BasicDBObject("a", 1)), true, false);
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 3).append("a", 21));
+
+    }
+
+    @Test
     public void testFindAndModifyUpsert() {
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), true, true);
