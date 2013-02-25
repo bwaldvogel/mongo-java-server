@@ -17,6 +17,10 @@ public class ValueComparatorTest {
     }
 
     @Test
+    public void testCompareNulls() {
+        assertThat(comparator.compare(null, null)).isZero();
+    }
+    @Test
     public void testCompareStringValues() {
         assertThat(comparator.compare("abc", "abc")).isEqualTo(0);
         assertThat(comparator.compare("abc", "zzz")).isLessThan(0);

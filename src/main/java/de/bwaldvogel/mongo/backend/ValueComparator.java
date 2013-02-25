@@ -33,6 +33,11 @@ public class ValueComparator implements Comparator<Object> {
 
     @Override
     public int compare(Object value1, Object value2) {
+
+        // also catches null/null case
+        if (value1 == value2)
+            return 0;
+
         int t1 = getTypeOrder(value1);
         int t2 = getTypeOrder(value2);
         if (t1 != t2) {

@@ -13,10 +13,6 @@ public class DocumentComparator implements Comparator<BSONObject> {
         if (orderBy == null || orderBy.keySet().isEmpty()) {
             throw new IllegalArgumentException();
         }
-        if (orderBy.keySet().size() > 1) {
-            throw new IllegalArgumentException("compound indices not yet implemented");
-        }
-
         this.orderBy = orderBy;
     }
 
