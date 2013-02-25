@@ -629,10 +629,6 @@ public class AdvancedMemoryBackendTest {
 
     @Test
     public void testFindAndModifyFields() throws Exception {
-        client = new MongoClient("localhost");
-        db = client.getDB("test");
-        collection = db.getCollection("test");
-        collection.drop();
         collection.insert(new BasicDBObject("_id", 1).append("a", 1));
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), new BasicDBObject("_id", 1), null,
                 false, new BasicDBObject("$inc", new BasicDBObject("a", 1)), true, false);
