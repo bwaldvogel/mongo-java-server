@@ -1,7 +1,6 @@
 package de.bwaldvogel;
 
 import static org.fest.assertions.Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
@@ -120,9 +119,8 @@ public class AdvancedMemoryBackendTest {
     public void testFindOneById() {
         collection.insert(new BasicDBObject("_id", 1));
         DBObject result = collection.findOne(new BasicDBObject("_id", 1));
-        assertEquals(new BasicDBObject("_id", 1), result);
-
-        assertEquals(null, collection.findOne(new BasicDBObject("_id", 2)));
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 1));
+        assertThat(collection.findOne(new BasicDBObject("_id", 2))).isNull();
     }
 
     @Test
@@ -134,7 +132,7 @@ public class AdvancedMemoryBackendTest {
 
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find(new BasicDBObject("name", "neil"));
-        assertEquals("should have two neils", 2, cursor.toArray().size());
+        assertThat(cursor.toArray()).hasSize(2);
     }
 
     @Test
@@ -146,7 +144,7 @@ public class AdvancedMemoryBackendTest {
 
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find().limit(2);
-        assertEquals(Arrays.asList(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2)), cursor.toArray());
+        assertThat(cursor.toArray()).containsExactly(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
     }
 
     @Test
@@ -158,7 +156,7 @@ public class AdvancedMemoryBackendTest {
 
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find().limit(2).skip(2);
-        assertEquals(Arrays.asList(new BasicDBObject("_id", 3), new BasicDBObject("_id", 4)), cursor.toArray());
+        assertThat(cursor.toArray()).containsExactly(new BasicDBObject("_id", 3), new BasicDBObject("_id", 4));
     }
 
     @Test
@@ -170,9 +168,8 @@ public class AdvancedMemoryBackendTest {
 
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(3, 2, 1))));
-        assertEquals(
-                Arrays.asList(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2), new BasicDBObject("_id", 3)),
-                cursor.toArray());
+        assertThat(cursor.toArray()).containsExactly(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2),
+                new BasicDBObject("_id", 3));
     }
 
     @Test
@@ -185,9 +182,9 @@ public class AdvancedMemoryBackendTest {
 
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find().sort(new BasicDBObject("a", -1));
-        assertEquals(Arrays.asList(new BasicDBObject("a", 4).append("_id", 4),
+        assertThat(cursor.toArray()).containsExactly(new BasicDBObject("a", 4).append("_id", 4),
                 new BasicDBObject("a", 3).append("_id", 3), new BasicDBObject("a", 2).append("_id", 2),
-                new BasicDBObject("a", 1).append("_id", 1), new BasicDBObject("_id", 5)), cursor.toArray());
+                new BasicDBObject("a", 1).append("_id", 1), new BasicDBObject("_id", 5));
     }
 
     @Test
@@ -201,10 +198,9 @@ public class AdvancedMemoryBackendTest {
 
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find().sort(new BasicDBObject("a", 1).append("_id", -1));
-        assertEquals(Arrays.asList(new BasicDBObject("a", 1).append("_id", 3),
+        assertThat(cursor.toArray()).containsExactly(new BasicDBObject("a", 1).append("_id", 3),
                 new BasicDBObject("a", 1).append("_id", 2), new BasicDBObject("a", 1).append("_id", 1),
-                new BasicDBObject("a", 2).append("_id", 5), new BasicDBObject("a", 2).append("_id", 4)),
-                cursor.toArray());
+                new BasicDBObject("a", 2).append("_id", 5), new BasicDBObject("a", 2).append("_id", 4));
     }
 
     @Test
@@ -219,10 +215,10 @@ public class AdvancedMemoryBackendTest {
         @SuppressWarnings("resource")
         DBCursor cursor = collection.find(new BasicDBObject("c", new BasicDBObject("$ne", true))).sort(
                 new BasicDBObject("counts.done", -1));
-        assertEquals(Arrays.asList(new BasicDBObject("_id", 5).append("counts", new BasicDBObject("done", 2)),
+        assertThat(cursor.toArray()).containsExactly(
+                new BasicDBObject("_id", 5).append("counts", new BasicDBObject("done", 2)),
                 new BasicDBObject("_id", 4).append("counts", new BasicDBObject("done", 1)),
-                new BasicDBObject("_id", 1), new BasicDBObject("_id", 2), new BasicDBObject("_id", 3)),
-                cursor.toArray());
+                new BasicDBObject("_id", 1), new BasicDBObject("_id", 2), new BasicDBObject("_id", 3));
     }
 
     @Test
@@ -234,7 +230,8 @@ public class AdvancedMemoryBackendTest {
 
         collection.update(new BasicDBObject("_id", 2), new BasicDBObject("a", 5));
 
-        assertEquals(new BasicDBObject("_id", 2).append("a", 5), collection.findOne(new BasicDBObject("_id", 2)));
+        assertThat(collection.findOne(new BasicDBObject("_id", 2))).isEqualTo(
+                new BasicDBObject("_id", 2).append("a", 5));
     }
 
     @Test
@@ -246,7 +243,8 @@ public class AdvancedMemoryBackendTest {
 
         collection.update(new BasicDBObject("_id", 2).append("b", 5), new BasicDBObject("_id", 2).append("a", 5));
 
-        assertEquals(new BasicDBObject("_id", 2).append("a", 5), collection.findOne(new BasicDBObject("_id", 2)));
+        assertThat(collection.findOne(new BasicDBObject("_id", 2))).isEqualTo(
+                new BasicDBObject("_id", 2).append("a", 5));
     }
 
     @Test
@@ -254,21 +252,22 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("_id", 1));
         collection.update(new BasicDBObject("_id", 1), new BasicDBObject("_id", 1).append("a", 5));
 
-        assertEquals(new BasicDBObject("_id", 1).append("a", 5), collection.findOne(new BasicDBObject("_id", 1)));
+        assertThat(collection.findOne(new BasicDBObject("_id", 1))).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", 5));
 
         collection.update(new BasicDBObject("_id", 1),
                 new BasicDBObject("$set", new BasicDBObject("_id", 1).append("b", 3)));
 
-        assertEquals(new BasicDBObject("_id", 1).append("a", 5).append("b", 3),
-                collection.findOne(new BasicDBObject("_id", 1)));
+        assertThat(collection.findOne(new BasicDBObject("_id", 1))).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", 5).append("b", 3));
 
         // test with $set
 
         collection.update(new BasicDBObject("_id", 1),
                 new BasicDBObject("$set", new BasicDBObject("_id", 1).append("a", 7)));
 
-        assertEquals(new BasicDBObject("_id", 1).append("a", 7).append("b", 3),
-                collection.findOne(new BasicDBObject("_id", 1)));
+        assertThat(collection.findOne(new BasicDBObject("_id", 1))).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", 7).append("b", 3));
     }
 
     @Test
@@ -279,7 +278,8 @@ public class AdvancedMemoryBackendTest {
             collection.update(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2).append("a", 5));
             fail("should throw exception");
         } catch (MongoException e) {
-            assertEquals("cannot change _id of a document old:{ \"_id\" : 1} new:{ \"_id\" : 2}", e.getMessage());
+            assertThat(e.getMessage()).isEqualTo(
+                    "cannot change _id of a document old:{ \"_id\" : 1} new:{ \"_id\" : 2}");
         }
 
         // test with $set
@@ -288,7 +288,7 @@ public class AdvancedMemoryBackendTest {
             collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$set", new BasicDBObject("_id", 2)));
             fail("should throw exception");
         } catch (MongoException e) {
-            assertEquals("Mod on _id not allowed", e.getMessage());
+            assertThat(e.getMessage()).isEqualTo("Mod on _id not allowed");
         }
     }
 
@@ -296,7 +296,7 @@ public class AdvancedMemoryBackendTest {
     public void testUpsert() {
         collection.update(new BasicDBObject("_id", 1).append("n", "jon"), new BasicDBObject("$inc", new BasicDBObject(
                 "a", 1)), true, false);
-        assertEquals(new BasicDBObject("_id", 1).append("n", "jon").append("a", 1), collection.findOne());
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("n", "jon").append("a", 1));
     }
 
     @Test
@@ -304,7 +304,7 @@ public class AdvancedMemoryBackendTest {
         DBObject query = new BasicDBObject("_id", 1).append("b", new BasicDBObject("$gt", 5));
         BasicDBObject update = new BasicDBObject("$inc", new BasicDBObject("a", 1));
         collection.update(query, update, true, false);
-        assertEquals(new BasicDBObject("_id", 1).append("a", 1), collection.findOne());
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("a", 1));
     }
 
     @Test
@@ -407,7 +407,7 @@ public class AdvancedMemoryBackendTest {
         DBObject expected = new BasicDBObjectBuilder().append("_id", 1)
                 .append("n", Arrays.asList(new BasicDBObject("_id", 2).append("u", 3))).append("c", 4).get();
         collection.update(query, update, false, true);
-        assertEquals(expected, collection.findOne());
+        assertThat(collection.findOne()).isEqualTo(expected);
     }
 
     @Test
@@ -416,7 +416,7 @@ public class AdvancedMemoryBackendTest {
         DBObject query = new BasicDBObject("_id", new BasicDBObject("n", 1));
         DBObject update = new BasicDBObject("$set", new BasicDBObject("a", 1));
         collection.update(query, update, false, false);
-        assertEquals(new BasicDBObject("_id", new BasicDBObject("n", 1)).append("a", 1), collection.findOne());
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", new BasicDBObject("n", 1)).append("a", 1));
     }
 
     @Test
@@ -425,9 +425,8 @@ public class AdvancedMemoryBackendTest {
         collection.update(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2))), new BasicDBObject(
                 "$set", new BasicDBObject("n", 1)), false, true);
         List<DBObject> results = collection.find().toArray();
-        assertEquals(
-                Arrays.asList(new BasicDBObject("_id", 1).append("n", 1), new BasicDBObject("_id", 2).append("n", 1)),
-                results);
+        assertThat(results).containsExactly(new BasicDBObject("_id", 1).append("n", 1),
+                new BasicDBObject("_id", 2).append("n", 1));
     }
 
     @Test
@@ -436,7 +435,7 @@ public class AdvancedMemoryBackendTest {
         collection.update(new BasicDBObject("_id", new BasicDBObject("$gt", 1)), new BasicDBObject("$set",
                 new BasicDBObject("n", 1)), false, true);
         List<DBObject> results = collection.find().toArray();
-        assertEquals(Arrays.asList(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2).append("n", 1)), results);
+        assertThat(results).containsExactly(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2).append("n", 1));
     }
 
     @Test
@@ -452,10 +451,10 @@ public class AdvancedMemoryBackendTest {
             collection.update(dbo, ((BasicDBObject) dbo.copy()).append("foo", "bar"), true, false);
         }
         List<DBObject> results = collection.find(query).toArray();
-        assertEquals(Arrays.<DBObject> asList(
+        assertThat(results).containsExactly(
                 new BasicDBObject("_id", new BasicDBObject("n", "a").append("t", 1)).append("foo", "bar"),
                 new BasicDBObject("_id", new BasicDBObject("n", "a").append("t", 2)).append("foo", "bar"),
-                new BasicDBObject("_id", new BasicDBObject("n", "a").append("t", 3)).append("foo", "bar")), results);
+                new BasicDBObject("_id", new BasicDBObject("n", "a").append("t", 3)).append("foo", "bar"));
     }
 
     @Test
@@ -470,7 +469,7 @@ public class AdvancedMemoryBackendTest {
         collection.update(query, update, true, false);
 
         DBObject expected = queryBuilder.push("n").append("!", 1).push("a").append("b:false", 1).pop().pop().get();
-        assertEquals(expected, collection.findOne());
+        assertThat(collection.findOne()).isEqualTo(expected);
     }
 
     @Test
@@ -590,7 +589,7 @@ public class AdvancedMemoryBackendTest {
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), true, false);
 
-        assertEquals(new BasicDBObject("_id", 1).append("a", 2), result);
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 1).append("a", 2));
     }
 
     @Test
@@ -598,8 +597,8 @@ public class AdvancedMemoryBackendTest {
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), true, true);
 
-        assertEquals(new BasicDBObject("_id", 1).append("a", 1), result);
-        assertEquals(new BasicDBObject("_id", 1).append("a", 1), collection.findOne());
+        assertThat(result).isEqualTo(new BasicDBObject("_id", 1).append("a", 1));
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("a", 1));
     }
 
     @Test
@@ -607,8 +606,8 @@ public class AdvancedMemoryBackendTest {
         DBObject result = collection.findAndModify(new BasicDBObject("_id", 1), null, null, false, new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), false, true);
 
-        assertEquals(new BasicDBObject(), result);
-        assertEquals(new BasicDBObject("_id", 1).append("a", 1), collection.findOne());
+        assertThat(result).isEqualTo(new BasicDBObject());
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("a", 1));
     }
 
     @Test
@@ -638,7 +637,7 @@ public class AdvancedMemoryBackendTest {
 
         collection.remove(new BasicDBObject("_id", 2));
 
-        assertEquals(null, collection.findOne(new BasicDBObject("_id", 2)));
+        assertThat(collection.findOne(new BasicDBObject("_id", 2))).isNull();
     }
 
     @Test
@@ -649,7 +648,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("n", 3).append("_id", 3));
         collection.insert(new BasicDBObject("n", 1).append("_id", 4));
         collection.insert(new BasicDBObject("n", 1).append("_id", 5));
-        assertEquals(Arrays.asList(1, 2, 3), collection.distinct("n"));
+        assertThat(collection.distinct("n")).containsExactly(1, 2, 3);
     }
 
     @Test
@@ -689,11 +688,11 @@ public class AdvancedMemoryBackendTest {
         collection.ensureIndex("n");
         collection.ensureIndex("b");
         List<DBObject> indexes = db.getCollection("system.indexes").find().toArray();
-        assertEquals(
-                Arrays.asList(new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1))
-                        .append("ns", "db.coll").append("name", "n_1"),
-                        new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll")
-                                .append("name", "b_1")), indexes);
+        assertThat(indexes).containsExactly(
+                new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll")
+                        .append("name", "n_1"),
+                new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll")
+                        .append("name", "b_1"));
     }
 
     @Test
@@ -703,15 +702,15 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject("_id", 2).append("a", new BasicDBObject("b", 2)));
         collection.insert(new BasicDBObject("_id", 3).append("a", new BasicDBObject("b", 3)));
         List<DBObject> results = collection.find().sort(new BasicDBObject("a.b", -1)).toArray();
-        assertEquals(Arrays.asList(new BasicDBObject("_id", 3).append("a", new BasicDBObject("b", 3)),
+        assertThat(results).containsExactly(new BasicDBObject("_id", 3).append("a", new BasicDBObject("b", 3)),
                 new BasicDBObject("_id", 2).append("a", new BasicDBObject("b", 2)),
-                new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1))), results);
+                new BasicDBObject("_id", 1).append("a", new BasicDBObject("b", 1)));
     }
 
     @Test
     public void testInsertReturnsModifiedDocumentCount() {
         WriteResult result = collection.insert(new BasicDBObject("_id", new BasicDBObject("n", 1)));
-        assertEquals(1, result.getN());
+        assertThat(result.getN()).isEqualTo(1);
     }
 
     @Test
@@ -720,7 +719,7 @@ public class AdvancedMemoryBackendTest {
         collection.insert(new BasicDBObject());
 
         WriteResult result = collection.remove(new BasicDBObject());
-        assertEquals(2, result.getN());
+        assertThat(result.getN()).isEqualTo(2);
     }
 
     @Test
