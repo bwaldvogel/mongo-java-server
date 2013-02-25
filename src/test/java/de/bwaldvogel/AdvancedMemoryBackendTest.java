@@ -160,6 +160,22 @@ public class AdvancedMemoryBackendTest {
     }
 
     @Test
+    public void testFindWithSkipLimitAfterDelete() {
+        collection.insert(new BasicDBObject("_id", 1));
+        collection.insert(new BasicDBObject("_id", 2));
+        collection.insert(new BasicDBObject("_id", 3));
+        collection.insert(new BasicDBObject("_id", 4));
+        collection.insert(new BasicDBObject("_id", 5));
+
+        collection.remove(new BasicDBObject("_id", 1));
+        collection.remove(new BasicDBObject("_id", 3));
+
+        @SuppressWarnings("resource")
+        DBCursor cursor = collection.find().limit(2).skip(2);
+        assertThat(cursor.toArray()).containsExactly(new BasicDBObject("_id", 5));
+    }
+
+    @Test
     public void testIdInQueryResultsInIndexOrder() {
         collection.insert(new BasicDBObject("_id", 4));
         collection.insert(new BasicDBObject("_id", 3));
