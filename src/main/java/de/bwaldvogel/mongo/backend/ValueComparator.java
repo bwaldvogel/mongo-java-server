@@ -46,6 +46,10 @@ public class ValueComparator implements Comparator<Object> {
 
         Class<?> clazz = value1.getClass();
 
+        if (ObjectId.class.isAssignableFrom(clazz)) {
+            return ((ObjectId) value1).compareTo((ObjectId) value2);
+        }
+
         if (Number.class.isAssignableFrom(clazz)) {
             return Double.compare(((Number) value1).doubleValue(), ((Number) value2).doubleValue());
         }

@@ -4,6 +4,7 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Date;
 
+import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,6 +21,16 @@ public class ValueComparatorTest {
     public void testCompareNulls() {
         assertThat(comparator.compare(null, null)).isZero();
     }
+
+    @Test
+    public void testCompareObjectIds() {
+        assertThat(comparator.compare(new ObjectId(1, 2, 3), new ObjectId(1, 2, 3))).isZero();
+        assertThat(comparator.compare(new ObjectId(1, 2, 3), new ObjectId(2, 2, 3))).isLessThan(0);
+        assertThat(comparator.compare(new ObjectId(1, 2, 3), new ObjectId(1, 2, 4))).isLessThan(0);
+        assertThat(comparator.compare(new ObjectId(3, 2, 3), new ObjectId(2, 2, 3))).isGreaterThan(0);
+        assertThat(comparator.compare(new ObjectId(1, 2, 5), new ObjectId(1, 2, 4))).isGreaterThan(0);
+    }
+
     @Test
     public void testCompareStringValues() {
         assertThat(comparator.compare("abc", "abc")).isEqualTo(0);
