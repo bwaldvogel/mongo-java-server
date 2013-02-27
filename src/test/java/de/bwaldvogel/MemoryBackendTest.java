@@ -137,9 +137,9 @@ public class MemoryBackendTest {
     public void testListDatabaseNames() throws Exception {
         assertThat(client.getDatabaseNames()).isEmpty();
         db.getCollection("testcollection").insert(new BasicDBObject());
-        assertThat(client.getDatabaseNames()).containsExactly("testdb");
+        assertThat(client.getDatabaseNames()).containsExactly(db.getName());
         client.getDB("bar").getCollection("testcollection").insert(new BasicDBObject());
-        assertThat(client.getDatabaseNames()).containsExactly("bar", "testdb");
+        assertThat(client.getDatabaseNames()).containsExactly("bar", db.getName());
     }
 
     @Test
@@ -396,8 +396,8 @@ public class MemoryBackendTest {
     @Test
     public void testDropDatabase() throws Exception {
         db.getCollection("foo").insert(new BasicDBObject());
-        assertThat(client.getDatabaseNames()).containsExactly("testdb");
-        client.dropDatabase("testdb");
+        assertThat(client.getDatabaseNames()).containsExactly(db.getName());
+        client.dropDatabase(db.getName());
         assertThat(client.getDatabaseNames()).isEmpty();
     }
 
