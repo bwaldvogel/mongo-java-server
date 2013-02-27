@@ -699,7 +699,6 @@ public class MemoryBackendTest {
     @Test
     public void testInsertRemove() throws Exception {
 
-
         for (int i = 0; i < 10; i++) {
             collection.insert(new BasicDBObject("_id", 1));
             assertThat(collection.count()).isEqualTo(1);
@@ -746,7 +745,6 @@ public class MemoryBackendTest {
     @Test
     public void testQueryAll() throws Exception {
 
-
         List<Object> inserted = new ArrayList<Object>();
         for (int i = 0; i < 10; i++) {
             BasicDBObject obj = new BasicDBObject("_id", i);
@@ -760,7 +758,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryCount() throws Exception {
-
 
         for (int i = 0; i < 100; i++) {
             collection.insert(new BasicDBObject());
@@ -830,6 +827,19 @@ public class MemoryBackendTest {
             assertThat(value).isLessThanOrEqualTo(before);
             before = value;
         }
+    }
+
+    @Test
+    public void testQueryWithFieldSelector() throws Exception {
+        collection.insert(new BasicDBObject("foo", "bar"));
+        DBObject obj = collection.findOne(new BasicDBObject(), new BasicDBObject("_id", 1));
+        assertThat(obj.keySet()).containsOnly("_id");
+
+        obj = collection.findOne(new BasicDBObject("foo", "bar"), new BasicDBObject("_id", 1));
+        assertThat(obj.keySet()).containsOnly("_id");
+
+        obj = collection.findOne(new BasicDBObject("foo", "bar"), new BasicDBObject("_id", 1).append("foo", 1));
+        assertThat(obj.keySet()).containsOnly("_id", "foo");
     }
 
     @Test
@@ -931,7 +941,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpdate() throws Exception {
-
 
         BasicDBObject object = new BasicDBObject("_id", 1);
 

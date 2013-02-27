@@ -80,7 +80,7 @@ public class MemoryDatabase extends CommonDatabase {
     @Override
     public Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException {
         MemoryCollection collection = resolveCollection(query);
-        return collection.handleQuery(query.getQuery(), query.getNumberToSkip(), query.getNumberToReturn());
+        return collection.handleQuery(query.getQuery(), query.getNumberToSkip(), query.getNumberToReturn(), query.getReturnFieldSelector());
     }
 
     @Override

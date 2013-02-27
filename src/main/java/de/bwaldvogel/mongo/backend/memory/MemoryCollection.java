@@ -374,6 +374,11 @@ public class MemoryCollection extends MongoCollection {
     }
 
     public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn) {
+        return handleQuery(queryObject, numberToSkip, numberToReturn, null);
+    }
+
+    public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn,
+            BSONObject fieldSelector) {
 
         BSONObject query;
         BSONObject orderBy = null;
@@ -416,6 +421,12 @@ public class MemoryCollection extends MongoCollection {
 
         if (numberToReturn > 0 && objs.size() > numberToReturn)
             objs = objs.subList(0, numberToReturn);
+
+        if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
+            for (int i = 0; i < objs.size(); i++) {
+                objs.set(i, projectDocument(objs.get(i), fieldSelector));
+            }
+        }
 
         return objs;
     }
