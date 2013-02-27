@@ -228,7 +228,7 @@ public class MemoryDatabase extends CommonDatabase {
         if (lastExceptions != null) {
             MongoServerError ex = lastExceptions.remove(channel);
             if (ex != null) {
-                BSONObject  obj = new BasicBSONObject("err", ex.getMessage());
+                BSONObject obj = new BasicBSONObject("err", ex.getMessage());
                 obj.put("code", Integer.valueOf(ex.getErrorCode()));
                 obj.put("connectionId", channel.getId());
                 obj.put("ok", Integer.valueOf(1));
