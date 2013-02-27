@@ -18,12 +18,12 @@ public class ReadOnlyProxy implements MongoBackend {
 
     private static final Set<String> allowedCommands = new HashSet<String>();
     static {
-        allowedCommands.add("isMaster");
-        allowedCommands.add("listDatabases");
+        allowedCommands.add("ismaster");
+        allowedCommands.add("listdatabases");
         allowedCommands.add("count");
         allowedCommands.add("dbstats");
         allowedCommands.add("collstats");
-        allowedCommands.add("serverStatus");
+        allowedCommands.add("serverstatus");
     }
 
     private MongoBackend backend;
@@ -49,7 +49,7 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public BSONObject handleCommand(Channel channel, String database, String command, BSONObject query)
             throws MongoServerException {
-        if (allowedCommands.contains(command)) {
+        if (allowedCommands.contains(command.toLowerCase())) {
             return backend.handleCommand(channel, database, command, query);
         }
         throw new NoSuchCommandException(command);

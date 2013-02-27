@@ -29,13 +29,13 @@ public class MemoryBackend implements MongoBackend {
 
         String command = query.keySet().iterator().next();
 
-        if (command.equals("ismaster") || command.equals("isMaster")) {
+        if (command.equalsIgnoreCase("ismaster")) {
             BSONObject reply = new BasicBSONObject("ismaster", Boolean.TRUE);
             reply.put("maxBsonObjectSize", Integer.valueOf(MongoWireProtocolHandler.MAX_BSON_OBJECT_SIZE));
             reply.put("localTime", new Date());
             reply.put("ok", Integer.valueOf("1"));
             return reply;
-        } else if (command.equals("listDatabases")) {
+        } else if (command.equalsIgnoreCase("listdatabases")) {
             BSONObject response = new BasicBSONObject();
             List<BSONObject> dbs = new ArrayList<BSONObject>();
             for (MongoDatabase db : databases.values()) {
