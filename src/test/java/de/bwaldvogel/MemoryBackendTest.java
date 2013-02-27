@@ -208,14 +208,15 @@ public class MemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testDistinctQuery() {
-        collection.insert(new BasicDBObject("n", 1).append("_id", 1));
-        collection.insert(new BasicDBObject("n", 2).append("_id", 2));
-        collection.insert(new BasicDBObject("n", 3).append("_id", 3));
-        collection.insert(new BasicDBObject("n", 1).append("_id", 4));
-        collection.insert(new BasicDBObject("n", 1).append("_id", 5));
+        collection.insert(new BasicDBObject("n", 3));
+        collection.insert(new BasicDBObject("n", 1));
+        collection.insert(new BasicDBObject("n", 2));
+        collection.insert(new BasicDBObject("n", 1));
+        collection.insert(new BasicDBObject("n", 1));
         assertThat(collection.distinct("n")).containsExactly(1, 2, 3);
+        assertThat(collection.distinct("foobar")).isEmpty();
+        assertThat(collection.distinct("_id")).hasSize((int) collection.count());
     }
 
     @Test

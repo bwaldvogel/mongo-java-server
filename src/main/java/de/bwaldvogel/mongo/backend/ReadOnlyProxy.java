@@ -22,6 +22,7 @@ public class ReadOnlyProxy implements MongoBackend {
         allowedCommands.add("listdatabases");
         allowedCommands.add("count");
         allowedCommands.add("dbstats");
+        allowedCommands.add("distinct");
         allowedCommands.add("collstats");
         allowedCommands.add("serverstatus");
     }

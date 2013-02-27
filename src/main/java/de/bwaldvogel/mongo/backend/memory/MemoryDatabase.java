@@ -134,6 +134,10 @@ public class MemoryDatabase extends CommonDatabase {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
+        } else if (command.equalsIgnoreCase("distinct")) {
+            String collectionName = query.get(command).toString();
+            MemoryCollection collection = resolveCollection(collectionName);
+            return collection.handleDistinct(query);
         } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query);
         } else if (command.equalsIgnoreCase("dropDatabase")) {

@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.BSONObject;
@@ -20,6 +21,7 @@ import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.backend.QueryMatcher;
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
@@ -416,6 +418,22 @@ public class MemoryCollection extends MongoCollection {
             objs = objs.subList(0, numberToReturn);
 
         return objs;
+    }
+
+    public synchronized BSONObject handleDistinct(BSONObject query) {
+        String key = query.get("key").toString();
+        BSONObject q = (BSONObject) query.get("query");
+        TreeSet<Object> values = new TreeSet<Object>(new ValueComparator());
+
+        for (Integer pos : queryDocuments(q)) {
+            BSONObject document = documents.get(pos.intValue());
+            if (document.containsField(key))
+                values.add(document.get(key));
+        }
+
+        BSONObject response = new BasicBSONObject("values", new ArrayList<Object>(values));
+        response.put("ok", 1);
+        return response;
     }
 
     public synchronized int handleInsert(MongoInsert insert) throws MongoServerError {

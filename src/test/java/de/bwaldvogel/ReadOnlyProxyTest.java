@@ -104,6 +104,16 @@ public class ReadOnlyProxyTest {
     }
 
     @Test
+    public void testDistinctQuery() {
+        DBCollection collection = writeClient.getDB("testdb").getCollection("testcollection");
+        collection.insert(new BasicDBObject("n", 1));
+        collection.insert(new BasicDBObject("n", 2));
+        collection.insert(new BasicDBObject("n", 1));
+        collection = readOnlyClient.getDB("testdb").getCollection("testcollection");
+        assertThat(collection.distinct("n")).containsExactly(1, 2);
+    }
+
+    @Test
     public void testInsert() throws Exception {
         DBCollection collection = readOnlyClient.getDB("testdb").getCollection("testcollection");
         assertThat(collection.count()).isEqualTo(0);
