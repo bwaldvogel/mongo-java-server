@@ -68,10 +68,13 @@ public class SimpleTest {
 ### Similar Projects ###
 
 * [jmockmongo][jmockmongo]
-	* shares the basic idea but focuses on unit testing
+	* shares the basic idea of implementing the wire protocol with Netty
+	* focus on in-memory backend for unit testing
 
 * [jongo][jongo]
-	* similar to jmockmongo – focus on unit testing
+	* focus on unit testing
+	* no wire protocol implementation
+	* intercepts the java mongo driver
 	* currently used in [nosql-unit][nosql-unit]
 
 [mongodb]: http://www.mongodb.org/
