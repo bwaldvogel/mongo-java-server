@@ -143,6 +143,33 @@ public class MemoryCollection extends MongoCollection {
                 }
                 document.put(key, list);
             }
+        } else if (modifier.equals("$pull") || modifier.equals("$pullAll")) {
+            // http://docs.mongodb.org/manual/reference/operator/pull/
+            for (String key : change.keySet()) {
+                Object value = document.get(key);
+                List<Object> list;
+                if (value == null) {
+                    return;
+                } else if (value instanceof List<?>) {
+                    list = Utils.asList(value);
+                } else {
+                    throw new MongoServerError(10142, "Cannot apply $pull/$pullAll modifier to non-array");
+                }
+
+                Object pushValue = change.get(key);
+                if (modifier.equals("$pullAll")) {
+                    if (!(pushValue instanceof Collection<?>)) {
+                        throw new MongoServerError(10153, "Modifier $pushAll/pullAll allowed for arrays only");
+                    }
+                    @SuppressWarnings("unchecked")
+                    Collection<Object> valueList = (Collection<Object>) pushValue;
+                    do {
+                    } while (list.removeAll(valueList));
+                } else {
+                    do {
+                    } while (list.remove(pushValue));
+                }
+            }
         } else if (modifier.equals("$inc")) {
             // http://docs.mongodb.org/manual/reference/operator/inc/
             for (String key : change.keySet()) {

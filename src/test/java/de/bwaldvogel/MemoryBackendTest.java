@@ -1017,6 +1017,79 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdatePull() throws Exception {
+        BasicDBObject obj = new BasicDBObject("_id", 1);
+        collection.insert(obj);
+
+        // pull from non-existing field
+        assertThat(collection.findOne(obj)).isEqualTo(obj);
+
+        // pull from non-array
+        collection.update(obj, new BasicDBObject("$set", new BasicDBObject("field", "value")));
+        try {
+            collection.update(obj, new BasicDBObject("$pull", new BasicDBObject("field", "value")));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10142);
+            assertThat(e.getMessage()).isEqualTo("Cannot apply $pull/$pullAll modifier to non-array");
+        }
+
+        // pull standard
+        collection.update(obj,
+                new BasicDBObject("$set", new BasicDBObject("field", Arrays.asList("value1", "value2", "value1"))));
+
+        collection.update(obj, new BasicDBObject("$pull", new BasicDBObject("field", "value1")));
+
+        assertThat(collection.findOne(obj).get("field")).isEqualTo(Arrays.asList("value2"));
+
+        // pull with multiple fields
+
+        collection.update(obj,
+                new BasicDBObject("$set", new BasicDBObject("field1", Arrays.asList("value1", "value2", "value1"))));
+        collection.update(obj,
+                new BasicDBObject("$set", new BasicDBObject("field2", Arrays.asList("value3", "value3", "value1"))));
+
+        collection.update(obj,
+                new BasicDBObject("$pull", new BasicDBObject("field1", "value2").append("field2", "value3")));
+
+        assertThat(collection.findOne(obj).get("field1")).isEqualTo(Arrays.asList("value1", "value1"));
+        assertThat(collection.findOne(obj).get("field2")).isEqualTo(Arrays.asList("value1"));
+    }
+
+    @Test
+    public void testUpdatePullAll() throws Exception {
+        DBObject obj = new BasicDBObject("_id", 1);
+        collection.insert(obj);
+        collection.update(obj, new BasicDBObject("$set", new BasicDBObject("field", "value")));
+        try {
+            collection.update(obj, new BasicDBObject("$pullAll", new BasicDBObject("field", "value")));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10142);
+            assertThat(e.getMessage()).isEqualTo("Cannot apply $pull/$pullAll modifier to non-array");
+        }
+
+        collection.update(
+                obj,
+                new BasicDBObject("$set", new BasicDBObject("field1", Arrays.asList("value1", "value2", "value1",
+                        "value3", "value4", "value3"))));
+
+        collection.update(obj,
+                new BasicDBObject("$pullAll", new BasicDBObject("field1", Arrays.asList("value1", "value3"))));
+
+        assertThat(collection.findOne(obj).get("field1")).isEqualTo(Arrays.asList("value2", "value4"));
+
+        try {
+            collection.update(obj, new BasicDBObject("$pullAll", new BasicDBObject("field1", "bar")));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10153);
+            assertThat(e.getMessage()).isEqualTo("Modifier $pushAll/pullAll allowed for arrays only");
+        }
+
+    }
+
+    @Test
     public void testUpdateSet() throws Exception {
         BasicDBObject object = new BasicDBObject("_id", 1);
 
