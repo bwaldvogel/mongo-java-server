@@ -173,6 +173,7 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, new BasicBSONObject("c", 1))).isFalse();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 1))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 2))).isFalse();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.a.x", 2))).isFalse();
 
         document.put("a", new BasicBSONObject("b", new BasicBSONObject("c", new BasicBSONObject("d", 1))));
         assertThat(matcher.matches(document, new BasicBSONObject("a.b.c.d", 1))).isTrue();
@@ -190,6 +191,26 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 2))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 3))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 4))).isFalse();
+    }
+
+    @Test
+    public void testMatchesSubqueryListPosition() {
+        BSONObject document = new BasicDBObject();
+        document.put("c", new BasicDBObject("a", Arrays.asList(1, 2, 3)));
+        assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("c", 1))).isFalse();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.a.0", 1))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.a.0", 2))).isFalse();
+
+        document.put("c", Arrays.asList(new BasicDBObject("a", 12), new BasicDBObject("a", 13)));
+        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 12))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 13))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 14))).isFalse();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.0.a", 12))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.0.a", 13))).isFalse();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.1.a", 12))).isFalse();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.1.a", 13))).isTrue();
+        assertThat(matcher.matches(document, new BasicBSONObject("c.2.a", 13))).isFalse();
     }
 
 }

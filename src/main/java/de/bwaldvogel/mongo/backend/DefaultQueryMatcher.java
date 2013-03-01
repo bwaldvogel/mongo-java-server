@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,22 +22,51 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return true;
     }
 
+    private Object getListSafe(Object document, String key) {
+        if (document == null) {
+            return null;
+        }
+
+        if (document instanceof BSONObject) {
+            return ((BSONObject) document).get(key);
+        }
+
+        if (document instanceof List<?>) {
+            if (key.matches("\\d+")) {
+                int pos = Integer.parseInt(key);
+                List<?> list = (List<?>) document;
+                if (pos >= 0 && pos < list.size()) {
+                    return list.get(pos);
+                }
+            }
+        }
+        return null;
+    }
+
     private boolean checkMatch(Object queryValue, String key, Object document) {
+
+        if (document == null)
+            return false;
 
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
-            if (document == null || !(document instanceof BSONObject)) {
-                return false;
-            }
-
-            Object subObject = ((BSONObject) document).get(mainKey);
+            Object subObject = getListSafe(document, mainKey);
             return checkMatch(queryValue, subKey, subObject);
         }
 
-        if (document instanceof Collection<?>) {
+        if (document instanceof List<?>) {
+
+            if (key.matches("\\d+")) {
+                return checkMatchesValue(queryValue, getListSafe(document, key));
+            }
+
             return checkMatchesAnyDocument(queryValue, key, document);
+        }
+
+        if (!(document instanceof BSONObject)) {
+            return false;
         }
 
         Object value = ((BSONObject) document).get(key);
