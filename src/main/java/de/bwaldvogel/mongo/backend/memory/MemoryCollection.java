@@ -364,12 +364,17 @@ public class MemoryCollection extends MongoCollection {
             return null;
         BSONObject newDocument = new BasicBSONObject();
         for (String key : fields.keySet()) {
-            if (Utils.normalizeValue(fields.get(key)).equals(Double.valueOf(1.0))) {
-                if (document.containsField(key)) {
-                    newDocument.put(key, document.get(key));
-                }
+            if (Utils.isFieldTrue(fields, key)) {
+                newDocument.put(key, document.get(key));
             }
         }
+
+        // implicitly add _id if not mentioned
+        // http://docs.mongodb.org/manual/core/read-operations/#result-projections
+        if (!fields.containsField(idField)) {
+            newDocument.put(idField, document.get(idField));
+        }
+
         return newDocument;
     }
 

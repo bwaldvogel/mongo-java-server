@@ -832,14 +832,14 @@ public class MemoryBackendTest {
     @Test
     public void testQueryWithFieldSelector() throws Exception {
         collection.insert(new BasicDBObject("foo", "bar"));
-        DBObject obj = collection.findOne(new BasicDBObject(), new BasicDBObject("_id", 1));
-        assertThat(obj.keySet()).containsOnly("_id");
+        DBObject obj = collection.findOne(new BasicDBObject(), new BasicDBObject("foo", 1));
+        assertThat(obj.keySet()).containsOnly("_id", "foo");
 
         obj = collection.findOne(new BasicDBObject("foo", "bar"), new BasicDBObject("_id", 1));
         assertThat(obj.keySet()).containsOnly("_id");
 
-        obj = collection.findOne(new BasicDBObject("foo", "bar"), new BasicDBObject("_id", 1).append("foo", 1));
-        assertThat(obj.keySet()).containsOnly("_id", "foo");
+        obj = collection.findOne(new BasicDBObject("foo", "bar"), new BasicDBObject("_id", 0).append("foo", 1));
+        assertThat(obj.keySet()).containsOnly("foo");
     }
 
     @Test
