@@ -620,7 +620,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsert() throws Exception {
-
         assertThat(collection.count()).isEqualTo(0);
 
         for (int i = 0; i < 3; i++) {
@@ -638,7 +637,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsertDuplicate() throws Exception {
-
         assertThat(collection.count()).isEqualTo(0);
 
         collection.insert(new BasicDBObject("_id", 1));
@@ -682,7 +680,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsertQuery() throws Exception {
-
         assertThat(collection.count()).isEqualTo(0);
 
         BasicDBObject insertedObject = new BasicDBObject("_id", 1);
@@ -698,7 +695,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testInsertRemove() throws Exception {
-
         for (int i = 0; i < 10; i++) {
             collection.insert(new BasicDBObject("_id", 1));
             assertThat(collection.count()).isEqualTo(1);
@@ -736,7 +732,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testQuery() throws Exception {
-
         DBObject obj = collection.findOne(new BasicDBObject("_id", 1));
         assertThat(obj).isNull();
         assertThat(collection.count()).isEqualTo(0);
@@ -744,7 +739,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryAll() throws Exception {
-
         List<Object> inserted = new ArrayList<Object>();
         for (int i = 0; i < 10; i++) {
             BasicDBObject obj = new BasicDBObject("_id", i);
@@ -758,7 +752,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryCount() throws Exception {
-
         for (int i = 0; i < 100; i++) {
             collection.insert(new BasicDBObject());
         }
@@ -772,7 +765,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryLimit() throws Exception {
-
         for (int i = 0; i < 5; i++) {
             collection.insert(new BasicDBObject());
         }
@@ -782,7 +774,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryNull() throws Exception {
-
         BasicDBObject object = new BasicDBObject("_id", 1);
         collection.insert(object);
         assertThat(collection.findOne(new BasicDBObject("foo", null))).isEqualTo(object);
@@ -791,7 +782,6 @@ public class MemoryBackendTest {
     @Test
     @SuppressWarnings("resource")
     public void testQuerySkipLimit() throws Exception {
-
         for (int i = 0; i < 10; i++) {
             collection.insert(new BasicDBObject());
         }
@@ -805,7 +795,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testQuerySort() throws Exception {
-
         Random random = new Random(4711);
         for (int i = 0; i < 10; i++) {
             collection.insert(new BasicDBObject("_id", Double.valueOf(random.nextDouble())));
@@ -941,7 +930,6 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpdate() throws Exception {
-
         BasicDBObject object = new BasicDBObject("_id", 1);
 
         BasicDBObject newObject = new BasicDBObject("_id", 1);
