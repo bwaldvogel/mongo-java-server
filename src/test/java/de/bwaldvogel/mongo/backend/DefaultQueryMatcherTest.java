@@ -36,7 +36,9 @@ public class DefaultQueryMatcherTest {
     public void testMatchesPattern() {
         BSONObject document = new BasicDBObject("name", "john");
         assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("jo.*")))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("Jo.*", Pattern.CASE_INSENSITIVE)))).isTrue();
+        assertThat(
+                matcher.matches(document,
+                        new BasicBSONObject("name", Pattern.compile("Jo.*", Pattern.CASE_INSENSITIVE)))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("marta")))).isFalse();
         assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("John")))).isFalse();
     }
@@ -71,7 +73,6 @@ public class DefaultQueryMatcherTest {
                 new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3.0, 2.0, 1.00001))))) //
                 .isFalse();
     }
-
 
     @Test
     public void testMatchesGreaterThanQuery() {
