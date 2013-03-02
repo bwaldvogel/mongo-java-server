@@ -188,7 +188,7 @@ public class MemoryCollection extends MongoCollection {
                 document.put(key, Utils.addNumbers(number, (Number) change.get(key)));
             }
         } else {
-            throw new IllegalArgumentException("modifier " + modifier + " not yet supported");
+            throw new MongoServerError(10147, "Invalid modifier specified " + modifier);
         }
 
     }

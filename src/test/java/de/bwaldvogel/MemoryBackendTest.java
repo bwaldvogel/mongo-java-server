@@ -66,6 +66,18 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUnsupportedModifier() throws Exception {
+        collection.insert(new BasicDBObject());
+        try {
+            collection.update(new BasicDBObject(), new BasicDBObject("$foo", new BasicDBObject()));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10147);
+            assertThat(e.getMessage()).isEqualTo("Invalid modifier specified $foo");
+        }
+    }
+
+    @Test
     @Ignore("not yet implemented (illegal query key)")
     public void testAnotherUpsert() {
         BasicDBObjectBuilder queryBuilder = BasicDBObjectBuilder.start().push("_id").append("f", "ca").push("1")
