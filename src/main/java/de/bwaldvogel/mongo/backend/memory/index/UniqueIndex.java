@@ -117,13 +117,15 @@ public class UniqueIndex extends Index {
 
         if (keyValue instanceof BSONObject) {
             BSONObject keyObj = (BSONObject) keyValue;
-            if (keyObj.keySet().size() != 1) {
-                throw new UnsupportedOperationException("illegal query key: " + keyValue);
-            }
+            if (Utils.containsQueryExpression(keyObj)) {
+                if (keyObj.keySet().size() != 1) {
+                    throw new UnsupportedOperationException("illegal query key: " + keyValue);
+                }
 
-            String expression = keyObj.keySet().iterator().next();
-            if (expression.startsWith("$")) {
-                return getPositionsForExpression(keyObj, expression);
+                String expression = keyObj.keySet().iterator().next();
+                if (expression.startsWith("$")) {
+                    return getPositionsForExpression(keyObj, expression);
+                }
             }
         } else if (keyValue instanceof Pattern) {
             List<Integer> positions = new ArrayList<Integer>();
