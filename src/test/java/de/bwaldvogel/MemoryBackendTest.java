@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
 import org.bson.types.ObjectId;
 import org.junit.After;
 import org.junit.Before;
@@ -78,14 +79,16 @@ public class MemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented (illegal query key)")
     public void testAnotherUpsert() {
         BasicDBObjectBuilder queryBuilder = BasicDBObjectBuilder.start().push("_id").append("f", "ca").push("1")
                 .append("l", 2).pop().push("t").append("t", 11).pop().pop();
         DBObject query = queryBuilder.get();
 
+        // { _id: { f: ca, 1: { l: 2 }, t: { t: 11 } } }
         DBObject update = BasicDBObjectBuilder.start().push("$inc").append("n.!", 1).append("n.a.b:false", 1).pop()
                 .get();
+
+        // { "$inc" : { "n.!" : 1 , "n.a.b:false" : 1}}
         collection.update(query, update, true, false);
 
         DBObject expected = queryBuilder.push("n").append("!", 1).push("a").append("b:false", 1).pop().pop().get();
@@ -953,6 +956,16 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateSubdocument() throws Exception {
+        try {
+            collection.update(new BasicDBObject(), new BasicDBObject("a.b.c", 123));
+            fail("IllegalArgumentException expected");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage()).contains("Bad Key");
+        }
+    }
+
+    @Test
     public void testUpdateIdNoChange() {
         collection.insert(new BasicDBObject("_id", 1));
         collection.update(new BasicDBObject("_id", 1), new BasicDBObject("_id", 1).append("a", 5));
@@ -979,8 +992,9 @@ public class MemoryBackendTest {
     public void testUpdatePush() throws Exception {
         BasicDBObject idObj = new BasicDBObject("_id", 1);
         collection.insert(idObj);
-        collection.update(idObj, new BasicDBObject("$push", new BasicDBObject("field", "value")));
-        DBObject expected = new BasicDBObject("_id", 1).append("field", Arrays.asList("value"));
+        collection.update(idObj, new BasicDBObject("$push", new BasicDBObject("field.subfield.subsubfield", "value")));
+        DBObject expected = new BasicDBObject("_id", 1).append("field", new BasicDBObject("subfield",
+                new BasicDBObject("subsubfield", Arrays.asList("value"))));
         assertThat(collection.findOne(idObj)).isEqualTo(expected);
 
         // push to non-array
@@ -1117,6 +1131,14 @@ public class MemoryBackendTest {
         collection.update(object, new BasicDBObject("$set", new BasicDBObject("bar", "bla")));
         expected.put("bar", "bla");
         assertThat(collection.findOne(object)).isEqualTo(expected);
+
+        collection.update(object, new BasicDBObject("$set", new BasicDBObject("foo.bar", "bla")));
+        expected.put("foo", new BasicDBObject("bar", "bla"));
+        assertThat(collection.findOne(object)).isEqualTo(expected);
+
+        collection.update(object, new BasicDBObject("$set", new BasicDBObject("foo.foo", "123")));
+        ((BasicBSONObject) expected.get("foo")).put("foo", "123");
+        assertThat(collection.findOne(object)).isEqualTo(expected);
     }
 
     @Test
@@ -1130,8 +1152,20 @@ public class MemoryBackendTest {
             assertThat(e.getCode()).isEqualTo(10148);
             assertThat(e.getMessage()).isEqualTo("Mod on _id not allowed");
         }
+
         collection.update(obj, new BasicDBObject("$unset", new BasicDBObject("a", "").append("b", "")));
         DBObject expected = new BasicDBObject("_id", 1).append("c", "value");
+        assertThat(collection.findOne()).isEqualTo(expected);
+
+        collection.update(obj, new BasicDBObject("$unset", new BasicDBObject("c.y", 1)));
+        expected = new BasicDBObject("_id", 1).append("c", "value");
+        assertThat(collection.findOne()).isEqualTo(expected);
+
+        collection.update(new BasicDBObject("_id", 1),
+                new BasicDBObject("a", new BasicDBObject("b", "foo").append("c", "bar")));
+
+        collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$unset", new BasicDBObject("a.b", 1)));
+        expected = new BasicDBObject("_id", 1).append("a", new BasicDBObject("c", "bar"));
         assertThat(collection.findOne()).isEqualTo(expected);
     }
 

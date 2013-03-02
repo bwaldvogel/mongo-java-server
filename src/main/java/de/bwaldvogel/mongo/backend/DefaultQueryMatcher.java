@@ -22,27 +22,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return true;
     }
 
-    private Object getListSafe(Object document, String key) {
-        if (document == null) {
-            return null;
-        }
-
-        if (document instanceof BSONObject) {
-            return ((BSONObject) document).get(key);
-        }
-
-        if (document instanceof List<?>) {
-            if (key.matches("\\d+")) {
-                int pos = Integer.parseInt(key);
-                List<?> list = (List<?>) document;
-                if (pos >= 0 && pos < list.size()) {
-                    return list.get(pos);
-                }
-            }
-        }
-        return null;
-    }
-
     private boolean checkMatch(Object queryValue, String key, Object document) {
 
         if (document == null)
@@ -52,14 +31,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
-            Object subObject = getListSafe(document, mainKey);
+            Object subObject = Utils.getListSafe(document, mainKey);
             return checkMatch(queryValue, subKey, subObject);
         }
 
         if (document instanceof List<?>) {
 
             if (key.matches("\\d+")) {
-                return checkMatchesValue(queryValue, getListSafe(document, key));
+                return checkMatchesValue(queryValue, Utils.getListSafe(document, key));
             }
 
             return checkMatchesAnyDocument(queryValue, key, document);

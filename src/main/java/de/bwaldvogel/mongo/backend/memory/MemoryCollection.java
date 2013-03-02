@@ -97,11 +97,59 @@ public class MemoryCollection extends MongoCollection {
         return matchDocuments(query);
     }
 
+    private Object getSubdocumentValue(BSONObject document, String key) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = key.substring(dotPos + 1);
+            Object subObject = Utils.getListSafe(document, mainKey);
+            if (subObject instanceof BSONObject) {
+                return getSubdocumentValue((BSONObject) subObject, subKey);
+            } else {
+                return null;
+            }
+        } else {
+            return Utils.getListSafe(document, key);
+        }
+    }
+
+    private void changeSubdocumentValue(BSONObject document, String key, Object newValue) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = key.substring(dotPos + 1);
+            Object subObject = Utils.getListSafe(document, mainKey);
+            if (subObject instanceof BSONObject) {
+                changeSubdocumentValue((BSONObject) subObject, subKey, newValue);
+            } else {
+                BSONObject obj = new BasicBSONObject();
+                changeSubdocumentValue(obj, subKey, newValue);
+                document.put(mainKey, obj);
+            }
+        } else {
+            document.put(key, newValue);
+        }
+    }
+
+    private void removeSubdocumentValue(BSONObject document, String key) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = key.substring(dotPos + 1);
+            Object subObject = Utils.getListSafe(document, mainKey);
+            if (subObject instanceof BSONObject) {
+                removeSubdocumentValue((BSONObject) subObject, subKey);
+            }
+        } else {
+            document.removeField(key);
+        }
+    }
+
     private void modifyField(BSONObject document, String modifier, BSONObject change) throws MongoServerError {
         if (modifier.equals("$set")) {
             for (String key : change.keySet()) {
                 Object newValue = change.get(key);
-                Object oldValue = document.get(key);
+                Object oldValue = getSubdocumentValue(document, key);
 
                 if (Utils.nullAwareEquals(newValue, oldValue)) {
                     // no change
@@ -110,17 +158,17 @@ public class MemoryCollection extends MongoCollection {
 
                 assertNotKeyField(key);
 
-                document.put(key, newValue);
+                changeSubdocumentValue(document, key, newValue);
             }
         } else if (modifier.equals("$unset")) {
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
-                document.removeField(key);
+                removeSubdocumentValue(document, key);
             }
         } else if (modifier.equals("$push") || modifier.equals("$pushAll")) {
             // http://docs.mongodb.org/manual/reference/operator/push/
             for (String key : change.keySet()) {
-                Object value = document.get(key);
+                Object value = getSubdocumentValue(document, key);
                 List<Object> list;
                 if (value == null) {
                     list = new ArrayList<Object>();
@@ -141,12 +189,12 @@ public class MemoryCollection extends MongoCollection {
                 } else {
                     list.add(pushValue);
                 }
-                document.put(key, list);
+                changeSubdocumentValue(document, key, list);
             }
         } else if (modifier.equals("$pull") || modifier.equals("$pullAll")) {
             // http://docs.mongodb.org/manual/reference/operator/pull/
             for (String key : change.keySet()) {
-                Object value = document.get(key);
+                Object value = getSubdocumentValue(document, key);
                 List<Object> list;
                 if (value == null) {
                     return;
@@ -169,13 +217,14 @@ public class MemoryCollection extends MongoCollection {
                     do {
                     } while (list.remove(pushValue));
                 }
+                // no need to put something back
             }
         } else if (modifier.equals("$inc")) {
             // http://docs.mongodb.org/manual/reference/operator/inc/
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
 
-                Object value = document.get(key);
+                Object value = getSubdocumentValue(document, key);
                 Number number;
                 if (value == null) {
                     number = Integer.valueOf(0);
@@ -185,7 +234,7 @@ public class MemoryCollection extends MongoCollection {
                     throw new UnsupportedOperationException();
                 }
 
-                document.put(key, Utils.addNumbers(number, (Number) change.get(key)));
+                changeSubdocumentValue(document, key, Utils.addNumbers(number, (Number) change.get(key)));
             }
         } else {
             throw new MongoServerError(10147, "Invalid modifier specified " + modifier);
@@ -497,7 +546,7 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
-    public synchronized int handleUpdate(MongoUpdate update) throws MongoServerError {
+    public synchronized int handleUpdate(MongoUpdate update) throws MongoServerException {
         BSONObject updateQuery = update.getUpdate();
         int n = 0;
         BSONObject selector = update.getSelector();
@@ -519,8 +568,7 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
-    private BSONObject updateDocument(BSONObject document, BSONObject updateQuery) throws MongoServerError,
-            KeyConstraintError {
+    private BSONObject updateDocument(BSONObject document, BSONObject updateQuery) throws MongoServerException {
         synchronized (document) {
             // copy document
             BSONObject oldDocument = new BasicBSONObject();
@@ -549,6 +597,10 @@ public class MemoryCollection extends MongoCollection {
 
                 // update the fields
                 for (String key : newDocument.keySet()) {
+                    if (key.contains(".")) {
+                        throw new MongoServerException(
+                                "illegal field name. must not happen as it must be catched by the driver");
+                    }
                     document.put(key, newDocument.get(key));
                 }
             }
@@ -578,18 +630,8 @@ public class MemoryCollection extends MongoCollection {
                 continue;
 
             Object value = selector.get(key);
-
-            String[] keys = key.split("\\.");
-            for (int i = keys.length - 1; i > 0; i--) {
-                value = new BasicBSONObject(keys[i], value);
-            }
-
-            if (keys.length > 1) {
-                key = keys[0];
-            }
-
             if (!Utils.containsQueryExpression(value)) {
-                document.put(key, value);
+                changeSubdocumentValue(document, key, value);
             }
         }
         return document;

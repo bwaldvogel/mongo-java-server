@@ -85,4 +85,25 @@ public class Utils {
         return false;
     }
 
+    public static Object getListSafe(Object document, String key) {
+        if (document == null) {
+            return null;
+        }
+
+        if (document instanceof BSONObject) {
+            return ((BSONObject) document).get(key);
+        }
+
+        if (document instanceof List<?>) {
+            if (key.matches("\\d+")) {
+                int pos = Integer.parseInt(key);
+                List<?> list = (List<?>) document;
+                if (pos >= 0 && pos < list.size()) {
+                    return list.get(pos);
+                }
+            }
+        }
+        return null;
+    }
+
 }
