@@ -125,7 +125,6 @@ public class MemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testCompoundDateIdUpserts() {
         DBObject query = new BasicDBObjectBuilder().push("_id").push("$lt").add("n", "a").add("t", 10).pop()
                 .push("$gte").add("n", "a").add("t", 1).pop().pop().get();

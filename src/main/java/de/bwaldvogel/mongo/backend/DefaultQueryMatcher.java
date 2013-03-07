@@ -69,15 +69,22 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     private boolean checkMatchesValue(Object queryValue, Object value) {
         if (queryValue instanceof BSONObject) {
-            BSONObject expressionObject = (BSONObject) queryValue;
-            if (expressionObject.keySet().size() != 1) {
-                throw new UnsupportedOperationException("illegal query expression: " + expressionObject);
-            }
+            BSONObject queryObject = (BSONObject) queryValue;
 
-            String expression = expressionObject.keySet().iterator().next();
-            if (expression.startsWith("$")) {
-                return checkExpressionMatch(value, expressionObject.get(expression), expression);
+            for (String key : queryObject.keySet()) {
+                Object querySubvalue = queryObject.get(key);
+                if (key.startsWith("$")) {
+                    if (!checkExpressionMatch(value, querySubvalue, key)) {
+                        return false;
+                    }
+                } else {
+                    if (!checkMatch(querySubvalue, key, value)) {
+                        return false;
+                    }
+                }
             }
+            return true;
+
         }
 
         if (value != null && queryValue instanceof Pattern) {
