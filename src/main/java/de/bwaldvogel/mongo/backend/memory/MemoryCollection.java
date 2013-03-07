@@ -97,22 +97,6 @@ public class MemoryCollection extends MongoCollection {
         return matchDocuments(query);
     }
 
-    private Object getSubdocumentValue(BSONObject document, String key) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = key.substring(dotPos + 1);
-            Object subObject = Utils.getListSafe(document, mainKey);
-            if (subObject instanceof BSONObject) {
-                return getSubdocumentValue((BSONObject) subObject, subKey);
-            } else {
-                return null;
-            }
-        } else {
-            return Utils.getListSafe(document, key);
-        }
-    }
-
     private void changeSubdocumentValue(BSONObject document, String key, Object newValue) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
@@ -149,7 +133,7 @@ public class MemoryCollection extends MongoCollection {
         if (modifier.equals("$set")) {
             for (String key : change.keySet()) {
                 Object newValue = change.get(key);
-                Object oldValue = getSubdocumentValue(document, key);
+                Object oldValue = Utils.getSubdocumentValue(document, key);
 
                 if (Utils.nullAwareEquals(newValue, oldValue)) {
                     // no change
@@ -168,7 +152,7 @@ public class MemoryCollection extends MongoCollection {
         } else if (modifier.equals("$push") || modifier.equals("$pushAll")) {
             // http://docs.mongodb.org/manual/reference/operator/push/
             for (String key : change.keySet()) {
-                Object value = getSubdocumentValue(document, key);
+                Object value = Utils.getSubdocumentValue(document, key);
                 List<Object> list;
                 if (value == null) {
                     list = new ArrayList<Object>();
@@ -194,7 +178,7 @@ public class MemoryCollection extends MongoCollection {
         } else if (modifier.equals("$pull") || modifier.equals("$pullAll")) {
             // http://docs.mongodb.org/manual/reference/operator/pull/
             for (String key : change.keySet()) {
-                Object value = getSubdocumentValue(document, key);
+                Object value = Utils.getSubdocumentValue(document, key);
                 List<Object> list;
                 if (value == null) {
                     return;
@@ -224,7 +208,7 @@ public class MemoryCollection extends MongoCollection {
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
 
-                Object value = getSubdocumentValue(document, key);
+                Object value = Utils.getSubdocumentValue(document, key);
                 Number number;
                 if (value == null) {
                     number = Integer.valueOf(0);

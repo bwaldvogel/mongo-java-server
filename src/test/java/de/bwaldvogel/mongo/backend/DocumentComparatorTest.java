@@ -57,4 +57,17 @@ public class DocumentComparatorTest {
         }
     }
 
+    @Test
+    public void testCompareCompoundKey() throws Exception {
+        DocumentComparator comparator = new DocumentComparator(new BasicBSONObject("a.b", 1).append("c", -1));
+
+        BSONObject a = new BasicBSONObject("a", new BasicBSONObject("b", 10));
+        BSONObject b = new BasicBSONObject("a", new BasicBSONObject("b", 15));
+        BSONObject c = new BasicBSONObject("a", new BasicBSONObject("b", 15)).append("x", 70);
+
+        assertThat(comparator.compare(a, b)).isLessThan(0);
+        assertThat(comparator.compare(b, a)).isGreaterThan(0);
+        assertThat(comparator.compare(b, c)).isZero();
+
+    }
 }

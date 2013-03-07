@@ -24,6 +24,22 @@ public class Utils {
         }
     }
 
+    public static Object getSubdocumentValue(BSONObject document, String key) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = key.substring(dotPos + 1);
+            Object subObject = Utils.getListSafe(document, mainKey);
+            if (subObject instanceof BSONObject) {
+                return getSubdocumentValue((BSONObject) subObject, subKey);
+            } else {
+                return null;
+            }
+        } else {
+            return Utils.getListSafe(document, key);
+        }
+    }
+
     public static boolean isFieldTrue(BSONObject document, String field) {
         Object value = document.get(field);
         if (value == null)

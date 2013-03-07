@@ -19,8 +19,8 @@ public class DocumentComparator implements Comparator<BSONObject> {
     @Override
     public int compare(BSONObject document1, BSONObject document2) {
         for (String sortKey : orderBy.keySet()) {
-            Object value1 = document1.get(sortKey);
-            Object value2 = document2.get(sortKey);
+            Object value1 = Utils.getSubdocumentValue(document1, sortKey);
+            Object value2 = Utils.getSubdocumentValue(document2, sortKey);
             int cmp = valueComparator.compare(value1, value2);
             if (cmp != 0) {
                 if (((Number) orderBy.get(sortKey)).intValue() < 0) {

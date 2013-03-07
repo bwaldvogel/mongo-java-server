@@ -4,6 +4,7 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Date;
 
+import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.junit.Test;
 
@@ -53,6 +54,20 @@ public class UtilsTest {
     public void testCalculateSize() {
         assertThat(Utils.calculateSize(new BasicBSONObject())).isEqualTo(5);
         assertThat(Utils.calculateSize(new BasicBSONObject("_id", 7))).isEqualTo(14);
+    }
+
+    @Test
+    public void testGetSubdocumentValue() throws Exception {
+        BSONObject document = new BasicBSONObject("foo", 25);
+        assertThat(Utils.getSubdocumentValue(document, "foo")).isEqualTo(25);
+        assertThat(Utils.getSubdocumentValue(document, "foo.bar")).isNull();
+        assertThat(Utils.getSubdocumentValue(document, "foo.bar.x")).isNull();
+
+        document.put("foo", new BasicDBObject("a", 10).append("b", new BasicDBObject("x", 29).append("z", 17)));
+        assertThat(Utils.getSubdocumentValue(document, "foo.a")).isEqualTo(10);
+        assertThat(Utils.getSubdocumentValue(document, "foo.b.x")).isEqualTo(29);
+        assertThat(Utils.getSubdocumentValue(document, "foo.b.z")).isEqualTo(17);
+        assertThat(Utils.getSubdocumentValue(document, "foo.c")).isNull();
     }
 
 }
