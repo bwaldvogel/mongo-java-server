@@ -144,7 +144,6 @@ public class MemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testCompoundSort() {
         collection.insert(new BasicDBObject("a", 1).append("_id", 1));
         collection.insert(new BasicDBObject("a", 2).append("_id", 5));
