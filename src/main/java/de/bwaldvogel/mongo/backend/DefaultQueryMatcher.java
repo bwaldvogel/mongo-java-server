@@ -119,6 +119,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 }
             }
             return false;
+        } else if (operator.equals("$not")) {
+            return !checkMatchesValue(expressionValue, value, valueExists);
         } else if (operator.equals("$ne")) {
             return !Utils.nullAwareEquals(value, expressionValue);
         } else if (operator.equals("$nin")) {

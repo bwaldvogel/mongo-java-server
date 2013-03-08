@@ -262,4 +262,41 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isTrue();
     }
 
+    @Test
+    public void testMatchesNot() throws Exception {
+
+        // db.inventory.find( { price: { $not: { $gt: 1.99 } } } )
+        BSONObject query = new BasicBSONObject("price", new BasicBSONObject("$not", new BasicBSONObject("$gt", 1.99)));
+
+        /*
+         * This query will select all documents in the inventory collection
+         * where:
+         *
+         * the price field value is less than or equal to 1.99 or the price
+         * field does not exist
+         *
+         * { $not: { $gt: 1.99 } } is different from the $lte operator. { $lte:
+         * 1.99 } returns only the documents where price field exists and its
+         * value is less than or equal to 1.99.
+         */
+
+        BSONObject document = new BasicDBObject();
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        document.put("price", 1.99);
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        document.put("price", 1.990001);
+        assertThat(matcher.matches(document, query)).isFalse();
+
+        document.put("price", null);
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        query = new BasicBSONObject("price", new BasicBSONObject("$not", new BasicBSONObject("$exists", true)));
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.removeField("price");
+        assertThat(matcher.matches(document, query)).isTrue();
+
+    }
+
 }
