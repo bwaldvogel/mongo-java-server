@@ -361,7 +361,7 @@ public class MemoryCollection extends MongoCollection {
 
     public synchronized BSONObject findAndModify(BSONObject query) throws MongoServerException {
 
-        boolean returnNew = Utils.isFieldTrue(query, "new");
+        boolean returnNew = Utils.isTrue(query.get("new"));
 
         if (!query.containsField("remove") && !query.containsField("update")) {
             throw new MongoServerException("need remove or update");
@@ -384,7 +384,7 @@ public class MemoryCollection extends MongoCollection {
         int num = 0;
         for (BSONObject document : handleQuery(queryObject, 0, 1)) {
             num++;
-            if (Utils.isFieldTrue(query, "remove")) {
+            if (Utils.isTrue(query.get("remove"))) {
                 removeDocument(document);
                 returnDocument = document;
             } else if (query.get("update") != null) {
@@ -399,7 +399,7 @@ public class MemoryCollection extends MongoCollection {
                 lastErrorObject.put("n", 1);
             }
         }
-        if (num == 0 && Utils.isFieldTrue(query, "upsert")) {
+        if (num == 0 && Utils.isTrue(query.get("upsert"))) {
             BSONObject selector = (BSONObject) query.get("query");
             BSONObject updateQuery = (BSONObject) query.get("update");
             BSONObject newDocument = handleUpsert(updateQuery, selector);
@@ -430,7 +430,7 @@ public class MemoryCollection extends MongoCollection {
             return null;
         BSONObject newDocument = new BasicBSONObject();
         for (String key : fields.keySet()) {
-            if (Utils.isFieldTrue(fields, key)) {
+            if (Utils.isTrue(fields.get(key))) {
                 newDocument.put(key, document.get(key));
             }
         }

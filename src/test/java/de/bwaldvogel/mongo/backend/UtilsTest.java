@@ -24,13 +24,13 @@ public class UtilsTest {
     }
 
     @Test
-    public void testIsFieldTrue() throws Exception {
-        assertThat(Utils.isFieldTrue(new BasicDBObject(), "foo")).isFalse();
-        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", null), "foo")).isFalse();
-        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", true), "foo")).isTrue();
-        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", 1), "foo")).isTrue();
-        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", 1.0), "foo")).isTrue();
-        assertThat(Utils.isFieldTrue(new BasicDBObject("foo", 0), "foo")).isFalse();
+    public void testIsTrue() throws Exception {
+        assertThat(Utils.isTrue("foo")).isTrue();
+        assertThat(Utils.isTrue(null)).isFalse();
+        assertThat(Utils.isTrue(true)).isTrue();
+        assertThat(Utils.isTrue(1)).isTrue();
+        assertThat(Utils.isTrue(1.0)).isTrue();
+        assertThat(Utils.isTrue(0)).isFalse();
     }
 
     @Test

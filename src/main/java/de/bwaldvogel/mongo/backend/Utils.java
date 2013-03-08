@@ -40,15 +40,19 @@ public class Utils {
         }
     }
 
-    public static boolean isFieldTrue(BSONObject document, String field) {
-        Object value = document.get(field);
+    public static boolean isTrue(Object value) {
         if (value == null)
             return false;
 
-        if (value.equals(Boolean.TRUE)) {
-            return true;
+        if (value instanceof Boolean) {
+            return ((Boolean) value).booleanValue();
         }
-        return normalizeValue(value).equals(Double.valueOf(1.0));
+
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue() != 0.0;
+        }
+
+        return true;
     }
 
     public static Object normalizeValue(Object value) {
