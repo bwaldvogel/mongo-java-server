@@ -289,6 +289,14 @@ public class DefaultQueryMatcherTest {
         document.put("price", 1.990001);
         assertThat(matcher.matches(document, query)).isFalse();
 
+        // !(x >= 5 && x <= 7)
+        query = new BasicBSONObject("price", new BasicBSONObject("$not", new BasicBSONObject("$gte", 5).append("$lte",
+                7)));
+        assertThat(matcher.matches(document, query)).isTrue();
+        document.put("price", 5);
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("price", 7);
+        assertThat(matcher.matches(document, query)).isFalse();
         document.put("price", null);
         assertThat(matcher.matches(document, query)).isTrue();
 
@@ -296,7 +304,21 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isFalse();
         document.removeField("price");
         assertThat(matcher.matches(document, query)).isTrue();
-
     }
 
+    @Test
+    public void testMatchesNotPattern() throws Exception {
+
+        // { item: { $not: /^p.*/ } }
+        BSONObject query = new BasicBSONObject("item", new BasicBSONObject("$not", Pattern.compile("^p.*")));
+
+        BSONObject document = new BasicDBObject();
+        assertThat(matcher.matches(document, query)).isTrue();
+        document.put("item", "p");
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("item", "pattern");
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("item", "Pattern");
+        assertThat(matcher.matches(document, query)).isTrue();
+    }
 }
