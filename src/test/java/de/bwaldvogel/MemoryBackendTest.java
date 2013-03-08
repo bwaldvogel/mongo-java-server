@@ -6,6 +6,7 @@ import static org.fest.assertions.Fail.fail;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -33,6 +34,7 @@ import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
+import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 
 import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
@@ -1061,7 +1063,8 @@ public class MemoryBackendTest {
 
         // addToSet with multiple fields
 
-        DBObject pushObj = new BasicDBObject("$addToSet", new BasicDBObject("field1", "value").append("field2", "value2"));
+        DBObject pushObj = new BasicDBObject("$addToSet", new BasicDBObject("field1", "value").append("field2",
+                "value2"));
         collection.update(idObj, pushObj);
 
         expected = new BasicDBObject("_id", 1).append("field", "value") //
@@ -1173,6 +1176,36 @@ public class MemoryBackendTest {
         collection.update(object, new BasicDBObject("$set", new BasicDBObject("foo.foo", "123")));
         ((BasicBSONObject) expected.get("foo")).put("foo", "123");
         assertThat(collection.findOne(object)).isEqualTo(expected);
+    }
+
+    @Test
+    public void testUpdatePop() throws Exception {
+        BasicDBObject object = new BasicDBObject("_id", 1);
+
+        collection.insert(object);
+        collection.update(object, new BasicDBObject("$pop", new BasicDBObject("foo.bar", 1)));
+
+        assertThat(collection.findOne(object)).isEqualTo(object);
+        collection.update(object, new BasicDBObject("$set", new BasicDBObject("foo.bar", Arrays.asList(1, 2, 3))));
+        assertThat(
+                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
+                .containsExactly(1, 2, 3);
+
+        collection.update(object, new BasicDBObject("$pop", new BasicDBObject("foo.bar", 1)));
+        assertThat(
+                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
+                .containsExactly(1, 2);
+
+        collection.update(object, new BasicDBObject("$pop", new BasicDBObject("foo.bar", -1)));
+        assertThat(
+                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
+                .containsExactly(2);
+
+        collection.update(object, new BasicDBObject("$pop", new BasicDBObject("foo.bar", null)));
+        assertThat(
+                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
+                .isEmpty();
+
     }
 
     @Test

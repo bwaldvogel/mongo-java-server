@@ -209,6 +209,28 @@ public class MemoryCollection extends MongoCollection {
                 }
                 // no need to put something back
             }
+        } else if (modifier.equals("$pop")) {
+            for (String key : change.keySet()) {
+                Object value = Utils.getSubdocumentValue(document, key);
+                List<Object> list;
+                if (value == null) {
+                    return;
+                } else if (value instanceof List<?>) {
+                    list = Utils.asList(value);
+                } else {
+                    throw new MongoServerError(10143, "Cannot apply " + modifier + " modifier to non-array");
+                }
+
+                Object pushValue = change.get(key);
+                if (!list.isEmpty()) {
+                    if (pushValue != null && Utils.normalizeValue(pushValue).equals(Double.valueOf(-1.0))) {
+                        list.remove(0);
+                    } else {
+                        list.remove(list.size() - 1);
+                    }
+                }
+                // no need to put something back
+            }
         } else if (modifier.equals("$inc")) {
             // http://docs.mongodb.org/manual/reference/operator/inc/
             for (String key : change.keySet()) {
