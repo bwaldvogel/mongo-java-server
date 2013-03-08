@@ -30,8 +30,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return false;
 
         if (key.startsWith("$")) {
-            if (key.equals("$and") || key.equals("$or")) {
-                return checkMatchAndOr(queryValue, key, document);
+            if (key.equals("$and") || key.equals("$or") || key.equals("$nor")) {
+                return checkMatchAndOrNor(queryValue, key, document);
             }
         }
 
@@ -67,7 +67,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return checkMatchesValue(queryValue, value, valueExists);
     }
 
-    public boolean checkMatchAndOr(Object queryValue, String key, Object document) throws MongoServerError {
+    public boolean checkMatchAndOrNor(Object queryValue, String key, Object document) throws MongoServerError {
         if (!(queryValue instanceof List<?>)) {
             throw new MongoServerError(14816, key + " expression must be a nonempty array");
         }
@@ -98,6 +98,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 }
             }
             return false;
+        } else if (key.equals("$nor")) {
+            return !checkMatchAndOrNor(queryValue, "$or", document);
         } else {
             throw new RuntimeException("must not happen");
         }

@@ -372,11 +372,32 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesIllegalQueryAndOr() throws Exception {
+    public void testMatchesNor() throws Exception {
+
+        // { $or: [ { price: 1.99 }, { qty: { $lt: 20 } } ] } )
+        BSONObject query = new BasicBSONObject("$nor", Arrays.asList(new BasicBSONObject("price", 1.99),
+                new BasicBSONObject("qty", new BasicBSONObject("$lt", 20))));
+
+        BSONObject document = new BasicDBObject();
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        document.put("price", 1.99);
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("price", 2.00);
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        document.put("qty", 19);
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("qty", 20);
+        assertThat(matcher.matches(document, query)).isTrue();
+    }
+
+    @Test
+    public void testMatchesIllegalQueryAndOrNor() throws Exception {
 
         BSONObject document = new BasicDBObject();
 
-        for (String op : new String[] { "$and", "$or" }) {
+        for (String op : new String[] { "$and", "$or", "$nor" }) {
 
             BSONObject query = new BasicBSONObject(op, null);
             try {
