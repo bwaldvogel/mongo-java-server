@@ -247,4 +247,19 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isFalse();
     }
 
+    @Test
+    public void testMatchesNotEqual() throws Exception {
+        BSONObject document = new BasicDBObject();
+
+        BSONObject query = new BasicBSONObject("qty", new BasicBSONObject("$ne", 17));
+
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        document.put("qty", 17);
+        assertThat(matcher.matches(document, query)).isFalse();
+
+        document.put("qty", 15);
+        assertThat(matcher.matches(document, query)).isTrue();
+    }
+
 }
