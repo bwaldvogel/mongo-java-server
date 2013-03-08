@@ -432,7 +432,7 @@ public class DefaultQueryMatcherTest {
     public void testMatchesMod() throws Exception {
         BSONObject document = new BasicDBObject();
 
-        BasicDBObject modOp = new BasicDBObject("$mod", Arrays.asList(4, 0));
+        BSONObject modOp = new BasicDBObject("$mod", Arrays.asList(4, 0));
         BSONObject query = new BasicDBObject("x", modOp);
         assertThat(matcher.matches(document, query)).isFalse();
 
@@ -443,5 +443,23 @@ public class DefaultQueryMatcherTest {
                 assertThat(matcher.matches(document, query)).isEqualTo((i % 4) == m);
             }
         }
+    }
+
+    @Test
+    public void testMatchesSize() throws Exception {
+
+        BSONObject document = new BasicDBObject();
+        BSONObject query = new BasicDBObject("a", new BasicDBObject("$size", 1));
+
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("a", "x");
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("a", Arrays.asList());
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("a", Arrays.asList(1));
+        assertThat(matcher.matches(document, query)).isTrue();
+        document.put("a", Arrays.asList(1, 2));
+        assertThat(matcher.matches(document, query)).isFalse();
+
     }
 }

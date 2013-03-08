@@ -61,7 +61,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
         boolean valueExists = ((BSONObject) document).containsField(key);
 
         if (value instanceof Collection<?>) {
-            return checkMatchesAnyValue(queryValue, value);
+            if (checkMatchesAnyValue(queryValue, value)) {
+                return true;
+            }
         }
 
         return checkMatchesValue(queryValue, value, valueExists);
@@ -195,6 +197,13 @@ public class DefaultQueryMatcher implements QueryMatcher {
             @SuppressWarnings("unchecked")
             List<Number> modValue = (List<Number>) expressionValue;
             return (((Number) value).intValue() % modValue.get(0).intValue() == modValue.get(1).intValue());
+        } else if (operator.equals("$size")) {
+            if (!(value instanceof Collection<?>) || !(expressionValue instanceof Number)) {
+                return false;
+            }
+            int listSize = ((Collection<?>) value).size();
+            double matchingSize = ((Number) expressionValue).doubleValue();
+            return listSize == matchingSize;
         } else {
             throw new MongoServerError(10068, "invalid operator: " + operator);
         }
