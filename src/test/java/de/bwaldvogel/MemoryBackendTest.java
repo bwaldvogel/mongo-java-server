@@ -6,7 +6,6 @@ import static org.fest.assertions.Fail.fail;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -34,7 +33,6 @@ import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
-import com.sun.org.apache.xml.internal.serializer.utils.Utils;
 
 import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
