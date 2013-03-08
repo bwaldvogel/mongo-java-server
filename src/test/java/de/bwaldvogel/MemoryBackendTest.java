@@ -74,7 +74,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10147);
-            assertThat(e.getMessage()).isEqualTo("Invalid modifier specified $foo");
+            assertThat(e.getMessage()).isEqualTo("Invalid modifier specified: $foo");
         }
     }
 

@@ -227,7 +227,7 @@ public class MemoryCollection extends MongoCollection {
                 changeSubdocumentValue(document, key, Utils.addNumbers(number, (Number) change.get(key)));
             }
         } else {
-            throw new MongoServerError(10147, "Invalid modifier specified " + modifier);
+            throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
         }
 
     }
