@@ -30,26 +30,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return false;
 
         if (key.startsWith("$")) {
-            if (key.equals("$and")) {
-                if (!(queryValue instanceof List<?>)) {
-                    throw new MongoServerError(14816, key + " expression must be a nonempty array");
-                }
-
-                @SuppressWarnings("unchecked")
-                List<Object> list = (List<Object>) queryValue;
-                if (list.isEmpty()) {
-                    throw new MongoServerError(14816, key + " expression must be a nonempty array");
-                }
-
-                for (Object subqueryValue : list) {
-                    if (!(subqueryValue instanceof BSONObject)) {
-                        throw new MongoServerError(14817, key + " elements must be objects");
-                    }
-                    if (!matches((BSONObject) document, (BSONObject) subqueryValue)) {
-                        return false;
-                    }
-                }
-                return true;
+            if (key.equals("$and") || key.equals("$or")) {
+                return checkMatchAndOr(queryValue, key, document);
             }
         }
 
@@ -83,6 +65,42 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         return checkMatchesValue(queryValue, value, valueExists);
+    }
+
+    public boolean checkMatchAndOr(Object queryValue, String key, Object document) throws MongoServerError {
+        if (!(queryValue instanceof List<?>)) {
+            throw new MongoServerError(14816, key + " expression must be a nonempty array");
+        }
+
+        @SuppressWarnings("unchecked")
+        List<Object> list = (List<Object>) queryValue;
+        if (list.isEmpty()) {
+            throw new MongoServerError(14816, key + " expression must be a nonempty array");
+        }
+
+        for (Object subqueryValue : list) {
+            if (!(subqueryValue instanceof BSONObject)) {
+                throw new MongoServerError(14817, key + " elements must be objects");
+            }
+        }
+
+        if (key.equals("$and")) {
+            for (Object subqueryValue : list) {
+                if (!matches((BSONObject) document, (BSONObject) subqueryValue)) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (key.equals("$or")) {
+            for (Object subqueryValue : list) {
+                if (matches((BSONObject) document, (BSONObject) subqueryValue)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            throw new RuntimeException("must not happen");
+        }
     }
 
     @SuppressWarnings("unchecked")
