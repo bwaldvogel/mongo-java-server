@@ -116,7 +116,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 }
             }
             return false;
-
+        } else if (operator.equals("$nin")) {
+            return !checkExpressionMatch(value, expressionValue, "$in");
         } else if (operator.equals("$gt")) {
             if (!comparableTypes(value, expressionValue))
                 return false;
