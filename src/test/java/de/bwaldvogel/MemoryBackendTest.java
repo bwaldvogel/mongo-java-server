@@ -266,7 +266,6 @@ public class MemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testEmbeddedSort() {
         collection.insert(new BasicDBObject("_id", 1));
         collection.insert(new BasicDBObject("_id", 2));
