@@ -80,7 +80,8 @@ public class MemoryDatabase extends CommonDatabase {
     @Override
     public Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException {
         MemoryCollection collection = resolveCollection(query);
-        return collection.handleQuery(query.getQuery(), query.getNumberToSkip(), query.getNumberToReturn(), query.getReturnFieldSelector());
+        return collection.handleQuery(query.getQuery(), query.getNumberToSkip(), query.getNumberToReturn(),
+                query.getReturnFieldSelector());
     }
 
     @Override
@@ -233,7 +234,7 @@ public class MemoryDatabase extends CommonDatabase {
             MongoServerError ex = lastExceptions.remove(channel);
             if (ex != null) {
                 BSONObject obj = new BasicBSONObject("err", ex.getMessage());
-                obj.put("code", Integer.valueOf(ex.getErrorCode()));
+                obj.put("code", Integer.valueOf(ex.getCode()));
                 obj.put("connectionId", channel.getId());
                 obj.put("ok", Integer.valueOf(1));
                 return obj;
@@ -247,7 +248,7 @@ public class MemoryDatabase extends CommonDatabase {
         return result;
     }
 
-    private BSONObject commandCount(String command, BSONObject query) {
+    private BSONObject commandCount(String command, BSONObject query) throws MongoServerError {
         String collection = query.get(command).toString();
         BSONObject response = new BasicBSONObject();
         MemoryCollection coll = collections.get(collection);

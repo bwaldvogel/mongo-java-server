@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import static org.fest.assertions.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +15,8 @@ import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
 
+import de.bwaldvogel.mongo.exception.MongoServerError;
+
 public class DefaultQueryMatcherTest {
 
     private QueryMatcher matcher;
@@ -24,7 +27,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesSimple() {
+    public void testMatchesSimple() throws Exception {
         BSONObject document = new BasicDBObject();
         assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("foo", "bar"))).isFalse();
@@ -33,7 +36,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesPattern() {
+    public void testMatchesPattern() throws Exception {
         BSONObject document = new BasicDBObject("name", "john");
         assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("jo.*")))).isTrue();
         assertThat(
@@ -44,7 +47,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesInQuery() {
+    public void testMatchesInQuery() throws Exception {
         assertThat(matcher.matches(new BasicDBObject(), //
                 new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
                 .isFalse();
@@ -75,7 +78,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesGreaterThanQuery() {
+    public void testMatchesGreaterThanQuery() throws Exception {
         assertThat(matcher.matches(new BasicDBObject(), //
                 new BasicBSONObject("a", new BasicDBObject("$gt", -1)))) //
                 .isFalse();
@@ -106,7 +109,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesLessThanQuery() {
+    public void testMatchesLessThanQuery() throws Exception {
         assertThat(matcher.matches(new BasicDBObject(), //
                 new BasicBSONObject("a", new BasicDBObject("$lt", -1)))) //
                 .isFalse();
@@ -137,7 +140,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesValueList() {
+    public void testMatchesValueList() throws Exception {
         BSONObject document = new BasicDBObject();
         document.put("a", Arrays.asList(1, 2, 3));
         assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
@@ -167,7 +170,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesSubquery() {
+    public void testMatchesSubquery() throws Exception {
         BSONObject document = new BasicDBObject();
         document.put("c", new BasicDBObject("a", 1));
         assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
@@ -183,7 +186,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesSubqueryList() {
+    public void testMatchesSubqueryList() throws Exception {
         BSONObject document = new BasicDBObject();
         document.put("c", new BasicDBObject("a", Arrays.asList(1, 2, 3)));
         assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
@@ -195,7 +198,7 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
-    public void testMatchesSubqueryListPosition() {
+    public void testMatchesSubqueryListPosition() throws Exception {
         BSONObject document = new BasicDBObject();
         document.put("c", new BasicDBObject("a", Arrays.asList(1, 2, 3)));
         assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
@@ -212,6 +215,19 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, new BasicBSONObject("c.1.a", 12))).isFalse();
         assertThat(matcher.matches(document, new BasicBSONObject("c.1.a", 13))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("c.2.a", 13))).isFalse();
+    }
+
+    @Test
+    public void testInvalidOperator() throws Exception {
+        BSONObject document = new BasicDBObject();
+        BSONObject query = new BasicDBObject("field", new BasicDBObject("$someInvalidOperator", 123));
+        try {
+            matcher.matches(document, query);
+            fail("MongoServerError expected");
+        } catch (MongoServerError e) {
+            assertThat(e.getCode()).isEqualTo(10068);
+            assertThat(e.getMessage()).isEqualTo("invalid operator: $someInvalidOperator");
+        }
     }
 
 }

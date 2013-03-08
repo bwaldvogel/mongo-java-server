@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.exception;
 
-
 public class MongoServerError extends MongoServerException {
 
     private static final long serialVersionUID = 4998311355923688257L;
@@ -11,7 +10,7 @@ public class MongoServerError extends MongoServerException {
         this.errorCode = errorCode;
     }
 
-    public int getErrorCode() {
+    public int getCode() {
         return errorCode;
     }
 

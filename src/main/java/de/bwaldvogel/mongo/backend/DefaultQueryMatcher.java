@@ -7,12 +7,14 @@ import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
 
+import de.bwaldvogel.mongo.exception.MongoServerError;
+
 public class DefaultQueryMatcher implements QueryMatcher {
 
     private ValueComparator comparator = new ValueComparator();
 
     @Override
-    public boolean matches(BSONObject document, BSONObject query) {
+    public boolean matches(BSONObject document, BSONObject query) throws MongoServerError {
         for (String key : query.keySet()) {
             if (!checkMatch(query.get(key), key, document)) {
                 return false;
@@ -22,7 +24,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return true;
     }
 
-    private boolean checkMatch(Object queryValue, String key, Object document) {
+    private boolean checkMatch(Object queryValue, String key, Object document) throws MongoServerError {
 
         if (document == null)
             return false;
@@ -58,7 +60,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAnyDocument(Object queryValue, String key, Object document) {
+    private boolean checkMatchesAnyDocument(Object queryValue, String key, Object document) throws MongoServerError {
         for (Object object : (Collection<Object>) document) {
             if (checkMatch(queryValue, key, object)) {
                 return true;
@@ -67,7 +69,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    private boolean checkMatchesValue(Object queryValue, Object value) {
+    private boolean checkMatchesValue(Object queryValue, Object value) throws MongoServerError {
         if (queryValue instanceof BSONObject) {
             BSONObject queryObject = (BSONObject) queryValue;
 
@@ -96,7 +98,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAnyValue(Object queryValue, Object values) {
+    private boolean checkMatchesAnyValue(Object queryValue, Object values) throws MongoServerError {
         for (Object value : (Collection<Object>) values) {
             if (checkMatchesValue(queryValue, value)) {
                 return true;
@@ -105,7 +107,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    private boolean checkExpressionMatch(Object value, Object expressionValue, String operator) {
+    private boolean checkExpressionMatch(Object value, Object expressionValue, String operator) throws MongoServerError {
         if (operator.equals("$in")) {
             Collection<?> queriedObjects = (Collection<?>) expressionValue;
             for (Object o : queriedObjects) {
@@ -132,7 +134,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 return false;
             return comparator.compare(value, expressionValue) <= 0;
         } else {
-            throw new UnsupportedOperationException("unsupported query expression: " + operator);
+            throw new MongoServerError(10068, "invalid operator: " + operator);
         }
     }
 

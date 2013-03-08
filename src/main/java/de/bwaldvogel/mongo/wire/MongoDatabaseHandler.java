@@ -110,7 +110,7 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
             log.error("failed to handle query " + query, e);
             BSONObject obj = new BasicBSONObject();
             obj.put("errmsg", e.getMessage());
-            obj.put("code", e.getErrorCode());
+            obj.put("code", Integer.valueOf(e.getCode()));
             obj.put("ok", Integer.valueOf(0));
             documents.add(obj);
         } catch (MongoServerException e) {

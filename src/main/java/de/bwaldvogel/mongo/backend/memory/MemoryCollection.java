@@ -63,7 +63,7 @@ public class MemoryCollection extends MongoCollection {
         return collectionName;
     }
 
-    private Iterable<Integer> matchDocuments(BSONObject query, Iterable<Integer> positions) {
+    private Iterable<Integer> matchDocuments(BSONObject query, Iterable<Integer> positions) throws MongoServerError {
         List<Integer> answer = new ArrayList<Integer>();
         for (Integer pos : positions) {
             BSONObject document = documents.get(pos.intValue());
@@ -74,7 +74,7 @@ public class MemoryCollection extends MongoCollection {
         return answer;
     }
 
-    private Iterable<Integer> matchDocuments(BSONObject query) {
+    private Iterable<Integer> matchDocuments(BSONObject query) throws MongoServerError {
         List<Integer> answer = new ArrayList<Integer>();
         for (int i = 0; i < documents.size(); i++) {
             BSONObject document = documents.get(i);
@@ -85,7 +85,7 @@ public class MemoryCollection extends MongoCollection {
         return answer;
     }
 
-    private Iterable<Integer> queryDocuments(BSONObject query) {
+    private Iterable<Integer> queryDocuments(BSONObject query) throws MongoServerError {
         synchronized (indexes) {
             for (Index index : indexes) {
                 if (index.canHandle(query)) {
@@ -444,12 +444,13 @@ public class MemoryCollection extends MongoCollection {
         return newDocument;
     }
 
-    public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn) {
+    public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn)
+            throws MongoServerError {
         return handleQuery(queryObject, numberToSkip, numberToReturn, null);
     }
 
     public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn,
-            BSONObject fieldSelector) {
+            BSONObject fieldSelector) throws MongoServerError {
 
         BSONObject query;
         BSONObject orderBy = null;
@@ -502,7 +503,7 @@ public class MemoryCollection extends MongoCollection {
         return objs;
     }
 
-    public synchronized BSONObject handleDistinct(BSONObject query) {
+    public synchronized BSONObject handleDistinct(BSONObject query) throws MongoServerError {
         String key = query.get("key").toString();
         BSONObject q = (BSONObject) query.get("query");
         TreeSet<Object> values = new TreeSet<Object>(new ValueComparator());
@@ -527,7 +528,7 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
-    public synchronized int handleDelete(MongoDelete delete) {
+    public synchronized int handleDelete(MongoDelete delete) throws MongoServerError {
         int n = 0;
         for (BSONObject document : handleQuery(delete.getSelector(), 0, Integer.MAX_VALUE)) {
             removeDocument(document);
@@ -644,7 +645,7 @@ public class MemoryCollection extends MongoCollection {
         return indexSize;
     }
 
-    public int count(BSONObject query) {
+    public int count(BSONObject query) throws MongoServerError {
         if (query.keySet().isEmpty()) {
             return getCount();
         }

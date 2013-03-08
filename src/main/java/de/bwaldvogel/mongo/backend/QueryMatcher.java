@@ -2,8 +2,10 @@ package de.bwaldvogel.mongo.backend;
 
 import org.bson.BSONObject;
 
+import de.bwaldvogel.mongo.exception.MongoServerError;
+
 public interface QueryMatcher {
 
-    boolean matches(BSONObject document, BSONObject query);
+    boolean matches(BSONObject document, BSONObject query) throws MongoServerError;
 
 }
