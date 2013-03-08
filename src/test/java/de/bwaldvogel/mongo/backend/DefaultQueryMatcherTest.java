@@ -321,4 +321,66 @@ public class DefaultQueryMatcherTest {
         document.put("item", "Pattern");
         assertThat(matcher.matches(document, query)).isTrue();
     }
+
+    @Test
+    public void testMatchesAnd() throws Exception {
+
+        // { $and: [ { price: 1.99 }, { qty: { $lt: 20 } }, { sale: true } ] } )
+        BSONObject query = new BasicBSONObject("$and", Arrays.asList(new BasicBSONObject("price", 1.99),
+                new BasicBSONObject("qty", new BasicBSONObject("$lt", 20)), new BasicBSONObject("sale", true)));
+
+        /*
+         * This query will select all documents in the inventory collection
+         * where:
+         *
+         * price field value equals 1.99 and qty field value is less than 20 and
+         * sale field value is equal to true.
+         */
+
+        BSONObject document = new BasicDBObject();
+        assertThat(matcher.matches(document, query)).isFalse();
+
+        document.put("price", 1.99);
+        document.put("qty", 20);
+        document.put("sale", false);
+        assertThat(matcher.matches(document, query)).isFalse();
+
+        document.put("qty", 19);
+        assertThat(matcher.matches(document, query)).isFalse();
+        document.put("sale", true);
+        assertThat(matcher.matches(document, query)).isTrue();
+    }
+
+    @Test
+    public void testMatchesAndIllegalQuery() throws Exception {
+
+        BSONObject document = new BasicDBObject();
+
+        BSONObject query = new BasicBSONObject("$and", null);
+        try {
+            matcher.matches(document, query);
+            fail("MongoServerError expected");
+        } catch (MongoServerError e) {
+            assertThat(e.getCode()).isEqualTo(14816);
+            assertThat(e.getMessage()).isEqualTo("$and expression must be a nonempty array");
+        }
+
+        query.put("$and", new ArrayList<Object>());
+        try {
+            matcher.matches(document, query);
+            fail("MongoServerError expected");
+        } catch (MongoServerError e) {
+            assertThat(e.getCode()).isEqualTo(14816);
+            assertThat(e.getMessage()).isEqualTo("$and expression must be a nonempty array");
+        }
+
+        query.put("$and", Arrays.asList("a"));
+        try {
+            matcher.matches(document, query);
+            fail("MongoServerError expected");
+        } catch (MongoServerError e) {
+            assertThat(e.getCode()).isEqualTo(14817);
+            assertThat(e.getMessage()).isEqualTo("$and elements must be objects");
+        }
+    }
 }

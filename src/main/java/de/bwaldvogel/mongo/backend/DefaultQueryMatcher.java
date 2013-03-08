@@ -29,6 +29,30 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (document == null)
             return false;
 
+        if (key.startsWith("$")) {
+            if (key.equals("$and")) {
+                if (!(queryValue instanceof List<?>)) {
+                    throw new MongoServerError(14816, key + " expression must be a nonempty array");
+                }
+
+                @SuppressWarnings("unchecked")
+                List<Object> list = (List<Object>) queryValue;
+                if (list.isEmpty()) {
+                    throw new MongoServerError(14816, key + " expression must be a nonempty array");
+                }
+
+                for (Object subqueryValue : list) {
+                    if (!(subqueryValue instanceof BSONObject)) {
+                        throw new MongoServerError(14817, key + " elements must be objects");
+                    }
+                    if (!matches((BSONObject) document, (BSONObject) subqueryValue)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
