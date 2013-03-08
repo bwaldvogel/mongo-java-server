@@ -40,7 +40,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (document instanceof List<?>) {
 
             if (key.matches("\\d+")) {
-                return checkMatchesValue(queryValue, Utils.getListSafe(document, key));
+                Object listValue = Utils.getListSafe(document, key);
+                return checkMatchesValue(queryValue, listValue, listValue != null);
             }
 
             return checkMatchesAnyDocument(queryValue, key, document);
@@ -51,12 +52,13 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         Object value = ((BSONObject) document).get(key);
+        boolean valueExists = ((BSONObject) document).containsField(key);
 
         if (value instanceof Collection<?>) {
             return checkMatchesAnyValue(queryValue, value);
         }
 
-        return checkMatchesValue(queryValue, value);
+        return checkMatchesValue(queryValue, value, valueExists);
     }
 
     @SuppressWarnings("unchecked")
@@ -69,14 +71,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    private boolean checkMatchesValue(Object queryValue, Object value) throws MongoServerError {
+    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) throws MongoServerError {
         if (queryValue instanceof BSONObject) {
             BSONObject queryObject = (BSONObject) queryValue;
 
             for (String key : queryObject.keySet()) {
                 Object querySubvalue = queryObject.get(key);
                 if (key.startsWith("$")) {
-                    if (!checkExpressionMatch(value, querySubvalue, key)) {
+                    if (!checkExpressionMatch(value, valueExists, querySubvalue, key)) {
                         return false;
                     }
                 } else {
@@ -100,14 +102,15 @@ public class DefaultQueryMatcher implements QueryMatcher {
     @SuppressWarnings("unchecked")
     private boolean checkMatchesAnyValue(Object queryValue, Object values) throws MongoServerError {
         for (Object value : (Collection<Object>) values) {
-            if (checkMatchesValue(queryValue, value)) {
+            if (checkMatchesValue(queryValue, value, true)) {
                 return true;
             }
         }
         return false;
     }
 
-    private boolean checkExpressionMatch(Object value, Object expressionValue, String operator) throws MongoServerError {
+    private boolean checkExpressionMatch(Object value, boolean valueExists, Object expressionValue, String operator)
+            throws MongoServerError {
         if (operator.equals("$in")) {
             Collection<?> queriedObjects = (Collection<?>) expressionValue;
             for (Object o : queriedObjects) {
@@ -117,7 +120,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
             return false;
         } else if (operator.equals("$nin")) {
-            return !checkExpressionMatch(value, expressionValue, "$in");
+            return !checkExpressionMatch(value, valueExists, expressionValue, "$in");
+        } else if (operator.equals("$exists")) {
+            return (valueExists == Utils.isTrue(expressionValue));
         } else if (operator.equals("$gt")) {
             if (!comparableTypes(value, expressionValue))
                 return false;

@@ -230,4 +230,21 @@ public class DefaultQueryMatcherTest {
         }
     }
 
+    @Test
+    public void testMatchesExists() throws Exception {
+        BSONObject document = new BasicDBObject();
+
+        // db.inventory.find( { qty: { $exists: true, $nin: [ 5, 15 ] } } )
+        BSONObject query = new BasicBSONObject("qty", new BasicBSONObject("$exists", true).append("$nin",
+                Arrays.asList(5, 15)));
+
+        assertThat(matcher.matches(document, query)).isFalse();
+
+        document.put("qty", 17);
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        document.put("qty", 15);
+        assertThat(matcher.matches(document, query)).isFalse();
+    }
+
 }
