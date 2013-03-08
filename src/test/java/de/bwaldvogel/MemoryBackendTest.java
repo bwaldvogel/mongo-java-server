@@ -35,6 +35,7 @@ import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
 
 import de.bwaldvogel.mongo.backend.Constants;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import de.bwaldvogel.mongo.wire.message.MongoServer;
 
@@ -1185,24 +1186,16 @@ public class MemoryBackendTest {
 
         assertThat(collection.findOne(object)).isEqualTo(object);
         collection.update(object, new BasicDBObject("$set", new BasicDBObject("foo.bar", Arrays.asList(1, 2, 3))));
-        assertThat(
-                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
-                .containsExactly(1, 2, 3);
+        assertThat((List<?>) Utils.getSubdocumentValue(collection.findOne(object), "foo.bar")).containsExactly(1, 2, 3);
 
         collection.update(object, new BasicDBObject("$pop", new BasicDBObject("foo.bar", 1)));
-        assertThat(
-                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
-                .containsExactly(1, 2);
+        assertThat((List<?>) Utils.getSubdocumentValue(collection.findOne(object), "foo.bar")).containsExactly(1, 2);
 
         collection.update(object, new BasicDBObject("$pop", new BasicDBObject("foo.bar", -1)));
-        assertThat(
-                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
-                .containsExactly(2);
+        assertThat((List<?>) Utils.getSubdocumentValue(collection.findOne(object), "foo.bar")).containsExactly(2);
 
         collection.update(object, new BasicDBObject("$pop", new BasicDBObject("foo.bar", null)));
-        assertThat(
-                (List<?>) de.bwaldvogel.mongo.backend.Utils.getSubdocumentValue(collection.findOne(object), "foo.bar"))
-                .isEmpty();
+        assertThat((List<?>) Utils.getSubdocumentValue(collection.findOne(object), "foo.bar")).isEmpty();
 
     }
 
