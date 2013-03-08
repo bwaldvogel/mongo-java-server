@@ -427,4 +427,21 @@ public class DefaultQueryMatcherTest {
             }
         }
     }
+
+    @Test
+    public void testMatchesMod() throws Exception {
+        BSONObject document = new BasicDBObject();
+
+        BasicDBObject modOp = new BasicDBObject("$mod", Arrays.asList(4, 0));
+        BSONObject query = new BasicDBObject("x", modOp);
+        assertThat(matcher.matches(document, query)).isFalse();
+
+        for (int m = 0; m < 4; m++) {
+            modOp.put("$mod", Arrays.asList(4, m));
+            for (int i = 0; i < 20; i++) {
+                document.put("x", i);
+                assertThat(matcher.matches(document, query)).isEqualTo((i % 4) == m);
+            }
+        }
+    }
 }

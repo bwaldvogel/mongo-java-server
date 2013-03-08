@@ -187,6 +187,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
             if (!comparableTypes(value, expressionValue))
                 return false;
             return comparator.compare(value, expressionValue) <= 0;
+        } else if (operator.equals("$mod")) {
+            if (!(value instanceof Number)) {
+                return false;
+            }
+
+            @SuppressWarnings("unchecked")
+            List<Number> modValue = (List<Number>) expressionValue;
+            return (((Number) value).intValue() % modValue.get(0).intValue() == modValue.get(1).intValue());
         } else {
             throw new MongoServerError(10068, "invalid operator: " + operator);
         }
