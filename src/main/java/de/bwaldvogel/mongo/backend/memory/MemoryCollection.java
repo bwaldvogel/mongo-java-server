@@ -149,7 +149,7 @@ public class MemoryCollection extends MongoCollection {
                 assertNotKeyField(key);
                 removeSubdocumentValue(document, key);
             }
-        } else if (modifier.equals("$push") || modifier.equals("$pushAll")) {
+        } else if (modifier.equals("$push") || modifier.equals("$pushAll") || modifier.equals("$addToSet")) {
             // http://docs.mongodb.org/manual/reference/operator/push/
             for (String key : change.keySet()) {
                 Object value = Utils.getSubdocumentValue(document, key);
@@ -159,19 +159,25 @@ public class MemoryCollection extends MongoCollection {
                 } else if (value instanceof List<?>) {
                     list = Utils.asList(value);
                 } else {
-                    throw new MongoServerError(10141, "Cannot apply $push/$pushAll modifier to non-array");
+                    throw new MongoServerError(10141, "Cannot apply " + modifier + " modifier to non-array");
                 }
 
                 Object pushValue = change.get(key);
                 if (modifier.equals("$pushAll")) {
                     if (!(pushValue instanceof Collection<?>)) {
-                        throw new MongoServerError(10153, "Modifier $pushAll/pullAll allowed for arrays only");
+                        throw new MongoServerError(10153, "Modifier " + modifier + " allowed for arrays only");
                     }
                     @SuppressWarnings("unchecked")
                     Collection<Object> pushValueList = (Collection<Object>) pushValue;
                     list.addAll(pushValueList);
-                } else {
+                } else if (modifier.equals("$push")) {
                     list.add(pushValue);
+                } else if (modifier.equals("$addToSet")) {
+                    if (!list.contains(pushValue)) {
+                        list.add(pushValue);
+                    }
+                } else {
+                    throw new RuntimeException("must not happen");
                 }
                 changeSubdocumentValue(document, key, list);
             }
@@ -185,13 +191,13 @@ public class MemoryCollection extends MongoCollection {
                 } else if (value instanceof List<?>) {
                     list = Utils.asList(value);
                 } else {
-                    throw new MongoServerError(10142, "Cannot apply $pull/$pullAll modifier to non-array");
+                    throw new MongoServerError(10142, "Cannot apply " + modifier + " modifier to non-array");
                 }
 
                 Object pushValue = change.get(key);
                 if (modifier.equals("$pullAll")) {
                     if (!(pushValue instanceof Collection<?>)) {
-                        throw new MongoServerError(10153, "Modifier $pushAll/pullAll allowed for arrays only");
+                        throw new MongoServerError(10153, "Modifier " + modifier + " allowed for arrays only");
                     }
                     @SuppressWarnings("unchecked")
                     Collection<Object> valueList = (Collection<Object>) pushValue;

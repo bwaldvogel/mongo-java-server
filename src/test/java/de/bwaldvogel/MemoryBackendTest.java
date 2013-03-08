@@ -1001,7 +1001,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10141);
-            assertThat(e.getMessage()).isEqualTo("Cannot apply $push/$pushAll modifier to non-array");
+            assertThat(e.getMessage()).isEqualTo("Cannot apply $push modifier to non-array");
         }
 
         // push with multiple fields
@@ -1030,12 +1030,49 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10153);
-            assertThat(e.getMessage()).isEqualTo("Modifier $pushAll/pullAll allowed for arrays only");
+            assertThat(e.getMessage()).isEqualTo("Modifier $pushAll allowed for arrays only");
         }
 
         collection.update(idObj, new BasicDBObject("$pushAll", //
                 new BasicDBObject("field", Arrays.asList("value", "value2"))));
         DBObject expected = new BasicDBObject("_id", 1).append("field", Arrays.asList("value", "value2"));
+        assertThat(collection.findOne(idObj)).isEqualTo(expected);
+    }
+
+    @Test
+    public void testUpdateAddToSet() throws Exception {
+        BasicDBObject idObj = new BasicDBObject("_id", 1);
+        collection.insert(idObj);
+        collection.update(idObj, new BasicDBObject("$addToSet",
+                new BasicDBObject("field.subfield.subsubfield", "value")));
+        DBObject expected = new BasicDBObject("_id", 1).append("field", new BasicDBObject("subfield",
+                new BasicDBObject("subsubfield", Arrays.asList("value"))));
+        assertThat(collection.findOne(idObj)).isEqualTo(expected);
+
+        // addToSet to non-array
+        collection.update(idObj, new BasicDBObject("$set", new BasicDBObject("field", "value")));
+        try {
+            collection.update(idObj, new BasicDBObject("$addToSet", new BasicDBObject("field", "value")));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10141);
+            assertThat(e.getMessage()).isEqualTo("Cannot apply $addToSet modifier to non-array");
+        }
+
+        // addToSet with multiple fields
+
+        DBObject pushObj = new BasicDBObject("$addToSet", new BasicDBObject("field1", "value").append("field2", "value2"));
+        collection.update(idObj, pushObj);
+
+        expected = new BasicDBObject("_id", 1).append("field", "value") //
+                .append("field1", Arrays.asList("value")) //
+                .append("field2", Arrays.asList("value2"));
+        assertThat(collection.findOne(idObj)).isEqualTo(expected);
+
+        // addToSet duplicate
+        pushObj = new BasicDBObject("$addToSet", new BasicDBObject("field1", "value"));
+        collection.update(idObj, pushObj);
+        expected.put("field1", Arrays.asList("value"));
         assertThat(collection.findOne(idObj)).isEqualTo(expected);
     }
 
@@ -1054,7 +1091,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10142);
-            assertThat(e.getMessage()).isEqualTo("Cannot apply $pull/$pullAll modifier to non-array");
+            assertThat(e.getMessage()).isEqualTo("Cannot apply $pull modifier to non-array");
         }
 
         // pull standard
@@ -1089,7 +1126,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10142);
-            assertThat(e.getMessage()).isEqualTo("Cannot apply $pull/$pullAll modifier to non-array");
+            assertThat(e.getMessage()).isEqualTo("Cannot apply $pullAll modifier to non-array");
         }
 
         collection.update(
@@ -1107,7 +1144,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10153);
-            assertThat(e.getMessage()).isEqualTo("Modifier $pushAll/pullAll allowed for arrays only");
+            assertThat(e.getMessage()).isEqualTo("Modifier $pullAll allowed for arrays only");
         }
 
     }
