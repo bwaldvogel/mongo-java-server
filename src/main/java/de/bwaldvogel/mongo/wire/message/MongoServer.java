@@ -72,8 +72,13 @@ public class MongoServer {
             }
         });
 
-        serverChannel = bootstrap.bind(socketAddress);
-        log.info("started " + this);
+        try {
+            serverChannel = bootstrap.bind(socketAddress);
+            log.info("started " + this);
+        } catch (RuntimeException e) {
+            shutdownNow();
+            throw e;
+        }
     }
 
     /**
