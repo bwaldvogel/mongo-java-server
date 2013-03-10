@@ -922,6 +922,17 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testWhatsMyUri() throws Exception {
+        for (String dbname : new String[] { "admin", "local", "test" }) {
+            CommandResult result = client.getDB(dbname).command("whatsmyuri");
+            result.throwOnError();
+            assertThat(result.ok()).isTrue();
+            assertThat(result.get("you")).isNotNull();
+            assertThat(result.get("you").toString()).startsWith("127.0.0.1:");
+        }
+    }
+
+    @Test
     public void testSort() {
         collection.insert(new BasicDBObject("a", 1).append("_id", 1));
         collection.insert(new BasicDBObject("a", 2).append("_id", 2));

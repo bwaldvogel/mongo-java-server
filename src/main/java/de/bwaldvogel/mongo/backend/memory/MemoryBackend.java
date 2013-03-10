@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend.memory;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,9 +26,8 @@ public class MemoryBackend implements MongoBackend {
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
 
-    protected BSONObject handleAdminCommand(BSONObject query) throws NoSuchCommandException {
-
-        String command = query.keySet().iterator().next();
+    protected BSONObject handleAdminCommand(Channel channel, String command, BSONObject query)
+            throws MongoServerException {
 
         if (command.equalsIgnoreCase("ismaster")) {
             BSONObject reply = new BasicBSONObject("ismaster", Boolean.TRUE);
@@ -79,8 +79,17 @@ public class MemoryBackend implements MongoBackend {
     @Override
     public BSONObject handleCommand(Channel channel, String databaseName, String command, BSONObject query)
             throws MongoServerException {
+
+        if (command.equalsIgnoreCase("whatsmyuri")) {
+            BSONObject response = new BasicBSONObject();
+            InetSocketAddress remoteAddress = (InetSocketAddress) channel.getRemoteAddress();
+            response.put("you", remoteAddress.getAddress().getHostAddress() + ":" + remoteAddress.getPort());
+            response.put("ok", Integer.valueOf(1));
+            return response;
+        }
+
         if (databaseName.equals("admin")) {
-            return handleAdminCommand(query);
+            return handleAdminCommand(channel, command, query);
         } else {
             MongoDatabase db = resolveDatabase(databaseName);
             return db.handleCommand(channel, command, query);
