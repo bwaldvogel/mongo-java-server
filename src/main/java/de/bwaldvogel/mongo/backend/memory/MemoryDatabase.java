@@ -149,6 +149,10 @@ public class MemoryDatabase extends CommonDatabase {
             String collectionName = query.get("collstats").toString();
             MemoryCollection collection = resolveCollection(collectionName);
             return collection.getStats();
+        } else if (command.equalsIgnoreCase("validate")) {
+            String collectionName = query.get("validate").toString();
+            MemoryCollection collection = resolveCollection(collectionName);
+            return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {
             String collectionName = query.get(command).toString();
             MemoryCollection collection = resolveCollection(collectionName);

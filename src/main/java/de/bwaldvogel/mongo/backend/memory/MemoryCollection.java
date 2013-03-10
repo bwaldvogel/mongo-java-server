@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -700,6 +701,28 @@ public class MemoryCollection extends MongoCollection {
         }
 
         response.put("indexSize", indexSizes);
+        response.put("ok", Integer.valueOf(1));
+        return response;
+    }
+
+    public BSONObject validate() {
+        BSONObject response = new BasicBSONObject("ns", getFullName());
+        response.put("extentCount", Integer.valueOf(0));
+        response.put("datasize", Long.valueOf(dataSize.get()));
+        response.put("nrecords", Integer.valueOf(documents.size()));
+        response.put("padding", Integer.valueOf(1));
+        response.put("deletedCount", Integer.valueOf(emptyPositions.size()));
+        response.put("deletedSize", Integer.valueOf(0));
+
+        response.put("nIndexes", Integer.valueOf(indexes.size()));
+        BSONObject keysPerIndex = new BasicBSONObject();
+        for (Index index : indexes) {
+            keysPerIndex.put(index.getName(), Long.valueOf(index.getCount()));
+        }
+
+        response.put("keysPerIndex", keysPerIndex);
+        response.put("valid", Boolean.TRUE);
+        response.put("errors", Arrays.asList());
         response.put("ok", Integer.valueOf(1));
         return response;
     }
