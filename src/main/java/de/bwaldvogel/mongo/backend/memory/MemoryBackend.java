@@ -13,6 +13,7 @@ import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.backend.MongoBackend;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
@@ -30,11 +31,11 @@ public class MemoryBackend implements MongoBackend {
             throws MongoServerException {
 
         if (command.equalsIgnoreCase("ismaster")) {
-            BSONObject reply = new BasicBSONObject("ismaster", Boolean.TRUE);
-            reply.put("maxBsonObjectSize", Integer.valueOf(MongoWireProtocolHandler.MAX_BSON_OBJECT_SIZE));
-            reply.put("localTime", new Date());
-            reply.put("ok", Integer.valueOf("1"));
-            return reply;
+            BSONObject response = new BasicBSONObject("ismaster", Boolean.TRUE);
+            response.put("maxBsonObjectSize", Integer.valueOf(MongoWireProtocolHandler.MAX_BSON_OBJECT_SIZE));
+            response.put("localTime", new Date());
+            Utils.markOkay(response);
+            return response;
         } else if (command.equalsIgnoreCase("listdatabases")) {
             BSONObject response = new BasicBSONObject();
             List<BSONObject> dbs = new ArrayList<BSONObject>();
@@ -44,7 +45,7 @@ public class MemoryBackend implements MongoBackend {
                 dbs.add(dbObj);
             }
             response.put("databases", dbs);
-            response.put("ok", Integer.valueOf(1));
+            Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("replSetGetStatus")) {
             BSONObject reply = new BasicBSONObject();
@@ -84,7 +85,7 @@ public class MemoryBackend implements MongoBackend {
             BSONObject response = new BasicBSONObject();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.getRemoteAddress();
             response.put("you", remoteAddress.getAddress().getHostAddress() + ":" + remoteAddress.getPort());
-            response.put("ok", Integer.valueOf(1));
+            Utils.markOkay(response);
             return response;
         }
 

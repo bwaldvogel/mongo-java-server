@@ -24,6 +24,13 @@ public class UtilsTest {
     }
 
     @Test
+    public void testMarkOkay() throws Exception {
+        BSONObject obj = new BasicBSONObject();
+        Utils.markOkay(obj);
+        assertThat(obj.get("ok")).isEqualTo(Integer.valueOf(1));
+    }
+
+    @Test
     public void testIsTrue() throws Exception {
         assertThat(Utils.isTrue("foo")).isTrue();
         assertThat(Utils.isTrue(null)).isFalse();

@@ -129,4 +129,8 @@ public class Utils {
         return null;
     }
 
+    public static void markOkay(BSONObject result) {
+        result.put("ok", Integer.valueOf(1));
+    }
+
 }

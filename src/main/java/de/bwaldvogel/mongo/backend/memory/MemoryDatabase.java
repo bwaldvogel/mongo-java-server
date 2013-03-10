@@ -10,6 +10,7 @@ import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.backend.Constants;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -191,14 +192,14 @@ public class MemoryDatabase extends CommonDatabase {
         response.put("indexSize", Long.valueOf(indexSize));
         response.put("fileSize", Integer.valueOf(0));
         response.put("nsSizeMB", Integer.valueOf(0));
-        response.put("ok", Integer.valueOf(1));
+        Utils.markOkay(response);
         return response;
     }
 
     private BSONObject commandDropDatabase() {
         backend.dropDatabase(this);
         BSONObject response = new BasicBSONObject("dropped", getDatabaseName());
-        response.put("ok", Integer.valueOf(1));
+        Utils.markOkay(response);
         return response;
     }
 
@@ -214,7 +215,7 @@ public class MemoryDatabase extends CommonDatabase {
             namespaces.removeDocument(new BasicBSONObject("name", collection.getFullName()));
             response.put("nIndexesWas", Integer.valueOf(collection.getNumIndexes()));
             response.put("ns", collection.getFullName());
-            response.put("ok", Integer.valueOf(1));
+            Utils.markOkay(response);
         }
 
         return response;
@@ -232,7 +233,8 @@ public class MemoryDatabase extends CommonDatabase {
             }
         }
 
-        BSONObject result = new BasicBSONObject("ok", Integer.valueOf(1));
+        BSONObject result = new BasicBSONObject();
+        Utils.markOkay(result);
 
         if (lastExceptions != null) {
             MongoServerError ex = lastExceptions.remove(channel);
@@ -240,7 +242,7 @@ public class MemoryDatabase extends CommonDatabase {
                 BSONObject obj = new BasicBSONObject("err", ex.getMessage());
                 obj.put("code", Integer.valueOf(ex.getCode()));
                 obj.put("connectionId", channel.getId());
-                obj.put("ok", Integer.valueOf(1));
+                Utils.markOkay(obj);
                 return obj;
             }
 
@@ -262,7 +264,7 @@ public class MemoryDatabase extends CommonDatabase {
         } else {
             response.put("n", Integer.valueOf(coll.count((BSONObject) query.get("query"))));
         }
-        response.put("ok", Integer.valueOf(1));
+        Utils.markOkay(response);
         return response;
     }
 }

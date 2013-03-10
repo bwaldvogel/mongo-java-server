@@ -444,7 +444,7 @@ public class MemoryCollection extends MongoCollection {
             result.put("lastErrorObject", lastErrorObject);
         }
         result.put("value", returnDocument);
-        result.put("ok", Integer.valueOf(1));
+        Utils.markOkay(result);
         return result;
     }
 
@@ -538,7 +538,7 @@ public class MemoryCollection extends MongoCollection {
         }
 
         BSONObject response = new BasicBSONObject("values", new ArrayList<Object>(values));
-        response.put("ok", 1);
+        Utils.markOkay(response);
         return response;
     }
 
@@ -701,7 +701,7 @@ public class MemoryCollection extends MongoCollection {
         }
 
         response.put("indexSize", indexSizes);
-        response.put("ok", Integer.valueOf(1));
+        Utils.markOkay(response);
         return response;
     }
 
@@ -723,7 +723,7 @@ public class MemoryCollection extends MongoCollection {
         response.put("keysPerIndex", keysPerIndex);
         response.put("valid", Boolean.TRUE);
         response.put("errors", Arrays.asList());
-        response.put("ok", Integer.valueOf(1));
+        Utils.markOkay(response);
         return response;
     }
 }

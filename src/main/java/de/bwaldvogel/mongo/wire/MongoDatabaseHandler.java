@@ -21,6 +21,7 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 
 import de.bwaldvogel.mongo.backend.MongoBackend;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -169,7 +170,7 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
 
         serverStatus.put("cursors", cursors);
 
-        serverStatus.put("ok", Integer.valueOf(1));
+        Utils.markOkay(serverStatus);
 
         return serverStatus;
     }
