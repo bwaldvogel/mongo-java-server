@@ -54,7 +54,7 @@ public class MemoryDatabase extends CommonDatabase {
 
     private void checkCollectionName(String collectionName) throws MongoServerException {
 
-        if (collectionName.contains("$") || collectionName.startsWith("system."))
+        if (collectionName.contains("$"))
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
 
         if (collectionName.length() > Constants.MAX_NS_LENGTH)
