@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend.memory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -9,12 +10,14 @@ import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
 
+import com.mongodb.BasicDBObject;
+
 import de.bwaldvogel.mongo.backend.Constants;
+import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
-import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -24,12 +27,13 @@ public class MemoryDatabase extends CommonDatabase {
 
     private static final Logger log = Logger.getLogger(MemoryDatabase.class);
 
-    private Map<String, MemoryCollection> collections = new HashMap<String, MemoryCollection>();
+    private Map<String, MongoCollection> collections = new HashMap<String, MongoCollection>();
     private Map<Channel, MongoServerError> lastExceptions = new HashMap<Channel, MongoServerError>();
     private Map<Channel, Integer> lastUpdates = new HashMap<Channel, Integer>();
-    private MemoryCollection namespaces;
 
     private MemoryBackend backend;
+
+    private MongoCollection namespaces;
 
     public MemoryDatabase(MemoryBackend backend, String databaseName) {
         super(databaseName);
@@ -38,25 +42,17 @@ public class MemoryDatabase extends CommonDatabase {
         collections.put(namespaces.getCollectionName(), namespaces);
     }
 
-    private synchronized MemoryCollection resolveCollection(ClientRequest request) throws MongoServerException {
-        return resolveCollection(request.getCollectionName());
-    }
-
-    private synchronized MemoryCollection resolveCollection(String collectionName) throws MongoServerException {
-        MemoryCollection collection = collections.get(collectionName);
-        if (collection == null) {
-            checkCollectionName(collectionName);
-            collection = new MemoryCollection(getDatabaseName(), collectionName, Constants.ID_FIELD);
-            collections.put(collectionName, collection);
-            namespaces.addDocument(new BasicBSONObject("name", collection.getFullName()));
+    private synchronized MongoCollection resolveCollection(String collectionName, boolean throwIfNotFound)
+            throws MongoServerException {
+        checkCollectionName(collectionName);
+        MongoCollection collection = collections.get(collectionName);
+        if (collection == null && throwIfNotFound) {
+            throw new MongoServerException("ns not found");
         }
         return collection;
     }
 
     private void checkCollectionName(String collectionName) throws MongoServerException {
-
-        if (collectionName.contains("$"))
-            throw new MongoServerError(10093, "cannot insert into reserved $ collection");
 
         if (collectionName.length() > Constants.MAX_NS_LENGTH)
             throw new MongoServerError(10080, "ns name too long, max size is " + Constants.MAX_NS_LENGTH);
@@ -80,7 +76,11 @@ public class MemoryDatabase extends CommonDatabase {
 
     @Override
     public Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException {
-        MemoryCollection collection = resolveCollection(query);
+        String collectionName = query.getCollectionName();
+        MongoCollection collection = resolveCollection(collectionName, false);
+        if (collection == null) {
+            return Collections.emptyList();
+        }
         return collection.handleQuery(query.getQuery(), query.getNumberToSkip(), query.getNumberToReturn(),
                 query.getReturnFieldSelector());
     }
@@ -95,7 +95,14 @@ public class MemoryDatabase extends CommonDatabase {
     public void handleInsert(MongoInsert insert) throws MongoServerException {
         lastUpdates.remove(insert.getChannel());
         try {
-            MemoryCollection collection = resolveCollection(insert);
+            String collectionName = insert.getCollectionName();
+            if (collectionName.startsWith("system.")) {
+                throw new MongoServerError(16459, "attempt to insert in system namespace");
+            }
+            MongoCollection collection = resolveCollection(collectionName, false);
+            if (collection == null) {
+                collection = createCollection(collectionName);
+            }
             int n = collection.handleInsert(insert);
             lastUpdates.put(insert.getChannel(), Integer.valueOf(n));
         } catch (MongoServerError e) {
@@ -104,12 +111,32 @@ public class MemoryDatabase extends CommonDatabase {
         }
     }
 
+    private MongoCollection createCollection(String collectionName) throws MongoServerException {
+        checkCollectionName(collectionName);
+        if (collectionName.contains("$")) {
+            throw new MongoServerError(10093, "cannot insert into reserved $ collection");
+        }
+        MongoCollection collection = new MemoryCollection(getDatabaseName(), collectionName, "_id");
+        collections.put(collectionName, collection);
+        namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
+        return collection;
+    }
+
     @Override
     public void handleDelete(MongoDelete delete) throws MongoServerException {
         lastUpdates.remove(delete.getChannel());
         try {
-            MemoryCollection collection = resolveCollection(delete);
-            int n = collection.handleDelete(delete);
+            String collectionName = delete.getCollectionName();
+            if (collectionName.startsWith("system.")) {
+                throw new MongoServerError(12050, "cannot delete from system namespace");
+            }
+            MongoCollection collection = resolveCollection(collectionName, false);
+            int n;
+            if (collection == null) {
+                n = 0;
+            } else {
+                n = collection.handleDelete(delete);
+            }
             lastUpdates.put(delete.getChannel(), Integer.valueOf(n));
         } catch (MongoServerError e) {
             log.error("failed to delete " + delete, e);
@@ -121,7 +148,16 @@ public class MemoryDatabase extends CommonDatabase {
     public void handleUpdate(MongoUpdate update) throws MongoServerException {
         lastUpdates.remove(update.getChannel());
         try {
-            MemoryCollection collection = resolveCollection(update);
+            String collectionName = update.getCollectionName();
+
+            if (collectionName.startsWith("system.")) {
+                throw new MongoServerError(10156, "cannot update system collection");
+            }
+
+            MongoCollection collection = resolveCollection(collectionName, false);
+            if (collection == null) {
+                collection = createCollection(collectionName);
+            }
             int n = collection.handleUpdate(update);
             lastUpdates.put(update.getChannel(), Integer.valueOf(n));
         } catch (MongoServerError e) {
@@ -138,7 +174,7 @@ public class MemoryDatabase extends CommonDatabase {
             return commandGetLastError(channel, command, query);
         } else if (command.equalsIgnoreCase("distinct")) {
             String collectionName = query.get(command).toString();
-            MemoryCollection collection = resolveCollection(collectionName);
+            MongoCollection collection = resolveCollection(collectionName, true);
             return collection.handleDistinct(query);
         } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query);
@@ -148,15 +184,18 @@ public class MemoryDatabase extends CommonDatabase {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
             String collectionName = query.get("collstats").toString();
-            MemoryCollection collection = resolveCollection(collectionName);
+            MongoCollection collection = resolveCollection(collectionName, true);
             return collection.getStats();
         } else if (command.equalsIgnoreCase("validate")) {
             String collectionName = query.get("validate").toString();
-            MemoryCollection collection = resolveCollection(collectionName);
+            MongoCollection collection = resolveCollection(collectionName, true);
             return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {
             String collectionName = query.get(command).toString();
-            MemoryCollection collection = resolveCollection(collectionName);
+            MongoCollection collection = resolveCollection(collectionName, false);
+            if (collection == null) {
+                collection = createCollection(collectionName);
+            }
             return collection.findAndModify(query);
         } else {
             log.error("unknown query: " + query);
@@ -164,7 +203,7 @@ public class MemoryDatabase extends CommonDatabase {
         throw new NoSuchCommandException(command);
     }
 
-    private BSONObject commandDatabaseStats() {
+    private BSONObject commandDatabaseStats() throws MongoServerException {
         BSONObject response = new BasicBSONObject("db", getDatabaseName());
         response.put("collections", Integer.valueOf(collections.size()));
 
@@ -173,11 +212,17 @@ public class MemoryDatabase extends CommonDatabase {
         long objects = 0;
         long dataSize = 0;
         double averageObjectSize = 0;
-        for (MemoryCollection collection : collections.values()) {
-            objects += collection.getCount();
-            dataSize += collection.getDataSize();
-            indexes += collection.getNumIndexes();
-            indexSize += collection.getIndexSize();
+        for (MongoCollection collection : collections.values()) {
+            BSONObject stats = collection.getStats();
+            objects += ((Number) stats.get("count")).longValue();
+            dataSize += ((Number) stats.get("size")).longValue();
+            indexes += ((Number) stats.get("nindexes")).longValue();
+
+            BSONObject indexSizes = (BSONObject) stats.get("indexSize");
+            for (String indexName : indexSizes.keySet()) {
+                indexSize += ((Number) indexSizes.get(indexName)).longValue();
+            }
+
         }
         if (objects > 0) {
             averageObjectSize = dataSize / ((double) objects);
@@ -203,9 +248,9 @@ public class MemoryDatabase extends CommonDatabase {
         return response;
     }
 
-    private BSONObject commandDrop(BSONObject query) {
+    private BSONObject commandDrop(BSONObject query) throws MongoServerException {
         String collectionName = query.get("drop").toString();
-        MemoryCollection collection = collections.remove(collectionName);
+        MongoCollection collection = collections.remove(collectionName);
 
         BSONObject response = new BasicBSONObject();
         if (collection == null) {
@@ -221,7 +266,8 @@ public class MemoryDatabase extends CommonDatabase {
         return response;
     }
 
-    private BSONObject commandGetLastError(Channel channel, String command, BSONObject query) {
+    private BSONObject commandGetLastError(Channel channel, String command, BSONObject query)
+            throws MongoServerException {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
         if (!cmd.equals(command))
@@ -229,7 +275,7 @@ public class MemoryDatabase extends CommonDatabase {
         if (it.hasNext()) {
             String subCommand = it.next();
             if (!subCommand.equals("w")) {
-                throw new IllegalArgumentException("unknown subcommand: " + subCommand);
+                throw new MongoServerException("unknown subcommand: " + subCommand);
             }
         }
 
@@ -254,10 +300,10 @@ public class MemoryDatabase extends CommonDatabase {
         return result;
     }
 
-    private BSONObject commandCount(String command, BSONObject query) throws MongoServerError {
+    private BSONObject commandCount(String command, BSONObject query) throws MongoServerException {
         String collection = query.get(command).toString();
         BSONObject response = new BasicBSONObject();
-        MemoryCollection coll = collections.get(collection);
+        MongoCollection coll = collections.get(collection);
         if (coll == null) {
             response.put("missing", Boolean.TRUE);
             response.put("n", Integer.valueOf(0));

@@ -34,8 +34,6 @@ import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MemoryCollection extends MongoCollection {
 
-    private String collectionName;
-
     private List<Index> indexes = new ArrayList<Index>();
 
     private QueryMatcher matcher = new DefaultQueryMatcher();
@@ -45,23 +43,12 @@ public class MemoryCollection extends MongoCollection {
     private List<BSONObject> documents = new ArrayList<BSONObject>();
     private Queue<Integer> emptyPositions = new LinkedList<Integer>();
 
-    private String databaseName;
-
     private String idField;
 
     public MemoryCollection(String databaseName, String collectionName, String idField) {
-        this.databaseName = databaseName;
-        this.collectionName = collectionName;
+        super(databaseName, collectionName);
         this.idField = idField;
         indexes.add(new UniqueIndex(idField));
-    }
-
-    public String getFullName() {
-        return databaseName + "." + getCollectionName();
-    }
-
-    public String getCollectionName() {
-        return collectionName;
     }
 
     private Iterable<Integer> matchDocuments(BSONObject query, Iterable<Integer> positions) throws MongoServerError {
@@ -261,7 +248,7 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
-    private void applyUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError {
+    private void applyUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerException {
 
         for (String key : newDocument.keySet()) {
             if (key.startsWith("$")) {
@@ -284,7 +271,7 @@ public class MemoryCollection extends MongoCollection {
 
         if (newId == null) {
             if (oldId == null) {
-                throw new IllegalArgumentException("document to update has no _id: " + oldDocument);
+                throw new MongoServerException("document to update has no _id: " + oldDocument);
             }
             newDocument.put(idField, oldId);
         }
@@ -319,7 +306,7 @@ public class MemoryCollection extends MongoCollection {
         return new ObjectId();
     }
 
-    private BSONObject calculateUpdateDocument(BSONObject oldDocument, BSONObject update) throws MongoServerError {
+    private BSONObject calculateUpdateDocument(BSONObject oldDocument, BSONObject update) throws MongoServerException {
 
         int numStartsWithDollar = 0;
         for (String key : update.keySet()) {
@@ -338,13 +325,13 @@ public class MemoryCollection extends MongoCollection {
         } else if (numStartsWithDollar == 0) {
             applyUpdate(newDocument, update);
         } else {
-            throw new UnsupportedOperationException("illegal update: " + update);
+            throw new MongoServerException("illegal update: " + update);
         }
 
         return newDocument;
     }
 
-    synchronized void addDocument(BSONObject document) throws KeyConstraintError {
+    public synchronized void addDocument(BSONObject document) throws KeyConstraintError {
 
         Integer pos = emptyPositions.poll();
         if (pos == null)
@@ -364,7 +351,7 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
-    synchronized void removeDocument(BSONObject document) {
+    public synchronized void removeDocument(BSONObject document) {
         Integer pos = null;
         for (Index index : indexes) {
             pos = index.remove(document);
@@ -622,8 +609,7 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
-    private BSONObject handleUpsert(BSONObject updateQuery, BSONObject selector) throws MongoServerError,
-            KeyConstraintError {
+    private BSONObject handleUpsert(BSONObject updateQuery, BSONObject selector) throws MongoServerException {
         BSONObject document = convertSelectorToDocument(selector);
 
         BSONObject newDocument = calculateUpdateDocument(document, updateQuery);
@@ -653,19 +639,6 @@ public class MemoryCollection extends MongoCollection {
 
     public int getNumIndexes() {
         return indexes.size();
-    }
-
-    public long getDataSize() {
-        return dataSize.get();
-    }
-
-    public long getIndexSize() {
-        long indexSize = 0;
-        for (Index index : indexes) {
-            // actually the data size is expected. we return the count instead
-            indexSize += index.getCount();
-        }
-        return indexSize;
     }
 
     public int count(BSONObject query) throws MongoServerError {

@@ -112,9 +112,8 @@ public class MemoryBackendTest {
     @Test
     public void testCollectionStats() throws Exception {
         CommandResult stats = collection.getStats();
-        stats.throwOnError();
-        assertThat(((Number) stats.get("count")).longValue()).isEqualTo(0);
-        assertThat(((Number) stats.get("size")).longValue()).isEqualTo(0);
+        assertThat(stats.ok()).isFalse();
+        assertThat(stats.getErrorMessage()).isEqualTo("ns not found");
 
         collection.insert(new BasicDBObject());
         collection.insert(new BasicDBObject("abc", "foo"));
@@ -219,6 +218,44 @@ public class MemoryBackendTest {
         assertThat(collection.count()).isEqualTo(1);
         collection.remove(new BasicDBObject());
         assertThat(collection.count()).isZero();
+    }
+
+    @Test
+    public void testDeleteInSystemNamespace() throws Exception {
+        try {
+            db.getCollection("system.foobar").remove(new BasicDBObject());
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(12050);
+            assertThat(e.getMessage()).startsWith("cannot delete from system namespace");
+        }
+
+        try {
+            db.getCollection("system.namespaces").remove(new BasicDBObject());
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(12050);
+            assertThat(e.getMessage()).startsWith("cannot delete from system namespace");
+        }
+    }
+
+    @Test
+    public void testUpdateInSystemNamespace() throws Exception {
+        try {
+            db.getCollection("system.foobar").update(new BasicDBObject(), new BasicDBObject());
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10156);
+            assertThat(e.getMessage()).startsWith("cannot update system collection");
+        }
+
+        try {
+            db.getCollection("system.namespaces").update(new BasicDBObject(), new BasicDBObject());
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10156);
+            assertThat(e.getMessage()).startsWith("cannot update system collection");
+        }
     }
 
     @Test
@@ -729,6 +766,25 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testInsertInSystemNamespace() throws Exception {
+        try {
+            db.getCollection("system.foobar").insert(new BasicDBObject());
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(16459);
+            assertThat(e.getMessage()).startsWith("attempt to insert in system namespace");
+        }
+
+        try {
+            db.getCollection("system.namespaces").insert(new BasicDBObject());
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(16459);
+            assertThat(e.getMessage()).startsWith("attempt to insert in system namespace");
+        }
+    }
+
+    @Test
     public void testListDatabaseNames() throws Exception {
         assertThat(client.getDatabaseNames()).isEmpty();
         db.getCollection(collection.getName()).insert(new BasicDBObject());
@@ -842,6 +898,17 @@ public class MemoryBackendTest {
 
         obj = collection.findOne(new BasicDBObject("foo", "bar"), new BasicDBObject("_id", 0).append("foo", 1));
         assertThat(obj.keySet()).containsOnly("foo");
+    }
+
+    @Test
+    public void testQuerySystemNamespace() throws Exception {
+        assertThat(db.getCollection("system.foobar").findOne()).isNull();
+        assertThat(db.getCollectionNames()).isEmpty();
+
+        collection.insert(new BasicDBObject());
+        BasicDBObject expectedObj = new BasicDBObject("name", collection.getFullName());
+        DBObject coll = db.getCollection("system.namespaces").findOne(expectedObj);
+        assertThat(coll).isEqualTo(expectedObj);
     }
 
     @Test
