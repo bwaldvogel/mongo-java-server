@@ -13,4 +13,9 @@ abstract class CommonDatabase implements MongoDatabase {
         return databaseName;
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
+    }
+
 }

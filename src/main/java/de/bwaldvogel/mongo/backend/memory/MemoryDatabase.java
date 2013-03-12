@@ -34,8 +34,8 @@ public class MemoryDatabase extends CommonDatabase {
     public MemoryDatabase(MemoryBackend backend, String databaseName) {
         super(databaseName);
         this.backend = backend;
-        namespaces = new MemoryCollection(getDatabaseName(), "system.namespaces", "name");
-        collections.put("system.namespaces", namespaces);
+        namespaces = new MemoryNamespacesCollection(getDatabaseName());
+        collections.put(namespaces.getCollectionName(), namespaces);
     }
 
     private synchronized MemoryCollection resolveCollection(ClientRequest request) throws MongoServerException {
