@@ -296,10 +296,13 @@ public class MemoryBackendTest {
     @Test
     public void testDropDatabaseDropsAllData() throws Exception {
         collection.insert(new BasicDBObject());
+        DBCollection collection2 = db.getCollection("testcoll2");
+        collection2.insert(new BasicDBObject());
+
         client.dropDatabase(db.getName());
         assertThat(client.getDatabaseNames()).excludes(db.getName());
         assertThat(collection.count()).isZero();
-        assertThat(db.getCollectionNames()).excludes(collection.getName());
+        assertThat(db.getCollectionNames()).excludes(collection.getName(), collection2.getName());
     }
 
     @Test
