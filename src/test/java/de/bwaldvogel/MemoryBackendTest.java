@@ -1327,6 +1327,19 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateMulti() throws Exception {
+        collection.drop();
+        collection.insert(new BasicDBObject("a", 1));
+        collection.insert(new BasicDBObject("a", 1));
+        collection.update(new BasicDBObject("a", 1), new BasicDBObject("$set", new BasicDBObject("b", 2)));
+        assertThat(collection.find(new BasicDBObject("b", 2)).count()).isEqualTo(1);
+
+        collection.update(new BasicDBObject("a", 1), new BasicDBObject("$set", new BasicDBObject("b", 3)), false, true);
+        assertThat(collection.find(new BasicDBObject("b", 2)).count()).isEqualTo(0);
+        assertThat(collection.find(new BasicDBObject("b", 3)).count()).isEqualTo(2);
+    }
+
+    @Test
     public void testUpdateWithIdInMulti() {
         collection.insert(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
         collection.update(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2))), new BasicDBObject(

@@ -561,12 +561,12 @@ public class MemoryCollection extends MongoCollection {
         int n = 0;
         BSONObject selector = update.getSelector();
         for (Integer position : queryDocuments(selector)) {
-            if (n > 0 && !update.isMulti()) {
-                throw new MongoServerError(0, "no multi flag");
-            }
-
-            n++;
             updateDocument(documents.get(position.intValue()), updateQuery);
+            n++;
+
+            if (!update.isMulti()) {
+                break;
+            }
         }
 
         // insert?
