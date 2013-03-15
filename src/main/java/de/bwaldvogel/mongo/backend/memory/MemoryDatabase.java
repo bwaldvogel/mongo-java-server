@@ -18,6 +18,7 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -295,17 +296,16 @@ public class MemoryDatabase extends CommonDatabase {
         String collectionName = query.get("drop").toString();
         MongoCollection collection = collections.remove(collectionName);
 
-        BSONObject response = new BasicBSONObject();
         if (collection == null) {
-            throw new MongoServerException("ns not found");
-        } else {
-            namespaces.removeDocument(new BasicBSONObject("name", collection.getFullName()));
-            response.put("nIndexesWas", Integer.valueOf(collection.getNumIndexes()));
-            response.put("ns", collection.getFullName());
-            Utils.markOkay(response);
+            throw new MongoSilentServerException("ns not found");
         }
-
+        BSONObject response = new BasicBSONObject();
+        namespaces.removeDocument(new BasicBSONObject("name", collection.getFullName()));
+        response.put("nIndexesWas", Integer.valueOf(collection.getNumIndexes()));
+        response.put("ns", collection.getFullName());
+        Utils.markOkay(response);
         return response;
+
     }
 
     private BSONObject commandGetLastError(Channel channel, String command, BSONObject query)

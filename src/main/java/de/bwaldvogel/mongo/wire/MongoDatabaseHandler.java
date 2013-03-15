@@ -25,6 +25,7 @@ import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
@@ -112,6 +113,11 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
             BSONObject obj = new BasicBSONObject();
             obj.put("errmsg", e.getMessage());
             obj.put("code", Integer.valueOf(e.getCode()));
+            obj.put("ok", Integer.valueOf(0));
+            documents.add(obj);
+        } catch (MongoSilentServerException e) {
+            BSONObject obj = new BasicBSONObject();
+            obj.put("errmsg", e.getMessage());
             obj.put("ok", Integer.valueOf(0));
             documents.add(obj);
         } catch (MongoServerException e) {

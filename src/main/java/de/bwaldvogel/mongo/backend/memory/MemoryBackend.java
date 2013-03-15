@@ -15,6 +15,7 @@ import org.jboss.netty.channel.Channel;
 import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
@@ -48,7 +49,7 @@ public class MemoryBackend implements MongoBackend {
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("replSetGetStatus")) {
-            throw new MongoServerException("not running with --replSet");
+            throw new MongoSilentServerException("not running with --replSet");
         } else {
             throw new NoSuchCommandException(command);
         }
