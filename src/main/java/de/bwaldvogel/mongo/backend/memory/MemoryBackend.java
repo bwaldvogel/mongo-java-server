@@ -54,11 +54,11 @@ public class MemoryBackend implements MongoBackend {
         }
     }
 
-    private synchronized MongoDatabase resolveDatabase(Message message) {
+    private synchronized MongoDatabase resolveDatabase(Message message) throws MongoServerException {
         return resolveDatabase(message.getDatabaseName());
     }
 
-    private synchronized MongoDatabase resolveDatabase(String database) {
+    private synchronized MongoDatabase resolveDatabase(String database) throws MongoServerException {
         MongoDatabase db = databases.get(database);
         if (db == null) {
             db = new MemoryDatabase(this, database);

@@ -7,15 +7,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public abstract class Index {
 
-    private String name;
-
-    public Index(String name) {
-        this.name = name;
-    }
-
-    public final String getName() {
-        return name;
-    }
+    public abstract String getName();
 
     public abstract void checkAdd(BSONObject document) throws KeyConstraintError;
 

@@ -66,7 +66,7 @@ public class ReadOnlyProxyTest {
     public void testStats() throws Exception {
         CommandResult stats = readOnlyClient.getDB("testdb").getStats();
         stats.throwOnError();
-        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(0);
+        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(1);
     }
 
     @Test

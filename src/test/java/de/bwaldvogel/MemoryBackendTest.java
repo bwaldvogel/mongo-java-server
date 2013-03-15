@@ -17,7 +17,6 @@ import org.bson.BasicBSONObject;
 import org.bson.types.ObjectId;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
@@ -171,16 +170,17 @@ public class MemoryBackendTest {
     }
 
     @Test
-    @Ignore("not yet implemented")
     public void testCreateIndexes() {
         collection.ensureIndex("n");
         collection.ensureIndex("b");
         List<DBObject> indexes = db.getCollection("system.indexes").find().toArray();
         assertThat(indexes).containsExactly(
-                new BasicDBObject("v", 1).append("key", new BasicDBObject("n", 1)).append("ns", "db.coll")
-                        .append("name", "n_1"),
-                new BasicDBObject("v", 1).append("key", new BasicDBObject("b", 1)).append("ns", "db.coll")
-                        .append("name", "b_1"));
+                new BasicDBObject("key", new BasicDBObject("_id", 1)).append("ns", collection.getFullName()).append(
+                        "name", "_id_"),
+                new BasicDBObject("key", new BasicDBObject("n", 1)).append("ns", collection.getFullName()).append(
+                        "name", "n_1"),
+                new BasicDBObject("key", new BasicDBObject("b", 1)).append("ns", collection.getFullName()).append(
+                        "name", "b_1"));
     }
 
     @Test
@@ -194,10 +194,10 @@ public class MemoryBackendTest {
     public void testDatabaseStats() throws Exception {
         CommandResult stats = db.getStats();
         stats.throwOnError();
-        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(0);
+        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(1);
         assertThat(((Number) stats.get("collections")).longValue()).isEqualTo(1);
-        assertThat(((Number) stats.get("indexes")).longValue()).isEqualTo(1);
-        assertThat(((Number) stats.get("dataSize")).longValue()).isEqualTo(0);
+        assertThat(((Number) stats.get("indexes")).longValue()).isEqualTo(0);
+        assertThat(((Number) stats.get("dataSize")).longValue()).isEqualTo(37);
 
         db.getCollection("foo").insert(new BasicDBObject());
         db.getCollection("foo").insert(new BasicDBObject());
@@ -206,10 +206,10 @@ public class MemoryBackendTest {
         stats = db.getStats();
         stats.throwOnError();
 
-        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(5);
+        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(8);
         assertThat(((Number) stats.get("collections")).longValue()).isEqualTo(3);
-        assertThat(((Number) stats.get("indexes")).longValue()).isEqualTo(3);
-        assertThat(((Number) stats.get("dataSize")).longValue()).isEqualTo(118);
+        assertThat(((Number) stats.get("indexes")).longValue()).isEqualTo(2);
+        assertThat(((Number) stats.get("dataSize")).longValue()).isEqualTo(271);
     }
 
     @Test
@@ -272,10 +272,10 @@ public class MemoryBackendTest {
 
     @Test
     public void testDropCollection() throws Exception {
-        db.getCollection("foo").insert(new BasicDBObject());
-        assertThat(db.getCollectionNames()).containsOnly("foo");
-        db.getCollection("foo").drop();
-        assertThat(db.getCollectionNames()).isEmpty();
+        collection.insert(new BasicDBObject());
+        assertThat(db.getCollectionNames()).contains(collection.getName());
+        collection.drop();
+        assertThat(db.getCollectionNames()).excludes(collection.getName());
     }
 
     @Test
@@ -587,7 +587,7 @@ public class MemoryBackendTest {
         assertThat(collection).isNotNull();
         assertThat(db.getCollection("coll")).isSameAs(collection);
         assertThat(db.getCollectionFromString("coll")).isSameAs(collection);
-        assertThat(db.getCollectionNames()).containsOnly("coll");
+        assertThat(db.getCollectionNames()).contains("coll");
     }
 
     @Test
@@ -906,7 +906,7 @@ public class MemoryBackendTest {
     @Test
     public void testQuerySystemNamespace() throws Exception {
         assertThat(db.getCollection("system.foobar").findOne()).isNull();
-        assertThat(db.getCollectionNames()).isEmpty();
+        assertThat(db.getCollectionNames()).containsOnly("system.indexes");
 
         collection.insert(new BasicDBObject());
         BasicDBObject expectedObj = new BasicDBObject("name", collection.getFullName());

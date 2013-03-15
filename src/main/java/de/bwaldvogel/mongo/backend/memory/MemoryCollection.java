@@ -24,8 +24,6 @@ import de.bwaldvogel.mongo.backend.QueryMatcher;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.backend.memory.index.Index;
-import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
-import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
@@ -48,7 +46,10 @@ public class MemoryCollection extends MongoCollection {
     public MemoryCollection(String databaseName, String collectionName, String idField) {
         super(databaseName, collectionName);
         this.idField = idField;
-        indexes.add(new UniqueIndex(idField));
+    }
+
+    public void addIndex(Index index) {
+        indexes.add(index);
     }
 
     private Iterable<Integer> matchDocuments(BSONObject query, Iterable<Integer> positions) throws MongoServerError {
@@ -331,7 +332,7 @@ public class MemoryCollection extends MongoCollection {
         return newDocument;
     }
 
-    public synchronized void addDocument(BSONObject document) throws KeyConstraintError {
+    public synchronized void addDocument(BSONObject document) throws MongoServerException {
 
         Integer pos = emptyPositions.poll();
         if (pos == null)
@@ -351,21 +352,29 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
-    public synchronized void removeDocument(BSONObject document) {
+    public synchronized void removeDocument(BSONObject document) throws MongoServerException {
         Integer pos = null;
-        for (Index index : indexes) {
-            pos = index.remove(document);
+
+        if (!indexes.isEmpty()) {
+            for (Index index : indexes) {
+                pos = index.remove(document);
+            }
+        } else {
+            int idx = documents.indexOf(document);
+            if (idx >= 0) {
+                pos = Integer.valueOf(idx);
+            }
         }
         if (pos == null) {
             // not found
             return;
         }
         dataSize.addAndGet(-Utils.calculateSize(document));
-        documents.set(pos, null);
+        documents.set(pos.intValue(), null);
         emptyPositions.add(pos);
     }
 
-    public synchronized int getCount() {
+    public synchronized int count() {
         return documents.size() - emptyPositions.size();
     }
 
@@ -529,7 +538,7 @@ public class MemoryCollection extends MongoCollection {
         return response;
     }
 
-    public synchronized int handleInsert(MongoInsert insert) throws MongoServerError {
+    public synchronized int handleInsert(MongoInsert insert) throws MongoServerException {
         int n = 0;
         for (BSONObject document : insert.getDocuments()) {
             addDocument(document);
@@ -538,7 +547,7 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
-    public synchronized int handleDelete(MongoDelete delete) throws MongoServerError {
+    public synchronized int handleDelete(MongoDelete delete) throws MongoServerException {
         int n = 0;
         for (BSONObject document : handleQuery(delete.getSelector(), 0, Integer.MAX_VALUE)) {
             removeDocument(document);
@@ -643,7 +652,7 @@ public class MemoryCollection extends MongoCollection {
 
     public int count(BSONObject query) throws MongoServerError {
         if (query.keySet().isEmpty()) {
-            return getCount();
+            return count();
         }
 
         int count = 0;

@@ -21,15 +21,18 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class UniqueIndex extends Index {
 
-    private final String key;
     private Map<Object, Integer> index = new HashMap<Object, Integer>();
 
-    public UniqueIndex(String key) {
-        super(determineName(key, true));
+    private final boolean ascending;
+    private final String key;
+
+    public UniqueIndex(String key, boolean ascending) {
+        super();
         this.key = key;
+        this.ascending = ascending;
     }
 
-    private static String determineName(String key, boolean ascending) {
+    public String getName() {
         if (key.equals(Constants.ID_FIELD)) {
             return Constants.ID_INDEX_NAME;
         } else {

@@ -15,6 +15,7 @@ import com.mongodb.BasicDBObject;
 import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -34,12 +35,16 @@ public class MemoryDatabase extends CommonDatabase {
     private MemoryBackend backend;
 
     private MongoCollection namespaces;
+    private MongoCollection indexes;
 
-    public MemoryDatabase(MemoryBackend backend, String databaseName) {
+    public MemoryDatabase(MemoryBackend backend, String databaseName) throws MongoServerException {
         super(databaseName);
         this.backend = backend;
         namespaces = new MemoryNamespacesCollection(getDatabaseName());
         collections.put(namespaces.getCollectionName(), namespaces);
+
+        indexes = new MemoryIndexesCollection(getDatabaseName());
+        addNamespace(indexes);
     }
 
     private synchronized MongoCollection resolveCollection(String collectionName, boolean throwIfNotFound)
@@ -96,6 +101,12 @@ public class MemoryDatabase extends CommonDatabase {
         lastUpdates.remove(insert.getChannel());
         try {
             String collectionName = insert.getCollectionName();
+            if (collectionName.equals(indexes.getCollectionName())) {
+                for (BSONObject indexDescription : insert.getDocuments()) {
+                    addIndex(indexDescription);
+                }
+                return;
+            }
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
@@ -111,15 +122,49 @@ public class MemoryDatabase extends CommonDatabase {
         }
     }
 
+    private void addIndex(BSONObject indexDescription) throws MongoServerException {
+
+        String ns = indexDescription.get("ns").toString();
+        int index = ns.indexOf('.');
+        String collectionName = ns.substring(index + 1);
+        MongoCollection collection = resolveCollection(collectionName, false);
+        if (collection == null) {
+            collection = createCollection(collectionName);
+        }
+
+        indexes.addDocument(indexDescription);
+
+        BSONObject key = (BSONObject) indexDescription.get("key");
+        if (key.keySet().equals(Collections.singleton("_id"))) {
+            boolean ascending = Utils.normalizeValue(key.get("_id")).equals(Double.valueOf(1.0));
+            collection.addIndex(new UniqueIndex("_id", ascending));
+        } else {
+            // non-id indexes not yet implemented
+            // we can ignore that for a moment since it will not break the
+            // functionality
+        }
+    }
+
     private MongoCollection createCollection(String collectionName) throws MongoServerException {
         checkCollectionName(collectionName);
         if (collectionName.contains("$")) {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
         }
         MongoCollection collection = new MemoryCollection(getDatabaseName(), collectionName, "_id");
-        collections.put(collectionName, collection);
-        namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
+        addNamespace(collection);
+
+        BSONObject indexDescription = new BasicBSONObject();
+        indexDescription.put("name", "_id_");
+        indexDescription.put("ns", collection.getFullName());
+        indexDescription.put("key", new BasicBSONObject("_id", Integer.valueOf(1)));
+        addIndex(indexDescription);
+
         return collection;
+    }
+
+    protected void addNamespace(MongoCollection collection) throws MongoServerException {
+        collections.put(collection.getCollectionName(), collection);
+        namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
     }
 
     @Override
@@ -205,18 +250,17 @@ public class MemoryDatabase extends CommonDatabase {
 
     private BSONObject commandDatabaseStats() throws MongoServerException {
         BSONObject response = new BasicBSONObject("db", getDatabaseName());
-        response.put("collections", Integer.valueOf(collections.size()));
+        response.put("collections", Integer.valueOf(namespaces.count()));
 
-        int indexes = 0;
         long indexSize = 0;
         long objects = 0;
         long dataSize = 0;
         double averageObjectSize = 0;
+
         for (MongoCollection collection : collections.values()) {
             BSONObject stats = collection.getStats();
             objects += ((Number) stats.get("count")).longValue();
             dataSize += ((Number) stats.get("size")).longValue();
-            indexes += ((Number) stats.get("nindexes")).longValue();
 
             BSONObject indexSizes = (BSONObject) stats.get("indexSize");
             for (String indexName : indexSizes.keySet()) {
@@ -227,13 +271,12 @@ public class MemoryDatabase extends CommonDatabase {
         if (objects > 0) {
             averageObjectSize = dataSize / ((double) objects);
         }
-
         response.put("objects", Long.valueOf(objects));
         response.put("avgObjSize", Double.valueOf(averageObjectSize));
         response.put("dataSize", Long.valueOf(dataSize));
         response.put("storageSize", Long.valueOf(0));
         response.put("numExtents", Integer.valueOf(0));
-        response.put("indexes", Integer.valueOf(indexes));
+        response.put("indexes", Integer.valueOf(indexes.count()));
         response.put("indexSize", Long.valueOf(indexSize));
         response.put("fileSize", Integer.valueOf(0));
         response.put("nsSizeMB", Integer.valueOf(0));
@@ -254,8 +297,7 @@ public class MemoryDatabase extends CommonDatabase {
 
         BSONObject response = new BasicBSONObject();
         if (collection == null) {
-            response.put("errmsg", "ns not found");
-            response.put("ok", Integer.valueOf(0));
+            throw new MongoServerException("ns not found");
         } else {
             namespaces.removeDocument(new BasicBSONObject("name", collection.getFullName()));
             response.put("nIndexesWas", Integer.valueOf(collection.getNumIndexes()));

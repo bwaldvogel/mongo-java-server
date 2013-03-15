@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import org.bson.BSONObject;
 
+import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -25,6 +26,8 @@ public abstract class MongoCollection {
         return collectionName;
     }
 
+    public abstract void addIndex(Index index);
+
     public abstract void addDocument(BSONObject document) throws MongoServerException;
 
     public abstract void removeDocument(BSONObject document) throws MongoServerException;
@@ -47,6 +50,8 @@ public abstract class MongoCollection {
     public abstract BSONObject findAndModify(BSONObject query) throws MongoServerException;
 
     public abstract int count(BSONObject query) throws MongoServerException;
+
+    public abstract int count();
 
     public abstract int getNumIndexes();
 
