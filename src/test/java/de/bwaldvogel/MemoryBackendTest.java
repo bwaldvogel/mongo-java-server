@@ -681,7 +681,10 @@ public class MemoryBackendTest {
 
         assertThat(collection.count()).isEqualTo(3);
 
-        collection.insert(new BasicDBObject("foo", Arrays.asList(1, 2, 3)));
+        WriteResult result = collection.insert(new BasicDBObject("foo", Arrays.asList(1, 2, 3)));
+        assertThat(result.getN()).isEqualTo(1);
+        assertThat(result.getField("updatedExisting")).isNull();
+
         collection.insert(new BasicDBObject("foo", new byte[10]));
         BasicDBObject insertedObject = new BasicDBObject("foo", UUID.randomUUID());
         collection.insert(insertedObject);
@@ -1036,8 +1039,18 @@ public class MemoryBackendTest {
         newObject.put("foo", "bar");
 
         collection.insert(object);
-        collection.update(object, newObject);
+        WriteResult result = collection.update(object, newObject);
+        assertThat(result.getN()).isEqualTo(1);
+        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.TRUE);
         assertThat(collection.findOne(object)).isEqualTo(newObject);
+    }
+
+    @Test
+    public void testUpdateNothing() throws Exception {
+        BasicDBObject object = new BasicDBObject("_id", 1);
+        WriteResult result = collection.update(object, object);
+        assertThat(result.getN()).isEqualTo(0);
+        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
     }
 
     @Test
@@ -1328,13 +1341,20 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpdateMulti() throws Exception {
-        collection.drop();
         collection.insert(new BasicDBObject("a", 1));
         collection.insert(new BasicDBObject("a", 1));
-        collection.update(new BasicDBObject("a", 1), new BasicDBObject("$set", new BasicDBObject("b", 2)));
+        WriteResult result = collection.update(new BasicDBObject("a", 1), new BasicDBObject("$set", new BasicDBObject(
+                "b", 2)));
+
+        assertThat(result.getN()).isEqualTo(1);
+        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.TRUE);
+
         assertThat(collection.find(new BasicDBObject("b", 2)).count()).isEqualTo(1);
 
-        collection.update(new BasicDBObject("a", 1), new BasicDBObject("$set", new BasicDBObject("b", 3)), false, true);
+        result = collection.update(new BasicDBObject("a", 1), new BasicDBObject("$set", new BasicDBObject("b", 3)),
+                false, true);
+        assertThat(result.getN()).isEqualTo(2);
+        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.TRUE);
         assertThat(collection.find(new BasicDBObject("b", 2)).count()).isEqualTo(0);
         assertThat(collection.find(new BasicDBObject("b", 3)).count()).isEqualTo(2);
     }
@@ -1387,8 +1407,10 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpsert() {
-        collection.update(new BasicDBObject("_id", 1).append("n", "jon"), new BasicDBObject("$inc", new BasicDBObject(
-                "a", 1)), true, false);
+        WriteResult result = collection.update(new BasicDBObject("_id", 1).append("n", "jon"), new BasicDBObject(
+                "$inc", new BasicDBObject("a", 1)), true, false);
+        assertThat(result.getN()).isEqualTo(1);
+        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
         assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("n", "jon").append("a", 1));
     }
 

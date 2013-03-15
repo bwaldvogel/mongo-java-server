@@ -31,7 +31,7 @@ public class MemoryDatabase extends CommonDatabase {
 
     private Map<String, MongoCollection> collections = new HashMap<String, MongoCollection>();
     private Map<Channel, MongoServerError> lastExceptions = new HashMap<Channel, MongoServerError>();
-    private Map<Channel, Integer> lastUpdates = new HashMap<Channel, Integer>();
+    private Map<Channel, BSONObject> lastUpdates = new HashMap<Channel, BSONObject>();
 
     private MemoryBackend backend;
 
@@ -71,7 +71,7 @@ public class MemoryDatabase extends CommonDatabase {
         return lastExceptions.get(Integer.valueOf(clientId));
     }
 
-    public Integer getLastUpdates(int clientId) {
+    public BSONObject getLastUpdates(int clientId) {
         return lastUpdates.get(Integer.valueOf(clientId));
     }
 
@@ -116,7 +116,7 @@ public class MemoryDatabase extends CommonDatabase {
                 collection = createCollection(collectionName);
             }
             int n = collection.handleInsert(insert);
-            lastUpdates.put(insert.getChannel(), Integer.valueOf(n));
+            lastUpdates.put(insert.getChannel(), new BasicBSONObject("n", Integer.valueOf(n)));
         } catch (MongoServerError e) {
             log.error("failed to insert " + insert, e);
             lastExceptions.put(insert.getChannel(), e);
@@ -183,7 +183,7 @@ public class MemoryDatabase extends CommonDatabase {
             } else {
                 n = collection.handleDelete(delete);
             }
-            lastUpdates.put(delete.getChannel(), Integer.valueOf(n));
+            lastUpdates.put(delete.getChannel(), new BasicBSONObject("n", Integer.valueOf(n)));
         } catch (MongoServerError e) {
             log.error("failed to delete " + delete, e);
             lastExceptions.put(delete.getChannel(), e);
@@ -204,8 +204,8 @@ public class MemoryDatabase extends CommonDatabase {
             if (collection == null) {
                 collection = createCollection(collectionName);
             }
-            int n = collection.handleUpdate(update);
-            lastUpdates.put(update.getChannel(), Integer.valueOf(n));
+            BSONObject result = collection.handleUpdate(update);
+            lastUpdates.put(update.getChannel(), result);
         } catch (MongoServerError e) {
             log.error("failed to update " + update, e);
             lastExceptions.put(update.getChannel(), e);
@@ -323,7 +323,6 @@ public class MemoryDatabase extends CommonDatabase {
 
         BSONObject result = new BasicBSONObject();
         Utils.markOkay(result);
-
         if (lastExceptions != null) {
             MongoServerError ex = lastExceptions.remove(channel);
             if (ex != null) {
@@ -334,11 +333,12 @@ public class MemoryDatabase extends CommonDatabase {
                 return obj;
             }
 
-            Integer numUpdates = lastUpdates.remove(channel);
-            if (numUpdates != null) {
-                result.put("n", numUpdates);
+            BSONObject lastUpdate = lastUpdates.remove(channel);
+            if (lastUpdate != null) {
+                result.putAll(lastUpdate);
             }
         }
+
         return result;
     }
 

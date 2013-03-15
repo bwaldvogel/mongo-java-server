@@ -415,7 +415,7 @@ public class MemoryCollection extends MongoCollection {
                     returnDocument = oldDocument;
                 }
                 lastErrorObject = new BasicBSONObject("updatedExisting", Boolean.TRUE);
-                lastErrorObject.put("n", 1);
+                lastErrorObject.put("n", Integer.valueOf(1));
             }
         }
         if (num == 0 && Utils.isTrue(query.get("upsert"))) {
@@ -556,12 +556,14 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
-    public synchronized int handleUpdate(MongoUpdate update) throws MongoServerException {
+    public synchronized BSONObject handleUpdate(MongoUpdate update) throws MongoServerException {
         BSONObject updateQuery = update.getUpdate();
         int n = 0;
+        boolean updatedExisting = false;
         BSONObject selector = update.getSelector();
         for (Integer position : queryDocuments(selector)) {
             updateDocument(documents.get(position.intValue()), updateQuery);
+            updatedExisting = true;
             n++;
 
             if (!update.isMulti()) {
@@ -575,7 +577,9 @@ public class MemoryCollection extends MongoCollection {
             n++;
         }
 
-        return n;
+        BSONObject result = new BasicBSONObject("n", Integer.valueOf(n));
+        result.put("updatedExisting", Boolean.valueOf(updatedExisting));
+        return result;
     }
 
     private BSONObject updateDocument(BSONObject document, BSONObject updateQuery) throws MongoServerException {

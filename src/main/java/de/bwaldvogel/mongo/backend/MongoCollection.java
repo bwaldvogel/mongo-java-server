@@ -41,7 +41,7 @@ public abstract class MongoCollection {
 
     public abstract BSONObject handleDistinct(BSONObject query) throws MongoServerException;
 
-    public abstract int handleUpdate(MongoUpdate update) throws MongoServerException;
+    public abstract BSONObject handleUpdate(MongoUpdate update) throws MongoServerException;
 
     public abstract BSONObject getStats() throws MongoServerException;
 
