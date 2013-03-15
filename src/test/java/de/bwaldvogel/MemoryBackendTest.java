@@ -592,9 +592,12 @@ public class MemoryBackendTest {
 
     @Test
     public void testGetLastError() {
-        collection.insert(new BasicDBObject("_id", 1));
+        WriteResult result = collection.insert(new BasicDBObject("_id", 1));
         CommandResult error = db.getLastError();
         assertThat(error.ok()).isTrue();
+        assertThat(error).isEqualTo(result.getCachedLastError());
+
+        assertThat(db.getLastError()).isEqualTo(error);
 
         assertThat(db.command("illegalCommand").ok()).isFalse();
 
@@ -682,7 +685,7 @@ public class MemoryBackendTest {
         assertThat(collection.count()).isEqualTo(3);
 
         WriteResult result = collection.insert(new BasicDBObject("foo", Arrays.asList(1, 2, 3)));
-        assertThat(result.getN()).isEqualTo(1);
+        assertThat(result.getN()).isZero();
         assertThat(result.getField("updatedExisting")).isNull();
 
         collection.insert(new BasicDBObject("foo", new byte[10]));
@@ -763,12 +766,6 @@ public class MemoryBackendTest {
         assertThat(collection.count()).isZero();
         collection.remove(new BasicDBObject("doesnt exist", 1));
         assertThat(collection.count()).isZero();
-    }
-
-    @Test
-    public void testInsertReturnsModifiedDocumentCount() {
-        WriteResult result = collection.insert(new BasicDBObject("_id", new BasicDBObject("n", 1)));
-        assertThat(result.getN()).isEqualTo(1);
     }
 
     @Test
