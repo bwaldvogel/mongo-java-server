@@ -71,10 +71,6 @@ public class MemoryDatabase extends CommonDatabase {
         return lastExceptions.get(Integer.valueOf(clientId));
     }
 
-    public BSONObject getLastUpdates(int clientId) {
-        return lastUpdates.get(Integer.valueOf(clientId));
-    }
-
     @Override
     public boolean isEmpty() {
         return collections.isEmpty();
