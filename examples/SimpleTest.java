@@ -12,8 +12,8 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;
 
+import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
-import de.bwaldvogel.mongo.wire.message.MongoServer;
 
 public class SimpleTest {
 

@@ -33,10 +33,10 @@ import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
 
+import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
-import de.bwaldvogel.mongo.wire.message.MongoServer;
 
 public class MemoryBackendTest {
 

@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.wire.message;
+package de.bwaldvogel.mongo;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;

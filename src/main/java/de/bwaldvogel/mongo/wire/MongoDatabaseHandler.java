@@ -20,6 +20,7 @@ import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
 
+import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -30,7 +31,6 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
-import de.bwaldvogel.mongo.wire.message.MongoServer;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
