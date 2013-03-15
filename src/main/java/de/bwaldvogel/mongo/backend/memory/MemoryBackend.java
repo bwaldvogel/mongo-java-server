@@ -48,10 +48,7 @@ public class MemoryBackend implements MongoBackend {
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("replSetGetStatus")) {
-            BSONObject reply = new BasicBSONObject();
-            reply.put("ok", Integer.valueOf(0));
-            reply.put("errmsg", "not running with --replSet");
-            return reply;
+            throw new MongoServerException("not running with --replSet");
         } else {
             throw new NoSuchCommandException(command);
         }
