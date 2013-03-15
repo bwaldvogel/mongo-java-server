@@ -31,7 +31,8 @@ import de.bwaldvogel.mongo.wire.message.MongoUpdate;
  */
 public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
-    public static final int MAX_BSON_OBJECT_SIZE = 16777216;
+    public static final int MAX_BSON_OBJECT_SIZE = 16 * 1024 * 1024;
+    public static final int MAX_MESSAGE_SIZE_BYTES = 48 * 1000 * 1000;
 
     private static final Logger log = Logger.getLogger(MongoWireProtocolHandler.class);
 
@@ -60,6 +61,11 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
         buffer.markReaderIndex();
         int totalLength = buffer.readInt();
+
+        if (totalLength > MAX_MESSAGE_SIZE_BYTES) {
+            throw new IOException("message too large: " + totalLength + " bytes");
+        }
+
         if (buffer.readableBytes() < totalLength - lengthFieldLength) {
             buffer.resetReaderIndex();
             return null; // retry
@@ -193,7 +199,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new IOException();
         }
         if (length > MAX_BSON_OBJECT_SIZE) {
-            throw new IOException();
+            throw new IOException("BSON object too large: " + length + " bytes");
         }
 
         BSONObject object = new BasicBSONObject();

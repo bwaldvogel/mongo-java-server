@@ -1472,4 +1472,14 @@ public class MemoryBackendTest {
         assertThat(actual).isEqualTo(expected);
     }
 
+    @Test
+    public void testIsMaster() throws Exception {
+        CommandResult isMaster = db.command("isMaster");
+        assertThat(isMaster.ok()).isTrue();
+        assertThat(isMaster.getBoolean("ismaster")).isTrue();
+        assertThat(isMaster.getDate("localTime")).isInstanceOf(Date.class);
+        assertThat(isMaster.getInt("maxBsonObjectSize")).isGreaterThan(1000);
+        assertThat(isMaster.getInt("maxMessageSizeBytes")).isGreaterThan(isMaster.getInt("maxBsonObjectSize"));
+    }
+
 }

@@ -31,13 +31,7 @@ public class MemoryBackend implements MongoBackend {
     protected BSONObject handleAdminCommand(Channel channel, String command, BSONObject query)
             throws MongoServerException {
 
-        if (command.equalsIgnoreCase("ismaster")) {
-            BSONObject response = new BasicBSONObject("ismaster", Boolean.TRUE);
-            response.put("maxBsonObjectSize", Integer.valueOf(MongoWireProtocolHandler.MAX_BSON_OBJECT_SIZE));
-            response.put("localTime", new Date());
-            Utils.markOkay(response);
-            return response;
-        } else if (command.equalsIgnoreCase("listdatabases")) {
+        if (command.equalsIgnoreCase("listdatabases")) {
             BSONObject response = new BasicBSONObject();
             List<BSONObject> dbs = new ArrayList<BSONObject>();
             for (MongoDatabase db : databases.values()) {
@@ -83,6 +77,13 @@ public class MemoryBackend implements MongoBackend {
             BSONObject response = new BasicBSONObject();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.getRemoteAddress();
             response.put("you", remoteAddress.getAddress().getHostAddress() + ":" + remoteAddress.getPort());
+            Utils.markOkay(response);
+            return response;
+        } else if (command.equalsIgnoreCase("ismaster")) {
+            BSONObject response = new BasicBSONObject("ismaster", Boolean.TRUE);
+            response.put("maxBsonObjectSize", Integer.valueOf(MongoWireProtocolHandler.MAX_BSON_OBJECT_SIZE));
+            response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
+            response.put("localTime", new Date());
             Utils.markOkay(response);
             return response;
         }
