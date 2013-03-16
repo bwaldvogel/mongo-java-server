@@ -334,7 +334,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         if (length < 0)
             throw new IOException("string termination not found");
 
-        return buffer.toString(buffer.readerIndex(), length, Charset.forName("UTF-8"));
+        String result = buffer.toString(buffer.readerIndex(), length, Charset.forName("UTF-8"));
+        buffer.skipBytes(length + 1);
+        return result;
     }
 
     private Object readBinary(ChannelBuffer buffer) throws IOException {
