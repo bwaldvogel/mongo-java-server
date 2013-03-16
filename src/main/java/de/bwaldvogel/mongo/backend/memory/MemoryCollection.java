@@ -270,10 +270,7 @@ public class MemoryCollection extends MongoCollection {
             throw new MongoServerError(13596, "cannot change _id of a document old:" + oldId + " new:" + newId);
         }
 
-        if (newId == null) {
-            if (oldId == null) {
-                throw new MongoServerException("document to update has no _id: " + oldDocument);
-            }
+        if (newId == null && oldId != null) {
             newDocument.put(idField, oldId);
         }
 

@@ -1412,6 +1412,15 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpsertWithoutId() {
+        WriteResult result = collection.update(new BasicDBObject("a", 1), new BasicDBObject("a", 2), true, false);
+        assertThat(result.getN()).isEqualTo(1);
+        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
+        assertThat(collection.findOne().get("_id")).isInstanceOf(ObjectId.class);
+        assertThat(collection.findOne().get("a")).isEqualTo(2);
+    }
+
+    @Test
     public void testUpsertOnIdWithPush() {
         DBObject update1 = BasicDBObjectBuilder.start().push("$push").push("c").append("a", 1) //
                 .append("b", 2).pop().pop().get();
