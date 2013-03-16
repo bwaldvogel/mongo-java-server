@@ -29,6 +29,7 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
+import com.mongodb.MongoException.DuplicateKey;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
@@ -592,6 +593,9 @@ public class MemoryBackendTest {
 
     @Test
     public void testGetLastError() {
+
+        assertThat(db.getLastError().get("err")).isNull();
+
         WriteResult result = collection.insert(new BasicDBObject("_id", 1));
         CommandResult error = db.getLastError();
         assertThat(error.ok()).isTrue();
@@ -599,10 +603,77 @@ public class MemoryBackendTest {
 
         assertThat(db.getLastError()).isEqualTo(error);
 
-        assertThat(db.command("illegalCommand").ok()).isFalse();
+        try {
+            collection.insert(new BasicDBObject("_id", 1));
+            fail("DuplicateKey expected");
+        } catch (DuplicateKey e) {
+            // okay
+        }
 
-        // getlasterror must succeed again
-        assertThat(db.getLastError().ok()).isTrue();
+        // getlasterror must show the error
+        CommandResult lastError = db.getLastError();
+        assertThat(lastError.getString("err")).startsWith("duplicate key error");
+        assertThat(db.getLastError()).isEqualTo(lastError);
+
+        collection.findOne(new BasicDBObject());
+        assertThat(db.getLastError().getString("err")).isNull();
+    }
+
+    @Test
+    public void testGetPreviousError() {
+
+        assertThat(db.getPreviousError().getString("err")).isNull();
+        assertThat(db.getPreviousError().getInt("nPrev")).isEqualTo(-1);
+
+        collection.insert(new BasicDBObject("_id", 1));
+        try {
+            collection.insert(new BasicDBObject("_id", 1));
+            fail("DuplicateKey expected");
+        } catch (DuplicateKey e) {
+            // okay
+        }
+
+        // getlasterror must show the error
+        CommandResult lastError = db.getLastError();
+        assertThat(lastError.getString("err")).startsWith("duplicate key error");
+        CommandResult previousError = db.getPreviousError();
+        assertThat(previousError).isEqualTo(db.getLastError().append("nPrev", 1));
+        assertThat(db.getPreviousError()).isEqualTo(previousError);
+
+        collection.findOne(new BasicDBObject());
+        assertThat(db.getLastError().getString("err")).isNull();
+        assertThat(db.getPreviousError()).isEqualTo(lastError.append("nPrev", 2));
+
+        collection.findOne(new BasicDBObject());
+        assertThat(db.getPreviousError()).isEqualTo(lastError.append("nPrev", 3));
+
+        collection.update(new BasicDBObject(), new BasicDBObject("a", 1));
+        assertThat(db.getPreviousError().getInt("nPrev")).isEqualTo(1);
+        assertThat(db.getPreviousError().getInt("n")).isEqualTo(1);
+
+    }
+
+    @Test
+    public void testResetError() {
+        collection.insert(new BasicDBObject("_id", 1));
+        try {
+            collection.insert(new BasicDBObject("_id", 1));
+            fail("DuplicateKey expected");
+        } catch (DuplicateKey e) {
+            // okay
+        }
+
+        // getlasterror must show the error
+        CommandResult lastError = db.getLastError();
+        assertThat(lastError.getString("err")).startsWith("duplicate key error");
+        CommandResult previousError = db.getPreviousError();
+        assertThat(previousError).isEqualTo(db.getLastError().append("nPrev", 1));
+
+        db.resetError();
+        assertThat(db.getLastError().get("err")).isNull();
+        assertThat(db.getPreviousError().get("err")).isNull();
+        assertThat(db.getPreviousError().getInt("nPrev")).isEqualTo(-1);
+
     }
 
     /**

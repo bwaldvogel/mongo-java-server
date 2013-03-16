@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend.memory;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -13,6 +14,7 @@ import org.jboss.netty.channel.Channel;
 import com.mongodb.BasicDBObject;
 
 import de.bwaldvogel.mongo.backend.Constants;
+import de.bwaldvogel.mongo.backend.LimitedList;
 import de.bwaldvogel.mongo.backend.MongoCollection;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
@@ -30,8 +32,7 @@ public class MemoryDatabase extends CommonDatabase {
     private static final Logger log = Logger.getLogger(MemoryDatabase.class);
 
     private Map<String, MongoCollection> collections = new HashMap<String, MongoCollection>();
-    private Map<Channel, MongoServerError> lastExceptions = new HashMap<Channel, MongoServerError>();
-    private Map<Channel, BSONObject> lastResults = new HashMap<Channel, BSONObject>();
+    private Map<Channel, List<BSONObject>> lastResults = new HashMap<Channel, List<BSONObject>>();
 
     private MemoryBackend backend;
 
@@ -67,10 +68,6 @@ public class MemoryDatabase extends CommonDatabase {
             throw new MongoServerError(16256, "Invalid ns [" + collectionName + "]");
     }
 
-    public MongoServerError getLastException(int clientId) {
-        return lastExceptions.get(Integer.valueOf(clientId));
-    }
-
     @Override
     public boolean isEmpty() {
         return collections.isEmpty();
@@ -90,17 +87,22 @@ public class MemoryDatabase extends CommonDatabase {
 
     @Override
     public void handleClose(Channel channel) {
-        clearLastStatus(channel);
+        lastResults.remove(channel);
     }
 
-    protected void clearLastStatus(Channel channel) {
-        lastExceptions.remove(channel);
-        lastResults.remove(channel);
+    protected synchronized void clearLastStatus(Channel channel) {
+        List<BSONObject> results = lastResults.get(channel);
+        if (results == null) {
+            results = new LimitedList<BSONObject>(10);
+            lastResults.put(channel, results);
+        }
+        results.add(null);
     }
 
     @Override
     public void handleInsert(MongoInsert insert) throws MongoServerException {
-        clearLastStatus(insert.getChannel());
+        Channel channel = insert.getChannel();
+        clearLastStatus(channel);
         try {
             String collectionName = insert.getCollectionName();
             if (collectionName.equals(indexes.getCollectionName())) {
@@ -117,10 +119,10 @@ public class MemoryDatabase extends CommonDatabase {
                 collection = createCollection(collectionName);
             }
             collection.handleInsert(insert);
-            lastResults.put(insert.getChannel(), new BasicBSONObject("n", Integer.valueOf(0)));
+            putLastResult(channel, new BasicBSONObject("n", Integer.valueOf(0)));
         } catch (MongoServerError e) {
             log.error("failed to insert " + insert, e);
-            lastExceptions.put(insert.getChannel(), e);
+            putLastError(channel, e);
         }
     }
 
@@ -171,7 +173,8 @@ public class MemoryDatabase extends CommonDatabase {
 
     @Override
     public void handleDelete(MongoDelete delete) throws MongoServerException {
-        clearLastStatus(delete.getChannel());
+        Channel channel = delete.getChannel();
+        clearLastStatus(channel);
         try {
             String collectionName = delete.getCollectionName();
             if (collectionName.startsWith("system.")) {
@@ -184,16 +187,17 @@ public class MemoryDatabase extends CommonDatabase {
             } else {
                 n = collection.handleDelete(delete);
             }
-            lastResults.put(delete.getChannel(), new BasicBSONObject("n", Integer.valueOf(n)));
+            putLastResult(channel, new BasicBSONObject("n", Integer.valueOf(n)));
         } catch (MongoServerError e) {
             log.error("failed to delete " + delete, e);
-            lastExceptions.put(delete.getChannel(), e);
+            putLastError(channel, e);
         }
     }
 
     @Override
     public void handleUpdate(MongoUpdate update) throws MongoServerException {
-        clearLastStatus(update.getChannel());
+        Channel channel = update.getChannel();
+        clearLastStatus(channel);
         try {
             String collectionName = update.getCollectionName();
 
@@ -206,10 +210,10 @@ public class MemoryDatabase extends CommonDatabase {
                 collection = createCollection(collectionName);
             }
             BSONObject result = collection.handleUpdate(update);
-            lastResults.put(update.getChannel(), result);
+            putLastResult(channel, result);
         } catch (MongoServerError e) {
             log.error("failed to update " + update, e);
-            lastExceptions.put(update.getChannel(), e);
+            putLastError(channel, e);
         }
     }
 
@@ -219,6 +223,10 @@ public class MemoryDatabase extends CommonDatabase {
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
+        } else if (command.equalsIgnoreCase("getpreverror")) {
+            return commandGetPrevError(channel, command, query);
+        } else if (command.equalsIgnoreCase("reseterror")) {
+            return commandResetError(channel, command, query);
         }
 
         clearLastStatus(channel);
@@ -315,6 +323,24 @@ public class MemoryDatabase extends CommonDatabase {
 
     }
 
+    private void putLastError(Channel channel, MongoServerError ex) {
+        BSONObject error = new BasicBSONObject();
+        error.put("err", ex.getMessage());
+        error.put("code", Integer.valueOf(ex.getCode()));
+        error.put("connectionId", channel.getId());
+        putLastResult(channel, error);
+    }
+
+    private synchronized void putLastResult(Channel channel, BSONObject result) {
+        List<BSONObject> results = lastResults.get(channel);
+        // list must not be empty
+        BSONObject last = results.get(results.size() - 1);
+        if (last != null) {
+            throw new IllegalStateException();
+        }
+        results.set(results.size() - 1, result);
+    }
+
     private BSONObject commandGetLastError(Channel channel, String command, BSONObject query)
             throws MongoServerException {
         Iterator<String> it = query.keySet().iterator();
@@ -328,20 +354,60 @@ public class MemoryDatabase extends CommonDatabase {
             }
         }
 
+        List<BSONObject> results = lastResults.get(channel);
+
+        BSONObject result = null;
+        if (results != null && !results.isEmpty()) {
+            result = results.get(results.size() - 1);
+            if (result == null) {
+                result = new BasicBSONObject();
+            }
+        } else {
+            result = new BasicBSONObject();
+            result.put("err", null);
+        }
+        Utils.markOkay(result);
+        return result;
+    }
+
+    private BSONObject commandGetPrevError(Channel channel, String command, BSONObject query) {
+        List<BSONObject> results = lastResults.get(channel);
+
+        if (results != null) {
+            for (int i = 1; i < results.size(); i++) {
+                BSONObject result = results.get(results.size() - i);
+                if (result == null) {
+                    continue;
+                }
+
+                boolean isRelevant = false;
+                if (result.get("err") != null) {
+                    isRelevant = true;
+                } else if (((Number) result.get("n")).intValue() > 0) {
+                    isRelevant = true;
+                }
+
+                if (isRelevant) {
+                    result.put("nPrev", Integer.valueOf(i));
+                    return result;
+                }
+            }
+        }
+
+        // found no prev error
+        BSONObject result = new BasicBSONObject();
+        result.put("nPrev", Integer.valueOf(-1));
+        Utils.markOkay(result);
+        return result;
+    }
+
+    private BSONObject commandResetError(Channel channel, String command, BSONObject query) {
+        List<BSONObject> results = lastResults.get(channel);
+        if (results != null) {
+            results.clear();
+        }
         BSONObject result = new BasicBSONObject();
         Utils.markOkay(result);
-        MongoServerError ex = lastExceptions.get(channel);
-        if (ex != null) {
-            result.put("err", ex.getMessage());
-            result.put("code", Integer.valueOf(ex.getCode()));
-            result.put("connectionId", channel.getId());
-        }
-
-        BSONObject lastResult = lastResults.get(channel);
-        if (lastResult != null) {
-            result.putAll(lastResult);
-        }
-
         return result;
     }
 
