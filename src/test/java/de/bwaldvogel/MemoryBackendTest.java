@@ -477,6 +477,7 @@ public class MemoryBackendTest {
     @Test
     public void testFindOne() {
         collection.insert(new BasicDBObject("key", "value"));
+        collection.insert(new BasicDBObject("key", "value"));
         DBObject result = collection.findOne();
         assertThat(result).isNotNull();
         assertThat(result.get("_id")).isNotNull();
@@ -504,9 +505,11 @@ public class MemoryBackendTest {
         collection.insert(new BasicDBObject("_id", 3));
         collection.insert(new BasicDBObject("_id", 4));
 
-        @SuppressWarnings("resource")
-        DBCursor cursor = collection.find().limit(2);
-        assertThat(cursor.toArray()).containsExactly(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
+        List<DBObject> actual = collection.find().limit(2).toArray();
+        assertThat(actual).containsExactly(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
+
+        List<DBObject> actualNegativeLimit = collection.find().limit(-2).toArray();
+        assertThat(actualNegativeLimit).isEqualTo(actual);
     }
 
     @Test
@@ -913,6 +916,8 @@ public class MemoryBackendTest {
         }
         List<DBObject> objects = collection.find().limit(1).toArray();
         assertThat(objects.size()).isEqualTo(1);
+
+        assertThat(collection.find().limit(-1).toArray()).isEqualTo(objects);
     }
 
     @Test

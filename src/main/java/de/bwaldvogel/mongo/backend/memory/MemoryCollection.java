@@ -471,6 +471,11 @@ public class MemoryCollection extends MongoCollection {
         BSONObject query;
         BSONObject orderBy = null;
 
+        if (numberToReturn < 0) {
+            // actually: request to close cursor automatically
+            numberToReturn = -numberToReturn;
+        }
+
         if (queryObject.containsField("query")) {
             query = (BSONObject) queryObject.get("query");
             orderBy = (BSONObject) queryObject.get("orderby");
