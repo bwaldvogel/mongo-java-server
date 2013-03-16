@@ -44,6 +44,12 @@ public class DefaultQueryMatcherTest {
                         new BasicBSONObject("name", Pattern.compile("Jo.*", Pattern.CASE_INSENSITIVE)))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("marta")))).isFalse();
         assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("John")))).isFalse();
+
+        String name = "\u0442\u0435\u0441\u0442";
+        assertThat(name).hasSize(4);
+        document.put("name", name);
+        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile(name))));
+
     }
 
     @Test
