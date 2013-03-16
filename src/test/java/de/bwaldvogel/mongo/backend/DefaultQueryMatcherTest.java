@@ -50,6 +50,7 @@ public class DefaultQueryMatcherTest {
         document.put("name", name);
         assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile(name))));
 
+        assertThat(matcher.matches(document, new BasicBSONObject("name", new BasicBSONObject("$regex", name))));
     }
 
     @Test

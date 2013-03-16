@@ -204,6 +204,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
             int listSize = ((Collection<?>) value).size();
             double matchingSize = ((Number) expressionValue).doubleValue();
             return listSize == matchingSize;
+        } else if (operator.equals("$regex")) {
+            return checkMatchesValue(expressionValue, value, valueExists);
         } else {
             throw new MongoServerError(10068, "invalid operator: " + operator);
         }
