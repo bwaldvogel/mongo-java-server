@@ -298,6 +298,10 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             }
 
         }
+
+        // always enable unicode aware case matching
+        flags |= Pattern.UNICODE_CASE;
+
         return Pattern.compile(regex, flags);
     }
 
