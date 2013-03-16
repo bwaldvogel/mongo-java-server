@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.wire;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -327,17 +328,13 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return s;
     }
 
-    private String readCString(ChannelBuffer buffer) {
-        final StringBuilder sb = new StringBuilder(32);
-        while (true) {
-            final char b = (char) buffer.readByte();
-            if (b == 0) {
-                break;
-            }
-            sb.append(b);
-        }
+    // default visibility for unit test
+    String readCString(ChannelBuffer buffer) throws IOException {
+        int length = buffer.bytesBefore((byte) 0);
+        if (length < 0)
+            throw new IOException("string termination not found");
 
-        return sb.toString();
+        return buffer.toString(buffer.readerIndex(), length, Charset.forName("UTF-8"));
     }
 
     private Object readBinary(ChannelBuffer buffer) throws IOException {
