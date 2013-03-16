@@ -121,6 +121,16 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (queryValue instanceof BSONObject) {
             BSONObject queryObject = (BSONObject) queryValue;
 
+            if (queryObject.containsField("$regex")) {
+                String options = "";
+                if (queryObject.containsField("$options")) {
+                    options = queryObject.get("$options").toString();
+                }
+
+                Pattern pattern = Utils.createPattern(queryObject.get("$regex").toString(), options);
+                return pattern.matcher(value.toString()).find();
+            }
+
             for (String key : queryObject.keySet()) {
                 Object querySubvalue = queryObject.get(key);
                 if (key.startsWith("$")) {
@@ -204,8 +214,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
             int listSize = ((Collection<?>) value).size();
             double matchingSize = ((Number) expressionValue).doubleValue();
             return listSize == matchingSize;
-        } else if (operator.equals("$regex")) {
-            return checkMatchesValue(expressionValue, value, valueExists);
         } else {
             throw new MongoServerError(10068, "invalid operator: " + operator);
         }

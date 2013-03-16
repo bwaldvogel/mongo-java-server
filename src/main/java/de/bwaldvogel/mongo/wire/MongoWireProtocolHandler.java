@@ -19,6 +19,7 @@ import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -272,37 +273,10 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         throw new IOException("illegal BSON object");
     }
 
-    private Object readPattern(ChannelBuffer buffer) throws IOException {
+    private Pattern readPattern(ChannelBuffer buffer) throws IOException {
         String regex = readCString(buffer);
         String options = readCString(buffer);
-        int flags = 0;
-        for (char flag : options.toCharArray()) {
-            switch (flag) {
-            case 'i':
-                flags |= Pattern.CASE_INSENSITIVE;
-                break;
-            case 'm':
-                flags |= Pattern.MULTILINE;
-                break;
-            case 'x':
-                flags |= Pattern.COMMENTS;
-                break;
-            case 's':
-                flags |= Pattern.DOTALL;
-                break;
-            case 'u':
-                flags |= Pattern.UNICODE_CASE;
-                break;
-            default:
-                throw new IOException("unknown pattern flag: '" + flag + "'");
-            }
-
-        }
-
-        // always enable unicode aware case matching
-        flags |= Pattern.UNICODE_CASE;
-
-        return Pattern.compile(regex, flags);
+        return Utils.createPattern(regex, options);
     }
 
     private List<Object> readArray(ChannelBuffer buffer) throws IOException {

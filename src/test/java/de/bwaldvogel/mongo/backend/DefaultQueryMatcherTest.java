@@ -48,9 +48,21 @@ public class DefaultQueryMatcherTest {
         String name = "\u0442\u0435\u0441\u0442";
         assertThat(name).hasSize(4);
         document.put("name", name);
-        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile(name))));
+        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile(name)))).isTrue();
 
-        assertThat(matcher.matches(document, new BasicBSONObject("name", new BasicBSONObject("$regex", name))));
+        assertThat(matcher.matches(document, new BasicBSONObject("name", new BasicBSONObject("$regex", name))))
+                .isTrue();
+
+        document.put("name", name.toLowerCase());
+        assertThat(name.toLowerCase()).isNotEqualTo(name.toUpperCase());
+        assertThat(
+                matcher.matches(document,
+                        new BasicBSONObject("name", new BasicBSONObject("$regex", name.toUpperCase())))).isFalse();
+        assertThat(
+                matcher.matches(
+                        document,
+                        new BasicBSONObject("name", new BasicBSONObject("$regex", name.toUpperCase()).append(
+                                "$options", "i")))).isTrue();
     }
 
     @Test

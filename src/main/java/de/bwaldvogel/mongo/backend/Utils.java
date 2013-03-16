@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
 
@@ -131,6 +132,37 @@ public class Utils {
 
     public static void markOkay(BSONObject result) {
         result.put("ok", Integer.valueOf(1));
+    }
+
+    public static Pattern createPattern(String regex, String options) {
+        int flags = 0;
+        for (char flag : options.toCharArray()) {
+            switch (flag) {
+            case 'i':
+                flags |= Pattern.CASE_INSENSITIVE;
+                break;
+            case 'm':
+                flags |= Pattern.MULTILINE;
+                break;
+            case 'x':
+                flags |= Pattern.COMMENTS;
+                break;
+            case 's':
+                flags |= Pattern.DOTALL;
+                break;
+            case 'u':
+                flags |= Pattern.UNICODE_CASE;
+                break;
+            default:
+                throw new IllegalArgumentException("unknown pattern flag: '" + flag + "'");
+            }
+
+        }
+
+        // always enable unicode aware case matching
+        flags |= Pattern.UNICODE_CASE;
+
+        return Pattern.compile(regex, flags);
     }
 
 }
