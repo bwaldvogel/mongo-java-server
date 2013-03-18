@@ -33,6 +33,7 @@ import com.mongodb.MongoException.DuplicateKey;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
+import com.mongodb.util.JSON;
 
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.Constants;
@@ -1273,6 +1274,29 @@ public class MemoryBackendTest {
                 new BasicDBObject("$each", Arrays.asList(12, 13, 12)))));
         assertThat(collection.findOne()).isEqualTo(
                 new BasicDBObject("_id", 1).append("a", Arrays.asList(6, 5, 4, 3, 2, 1, 7, 9, 12, 13)));
+    }
+
+    private DBObject json(String string) {
+        string = string.trim();
+        if (!string.startsWith("{")) {
+            string = "{" + string + "}";
+        }
+        return (DBObject) JSON.parse(string);
+    }
+
+    @Test
+    public void testUpdateDatasize() throws Exception {
+        DBObject obj = json("{_id:1, a:{x:[1, 2, 3]}}");
+        collection.insert(obj);
+        int oldSize = collection.getStats().getInt("size");
+
+        collection.update(json("_id:1"), json("$set:{\"a.x.0\": 3}"));
+        assertThat(collection.findOne().get("a")).isEqualTo(json("x:[3,2,3]"));
+        assertThat(collection.getStats().getInt("size")).isEqualTo(oldSize);
+
+        // now increase the db
+        collection.update(json("_id:1"), json("$set:{\"a.x.0\": \"abc\"}"));
+        assertThat(collection.getStats().getInt("size") - oldSize).isEqualTo(4);
     }
 
     @Test

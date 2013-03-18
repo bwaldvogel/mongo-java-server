@@ -323,7 +323,7 @@ public class MemoryCollection extends MongoCollection {
             newDocument.put(idField, oldId);
         }
 
-        oldDocument.putAll(newDocument);
+        cloneInto(oldDocument, newDocument);
     }
 
     Object deriveDocumentId(BSONObject selector) {
@@ -366,7 +366,7 @@ public class MemoryCollection extends MongoCollection {
         BSONObject newDocument = new BasicBSONObject(idField, oldDocument.get(idField));
 
         if (numStartsWithDollar == update.keySet().size()) {
-            newDocument.putAll(oldDocument);
+            cloneInto(newDocument, oldDocument);
             for (String key : update.keySet()) {
                 modifyField(newDocument, key, (BSONObject) update.get(key), matchPos);
             }
@@ -644,7 +644,7 @@ public class MemoryCollection extends MongoCollection {
         synchronized (document) {
             // copy document
             BSONObject oldDocument = new BasicBSONObject();
-            oldDocument.putAll(document);
+            cloneInto(oldDocument, document);
 
             BSONObject newDocument = calculateUpdateDocument(document, updateQuery, matchPos);
 
@@ -677,6 +677,30 @@ public class MemoryCollection extends MongoCollection {
                 }
             }
             return oldDocument;
+        }
+    }
+
+    private void cloneInto(BSONObject targetDocument, BSONObject sourceDocument) {
+        for (String key : sourceDocument.keySet()) {
+            targetDocument.put(key, cloneValue(sourceDocument.get(key)));
+        }
+    }
+
+    protected Object cloneValue(Object value) {
+        if (value instanceof BSONObject) {
+            BSONObject newValue = new BasicBSONObject();
+            cloneInto(newValue, (BSONObject) value);
+            return newValue;
+        } else if (value instanceof List<?>) {
+            @SuppressWarnings("unchecked")
+            List<Object> list = (List<Object>) value;
+            List<Object> newValue = new ArrayList<Object>();
+            for (Object v : list) {
+                newValue.add(cloneValue(v));
+            }
+            return newValue;
+        } else {
+            return value;
         }
     }
 
