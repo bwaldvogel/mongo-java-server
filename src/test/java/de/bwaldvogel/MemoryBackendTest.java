@@ -1504,6 +1504,17 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateIllegalInt() throws Exception {
+        collection.insert(new BasicDBObject("_id", 1).append("a", new BasicDBObject("x", 1)));
+        try {
+            collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$inc", new BasicDBObject("a", 1)));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getMessage()).startsWith("can not increment");
+        }
+    }
+
+    @Test
     public void testUpdateWithIdInMulti() {
         collection.insert(new BasicDBObject("_id", 1), new BasicDBObject("_id", 2));
         collection.update(new BasicDBObject("_id", new BasicDBObject("$in", Arrays.asList(1, 2))), new BasicDBObject(

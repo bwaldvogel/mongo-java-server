@@ -211,7 +211,7 @@ public class MemoryDatabase extends CommonDatabase {
             }
             BSONObject result = collection.handleUpdate(update);
             putLastResult(channel, result);
-        } catch (MongoServerError e) {
+        } catch (MongoServerException e) {
             log.error("failed to update " + update, e);
             putLastError(channel, e);
         }
@@ -323,10 +323,15 @@ public class MemoryDatabase extends CommonDatabase {
 
     }
 
-    private void putLastError(Channel channel, MongoServerError ex) {
+    private void putLastError(Channel channel, MongoServerException ex) {
         BSONObject error = new BasicBSONObject();
-        error.put("err", ex.getMessage());
-        error.put("code", Integer.valueOf(ex.getCode()));
+        if (ex instanceof MongoServerError) {
+            MongoServerError err = (MongoServerError) ex;
+            error.put("err", err.getMessage());
+            error.put("code", Integer.valueOf(err.getCode()));
+        } else {
+            error.put("err", ex.getMessage());
+        }
         error.put("connectionId", channel.getId());
         putLastResult(channel, error);
     }
