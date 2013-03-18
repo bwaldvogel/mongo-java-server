@@ -1561,6 +1561,34 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateArrayMatch() throws Exception {
+
+        List<DBObject> list = new ArrayList<DBObject>();
+        list.add(new BasicDBObject("x", 1).append("y", 1));
+        list.add(new BasicDBObject("x", 2).append("y", 2));
+        list.add(new BasicDBObject("x", 3).append("y", 3));
+        DBObject obj = new BasicDBObject("_id", 1).append("a", list);
+        collection.insert(obj);
+
+        DBObject q = new BasicDBObject("a.x", 2);
+        collection.update(q, new BasicDBObject("$inc", new BasicDBObject("a.$.y", 1)));
+
+        list.get(1).put("y", 3);
+        assertThat(collection.findOne(q)).isEqualTo(obj);
+    }
+
+    @Test
+    public void testMultiUpdateArrayMatch() throws Exception {
+        collection.insert(new BasicDBObject());
+        collection.insert(new BasicDBObject("x", Arrays.asList(1, 2, 3)));
+        collection.insert(new BasicDBObject("x", 99));
+
+        DBObject q = new BasicDBObject("x", 2);
+        collection.update(q, new BasicDBObject("$inc", new BasicDBObject("x.$", 1)), false, true);
+        assertThat(collection.findOne(new BasicDBObject("x", 1)).get("x")).isEqualTo(Arrays.asList(1, 3, 3));
+    }
+
+    @Test
     public void testUpsert() {
         WriteResult result = collection.update(new BasicDBObject("_id", 1).append("n", "jon"), new BasicDBObject(
                 "$inc", new BasicDBObject("a", 1)), true, false);

@@ -12,6 +12,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class DefaultQueryMatcher implements QueryMatcher {
 
     private ValueComparator comparator = new ValueComparator();
+    private Integer lastPosition;
 
     @Override
     public boolean matches(BSONObject document, BSONObject query) throws MongoServerError {
@@ -22,6 +23,18 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         return true;
+    }
+
+    @Override
+    public synchronized Integer matchPosition(BSONObject document, BSONObject query) throws MongoServerError {
+        lastPosition = null;
+        for (String key : query.keySet()) {
+            if (!checkMatch(query.get(key), key, document)) {
+                return null;
+            }
+        }
+
+        return lastPosition;
     }
 
     private boolean checkMatch(Object queryValue, String key, Object document) throws MongoServerError {
@@ -109,10 +122,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     @SuppressWarnings("unchecked")
     private boolean checkMatchesAnyDocument(Object queryValue, String key, Object document) throws MongoServerError {
+        int i = 0;
         for (Object object : (Collection<Object>) document) {
             if (checkMatch(queryValue, key, object)) {
+                if (lastPosition == null)
+                    lastPosition = Integer.valueOf(i);
                 return true;
             }
+            i++;
         }
         return false;
     }
@@ -157,10 +174,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     @SuppressWarnings("unchecked")
     private boolean checkMatchesAnyValue(Object queryValue, Object values) throws MongoServerError {
+        int i = 0;
         for (Object value : (Collection<Object>) values) {
             if (checkMatchesValue(queryValue, value, true)) {
+                if (lastPosition == null)
+                    lastPosition = Integer.valueOf(i);
                 return true;
             }
+            i++;
         }
         return false;
     }

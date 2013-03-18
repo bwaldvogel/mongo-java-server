@@ -16,6 +16,25 @@ public class DocumentComparator implements Comparator<BSONObject> {
         this.orderBy = orderBy;
     }
 
+    public static Object getSubdocumentValue(BSONObject document, String key) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = key.substring(dotPos + 1);
+            if (subKey.startsWith("$.")) {
+                throw new IllegalArgumentException();
+            }
+            Object subObject = Utils.getListSafe(document, mainKey);
+            if (subObject instanceof BSONObject) {
+                return getSubdocumentValue((BSONObject) subObject, subKey);
+            } else {
+                return null;
+            }
+        } else {
+            return Utils.getListSafe(document, key);
+        }
+    }
+
     @Override
     public int compare(BSONObject document1, BSONObject document2) {
         for (String sortKey : orderBy.keySet()) {
