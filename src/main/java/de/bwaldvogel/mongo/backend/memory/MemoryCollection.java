@@ -139,37 +139,7 @@ public class MemoryCollection extends MongoCollection {
                 removeSubdocumentValue(document, key);
             }
         } else if (modifier.equals("$push") || modifier.equals("$pushAll") || modifier.equals("$addToSet")) {
-            // http://docs.mongodb.org/manual/reference/operator/push/
-            for (String key : change.keySet()) {
-                Object value = Utils.getSubdocumentValue(document, key);
-                List<Object> list;
-                if (value == null) {
-                    list = new ArrayList<Object>();
-                } else if (value instanceof List<?>) {
-                    list = Utils.asList(value);
-                } else {
-                    throw new MongoServerError(10141, "Cannot apply " + modifier + " modifier to non-array");
-                }
-
-                Object pushValue = change.get(key);
-                if (modifier.equals("$pushAll")) {
-                    if (!(pushValue instanceof Collection<?>)) {
-                        throw new MongoServerError(10153, "Modifier " + modifier + " allowed for arrays only");
-                    }
-                    @SuppressWarnings("unchecked")
-                    Collection<Object> pushValueList = (Collection<Object>) pushValue;
-                    list.addAll(pushValueList);
-                } else if (modifier.equals("$push")) {
-                    list.add(pushValue);
-                } else if (modifier.equals("$addToSet")) {
-                    if (!list.contains(pushValue)) {
-                        list.add(pushValue);
-                    }
-                } else {
-                    throw new RuntimeException("must not happen");
-                }
-                changeSubdocumentValue(document, key, list);
-            }
+            updatePushAllAddToSet(document, modifier, change);
         } else if (modifier.equals("$pull") || modifier.equals("$pullAll")) {
             // http://docs.mongodb.org/manual/reference/operator/pull/
             for (String key : change.keySet()) {
@@ -241,6 +211,54 @@ public class MemoryCollection extends MongoCollection {
             throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
         }
 
+    }
+
+    private void updatePushAllAddToSet(BSONObject document, String modifier, BSONObject change) throws MongoServerError {
+        // http://docs.mongodb.org/manual/reference/operator/push/
+        for (String key : change.keySet()) {
+            Object value = Utils.getSubdocumentValue(document, key);
+            List<Object> list;
+            if (value == null) {
+                list = new ArrayList<Object>();
+            } else if (value instanceof List<?>) {
+                list = Utils.asList(value);
+            } else {
+                throw new MongoServerError(10141, "Cannot apply " + modifier + " modifier to non-array");
+            }
+
+            Object changeValue = change.get(key);
+            if (modifier.equals("$pushAll")) {
+                if (!(changeValue instanceof Collection<?>)) {
+                    throw new MongoServerError(10153, "Modifier " + modifier + " allowed for arrays only");
+                }
+                @SuppressWarnings("unchecked")
+                Collection<Object> valueList = (Collection<Object>) changeValue;
+                list.addAll(valueList);
+            } else {
+                Collection<Object> pushValues = new ArrayList<Object>();
+                if (changeValue instanceof BSONObject
+                        && ((BSONObject) changeValue).keySet().equals(Collections.singleton("$each"))) {
+                    @SuppressWarnings("unchecked")
+                    Collection<Object> values = (Collection<Object>) ((BSONObject) changeValue).get("$each");
+                    pushValues.addAll(values);
+                } else {
+                    pushValues.add(changeValue);
+                }
+
+                for (Object val : pushValues) {
+                    if (modifier.equals("$push")) {
+                        list.add(val);
+                    } else if (modifier.equals("$addToSet")) {
+                        if (!list.contains(val)) {
+                            list.add(val);
+                        }
+                    } else {
+                        throw new RuntimeException("must not happen");
+                    }
+                }
+            }
+            changeSubdocumentValue(document, key, list);
+        }
     }
 
     private void assertNotKeyField(String key) throws MongoServerError {

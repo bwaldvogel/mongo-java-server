@@ -1252,6 +1252,30 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateAddToSetEach() throws Exception {
+        collection.insert(new BasicDBObject("_id", 1));
+
+        collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$addToSet", new BasicDBObject("a",
+                new BasicDBObject("$each", Arrays.asList(6, 5, 4)))));
+        assertThat(collection.findOne()).isEqualTo(new BasicDBObject("_id", 1).append("a", Arrays.asList(6, 5, 4)));
+
+        collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$addToSet", new BasicDBObject("a",
+                new BasicDBObject("$each", Arrays.asList(3, 2, 1)))));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", Arrays.asList(6, 5, 4, 3, 2, 1)));
+
+        collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$addToSet", new BasicDBObject("a",
+                new BasicDBObject("$each", Arrays.asList(4, 7, 9, 2)))));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", Arrays.asList(6, 5, 4, 3, 2, 1, 7, 9)));
+
+        collection.update(new BasicDBObject("_id", 1), new BasicDBObject("$addToSet", new BasicDBObject("a",
+                new BasicDBObject("$each", Arrays.asList(12, 13, 12)))));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", Arrays.asList(6, 5, 4, 3, 2, 1, 7, 9, 12, 13)));
+    }
+
+    @Test
     public void testUpdatePull() throws Exception {
         BasicDBObject obj = new BasicDBObject("_id", 1);
         collection.insert(obj);
