@@ -86,39 +86,41 @@ public class MemoryCollection extends MongoCollection {
         return matchDocuments(query);
     }
 
-    private void changeSubdocumentValue(BSONObject document, String key, Object newValue) {
+    private void changeSubdocumentValue(Object document, String key, Object newValue) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
             Object subObject = Utils.getListSafe(document, mainKey);
-            if (subObject instanceof BSONObject) {
-                changeSubdocumentValue((BSONObject) subObject, subKey, newValue);
+            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+                changeSubdocumentValue(subObject, subKey, newValue);
             } else {
                 BSONObject obj = new BasicBSONObject();
                 changeSubdocumentValue(obj, subKey, newValue);
-                document.put(mainKey, obj);
+                Utils.setListSafe(document, mainKey, obj);
             }
         } else {
-            document.put(key, newValue);
+            Utils.setListSafe(document, key, newValue);
         }
     }
 
-    private void removeSubdocumentValue(BSONObject document, String key) {
+    private void removeSubdocumentValue(Object document, String key) throws MongoServerException {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
             Object subObject = Utils.getListSafe(document, mainKey);
-            if (subObject instanceof BSONObject) {
-                removeSubdocumentValue((BSONObject) subObject, subKey);
+            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+                removeSubdocumentValue(subObject, subKey);
+            } else {
+                throw new MongoServerException("failed to remove subdocument");
             }
         } else {
-            document.removeField(key);
+            Utils.removeListSafe(document, key);
         }
     }
 
-    private void modifyField(BSONObject document, String modifier, BSONObject change) throws MongoServerError {
+    private void modifyField(BSONObject document, String modifier, BSONObject change) throws MongoServerException {
         if (modifier.equals("$set")) {
             for (String key : change.keySet()) {
                 Object newValue = change.get(key);

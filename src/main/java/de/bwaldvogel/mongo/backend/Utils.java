@@ -165,4 +165,33 @@ public class Utils {
         return Pattern.compile(regex, flags);
     }
 
+    public static void setListSafe(Object document, String key, Object obj) {
+        if (document instanceof List<?>) {
+            int pos = Integer.parseInt(key);
+            @SuppressWarnings("unchecked")
+            List<Object> list = ((List<Object>) document);
+            while (list.size() <= pos) {
+                list.add(null);
+            }
+            list.set(pos, obj);
+        } else {
+            ((BSONObject) document).put(key, obj);
+        }
+    }
+
+    public static void removeListSafe(Object document, String key) {
+        if (document instanceof BSONObject) {
+            ((BSONObject) document).removeField(key);
+        } else if (document instanceof List<?>) {
+            int pos = Integer.parseInt(key);
+            @SuppressWarnings("unchecked")
+            List<Object> list = ((List<Object>) document);
+            if (list.size() > pos) {
+                list.set(pos, null);
+            }
+        } else {
+            throw new IllegalArgumentException();
+        }
+    }
+
 }

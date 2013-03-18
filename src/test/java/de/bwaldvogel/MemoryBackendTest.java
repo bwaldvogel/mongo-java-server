@@ -1375,6 +1375,53 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateSetWithArrayIndices() throws Exception {
+
+        // SERVER-181
+
+        collection.insert(new BasicDBObject("_id", 1).append("a", Arrays.asList(new BasicDBObject("x", 0))));
+        collection.update(new BasicDBObject(), new BasicDBObject("$set", new BasicDBObject("a.0.x", 3)));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", Arrays.asList(new BasicDBObject("x", 3))));
+
+        collection.update(new BasicDBObject(), new BasicDBObject("$set", new BasicDBObject("a.1.z", 17)));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a",
+                        Arrays.asList(new BasicDBObject("x", 3), new BasicDBObject("z", 17))));
+
+        collection.update(new BasicDBObject(), new BasicDBObject("$set", new BasicDBObject("a.0.y", 7)));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a",
+                        Arrays.asList(new BasicDBObject("x", 3).append("y", 7), new BasicDBObject("z", 17))));
+
+        collection.update(new BasicDBObject(), new BasicDBObject("$set", new BasicDBObject("a.1", "test")));
+        assertThat(collection.findOne())
+                .isEqualTo(
+                        new BasicDBObject("_id", 1).append("a",
+                                Arrays.asList(new BasicDBObject("x", 3).append("y", 7), "test")));
+
+    }
+
+    @Test
+    public void testUpdateUnsetWithArrayIndices() throws Exception {
+
+        // SERVER-273
+
+        collection.insert(new BasicDBObject("_id", 1).append("a", Arrays.asList(new BasicDBObject("x", 0))));
+        collection.update(new BasicDBObject(), new BasicDBObject("$unset", new BasicDBObject("a.0.x", 1)));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", Arrays.asList(new BasicDBObject())));
+
+        collection.update(new BasicDBObject(), new BasicDBObject("$unset", new BasicDBObject("a.0", 1)));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", Arrays.asList((Object) null)));
+
+        collection.update(new BasicDBObject(), new BasicDBObject("$unset", new BasicDBObject("a.10", 1)));
+        assertThat(collection.findOne()).isEqualTo(
+                new BasicDBObject("_id", 1).append("a", Arrays.asList((Object) null)));
+    }
+
+    @Test
     public void testUpdatePop() throws Exception {
         BasicDBObject object = new BasicDBObject("_id", 1);
 
