@@ -1,6 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,41 +39,64 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return lastPosition;
     }
 
+    private List<String> splitKey(String key) throws IllegalArgumentException {
+        List<String> keys = Arrays.asList(key.split("\\."));
+        for (String subKey : keys) {
+            if (subKey.isEmpty()) {
+                throw new IllegalArgumentException("illegal key: " + key);
+            }
+        }
+        return keys;
+    }
+
     private boolean checkMatch(Object queryValue, String key, Object document) throws MongoServerError {
+        return checkMatch(queryValue, splitKey(key), document);
+    }
+
+    private boolean checkMatch(Object queryValue, List<String> keys, Object document) throws MongoServerError {
+
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("illegal keys: " + keys);
+        }
 
         if (document == null)
             return false;
 
-        if (key.startsWith("$")) {
-            if (key.equals("$and") || key.equals("$or") || key.equals("$nor")) {
-                return checkMatchAndOrNor(queryValue, key, document);
-            }
+        String firstKey = keys.get(0);
+        List<String> subKeys = Collections.emptyList();
+        if (keys.size() > 1) {
+            subKeys = keys.subList(1, keys.size());
         }
 
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = key.substring(dotPos + 1);
-            Object subObject = Utils.getListSafe(document, mainKey);
-            return checkMatch(queryValue, subKey, subObject);
+        if (firstKey.startsWith("$")) {
+            if (firstKey.equals("$and") || firstKey.equals("$or") || firstKey.equals("$nor")) {
+                return checkMatchAndOrNor(queryValue, firstKey, document);
+            }
         }
 
         if (document instanceof List<?>) {
-
-            if (key.matches("\\d+")) {
-                Object listValue = Utils.getListSafe(document, key);
-                return checkMatchesValue(queryValue, listValue, listValue != null);
+            if (firstKey.matches("\\d+")) {
+                Object listValue = Utils.getListSafe(document, firstKey);
+                if (subKeys.isEmpty()) {
+                    return checkMatchesValue(queryValue, listValue, listValue != null);
+                } else {
+                    return checkMatch(queryValue, subKeys, listValue);
+                }
             }
+            return checkMatchesAnyDocument(queryValue, keys, document);
+        }
 
-            return checkMatchesAnyDocument(queryValue, key, document);
+        if (!subKeys.isEmpty()) {
+            Object subObject = Utils.getListSafe(document, firstKey);
+            return checkMatch(queryValue, subKeys, subObject);
         }
 
         if (!(document instanceof BSONObject)) {
             return false;
         }
 
-        Object value = ((BSONObject) document).get(key);
-        boolean valueExists = ((BSONObject) document).containsField(key);
+        Object value = ((BSONObject) document).get(firstKey);
+        boolean valueExists = ((BSONObject) document).containsField(firstKey);
 
         if (value instanceof Collection<?>) {
             if (checkMatchesAnyValue(queryValue, value)) {
@@ -121,10 +146,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAnyDocument(Object queryValue, String key, Object document) throws MongoServerError {
+    private boolean checkMatchesAnyDocument(Object queryValue, List<String> keys, Object document)
+            throws MongoServerError {
         int i = 0;
         for (Object object : (Collection<Object>) document) {
-            if (checkMatch(queryValue, key, object)) {
+            if (checkMatch(queryValue, keys, object)) {
                 if (lastPosition == null)
                     lastPosition = Integer.valueOf(i);
                 return true;
@@ -155,6 +181,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                         return false;
                     }
                 } else {
+                    // the value of the query itself can be a complex query
                     if (!checkMatch(querySubvalue, key, value)) {
                         return false;
                     }

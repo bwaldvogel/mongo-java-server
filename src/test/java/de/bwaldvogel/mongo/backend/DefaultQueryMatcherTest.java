@@ -14,12 +14,21 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.util.JSON;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class DefaultQueryMatcherTest {
 
     private QueryMatcher matcher;
+
+    private BasicDBObject json(String string) {
+        string = string.trim();
+        if (!string.startsWith("{")) {
+            string = "{" + string + "}";
+        }
+        return (BasicDBObject) JSON.parse(string);
+    }
 
     @Before
     public void setUp() {
@@ -214,6 +223,10 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 2))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 3))).isTrue();
         assertThat(matcher.matches(document, new BasicBSONObject("c.a", 4))).isFalse();
+
+        document = json("{'array': [{'123a':{'name': 'old'}}]}");
+        BSONObject query = json("{'array.123a.name': 'old'}");
+        assertThat(matcher.matches(document, query)).isTrue();
     }
 
     @Test

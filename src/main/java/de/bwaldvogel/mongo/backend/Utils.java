@@ -106,17 +106,13 @@ public class Utils {
         return false;
     }
 
-    public static Object getListSafe(Object document, String field) {
+    public static Object getListSafe(Object document, String field) throws IllegalArgumentException {
         if (document == null) {
             return null;
         }
 
         if (field.contains("."))
             throw new IllegalArgumentException("illegal field: " + field);
-
-        if (document instanceof BSONObject) {
-            return ((BSONObject) document).get(field);
-        }
 
         if (document instanceof List<?>) {
             if (field.matches("\\d+")) {
@@ -125,8 +121,13 @@ public class Utils {
                 if (pos >= 0 && pos < list.size()) {
                     return list.get(pos);
                 }
+            } else {
+                throw new IllegalArgumentException("illegal field: " + field);
             }
+        } else if (document instanceof BSONObject) {
+            return ((BSONObject) document).get(field);
         }
+
         return null;
     }
 

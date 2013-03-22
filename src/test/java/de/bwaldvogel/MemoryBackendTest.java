@@ -52,6 +52,14 @@ public class MemoryBackendTest {
         return admin.command(command);
     }
 
+    private BasicDBObject json(String string) {
+        string = string.trim();
+        if (!string.startsWith("{")) {
+            string = "{" + string + "}";
+        }
+        return (BasicDBObject) JSON.parse(string);
+    }
+
     @Before
     public void setUp() throws Exception {
         mongoServer = new MongoServer(new MemoryBackend());
@@ -1276,14 +1284,6 @@ public class MemoryBackendTest {
                 new BasicDBObject("_id", 1).append("a", Arrays.asList(6, 5, 4, 3, 2, 1, 7, 9, 12, 13)));
     }
 
-    private DBObject json(String string) {
-        string = string.trim();
-        if (!string.startsWith("{")) {
-            string = "{" + string + "}";
-        }
-        return (DBObject) JSON.parse(string);
-    }
-
     @Test
     public void testUpdateDatasize() throws Exception {
         DBObject obj = json("{_id:1, a:{x:[1, 2, 3]}}");
@@ -1588,17 +1588,22 @@ public class MemoryBackendTest {
     public void testUpdateArrayMatch() throws Exception {
 
         List<DBObject> list = new ArrayList<DBObject>();
-        list.add(new BasicDBObject("x", 1).append("y", 1));
-        list.add(new BasicDBObject("x", 2).append("y", 2));
-        list.add(new BasicDBObject("x", 3).append("y", 3));
-        DBObject obj = new BasicDBObject("_id", 1).append("a", list);
+        list.add(json("x: 1, y: 1"));
+        list.add(json("x: 2, y: 2"));
+        list.add(json("x: 3, y: 3"));
+        DBObject obj = json("_id:1").append("a", list);
         collection.insert(obj);
 
-        DBObject q = new BasicDBObject("a.x", 2);
-        collection.update(q, new BasicDBObject("$inc", new BasicDBObject("a.$.y", 1)));
+        collection.update(json("'a.x': 2"), json("$inc: {'a.$.y': 1}"));
 
         list.get(1).put("y", 3);
-        assertThat(collection.findOne(q)).isEqualTo(obj);
+        assertThat(collection.findOne(json("'a.x': 2"))).isEqualTo(obj);
+
+        collection.insert(json("{'array': [{'123a':{'name': 'old'}}]}"));
+        assertThat(collection.findOne(json("{'array.123a.name': 'old'}"))).isNotNull();
+        collection.update(json("{'array.123a.name': 'old'}"), json("{$set: {'array.$.123a.name': 'new'}}"));
+        assertThat(collection.findOne(json("{'array.123a.name': 'new'}"))).isNotNull();
+        assertThat(collection.findOne(json("{'array.123a.name': 'old'}"))).isNull();
     }
 
     @Test
