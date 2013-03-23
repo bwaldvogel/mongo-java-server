@@ -641,6 +641,15 @@ public class MemoryCollection extends MongoCollection {
         int n = 0;
         boolean updatedExisting = false;
         BSONObject selector = update.getSelector();
+
+        if (update.isMulti()) {
+            for (String key : updateQuery.keySet()) {
+                if (!key.startsWith("$")) {
+                    throw new MongoServerError(10158, "multi update only works with $ operators");
+                }
+            }
+        }
+
         for (Integer position : queryDocuments(selector)) {
             BSONObject document = documents.get(position.intValue());
             Integer matchPos = matcher.matchPosition(document, selector);

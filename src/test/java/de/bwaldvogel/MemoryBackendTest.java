@@ -1586,6 +1586,18 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testMultiUpdateNoOperator() throws Exception {
+        collection.insert(json("x:99"));
+        try {
+            collection.update(json("{x:99}"), json("x:99, y:17"), false, true);
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(10158);
+            assertThat(e.getMessage()).isEqualTo("multi update only works with $ operators");
+        }
+    }
+
+    @Test
     public void testUpsert() {
         WriteResult result = collection.update(json("_id:1, n:'jon'"), json("$inc:{a:1}"), true, false);
         assertThat(result.getN()).isEqualTo(1);
