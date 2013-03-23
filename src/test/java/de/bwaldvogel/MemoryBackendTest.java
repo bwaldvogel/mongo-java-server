@@ -1129,6 +1129,19 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateMultiplePositional() throws Exception {
+        collection.insert(json("{a: {b: {c: 1}}}"));
+        try {
+            collection.update(json("{'a.b.c':1}"), json("$set:{'a.$.b.$.c': 1}"));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(16650);
+            assertThat(e.getMessage()).isEqualTo(
+                    "Cannot apply the positional operator without a corresponding query field containing an array.");
+        }
+    }
+
+    @Test
     public void testUpdateIllegalFieldName() throws Exception {
 
         // Disallow $ in field names - SERVER-3730

@@ -12,6 +12,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
@@ -88,6 +89,11 @@ public class MemoryCollection extends MongoCollection {
 
     private void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos)
             throws MongoServerException {
+        changeSubdocumentValue(document, key, newValue, new AtomicReference<Integer>(matchPos));
+    }
+
+    private void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos)
+            throws MongoServerException {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -106,21 +112,27 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
-    protected String getSubkey(String key, int dotPos, Integer matchPos) throws MongoServerError {
+    protected String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) throws MongoServerError {
         String subKey = key.substring(dotPos + 1);
 
         if (subKey.matches("\\$(\\..+)?")) {
-            if (matchPos == null) {
+            if (matchPos == null || matchPos.get() == null) {
                 throw new MongoServerError(16650, //
                         "Cannot apply the positional operator without a corresponding query " //
                                 + "field containing an array.");
             }
-            return subKey.replaceFirst("\\$", String.valueOf(matchPos));
+            Integer pos = matchPos.getAndSet(null);
+            return subKey.replaceFirst("\\$", String.valueOf(pos));
         }
         return subKey;
     }
 
     private void removeSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
+        removeSubdocumentValue(document, key, new AtomicReference<Integer>(matchPos));
+    }
+
+    private void removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
+            throws MongoServerException {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -137,6 +149,11 @@ public class MemoryCollection extends MongoCollection {
     }
 
     private Object getSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
+        return getSubdocumentValue(document, key, new AtomicReference<Integer>(matchPos));
+    }
+
+    private Object getSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
+            throws MongoServerException {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -734,7 +751,7 @@ public class MemoryCollection extends MongoCollection {
 
             Object value = selector.get(key);
             if (!Utils.containsQueryExpression(value)) {
-                changeSubdocumentValue(document, key, value, null);
+                changeSubdocumentValue(document, key, value, (AtomicReference<Integer>) null);
             }
         }
         return document;
