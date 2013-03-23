@@ -5,7 +5,6 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
@@ -37,11 +36,11 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesSimple() throws Exception {
-        BSONObject document = new BasicDBObject();
-        assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("foo", "bar"))).isFalse();
+        BSONObject document = json("{}");
+        assertThat(matcher.matches(document, json("{}"))).isTrue();
+        assertThat(matcher.matches(document, json("foo: 'bar'"))).isFalse();
         document.put("foo", "bar");
-        assertThat(matcher.matches(document, new BasicBSONObject("foo", "bar"))).isTrue();
+        assertThat(matcher.matches(document, json("foo: 'bar'"))).isTrue();
     }
 
     @Test
@@ -76,153 +75,87 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesInQuery() throws Exception {
-        assertThat(matcher.matches(new BasicDBObject(), //
-                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
-                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 2), //
-                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 4), //
-                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1.0), //
-                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3, 2, 1))))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$in", Arrays.asList(3.0, 2.0, 1.00001))))) //
-                .isFalse();
+        assertThat(matcher.matches(json("{}"), json("a: {$in: [3,2,1]}"))).isFalse();
+        assertThat(matcher.matches(json("a: 'x'"), json("a: {$in: [3,2,1]}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$in: [3,2,1]}"))).isTrue();
+        assertThat(matcher.matches(json("a: 2"), json("a: {$in: [3,2,1]}"))).isTrue();
+        assertThat(matcher.matches(json("a: 4"), json("a: {$in: [3,2,1]}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1.0"), json("a: {$in: [3,2,1]}"))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$in: [3.0, 2.0, 1.00001]}"))).isFalse();
     }
 
     @Test
     public void testMatchesGreaterThanQuery() throws Exception {
-        assertThat(matcher.matches(new BasicDBObject(), //
-                new BasicBSONObject("a", new BasicDBObject("$gt", -1)))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$gt", 0.9)))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$gt", 0)))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$gt", 1)))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$gte", 1)))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
-                new BasicBSONObject("a", new BasicDBObject("$gt", 1)))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
-                new BasicBSONObject("a", new BasicDBObject("$gte", 1)))) //
-                .isFalse();
+        assertThat(matcher.matches(json("{}"), json("a: {$gt: -1}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$gt: 0.9}"))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$gt: 0}"))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$gt: 1}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$gte: 1}"))).isTrue();
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$gt: 1}"))).isFalse();
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$gte: 1}"))).isFalse();
     }
 
     @Test
     public void testMatchesLessThanQuery() throws Exception {
-        assertThat(matcher.matches(new BasicDBObject(), //
-                new BasicBSONObject("a", new BasicDBObject("$lt", -1)))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$lt", 1.001)))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$lt", 2)))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$lt", 1)))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", 1), //
-                new BasicBSONObject("a", new BasicDBObject("$lte", 1)))) //
-                .isTrue();
-
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
-                new BasicBSONObject("a", new BasicDBObject("$lt", 1)))) //
-                .isFalse();
-
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), //
-                new BasicBSONObject("a", new BasicDBObject("$lte", 1)))) //
-                .isFalse();
+        assertThat(matcher.matches(json("{}"), json("a: {$lt: -1}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$lt: 1.001}"))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$lt: 2}"))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$lt: 1}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$lte: 1}"))).isTrue();
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$lt: 1}"))).isFalse();
+        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$lte: 1}"))).isFalse();
     }
 
     @Test
     public void testMatchesValueList() throws Exception {
-        BSONObject document = new BasicDBObject();
-        document.put("a", Arrays.asList(1, 2, 3));
-        assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("a", 1))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("a", 2))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("a", 3))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("a", 4))).isFalse();
+        BSONObject document = json("a: [1,2,3]");
+        assertThat(matcher.matches(document, json("{}"))).isTrue();
+        assertThat(matcher.matches(document, json("a: 1"))).isTrue();
+        assertThat(matcher.matches(document, json("a: 2"))).isTrue();
+        assertThat(matcher.matches(document, json("a: 3"))).isTrue();
+        assertThat(matcher.matches(document, json("a: 4"))).isFalse();
     }
 
     @Test
     public void testMatchesDocumentList() throws Exception {
-        // { "_id" : 1 , "c" : [ { "a" : 1 , "b" : 2} , { "a" : 3 , "b" : 4}]}
-        BSONObject document = new BasicDBObject("_id", 1);
-        List<BSONObject> list = new ArrayList<BSONObject>();
-        list.add(new BasicBSONObject("a", 1).append("b", 2));
-        list.add(new BasicBSONObject("a", 3).append("b", 4));
-        document.put("c", list);
+        BSONObject document = json("_id:1, c: [{a:1, b:2}, {a:3, b:4}]");
 
-        assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c", 1))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 1))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 3))).isTrue();
+        assertThat(matcher.matches(document, json("{}"))).isTrue();
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 3"))).isTrue();
 
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 1).append("c.b", 4))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 1).append("c.b", 5))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 2).append("c.b", 4))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1, 'c.b': 4"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 1, 'c.b': 5"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 2, 'c.b': 4"))).isFalse();
     }
 
     @Test
     public void testMatchesSubquery() throws Exception {
-        BSONObject document = new BasicDBObject();
-        document.put("c", new BasicDBObject("a", 1));
-        assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c", 1))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 1))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 2))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a.x", 2))).isFalse();
+        BSONObject document = json("c: {a:1}");
+        assertThat(matcher.matches(document, json("{}"))).isTrue();
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 2"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a.x': 2"))).isFalse();
 
-        document.put("a", new BasicBSONObject("b", new BasicBSONObject("c", new BasicBSONObject("d", 1))));
-        assertThat(matcher.matches(document, new BasicBSONObject("a.b.c.d", 1))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("a.b", 1))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("a.b.c", new BasicBSONObject("d", 1)))).isTrue();
+        document.put("a", json("b: {c: {d:1}}"));
+        assertThat(matcher.matches(document, json("'a.b.c.d': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.b': 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.b.c': {d:1}"))).isTrue();
     }
 
     @Test
     public void testMatchesSubqueryList() throws Exception {
-        BSONObject document = new BasicDBObject();
-        document.put("c", new BasicDBObject("a", Arrays.asList(1, 2, 3)));
-        assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c", 1))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 1))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 2))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 3))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 4))).isFalse();
+        BSONObject document = json("c: {a: [1,2,3] }");
+        assertThat(matcher.matches(document, json("{}"))).isTrue();
+
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 2"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 3"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 4"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a.x': 1"))).isFalse();
 
         document = json("{'array': [{'123a':{'name': 'old'}}]}");
         BSONObject query = json("{'array.123a.name': 'old'}");
@@ -231,28 +164,27 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesSubqueryListPosition() throws Exception {
-        BSONObject document = new BasicDBObject();
-        document.put("c", new BasicDBObject("a", Arrays.asList(1, 2, 3)));
-        assertThat(matcher.matches(document, new BasicBSONObject())).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c", 1))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a.0", 1))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a.0", 2))).isFalse();
+        BSONObject document = json("c: {a: [1,2,3] }");
+        assertThat(matcher.matches(document, json("{}"))).isTrue();
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a.0': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a.0': 2"))).isFalse();
 
-        document.put("c", Arrays.asList(new BasicDBObject("a", 12), new BasicDBObject("a", 13)));
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 12))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 13))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.a", 14))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.0.a", 12))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.0.a", 13))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.1.a", 12))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.1.a", 13))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("c.2.a", 13))).isFalse();
+        document = json("c: [{a: 12}, {a:13}]");
+        assertThat(matcher.matches(document, json("'c.a': 12"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 13"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 14"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.0.a': 12"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.0.a': 13"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.1.a': 12"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.1.a': 13"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.2.a': 13"))).isFalse();
     }
 
     @Test
     public void testInvalidOperator() throws Exception {
-        BSONObject document = new BasicDBObject();
-        BSONObject query = new BasicDBObject("field", new BasicDBObject("$someInvalidOperator", 123));
+        BSONObject document = json("{}");
+        BSONObject query = json("field: {$someInvalidOperator: 123}");
         try {
             matcher.matches(document, query);
             fail("MongoServerError expected");
@@ -264,11 +196,8 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesExists() throws Exception {
-        BSONObject document = new BasicDBObject();
-
-        // db.inventory.find( { qty: { $exists: true, $nin: [ 5, 15 ] } } )
-        BSONObject query = new BasicBSONObject("qty", new BasicBSONObject("$exists", true).append("$nin",
-                Arrays.asList(5, 15)));
+        BSONObject document = json("{}");
+        BSONObject query = json("qty: { $exists: true, $nin: [ 5, 15 ] }");
 
         assertThat(matcher.matches(document, query)).isFalse();
 
@@ -281,9 +210,9 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesNotEqual() throws Exception {
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
 
-        BSONObject query = new BasicBSONObject("qty", new BasicBSONObject("$ne", 17));
+        BSONObject query = json("qty: {$ne: 17}");
 
         assertThat(matcher.matches(document, query)).isTrue();
 
@@ -297,8 +226,8 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesNot() throws Exception {
 
-        // db.inventory.find( { price: { $not: { $gt: 1.99 } } } )
-        BSONObject query = new BasicBSONObject("price", new BasicBSONObject("$not", new BasicBSONObject("$gt", 1.99)));
+        // db.inventory.find( { } )
+        BSONObject query = json("price: { $not: { $gt: 1.99 } }");
 
         /*
          * This query will select all documents in the inventory collection
@@ -312,7 +241,7 @@ public class DefaultQueryMatcherTest {
          * value is less than or equal to 1.99.
          */
 
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
         assertThat(matcher.matches(document, query)).isTrue();
 
         document.put("price", 1.99);
@@ -322,8 +251,7 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isFalse();
 
         // !(x >= 5 && x <= 7)
-        query = new BasicBSONObject("price", new BasicBSONObject("$not", new BasicBSONObject("$gte", 5).append("$lte",
-                7)));
+        query = json("price: {$not: {$gte: 5, $lte: 7} }");
         assertThat(matcher.matches(document, query)).isTrue();
         document.put("price", 5);
         assertThat(matcher.matches(document, query)).isFalse();
@@ -332,7 +260,7 @@ public class DefaultQueryMatcherTest {
         document.put("price", null);
         assertThat(matcher.matches(document, query)).isTrue();
 
-        query = new BasicBSONObject("price", new BasicBSONObject("$not", new BasicBSONObject("$exists", true)));
+        query = json("price: {$not: {$exists: true}}");
         assertThat(matcher.matches(document, query)).isFalse();
         document.removeField("price");
         assertThat(matcher.matches(document, query)).isTrue();
@@ -344,7 +272,7 @@ public class DefaultQueryMatcherTest {
         // { item: { $not: /^p.*/ } }
         BSONObject query = new BasicBSONObject("item", new BasicBSONObject("$not", Pattern.compile("^p.*")));
 
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
         assertThat(matcher.matches(document, query)).isTrue();
         document.put("item", "p");
         assertThat(matcher.matches(document, query)).isFalse();
@@ -357,9 +285,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesAnd() throws Exception {
 
-        // { $and: [ { price: 1.99 }, { qty: { $lt: 20 } }, { sale: true } ] } )
-        BSONObject query = new BasicBSONObject("$and", Arrays.asList(new BasicBSONObject("price", 1.99),
-                new BasicBSONObject("qty", new BasicBSONObject("$lt", 20)), new BasicBSONObject("sale", true)));
+        BSONObject query = json("$and: [ { price: 1.99 }, { qty: { $lt: 20 } }, { sale: true } ]");
 
         /*
          * This query will select all documents in the inventory collection
@@ -369,7 +295,7 @@ public class DefaultQueryMatcherTest {
          * sale field value is equal to true.
          */
 
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
         assertThat(matcher.matches(document, query)).isFalse();
 
         document.put("price", 1.99);
@@ -386,11 +312,9 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesOr() throws Exception {
 
-        // { $or: [ { price: 1.99 }, { qty: { $lt: 20 } } ] } )
-        BSONObject query = new BasicBSONObject("$or", Arrays.asList(new BasicBSONObject("price", 1.99),
-                new BasicBSONObject("qty", new BasicBSONObject("$lt", 20))));
+        BSONObject query = json("$or: [ { price: 1.99 }, { qty: { $lt: 20 } } ]");
 
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
         assertThat(matcher.matches(document, query)).isFalse();
 
         document.put("price", 1.99);
@@ -406,11 +330,9 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesNor() throws Exception {
 
-        // { $or: [ { price: 1.99 }, { qty: { $lt: 20 } } ] } )
-        BSONObject query = new BasicBSONObject("$nor", Arrays.asList(new BasicBSONObject("price", 1.99),
-                new BasicBSONObject("qty", new BasicBSONObject("$lt", 20))));
+        BSONObject query = json("$nor: [ { price: 1.99 }, { qty: { $lt: 20 } } ]");
 
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
         assertThat(matcher.matches(document, query)).isTrue();
 
         document.put("price", 1.99);
@@ -427,7 +349,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesIllegalQueryAndOrNor() throws Exception {
 
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
 
         for (String op : new String[] { "$and", "$or", "$nor" }) {
 
@@ -462,9 +384,9 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesMod() throws Exception {
-        BSONObject document = new BasicDBObject();
+        BSONObject document = json("{}");
 
-        BSONObject modOp = new BasicDBObject("$mod", Arrays.asList(4, 0));
+        BSONObject modOp = json("$mod: [4, 0]");
         BSONObject query = new BasicDBObject("x", modOp);
         assertThat(matcher.matches(document, query)).isFalse();
 
@@ -480,8 +402,8 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesSize() throws Exception {
 
-        BSONObject document = new BasicDBObject();
-        BSONObject query = new BasicDBObject("a", new BasicDBObject("$size", 1));
+        BSONObject document = json("{}");
+        BSONObject query = json("a: {$size: 1}");
 
         assertThat(matcher.matches(document, query)).isFalse();
         document.put("a", "x");
