@@ -1108,6 +1108,53 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateBlank() throws Exception {
+        DBObject document = json("'': 1, _id: 2, a: 3, b: 4");
+        collection.insert(document);
+
+        collection.update(json("{}"), json("$set: {c:5}"));
+        assertThat(collection.findOne()).isEqualTo(json("'': 1, _id: 2, a: 3, b: 4, c:5"));
+    }
+
+    @Test
+    public void testUpdateIllegalFieldName() throws Exception {
+
+        // Disallow $ in field names - SERVER-3730
+
+        collection.insert(json("{x:1}"));
+
+        collection.update(json("{x:1}"), json("$set: {y:1}")); // ok
+
+        try {
+            collection.update(json("{x:1}"), json("$set: {$z:1}"));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(15896);
+            assertThat(e.getMessage()).isEqualTo("Modified field name may not start with $");
+        }
+
+        // unset ok to remove bad fields
+        collection.update(json("{x:1}"), json("$unset: {$z:1}"));
+
+        try {
+            collection.update(json("{x:1}"), json("$inc: {$z:1}"));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(15896);
+            assertThat(e.getMessage()).isEqualTo("Modified field name may not start with $");
+        }
+
+        try {
+            collection.update(json("{x:1}"), json("$pushAll: {$z:[1,2,3]}"));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(15896);
+            assertThat(e.getMessage()).isEqualTo("Modified field name may not start with $");
+        }
+
+    }
+
+    @Test
     public void testUpdateSubdocument() throws Exception {
         try {
             collection.update(json("{}"), json("'a.b.c': 123"));
@@ -1519,6 +1566,15 @@ public class MemoryBackendTest {
         assertThat(result.getN()).isEqualTo(1);
         assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
         assertThat(collection.findOne()).isEqualTo(json("_id:1, n:'jon', a:1"));
+    }
+
+    @Test
+    public void testUpsertFieldOrder() throws Exception {
+        collection.update(json("'x.y': 2"), json("$inc: {a:7}"), true, false);
+        DBObject obj = collection.findOne();
+        obj.removeField("_id");
+        // this actually differs from the official MongoDB implementation
+        assertThat(obj).isEqualTo(json("x:{y:2}, a:7"));
     }
 
     @Test

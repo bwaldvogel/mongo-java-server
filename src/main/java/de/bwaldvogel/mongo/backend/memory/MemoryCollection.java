@@ -149,6 +149,15 @@ public class MemoryCollection extends MongoCollection {
 
     private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos)
             throws MongoServerException {
+
+        if (!modifier.equals("$unset")) {
+            for (String key : change.keySet()) {
+                if (key.startsWith("$")) {
+                    throw new MongoServerError(15896, "Modified field name may not start with $");
+                }
+            }
+        }
+
         if (modifier.equals("$set")) {
             for (String key : change.keySet()) {
                 Object newValue = change.get(key);
@@ -299,12 +308,6 @@ public class MemoryCollection extends MongoCollection {
     }
 
     private void applyUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerException {
-
-        for (String key : newDocument.keySet()) {
-            if (key.startsWith("$")) {
-                throw new MongoServerError(15896, "Modified field name may not start with $");
-            }
-        }
 
         if (newDocument.equals(oldDocument)) {
             return;
