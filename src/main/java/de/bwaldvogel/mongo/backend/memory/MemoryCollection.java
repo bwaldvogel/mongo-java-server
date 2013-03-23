@@ -664,13 +664,18 @@ public class MemoryCollection extends MongoCollection {
             }
         }
 
+        BSONObject result = new BasicBSONObject();
+
         // insert?
         if (n == 0 && update.isUpsert()) {
-            handleUpsert(updateQuery, selector);
+            BSONObject newDocument = handleUpsert(updateQuery, selector);
+            if (!selector.containsField(idField)) {
+                result.put("upserted", newDocument.get(idField));
+            }
             n++;
         }
 
-        BSONObject result = new BasicBSONObject("n", Integer.valueOf(n));
+        result.put("n", Integer.valueOf(n));
         result.put("updatedExisting", Boolean.valueOf(updatedExisting));
         return result;
     }

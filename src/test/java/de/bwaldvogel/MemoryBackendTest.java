@@ -1096,6 +1096,7 @@ public class MemoryBackendTest {
         WriteResult result = collection.update(object, newObject);
         assertThat(result.getN()).isEqualTo(1);
         assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.TRUE);
+        assertThat(result.getField("upserted")).isNull();
         assertThat(collection.findOne(object)).isEqualTo(newObject);
     }
 
@@ -1416,7 +1417,9 @@ public class MemoryBackendTest {
         assertThat(collection.findOne()).isEqualTo(json("_id: 1, b: 3, a: 3"));
 
         collection.update(object, json("$set: {b: 4}, $setOnInsert: {a: 5}"), true, true);
-        assertThat(collection.findOne()).isEqualTo(json("_id: 1, b: 4, a: 3")); // 'a' is unchanged
+        assertThat(collection.findOne()).isEqualTo(json("_id: 1, b: 4, a: 3")); // 'a'
+                                                                                // is
+                                                                                // unchanged
     }
 
     @Test
@@ -1609,10 +1612,20 @@ public class MemoryBackendTest {
 
     @Test
     public void testUpsert() {
-        WriteResult result = collection.update(json("_id:1, n:'jon'"), json("$inc:{a:1}"), true, false);
+        WriteResult result = collection.update(json("n:'jon'"), json("$inc:{a:1}"), true, false);
         assertThat(result.getN()).isEqualTo(1);
         assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
-        assertThat(collection.findOne()).isEqualTo(json("_id:1, n:'jon', a:1"));
+
+        DBObject object = collection.findOne();
+        assertThat(result.getField("upserted")).isEqualTo(object.get("_id"));
+
+        object.removeField("_id");
+        assertThat(object).isEqualTo(json("n:'jon', a:1"));
+
+        result = collection.update(json("_id: 17, n:'jon'"), json("$inc:{a:1}"), true, false);
+        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
+        assertThat(result.getField("upserted")).isNull();
+        assertThat(collection.findOne(json("_id:17"))).isEqualTo(json("_id: 17, n:'jon', a:1"));
     }
 
     @Test
