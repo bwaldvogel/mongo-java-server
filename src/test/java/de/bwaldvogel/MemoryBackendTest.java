@@ -1117,6 +1117,18 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateEmptyPositional() throws Exception {
+        try {
+            collection.update(json("{}"), json("$set:{'a.$.b': 1}"), true, false);
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getCode()).isEqualTo(16650);
+            assertThat(e.getMessage()).isEqualTo(
+                    "Cannot apply the positional operator without a corresponding query field containing an array.");
+        }
+    }
+
+    @Test
     public void testUpdateIllegalFieldName() throws Exception {
 
         // Disallow $ in field names - SERVER-3730

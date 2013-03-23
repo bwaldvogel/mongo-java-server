@@ -106,10 +106,15 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
-    protected String getSubkey(String key, int dotPos, Integer matchPos) {
+    protected String getSubkey(String key, int dotPos, Integer matchPos) throws MongoServerError {
         String subKey = key.substring(dotPos + 1);
 
         if (subKey.matches("\\$(\\..+)?")) {
+            if (matchPos == null) {
+                throw new MongoServerError(16650, //
+                        "Cannot apply the positional operator without a corresponding query " //
+                                + "field containing an array.");
+            }
             return subKey.replaceFirst("\\$", String.valueOf(matchPos));
         }
         return subKey;

@@ -111,7 +111,7 @@ public class Utils {
             return null;
         }
 
-        if (field.contains("."))
+        if (field.equals("$") || field.contains("."))
             throw new IllegalArgumentException("illegal field: " + field);
 
         if (document instanceof List<?>) {
