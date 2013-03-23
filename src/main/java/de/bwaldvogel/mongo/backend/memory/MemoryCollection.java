@@ -169,7 +169,7 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
-    private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos)
+    private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos, boolean isUpsert)
             throws MongoServerException {
 
         if (!modifier.equals("$unset")) {
@@ -180,7 +180,7 @@ public class MemoryCollection extends MongoCollection {
             }
         }
 
-        if (modifier.equals("$set")) {
+        if (modifier.equals("$set") || (modifier.equals("$setOnInsert") && isUpsert)) {
             for (String key : change.keySet()) {
                 Object newValue = change.get(key);
                 Object oldValue = getSubdocumentValue(document, key, matchPos);
@@ -194,6 +194,8 @@ public class MemoryCollection extends MongoCollection {
 
                 changeSubdocumentValue(document, key, newValue, matchPos);
             }
+        } else if (modifier.equals("$setOnInsert")) {
+            // no upsert → ignore
         } else if (modifier.equals("$unset")) {
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
@@ -378,8 +380,8 @@ public class MemoryCollection extends MongoCollection {
         return new ObjectId();
     }
 
-    private BSONObject calculateUpdateDocument(BSONObject oldDocument, BSONObject update, Integer matchPos)
-            throws MongoServerException {
+    private BSONObject calculateUpdateDocument(BSONObject oldDocument, BSONObject update, Integer matchPos,
+            boolean isUpsert) throws MongoServerException {
 
         int numStartsWithDollar = 0;
         for (String key : update.keySet()) {
@@ -393,7 +395,7 @@ public class MemoryCollection extends MongoCollection {
         if (numStartsWithDollar == update.keySet().size()) {
             cloneInto(newDocument, oldDocument);
             for (String key : update.keySet()) {
-                modifyField(newDocument, key, (BSONObject) update.get(key), matchPos);
+                modifyField(newDocument, key, (BSONObject) update.get(key), matchPos, isUpsert);
             }
         } else if (numStartsWithDollar == 0) {
             applyUpdate(newDocument, update);
@@ -680,7 +682,7 @@ public class MemoryCollection extends MongoCollection {
             BSONObject oldDocument = new BasicBSONObject();
             cloneInto(oldDocument, document);
 
-            BSONObject newDocument = calculateUpdateDocument(document, updateQuery, matchPos);
+            BSONObject newDocument = calculateUpdateDocument(document, updateQuery, matchPos, false);
 
             if (!newDocument.equals(oldDocument)) {
                 for (Index index : indexes) {
@@ -741,7 +743,7 @@ public class MemoryCollection extends MongoCollection {
     private BSONObject handleUpsert(BSONObject updateQuery, BSONObject selector) throws MongoServerException {
         BSONObject document = convertSelectorToDocument(selector);
 
-        BSONObject newDocument = calculateUpdateDocument(document, updateQuery, null);
+        BSONObject newDocument = calculateUpdateDocument(document, updateQuery, null, true);
         if (newDocument.get(idField) == null) {
             newDocument.put(idField, deriveDocumentId(selector));
         }

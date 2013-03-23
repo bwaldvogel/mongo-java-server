@@ -1410,6 +1410,16 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testUpdateSetOnInsert() throws Exception {
+        BasicDBObject object = json("_id: 1");
+        collection.update(object, json("$set: {b: 3}, $setOnInsert: {a: 3}"), true, true);
+        assertThat(collection.findOne()).isEqualTo(json("_id: 1, b: 3, a: 3"));
+
+        collection.update(object, json("$set: {b: 4}, $setOnInsert: {a: 5}"), true, true);
+        assertThat(collection.findOne()).isEqualTo(json("_id: 1, b: 4, a: 3")); // 'a' is unchanged
+    }
+
+    @Test
     public void testUpdateSetWithArrayIndices() throws Exception {
 
         // SERVER-181
