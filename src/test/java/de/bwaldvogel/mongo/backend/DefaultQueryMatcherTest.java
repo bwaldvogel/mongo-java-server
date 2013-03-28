@@ -13,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import com.mongodb.util.JSON;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -416,4 +417,61 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isFalse();
 
     }
+
+    @Test
+    public void testMatchesAll() throws Exception {
+
+        BSONObject document = json("{a: {x: []}}");
+
+        assertThat(matcher.matches(document, json("x:{$all:[1]}"))).isFalse();
+
+        assertThat(matcher.matches(document, json("a.x: {$all: []}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [1]}"))).isFalse();
+
+        document = json("{a: {x: [1,2,3]}}");
+        assertThat(matcher.matches(document, json("a: {$all: [1]}"))).isFalse();
+        assertThat(matcher.matches(document, json("a.x: {$all: []}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [1]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.y: {$all: [1]}"))).isFalse();
+        assertThat(matcher.matches(document, json("a.x: {$all: [2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [1,2,3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [2,3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [1,3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [1,4]}"))).isFalse();
+        assertThat(matcher.matches(document, json("a.x: {$all: [4]}"))).isFalse();
+
+        // with regular expresssion
+        document = json("a: {x: ['john', 'jo', 'maria']}");
+        assertThat(matcher.matches(document, json("a.x: {$all: []}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [{$regex: '^jo.*'}]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all: [{$regex: '^foo'}]}"))).isFalse();
+        assertThat(matcher.matches(document, json("a.x: {$all: ['maria', {$regex: '^jo.*'}]}"))).isTrue();
+    }
+
+    @Test
+    public void testMatchesAllSubdocument() throws Exception {
+        // with subdocuments
+        DBObject document = json("a: [{x: 1} , {x: 2}]");
+        assertThat(matcher.matches(document, json("a.x: {$all : []}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all : [1]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all : [2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all : [1, 2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("a.x: {$all : [2, 3]}"))).isFalse();
+        assertThat(matcher.matches(document, json("a.x: {$all : [3]}"))).isFalse();
+    }
+
+    @Test
+    public void testMatchesAllAndIn() throws Exception {
+        DBObject document = json("a: {x: [1, 3]}");
+        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [2]}"))).isFalse();
+        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [3]}"))).isTrue();
+
+        document = json("a: {x: [1, 2, 3]}");
+        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [2]}"))).isTrue();
+
+        document = json("a: [{x:1}, {x:2}, {x:3}]");
+        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [2]}"))).isTrue();
+    }
+
 }

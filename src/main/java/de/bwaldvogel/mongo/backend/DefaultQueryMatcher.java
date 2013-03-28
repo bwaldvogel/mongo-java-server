@@ -8,8 +8,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class DefaultQueryMatcher implements QueryMatcher {
 
@@ -17,7 +19,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     private Integer lastPosition;
 
     @Override
-    public boolean matches(BSONObject document, BSONObject query) throws MongoServerError {
+    public boolean matches(BSONObject document, BSONObject query) throws MongoServerException {
         for (String key : query.keySet()) {
             if (!checkMatch(query.get(key), key, document)) {
                 return false;
@@ -28,7 +30,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @Override
-    public synchronized Integer matchPosition(BSONObject document, BSONObject query) throws MongoServerError {
+    public synchronized Integer matchPosition(BSONObject document, BSONObject query) throws MongoServerException {
         lastPosition = null;
         for (String key : query.keySet()) {
             if (!checkMatch(query.get(key), key, document)) {
@@ -39,24 +41,24 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return lastPosition;
     }
 
-    private List<String> splitKey(String key) throws IllegalArgumentException {
+    private List<String> splitKey(String key) throws MongoServerException {
         List<String> keys = Arrays.asList(key.split("\\."));
         for (String subKey : keys) {
             if (subKey.isEmpty()) {
-                throw new IllegalArgumentException("illegal key: " + key);
+                throw new MongoServerException("illegal key: " + key);
             }
         }
         return keys;
     }
 
-    private boolean checkMatch(Object queryValue, String key, Object document) throws MongoServerError {
+    private boolean checkMatch(Object queryValue, String key, Object document) throws MongoServerException {
         return checkMatch(queryValue, splitKey(key), document);
     }
 
-    private boolean checkMatch(Object queryValue, List<String> keys, Object document) throws MongoServerError {
+    private boolean checkMatch(Object queryValue, List<String> keys, Object document) throws MongoServerException {
 
         if (keys.isEmpty()) {
-            throw new IllegalArgumentException("illegal keys: " + keys);
+            throw new MongoServerException("illegal keys: " + keys);
         }
 
         if (document == null)
@@ -83,6 +85,18 @@ public class DefaultQueryMatcher implements QueryMatcher {
                     return checkMatch(queryValue, subKeys, listValue);
                 }
             }
+
+            // handle $all
+            if (queryValue instanceof BSONObject && ((BSONObject) queryValue).keySet().contains("$all")) {
+                // clone first
+                queryValue = new BasicBSONObject(((BSONObject) queryValue).toMap());
+                Object allQuery = ((BSONObject) queryValue).removeField("$all");
+                if (!checkMatchesAllDocuments(allQuery, keys, document)) {
+                    return false;
+                }
+                // continue matching the remainder of queryValue
+            }
+
             return checkMatchesAnyDocument(queryValue, keys, document);
         }
 
@@ -99,6 +113,17 @@ public class DefaultQueryMatcher implements QueryMatcher {
         boolean valueExists = ((BSONObject) document).containsField(firstKey);
 
         if (value instanceof Collection<?>) {
+            // handle $all
+            if (queryValue instanceof BSONObject && ((BSONObject) queryValue).keySet().contains("$all")) {
+                // clone first
+                queryValue = new BasicBSONObject(((BSONObject) queryValue).toMap());
+                Object allQuery = ((BSONObject) queryValue).removeField("$all");
+                if (!checkMatchesAllValues(allQuery, value)) {
+                    return false;
+                }
+                // continue matching the remainder of queryValue
+            }
+
             if (checkMatchesAnyValue(queryValue, value)) {
                 return true;
             }
@@ -107,7 +132,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return checkMatchesValue(queryValue, value, valueExists);
     }
 
-    public boolean checkMatchAndOrNor(Object queryValue, String key, Object document) throws MongoServerError {
+    public boolean checkMatchAndOrNor(Object queryValue, String key, Object document) throws MongoServerException {
         if (!(queryValue instanceof List<?>)) {
             throw new MongoServerError(14816, key + " expression must be a nonempty array");
         }
@@ -141,13 +166,24 @@ public class DefaultQueryMatcher implements QueryMatcher {
         } else if (key.equals("$nor")) {
             return !checkMatchAndOrNor(queryValue, "$or", document);
         } else {
-            throw new RuntimeException("must not happen");
+            throw new MongoServerException("illegal operation: " + key + ". must not happen");
         }
     }
 
     @SuppressWarnings("unchecked")
+    private boolean checkMatchesAllDocuments(Object queryValue, List<String> keys, Object document)
+            throws MongoServerException {
+        for (Object query : (Collection<Object>) queryValue) {
+            if (!checkMatchesAnyDocument(query, keys, document)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
     private boolean checkMatchesAnyDocument(Object queryValue, List<String> keys, Object document)
-            throws MongoServerError {
+            throws MongoServerException {
         int i = 0;
         for (Object object : (Collection<Object>) document) {
             if (checkMatch(queryValue, keys, object)) {
@@ -160,7 +196,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) throws MongoServerError {
+    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) throws MongoServerException {
         if (queryValue instanceof BSONObject) {
             BSONObject queryObject = (BSONObject) queryValue;
 
@@ -200,7 +236,24 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAnyValue(Object queryValue, Object values) throws MongoServerError {
+    private boolean checkMatchesAllValues(Object queryValue, Object values) throws MongoServerException {
+
+        if (!(queryValue instanceof Collection)) {
+            return false;
+        }
+
+        Collection<Object> list = (Collection<Object>) values;
+
+        for (Object query : (Collection<Object>) queryValue) {
+            if (!checkMatchesAnyValue(query, list)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean checkMatchesAnyValue(Object queryValue, Object values) throws MongoServerException {
         int i = 0;
         for (Object value : (Collection<Object>) values) {
             if (checkMatchesValue(queryValue, value, true)) {
@@ -214,7 +267,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkExpressionMatch(Object value, boolean valueExists, Object expressionValue, String operator)
-            throws MongoServerError {
+            throws MongoServerException {
         if (operator.equals("$in")) {
             Collection<?> queriedObjects = (Collection<?>) expressionValue;
             for (Object o : queriedObjects) {
@@ -262,6 +315,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
             int listSize = ((Collection<?>) value).size();
             double matchingSize = ((Number) expressionValue).doubleValue();
             return listSize == matchingSize;
+        } else if (operator.equals("$all")) {
+            return false;
         } else {
             throw new MongoServerError(10068, "invalid operator: " + operator);
         }

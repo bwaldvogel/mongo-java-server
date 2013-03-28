@@ -969,6 +969,15 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testQueryAllExpression() throws Exception {
+        collection.insert(json(" _id : [ { x : 1 } , { x : 2  } ]"));
+        collection.insert(json(" _id : [ { x : 2 } , { x : 3  } ]"));
+
+        assertThat(collection.find(json("'_id.x':{$all:[1,2]}")).toArray()).hasSize(1);
+        assertThat(collection.find(json("'_id.x':{$all:[2,3]}")).toArray()).hasSize(1);
+    }
+
+    @Test
     public void testRemove() {
         collection.insert(json("_id: 1"));
         collection.insert(json("_id: 2"));
