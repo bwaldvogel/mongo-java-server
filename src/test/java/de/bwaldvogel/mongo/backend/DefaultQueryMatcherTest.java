@@ -363,6 +363,15 @@ public class DefaultQueryMatcherTest {
                 assertThat(e.getMessage()).isEqualTo(op + " expression must be a nonempty array");
             }
 
+            query.put(op, 2);
+            try {
+                matcher.matches(document, query);
+                fail("MongoServerError expected");
+            } catch (MongoServerError e) {
+                assertThat(e.getCode()).isEqualTo(14816);
+                assertThat(e.getMessage()).isEqualTo(op + " expression must be a nonempty array");
+            }
+
             query.put(op, new ArrayList<Object>());
             try {
                 matcher.matches(document, query);
