@@ -27,7 +27,7 @@ drivers.
 ## Usage
 Add the following Maven dependency to your project:
 
-```
+```xml
 <dependency>
 	<groupId>de.bwaldvogel</groupId>
 	<artifactId>mongo-java-server</artifactId>
