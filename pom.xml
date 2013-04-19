@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <name>mongo-java-server</name>
     <description>Stub implementation of MongoDB in Java, that speaks the wire protocol</description>
 
@@ -14,6 +14,26 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>6</version>
+    </parent>
+
+    <scm>
+        <connection>scm:git:git@github.com:bwaldvogel/mongo-java-server.git</connection>
+        <developerConnection>scm:git:git@github.com:bwaldvogel/mongo-java-server.git</developerConnection>
+        <url>git@github.com:bwaldvogel/mongo-java-server.git</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>bwaldvogel</id>
+            <name>Benedikt Waldvogel</name>
+            <email>mail@bwaldvogel.de</email>
+        </developer>
+    </developers>
 
     <build>
         <plugins>
@@ -26,18 +46,44 @@
                     <target>1.6</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <configuration>
+                    <keyname>D2250F35</keyname>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
-    <repositories>
-        <repository>
-            <id>repository.jboss.org</id>
-            <url>https://repository.jboss.org/nexus/content/repositories/releases/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
     <dependencies>
         <dependency>
