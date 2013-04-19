@@ -7,6 +7,14 @@
     <name>mongo-java-server</name>
     <description>Stub implementation of MongoDB in Java, that speaks the wire protocol</description>
 
+    <licenses>
+        <license>
+            <name>The BSD License</name>
+            <url>http://www.opensource.org/licenses/bsd-license.php</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <build>
         <plugins>
             <plugin>
