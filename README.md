@@ -76,7 +76,7 @@ public class SimpleTest {
 }
 ```
 
-## Similar Projects ##
+## Related Work ##
 
 * [jmockmongo][jmockmongo]
 	* shares the basic idea of implementing the wire protocol with Netty
