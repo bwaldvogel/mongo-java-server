@@ -1,28 +1,39 @@
 [![Build Status](https://travis-ci.org/bwaldvogel/mongo-java-server.png?branch=master)](https://travis-ci.org/bwaldvogel/mongo-java-server)
 
-## MongoDB Java Server ##
+# MongoDB Java Server #
 
 Implementation of the core [MongoDB][mongodb] server using Java with different
 possible backends. The [MongoDB Wire Protocol][wire-protocol] is implemented
 using [Netty][netty].
 
-### In-Memory backend ###
+## In-Memory backend ##
 
 The in-memory backend is the default, such that mongo-java-server can be used
 as stub in unit tests. It doesn't support all features of the original MongoDB,
 and probably never will.
 
-### Ideas for other backends ###
+## Ideas for other backends ##
 
-#### Faulty backend ####
+### Faulty backend ###
 
 A faulty backend could randomly fail queries or cause timeouts. This could be
 used to test the client for error resilience.
 
-#### Fuzzy backend ####
+### Fuzzy backend ###
 
 Fuzzing the wire protocol could be used to check the robustness of client
 drivers.
+
+## Usage
+Add the following Maven dependency to your project:
+
+```
+<dependency>
+	<groupId>de.bwaldvogel</groupId>
+	<artifactId>mongo-java-server</artifactId>
+	<version>1.0</version>
+</dependency>
+```
 
 ### Unit test example ###
 
@@ -65,7 +76,7 @@ public class SimpleTest {
 }
 ```
 
-### Similar Projects ###
+## Similar Projects ##
 
 * [jmockmongo][jmockmongo]
 	* shares the basic idea of implementing the wire protocol with Netty
