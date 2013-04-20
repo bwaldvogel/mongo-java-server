@@ -632,7 +632,11 @@ public class MemoryCollection extends MongoCollection {
 
     public synchronized int handleDelete(MongoDelete delete) throws MongoServerException {
         int n = 0;
-        for (BSONObject document : handleQuery(delete.getSelector(), 0, Integer.MAX_VALUE)) {
+        int numToReturn = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
+        for (BSONObject document : handleQuery(delete.getSelector(), 0, numToReturn)) {
+            if (n >= numToReturn) {
+                throw new MongoServerException("internal error: too many elements (" + n + " >= " + numToReturn + ")");
+            }
             removeDocument(document);
             n++;
         }

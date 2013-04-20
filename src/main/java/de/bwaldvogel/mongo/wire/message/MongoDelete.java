@@ -6,14 +6,21 @@ import org.jboss.netty.channel.Channel;
 public class MongoDelete extends ClientRequest {
 
     private BSONObject selector;
+    private boolean singleRemove;
 
-    public MongoDelete(Channel channel, MessageHeader header, String fullCollectionName, BSONObject selector) {
+    public MongoDelete(Channel channel, MessageHeader header, String fullCollectionName, BSONObject selector,
+            boolean singleRemove) {
         super(channel, header, fullCollectionName);
         this.selector = selector;
+        this.singleRemove = singleRemove;
     }
 
     public BSONObject getSelector() {
         return selector;
+    }
+
+    public boolean isSingleRemove() {
+        return singleRemove;
     }
 
     @Override

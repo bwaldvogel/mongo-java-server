@@ -986,6 +986,18 @@ public class MemoryBackendTest {
         collection.remove(json("_id: 2"));
 
         assertThat(collection.findOne(json("_id: 2"))).isNull();
+        assertThat(collection.count()).isEqualTo(3);
+
+        collection.remove(json("_id: {$gte: 3}"));
+        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.findOne()).isEqualTo(json("_id: 1"));
+    }
+
+    @Test
+    public void testRemoveSingle() throws Exception {
+        DBObject obj = new BasicDBObject("_id", ObjectId.get());
+        collection.insert(obj);
+        collection.remove(obj);
     }
 
     @Test

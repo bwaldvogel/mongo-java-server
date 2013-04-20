@@ -121,12 +121,18 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         final String fullCollectionName = readCString(buffer);
 
         final int flags = buffer.readInt();
-        if (flags != 0)
+        boolean singleRemove = false;
+        if (flags == 0) {
+            // ignore
+        } else if (flags == 1) {
+            singleRemove = true;
+        } else {
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
+        }
 
         BSONObject selector = readBSON(buffer);
         log.debug("delete " + selector + " from " + fullCollectionName);
-        return new MongoDelete(channel, header, fullCollectionName, selector);
+        return new MongoDelete(channel, header, fullCollectionName, selector, singleRemove);
     }
 
     private Object handleUpdate(Channel channel, MessageHeader header, ChannelBuffer buffer) throws IOException {
