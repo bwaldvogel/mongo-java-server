@@ -560,7 +560,8 @@ public class MemoryCollection extends MongoCollection {
             query = (BSONObject) queryObject.get("query");
             orderBy = (BSONObject) queryObject.get("orderby");
         } else if (queryObject.containsField("$query")) {
-            throw new UnsupportedOperationException();
+            query = (BSONObject) queryObject.get("$query");
+            orderBy = (BSONObject) queryObject.get("$orderby");
         } else {
             query = queryObject;
         }

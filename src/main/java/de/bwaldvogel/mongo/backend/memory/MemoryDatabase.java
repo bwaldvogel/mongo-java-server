@@ -354,7 +354,11 @@ public class MemoryDatabase extends CommonDatabase {
             throw new IllegalStateException();
         if (it.hasNext()) {
             String subCommand = it.next();
-            if (!subCommand.equals("w")) {
+            if (subCommand.equals("w")) {
+                // ignore
+            } else if (subCommand.equals("fsync")) {
+                // ignore
+            } else {
                 throw new MongoServerException("unknown subcommand: " + subCommand);
             }
         }

@@ -82,7 +82,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10147);
-            assertThat(e.getMessage()).isEqualTo("Invalid modifier specified: $foo");
+            assertThat(e.getMessage()).contains("Invalid modifier specified: $foo");
         }
     }
 
@@ -223,7 +223,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(12050);
-            assertThat(e.getMessage()).startsWith("cannot delete from system namespace");
+            assertThat(e.getMessage()).contains("cannot delete from system namespace");
         }
 
         try {
@@ -231,7 +231,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(12050);
-            assertThat(e.getMessage()).startsWith("cannot delete from system namespace");
+            assertThat(e.getMessage()).contains("cannot delete from system namespace");
         }
     }
 
@@ -242,7 +242,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10156);
-            assertThat(e.getMessage()).startsWith("cannot update system collection");
+            assertThat(e.getMessage()).contains("cannot update system collection");
         }
 
         try {
@@ -250,7 +250,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10156);
-            assertThat(e.getMessage()).startsWith("cannot update system collection");
+            assertThat(e.getMessage()).contains("cannot update system collection");
         }
     }
 
@@ -367,7 +367,6 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10148);
-            assertThat(e.getMessage()).contains("command failed [findandmodify]");
             assertThat(e.getMessage()).contains("Mod on _id not allowed");
         }
     }
@@ -695,8 +694,8 @@ public class MemoryBackendTest {
             collection.update(json("_id: 1"), json("_id:2, a:4"));
             fail("MongoException expected");
         } catch (MongoException e) {
-            assertThat(e.getMessage()).isEqualTo(
-                    "cannot change _id of a document old:{ \"_id\" : 1} new:{ \"_id\" : 2}");
+            assertThat(e.getMessage()).contains(
+                    "cannot change _id of a document old:{ \\\"_id\\\" : 1} new:{ \\\"_id\\\" : 2}");
         }
 
         // test with $set
@@ -705,7 +704,7 @@ public class MemoryBackendTest {
             collection.update(json("_id: 1"), new BasicDBObject("$set", json("_id: 2")));
             fail("should throw exception");
         } catch (MongoException e) {
-            assertThat(e.getMessage()).isEqualTo("Mod on _id not allowed");
+            assertThat(e.getMessage()).contains("Mod on _id not allowed");
         }
     }
 
@@ -827,7 +826,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(16459);
-            assertThat(e.getMessage()).startsWith("attempt to insert in system namespace");
+            assertThat(e.getMessage()).contains("attempt to insert in system namespace");
         }
 
         try {
@@ -835,7 +834,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(16459);
-            assertThat(e.getMessage()).startsWith("attempt to insert in system namespace");
+            assertThat(e.getMessage()).contains("attempt to insert in system namespace");
         }
     }
 
@@ -1133,7 +1132,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(16650);
-            assertThat(e.getMessage()).isEqualTo(
+            assertThat(e.getMessage()).contains(
                     "Cannot apply the positional operator without a corresponding query field containing an array.");
         }
     }
@@ -1146,7 +1145,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(16650);
-            assertThat(e.getMessage()).isEqualTo(
+            assertThat(e.getMessage()).contains(
                     "Cannot apply the positional operator without a corresponding query field containing an array.");
         }
     }
@@ -1165,7 +1164,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(15896);
-            assertThat(e.getMessage()).isEqualTo("Modified field name may not start with $");
+            assertThat(e.getMessage()).contains("Modified field name may not start with $");
         }
 
         // unset ok to remove bad fields
@@ -1176,7 +1175,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(15896);
-            assertThat(e.getMessage()).isEqualTo("Modified field name may not start with $");
+            assertThat(e.getMessage()).contains("Modified field name may not start with $");
         }
 
         try {
@@ -1184,7 +1183,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(15896);
-            assertThat(e.getMessage()).isEqualTo("Modified field name may not start with $");
+            assertThat(e.getMessage()).contains("Modified field name may not start with $");
         }
 
     }
@@ -1232,7 +1231,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10141);
-            assertThat(e.getMessage()).isEqualTo("Cannot apply $push modifier to non-array");
+            assertThat(e.getMessage()).contains("Cannot apply $push modifier to non-array");
         }
 
         // push with multiple fields
@@ -1259,7 +1258,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10153);
-            assertThat(e.getMessage()).isEqualTo("Modifier $pushAll allowed for arrays only");
+            assertThat(e.getMessage()).contains("Modifier $pushAll allowed for arrays only");
         }
 
         collection.update(idObj, json("$pushAll: {field: ['value', 'value2']}"));
@@ -1280,7 +1279,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10141);
-            assertThat(e.getMessage()).isEqualTo("Cannot apply $addToSet modifier to non-array");
+            assertThat(e.getMessage()).contains("Cannot apply $addToSet modifier to non-array");
         }
 
         // addToSet with multiple fields
@@ -1343,7 +1342,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10142);
-            assertThat(e.getMessage()).isEqualTo("Cannot apply $pull modifier to non-array");
+            assertThat(e.getMessage()).contains("Cannot apply $pull modifier to non-array");
         }
 
         // pull standard
@@ -1374,7 +1373,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10142);
-            assertThat(e.getMessage()).isEqualTo("Cannot apply $pullAll modifier to non-array");
+            assertThat(e.getMessage()).contains("Cannot apply $pullAll modifier to non-array");
         }
 
         collection.update(obj, json("$set: {field1: ['value1', 'value2', 'value1', 'value3', 'value4', 'value3']}"));
@@ -1388,7 +1387,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10153);
-            assertThat(e.getMessage()).isEqualTo("Modifier $pullAll allowed for arrays only");
+            assertThat(e.getMessage()).contains("Modifier $pullAll allowed for arrays only");
         }
 
     }
@@ -1497,7 +1496,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10148);
-            assertThat(e.getMessage()).isEqualTo("Mod on _id not allowed");
+            assertThat(e.getMessage()).contains("Mod on _id not allowed");
         }
 
         collection.update(obj, json("$unset: {a:'', b:''}"));
@@ -1546,7 +1545,7 @@ public class MemoryBackendTest {
             collection.update(json("_id: 1"), json("$inc: {a: 1}"));
             fail("MongoException expected");
         } catch (MongoException e) {
-            assertThat(e.getMessage()).startsWith("can not increment");
+            assertThat(e.getMessage()).contains("can not increment");
         }
     }
 
@@ -1615,7 +1614,7 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10158);
-            assertThat(e.getMessage()).isEqualTo("multi update only works with $ operators");
+            assertThat(e.getMessage()).contains("multi update only works with $ operators");
         }
     }
 
