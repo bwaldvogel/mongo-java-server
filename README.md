@@ -2,8 +2,8 @@
 
 # MongoDB Java Server #
 
-Implementation of the core [MongoDB][mongodb] server using Java.
-The [MongoDB Wire Protocol][wire-protocol] is implemented using [Netty][netty].
+Stub implementation of the core [MongoDB][mongodb] server in Java.
+The [MongoDB Wire Protocol][wire-protocol] is implemented with [Netty][netty].
 Different backends are possible and can be easily extended.
 
 ## In-Memory backend ##
@@ -90,7 +90,7 @@ public class SimpleTest {
 
 [mongodb]: http://www.mongodb.org/
 [wire-protocol]: http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol
-[netty]: https://netty.io/
+[netty]: http://netty.io/
 [jmockmongo]: https://github.com/thiloplanz/jmockmongo/
 [jongo]: https://github.com/foursquare/fongo/
 [nosql-unit]: https://github.com/lordofthejars/nosql-unit/
