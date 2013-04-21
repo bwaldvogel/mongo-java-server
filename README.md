@@ -2,15 +2,15 @@
 
 # MongoDB Java Server #
 
-Implementation of the core [MongoDB][mongodb] server using Java with different
-possible backends. The [MongoDB Wire Protocol][wire-protocol] is implemented
-using [Netty][netty].
+Implementation of the core [MongoDB][mongodb] server using Java.
+The [MongoDB Wire Protocol][wire-protocol] is implemented using [Netty][netty].
+Different backends are possible and can be easily extended.
 
 ## In-Memory backend ##
 
 The in-memory backend is the default, such that mongo-java-server can be used
-as stub in unit tests. It doesn't support all features of the original MongoDB,
-and probably never will.
+as stub in unit tests. It does not support all features of the original
+MongoDB, and probably never will.
 
 ## Ideas for other backends ##
 
