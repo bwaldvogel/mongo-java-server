@@ -20,12 +20,12 @@ public class MongoServerTest {
             InetSocketAddress serverAddress = server.bind();
             client = new MongoClient(new ServerAddress(serverAddress));
             // request something
-            client.getDB("admin").command("serverStatus");
+            client.getDB("admin").command("serverStatus").throwOnError();
 
             server.stopListenting();
 
             // existing clients must still work
-            client.getDB("admin").command("serverStatus");
+            client.getDB("admin").command("serverStatus").throwOnError();
 
             // new clients must fail
             client.close();
@@ -53,7 +53,33 @@ public class MongoServerTest {
         client = new MongoClient(new ServerAddress(serverAddress));
 
         // request something to open a connection
-        client.getDB("admin").command("serverStatus");
+        client.getDB("admin").command("serverStatus").throwOnError();
+
+        server.shutdownNow();
+    }
+
+    @Test(timeout = 1000)
+    public void testShutdownAndRestart() {
+        MongoServer server = new MongoServer();
+        MongoClient client = null;
+        InetSocketAddress serverAddress = server.bind();
+        client = new MongoClient(new ServerAddress(serverAddress));
+
+        // request something to open a connection
+        client.getDB("admin").command("serverStatus").throwOnError();
+
+        server.shutdownNow();
+
+        try {
+            client.getDB("admin").command("serverStatus");
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            // okay
+        }
+
+        server.bind(serverAddress);
+
+        client.getDB("admin").command("serverStatus").throwOnError();
 
         server.shutdownNow();
     }
