@@ -58,7 +58,7 @@ public class SimpleTest {
 	@After
 	public void tearDown() {
 		client.close();
-		server.shutdown();
+		server.shutdownNow();
 	}
 
 	@Test
