@@ -97,11 +97,13 @@ public class MongoServer {
         return (InetSocketAddress) serverChannel.getLocalAddress();
     }
 
+    /**
+     * Stop accepting new clients. Wait until all resources (such as client connection) are closed and then shutdown.
+     * This method blocks until all clients are finished.
+     * Use {@link #shutdownNow()} if the shutdown should be forced.
+     */
     public void shutdown() {
-        if (serverChannel != null) {
-            serverChannel.close().awaitUninterruptibly();
-            serverChannel = null;
-        }
+        stopListenting();
 
         if (factory != null) {
             factory.releaseExternalResources();
@@ -111,9 +113,28 @@ public class MongoServer {
         log.info("completed shutdown of " + this);
     }
 
+    /**
+     * Closes the server socket. No new clients are accepted afterwards.
+     */
+    public void stopListenting() {
+        if (serverChannel != null) {
+            log.info("closing server channel");
+            serverChannel.close().awaitUninterruptibly();
+            serverChannel = null;
+        }
+    }
+
+    /**
+     * Stops accepting new clients, closes all clients and finally shuts down the server
+     * In contrast to {@link #shutdown()}, this method should not block.
+     */
     public void shutdownNow() {
-        shutdown();
+        // stop accepting new clients, before all remaining clients can be killed
+        stopListenting();
         closeClients();
+        // ready to finally shutdown and close all remaining resources
+        // should not block
+        shutdown();
     }
 
     private void closeClients() {
