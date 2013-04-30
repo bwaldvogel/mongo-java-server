@@ -1718,4 +1718,30 @@ public class MemoryBackendTest {
         assertThat(isMaster.getInt("maxMessageSizeBytes")).isGreaterThan(isMaster.getInt("maxBsonObjectSize"));
     }
 
+    // https://github.com/foursquare/fongo/pull/26
+    // http://stackoverflow.com/questions/12403240/storing-null-vs-not-storing-the-key-at-all-in-mongodb
+    @Test
+    public void testFindWithNullOrNoFieldFilter() {
+
+        collection.insert(json("name: 'jon', group: 'group1'"));
+        collection.insert(json("name: 'leo', group: 'group1'"));
+        collection.insert(json("name: 'neil1', group: 'group2'"));
+        collection.insert(json("name: 'neil2', group: null"));
+        collection.insert(json("name: 'neil3'"));
+
+        // check {group: null} vs {group: {$exists: false}} filter
+        DBCursor cursor1 = collection.find(json("group: null"));
+        assertThat(cursor1.toArray().size()).as("should have two neils (neil2, neil3)").isEqualTo(2);
+
+        DBCursor cursor2 = collection.find(json("group: {$exists: false}"));
+        assertThat(cursor2.toArray().size()).as("should have one neils (neil3)").isEqualTo(1);
+
+        // same check but for fields which do not exist in DB
+        DBCursor cursor3 = collection.find(json("other: null"));
+        assertThat(cursor3.toArray().size()).as("should return all documents").isEqualTo(5);
+
+        DBCursor cursor4 = collection.find(json("other: {$exists: false}"));
+        assertThat(cursor4.toArray().size()).as("should return all documents").isEqualTo(5);
+    }
+
 }
