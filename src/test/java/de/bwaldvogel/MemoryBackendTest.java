@@ -1744,4 +1744,23 @@ public class MemoryBackendTest {
         assertThat(objs).as("should return all documents").hasSize(5);
     }
 
+    // https://github.com/foursquare/fongo/issues/28
+    @Test
+    public void testExplicitlyAddedObjectIdNotNew() {
+        ObjectId oid = new ObjectId();
+        assertThat(oid.isNew()).as("should be new").isTrue();
+        collection.save(new BasicDBObject("_id", oid));
+        ObjectId retrievedOid = (ObjectId) collection.findOne().get("_id");
+        assertThat(retrievedOid).as("retrieved should still equal the inserted").isEqualTo(oid);
+        assertThat(retrievedOid.isNew()).as("retrieved should not be new").isFalse();
+    }
+
+    // https://github.com/foursquare/fongo/issues/28
+    @Test
+    public void testAutoCreatedObjectIdNotNew() {
+        collection.save(new BasicDBObject());
+        ObjectId retrievedOid = (ObjectId) collection.findOne().get("_id");
+        assertThat(retrievedOid.isNew()).as("retrieved should not be new").isFalse();
+    }
+
 }
