@@ -1730,18 +1730,18 @@ public class MemoryBackendTest {
         collection.insert(json("name: 'neil3'"));
 
         // check {group: null} vs {group: {$exists: false}} filter
-        DBCursor cursor1 = collection.find(json("group: null"));
-        assertThat(cursor1.toArray().size()).as("should have two neils (neil2, neil3)").isEqualTo(2);
+        List<DBObject> objs = collection.find(json("group: null")).toArray();
+        assertThat(objs).as("should have two neils (neil2, neil3)").hasSize(2);
 
-        DBCursor cursor2 = collection.find(json("group: {$exists: false}"));
-        assertThat(cursor2.toArray().size()).as("should have one neils (neil3)").isEqualTo(1);
+        objs = collection.find(json("group: {$exists: false}")).toArray();
+        assertThat(objs).as("should have one neils (neil3)").hasSize(1);
 
         // same check but for fields which do not exist in DB
-        DBCursor cursor3 = collection.find(json("other: null"));
-        assertThat(cursor3.toArray().size()).as("should return all documents").isEqualTo(5);
+        objs = collection.find(json("other: null")).toArray();
+        assertThat(objs).as("should return all documents").hasSize(5);
 
-        DBCursor cursor4 = collection.find(json("other: {$exists: false}"));
-        assertThat(cursor4.toArray().size()).as("should return all documents").isEqualTo(5);
+        objs = collection.find(json("other: {$exists: false}")).toArray();
+        assertThat(objs).as("should return all documents").hasSize(5);
     }
 
 }
