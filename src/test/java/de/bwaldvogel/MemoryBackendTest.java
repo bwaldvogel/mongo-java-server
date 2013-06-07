@@ -399,22 +399,29 @@ public class MemoryBackendTest {
         assertThat(collection.count()).isZero();
     }
 
+    // https://github.com/foursquare/fongo/issues/32
     @Test
     public void testFindAndModifyReturnNew() {
-        collection.insert(json("_id: 1, a: 1"));
-        DBObject result = collection.findAndModify(json("_id: 1"), null, null, false, json("$inc: {a:1}"), true, false);
+        collection.insert(json("_id: 1, a: 1, b: {c: 1}"));
 
-        assertThat(result).isEqualTo(json("_id: 1, a: 2"));
+        DBObject query = json("_id: 1");
+        DBObject update = json("$inc: {a: 1, 'b.c': 1}");
+        DBObject result = collection.findAndModify(query, null, null, false, update, true, false);
+
+        assertThat(result).isEqualTo(json("_id: 1, a: 2, b: {c: 2}"));
     }
 
+    // https://github.com/foursquare/fongo/issues/32
     @Test
     public void testFindAndModifyReturnOld() {
-        collection.insert(json("_id: 1, a:1"));
-        DBObject result = collection
-                .findAndModify(json("_id: 1"), null, null, false, json("$inc: {a:1}"), false, false);
+        collection.insert(json("_id: 1, a: 1, b: {c: 1}"));
 
-        assertThat(result).isEqualTo(json("_id: 1, a:1"));
-        assertThat(collection.findOne()).isEqualTo(json("_id: 1, a: 2"));
+        DBObject query = json("_id: 1");
+        DBObject update = json("$inc: {a: 1, 'b.c': 1}");
+        DBObject result = collection.findAndModify(query, null, null, false, update, false, false);
+
+        assertThat(result).isEqualTo(json("_id: 1, a: 1, b: {c: 1}"));
+        assertThat(collection.findOne(query)).isEqualTo(json("_id: 1, a: 2, b: {c: 2}"));
     }
 
     @Test
