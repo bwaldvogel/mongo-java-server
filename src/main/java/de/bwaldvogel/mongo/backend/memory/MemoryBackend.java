@@ -20,6 +20,7 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
@@ -107,7 +108,7 @@ public class MemoryBackend implements MongoBackend {
             return response;
         } else if (command.equalsIgnoreCase("ismaster")) {
             BSONObject response = new BasicBSONObject("ismaster", Boolean.TRUE);
-            response.put("maxBsonObjectSize", Integer.valueOf(MongoWireProtocolHandler.MAX_BSON_OBJECT_SIZE));
+            response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
             response.put("localTime", new Date());
             Utils.markOkay(response);

@@ -1,0 +1,184 @@
+package de.bwaldvogel.mongo.wire;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+import org.bson.BSONObject;
+import org.bson.BasicBSONObject;
+import org.bson.types.BSONTimestamp;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
+import org.jboss.netty.buffer.ChannelBuffer;
+
+import de.bwaldvogel.mongo.backend.Utils;
+
+class BsonDecoder {
+
+    public BSONObject decodeBson(ChannelBuffer buffer) throws IOException {
+        final int totalObjectLength = buffer.readInt();
+        final int length = totalObjectLength - 4;
+        if (buffer.readableBytes() < length) {
+            throw new IOException("Too few bytes to read: " + buffer.readableBytes() + ". Expected: " + length);
+        }
+        if (length > BsonConstants.MAX_BSON_OBJECT_SIZE) {
+            throw new IOException("BSON object too large: " + length + " bytes");
+        }
+
+        BSONObject object = new BasicBSONObject();
+        int start = buffer.readerIndex();
+        while (buffer.readerIndex() - start < length) {
+            byte type = buffer.readByte();
+            if (type == BsonConstants.TERMINATING_BYTE) {
+                return object;
+            }
+            String name = decodeCString(buffer);
+            Object value = decodeValue(type, buffer);
+            object.put(name, value);
+        }
+        throw new IOException("illegal BSON object");
+    }
+
+    private Object decodeValue(byte type, ChannelBuffer buffer) throws IOException {
+        Object value;
+        switch (type) {
+        case BsonConstants.TYPE_DOUBLE:
+            value = Double.valueOf(buffer.readDouble());
+            break;
+        case BsonConstants.TYPE_UTF8_STRING:
+            value = decodeString(buffer);
+            break;
+        case BsonConstants.TYPE_EMBEDDED_DOCUMENT:
+            value = decodeBson(buffer);
+            break;
+        case BsonConstants.TYPE_ARRAY:
+            value = decodeArray(buffer);
+            break;
+        case BsonConstants.TYPE_DATA:
+            value = decodeBinary(buffer);
+            break;
+        case BsonConstants.TYPE_UNDEFINED:
+            value = null;
+            break;
+        case BsonConstants.TYPE_OBJECT_ID:
+            value = decodeObjectId(buffer);
+            break;
+        case BsonConstants.TYPE_BOOLEAN:
+            value = decodeBoolean(buffer);
+            break;
+        case BsonConstants.TYPE_UTC_DATETIME:
+            value = new Date(buffer.readLong());
+            break;
+        case BsonConstants.TYPE_NULL:
+            value = null;
+            break;
+        case BsonConstants.TYPE_REGEX:
+            value = decodePattern(buffer);
+            break;
+        case BsonConstants.TYPE_INT32:
+            value = Integer.valueOf(buffer.readInt());
+            break;
+        case BsonConstants.TYPE_TIMESTAMP:
+            value = new BSONTimestamp(buffer.readInt(), buffer.readInt());
+            break;
+        case BsonConstants.TYPE_INT64:
+            value = Long.valueOf(buffer.readLong());
+            break;
+        case BsonConstants.TYPE_MAX_KEY:
+            value = new MaxKey();
+            break;
+        case BsonConstants.TYPE_MIN_KEY:
+            value = new MinKey();
+            break;
+        case BsonConstants.TYPE_JAVASCRIPT_CODE:
+        case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
+            throw new IOException("unhandled type: 0x" + Integer.toHexString(type));
+        default:
+            throw new IOException("unknown type: 0x" + Integer.toHexString(type));
+        }
+        return value;
+    }
+
+    private Pattern decodePattern(ChannelBuffer buffer) throws IOException {
+        String regex = decodeCString(buffer);
+        String options = decodeCString(buffer);
+        return Utils.createPattern(regex, options);
+    }
+
+    private List<Object> decodeArray(ChannelBuffer buffer) throws IOException {
+        List<Object> array = new ArrayList<Object>();
+        BSONObject arrayObject = decodeBson(buffer);
+        for (String key : arrayObject.keySet()) {
+            array.add(arrayObject.get(key));
+        }
+        return array;
+    }
+
+    private ObjectId decodeObjectId(ChannelBuffer buffer) {
+        byte[] b = new byte[BsonConstants.LENGTH_OBJECTID];
+        buffer.readBytes(b);
+        return new ObjectId(b);
+    }
+
+    private String decodeString(ChannelBuffer buffer) throws IOException {
+        int length = buffer.readInt();
+        byte[] data = new byte[length - 1];
+        buffer.readBytes(data);
+        String s = new String(data, "UTF-8");
+        byte trail = buffer.readByte();
+        if (trail != BsonConstants.STRING_TERMINATION) {
+            throw new IOException();
+        }
+        return s;
+    }
+
+    // default visibility for unit test
+    String decodeCString(ChannelBuffer buffer) throws IOException {
+        int length = buffer.bytesBefore(BsonConstants.STRING_TERMINATION);
+        if (length < 0)
+            throw new IOException("string termination not found");
+
+        String result = buffer.toString(buffer.readerIndex(), length, Charset.forName("UTF-8"));
+        buffer.skipBytes(length + 1);
+        return result;
+    }
+
+    private Object decodeBinary(ChannelBuffer buffer) throws IOException {
+        int length = buffer.readInt();
+        int subtype = buffer.readByte();
+        switch (subtype) {
+        case BsonConstants.BINARY_SUBTYPE_GENERIC:
+        case BsonConstants.BINARY_SUBTYPE_USER_DEFINED: {
+            byte[] data = new byte[length];
+            buffer.readBytes(data);
+            return data;
+        }
+        case BsonConstants.BINARY_SUBTYPE_OLD_UUID:
+        case BsonConstants.BINARY_SUBTYPE_UUID: {
+            if (length != BsonConstants.LENGTH_UUID) {
+                throw new IOException();
+            }
+            return new UUID(buffer.readLong(), buffer.readLong());
+        }
+        default:
+            throw new IOException();
+        }
+    }
+
+    private Object decodeBoolean(ChannelBuffer buffer) throws IOException {
+        switch (buffer.readByte()) {
+        case BsonConstants.BOOLEAN_VALUE_FALSE:
+            return Boolean.FALSE;
+        case BsonConstants.BOOLEAN_VALUE_TRUE:
+            return Boolean.TRUE;
+        default:
+            throw new IOException("illegal boolean value");
+        }
+    }
+
+}
