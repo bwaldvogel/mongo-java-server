@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
@@ -19,6 +18,8 @@ import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.jboss.netty.channel.group.ChannelGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.MongoBackend;
@@ -39,7 +40,7 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
     private final AtomicInteger idSequence = new AtomicInteger();
     private final MongoBackend mongoBackend;
 
-    private static final Logger log = Logger.getLogger(MongoWireProtocolHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
     private ChannelGroup channelGroup;
     private long started;
     private Date startDate;
@@ -55,14 +56,14 @@ public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
     public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         Channel channel = e.getChannel();
         channelGroup.add(channel);
-        log.info("client " + channel + " connected");
+        log.info("client {} connected", channel);
         super.channelClosed(ctx, e);
     }
 
     @Override
     public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
         Channel channel = e.getChannel();
-        log.info("channel " + channel + " closed");
+        log.info("channel {} closed", channel);
         mongoBackend.handleClose(channel);
         super.channelClosed(ctx, e);
     }

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.bson.types.BSONTimestamp;
@@ -18,6 +17,8 @@ import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
@@ -36,7 +37,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     public static final int MAX_BSON_OBJECT_SIZE = 16 * 1024 * 1024;
     public static final int MAX_MESSAGE_SIZE_BYTES = 48 * 1000 * 1000;
 
-    private static final Logger log = Logger.getLogger(MongoWireProtocolHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
 
     private static final int maxFrameLength = Integer.MAX_VALUE;
     private static final int lengthFieldOffset = 0;

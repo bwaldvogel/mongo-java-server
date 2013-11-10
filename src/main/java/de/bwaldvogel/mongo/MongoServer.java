@@ -6,7 +6,6 @@ import java.net.SocketAddress;
 import java.nio.ByteOrder;
 import java.util.concurrent.Executors;
 
-import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.buffer.HeapChannelBufferFactory;
 import org.jboss.netty.channel.Channel;
@@ -17,6 +16,8 @@ import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
@@ -26,7 +27,7 @@ import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 
 public class MongoServer {
 
-    private static final Logger log = Logger.getLogger(MongoServer.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoServer.class);
 
     public static final String VERSION = "0.1";
 
@@ -42,7 +43,7 @@ public class MongoServer {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                log.info("shutting down " + mongoServer);
+                log.info("shutting down {}", mongoServer);
                 mongoServer.shutdownNow();
             }
         });
@@ -74,7 +75,7 @@ public class MongoServer {
 
         try {
             serverChannel = bootstrap.bind(socketAddress);
-            log.info("started " + this);
+            log.info("started {}", this);
         } catch (RuntimeException e) {
             shutdownNow();
             throw e;
@@ -110,7 +111,7 @@ public class MongoServer {
             factory = null;
         }
 
-        log.info("completed shutdown of " + this);
+        log.info("completed shutdown of {}", this);
     }
 
     /**
@@ -139,7 +140,7 @@ public class MongoServer {
 
     private void closeClients() {
         if (!channelGroup.isEmpty()) {
-            log.warn(channelGroup.size() + " channels still open. closing now...");
+            log.warn("{} channels still open. closing now...", channelGroup.size());
             channelGroup.close().awaitUninterruptibly();
         }
     }

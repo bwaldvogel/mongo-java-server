@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.wire;
 import java.nio.ByteOrder;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.bson.BSON;
 import org.bson.BSONObject;
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -11,11 +10,14 @@ import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 
 public class MongoWireEncoder extends OneToOneEncoder {
-    private static final Logger _log = Logger.getLogger(MongoWireEncoder.class);
+
+    private static final Logger log = LoggerFactory.getLogger(MongoWireEncoder.class);
 
     @Override
     protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
@@ -39,7 +41,7 @@ public class MongoWireEncoder extends OneToOneEncoder {
             buffer.writeBytes(BSON.encode(bsonObject));
         }
 
-        _log.debug("wrote reply: " + reply);
+        log.debug("wrote reply: " + reply);
 
         // now set the length
         final int writerIndex = buffer.writerIndex();
