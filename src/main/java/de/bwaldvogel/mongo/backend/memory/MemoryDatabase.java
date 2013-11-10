@@ -164,6 +164,8 @@ public class MemoryDatabase extends CommonDatabase {
         indexDescription.put("key", new BasicBSONObject("_id", Integer.valueOf(1)));
         addIndex(indexDescription);
 
+        log.info("created collection {}", collection.getFullName());
+
         return collection;
     }
 

@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -11,6 +12,8 @@ import java.util.TreeMap;
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.jboss.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
@@ -25,6 +28,8 @@ import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MemoryBackend implements MongoBackend {
+
+    private static final Logger log = LoggerFactory.getLogger(MemoryBackend.class);
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
 
@@ -57,6 +62,7 @@ public class MemoryBackend implements MongoBackend {
         MongoDatabase db = databases.get(database);
         if (db == null) {
             db = new MemoryDatabase(this, database);
+            log.info("created database {}", db.getDatabaseName());
             databases.put(database, db);
         }
         return db;
