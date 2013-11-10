@@ -49,9 +49,29 @@ public class MemoryBackend implements MongoBackend {
             return response;
         } else if (command.equalsIgnoreCase("replSetGetStatus")) {
             throw new MongoSilentServerException("not running with --replSet");
+        } else if (command.equalsIgnoreCase("getLog")) {
+            final Object argument = query.get(command);
+            BSONObject response = getLog(argument == null ? null : argument.toString());
+            return response;
         } else {
             throw new NoSuchCommandException(command);
         }
+    }
+
+    private BSONObject getLog(String argument) throws MongoServerException {
+        log.debug("getLog: {}", argument);
+        BSONObject response = new BasicBSONObject();
+        if (argument.equals("*")) {
+            response.put("names", Arrays.asList("startupWarnings"));
+            Utils.markOkay(response);
+        } else if (argument.equals("startupWarnings")){
+            response.put("totalLinesWritten", Integer.valueOf(0));
+            response.put("log", new ArrayList<String>());
+            Utils.markOkay(response);
+        } else {
+           throw new MongoSilentServerException("no RamLog named: " + argument);
+        }
+        return response;
     }
 
     private synchronized MongoDatabase resolveDatabase(Message message) throws MongoServerException {

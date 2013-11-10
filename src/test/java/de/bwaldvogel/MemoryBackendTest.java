@@ -6,6 +6,7 @@ import static org.fest.assertions.Fail.fail;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -20,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.CommandFailureException;
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -122,6 +124,25 @@ public class MemoryBackendTest {
         assertThat(((Number) stats.get("count")).longValue()).isEqualTo(2);
         assertThat(((Number) stats.get("size")).longValue()).isEqualTo(57);
         assertThat(((Number) stats.get("avgObjSize")).doubleValue()).isEqualTo(28.5);
+    }
+
+    @Test
+    public void testGetLogStartupWarnings() throws Exception {
+        CommandResult startupWarnings = client.getDB("admin").command(json("getLog: 'startupWarnings'"));
+        startupWarnings.throwOnError();
+        assertThat(startupWarnings.get("totalLinesWritten")).isEqualTo(0);
+        assertThat(startupWarnings.get("log")).isEqualTo(Collections.emptyList());
+    }
+
+    @Test
+    public void testGetLogWhichDoesNotExist() throws Exception {
+        CommandResult startupWarnings = client.getDB("admin").command(json("getLog: 'illegal'"));
+        try {
+            startupWarnings.throwOnError();
+            fail("CommandFailureException expected");
+        } catch (CommandFailureException e) {
+            assertThat(e.getMessage()).contains("no RamLog");
+        }
     }
 
     @Test
