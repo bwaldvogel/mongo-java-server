@@ -1,15 +1,16 @@
 package de.bwaldvogel.mongo.wire;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.bson.BSONObject;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.handler.codec.frame.LengthFieldBasedFrameDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,72 +45,75 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-        log.error("exception for client " + e.getChannel().getId(), e.getCause());
-        e.getChannel().close();
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        log.error("exception for client " + ctx.channel().hashCode(), cause);
+        ctx.channel().close();
     }
 
     @Override
-    protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buffer) throws Exception {
+    protected Object decode(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
 
-        if (buffer.readableBytes() < 4) {
+        ByteBuf in = buf.order(ByteOrder.LITTLE_ENDIAN);
+
+        if (in.readableBytes() < 4) {
             return null;
         }
 
-        buffer.markReaderIndex();
-        int totalLength = buffer.readInt();
+        in.markReaderIndex();
+        int totalLength = in.readInt();
 
         if (totalLength > MAX_MESSAGE_SIZE_BYTES) {
             throw new IOException("message too large: " + totalLength + " bytes");
         }
 
-        if (buffer.readableBytes() < totalLength - lengthFieldLength) {
-            buffer.resetReaderIndex();
+        if (in.readableBytes() < totalLength - lengthFieldLength) {
+            in.resetReaderIndex();
             return null; // retry
         }
-        buffer = buffer.readSlice(totalLength - lengthFieldLength);
-        int readable = buffer.readableBytes();
+        in = in.readSlice(totalLength - lengthFieldLength);
+        int readable = in.readableBytes();
         if (readable != totalLength - lengthFieldLength) {
             throw new IllegalStateException();
         }
 
-        final int requestID = buffer.readInt();
-        final int responseTo = buffer.readInt();
+        final int requestID = in.readInt();
+        final int responseTo = in.readInt();
         final MessageHeader header = new MessageHeader(requestID, responseTo);
 
-        int opCodeId = buffer.readInt();
+        int opCodeId = in.readInt();
         final OpCode opCode = OpCode.getById(opCodeId);
         if (opCode == null) {
             throw new IOException("opCode " + opCodeId + " not supported");
         }
 
+        final Channel channel = ctx.channel();
         Object ret;
 
         switch (opCode) {
         case OP_QUERY:
-            ret = handleQuery(channel, header, buffer);
+            ret = handleQuery(channel, header, in);
             break;
         case OP_INSERT:
-            ret = handleInsert(channel, header, buffer);
+            ret = handleInsert(channel, header, in);
             break;
         case OP_DELETE:
-            ret = handleDelete(channel, header, buffer);
+            ret = handleDelete(channel, header, in);
             break;
         case OP_UPDATE:
-            ret = handleUpdate(channel, header, buffer);
+            ret = handleUpdate(channel, header, in);
             break;
         default:
             throw new UnsupportedOperationException("unsupported opcode: " + opCode);
         }
 
-        if (buffer.readable()) {
+        if (in.isReadable()) {
             throw new IOException();
         }
 
         return ret;
     }
 
-    private Object handleDelete(Channel channel, MessageHeader header, ChannelBuffer buffer) throws IOException {
+    private Object handleDelete(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         buffer.skipBytes(4); // reserved
 
@@ -130,7 +134,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoDelete(channel, header, fullCollectionName, selector, singleRemove);
     }
 
-    private Object handleUpdate(Channel channel, MessageHeader header, ChannelBuffer buffer) throws IOException {
+    private Object handleUpdate(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         buffer.skipBytes(4); // reserved
 
@@ -146,16 +150,16 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoUpdate(channel, header, fullCollectionName, selector, update, upsert, multi);
     }
 
-    private Object handleInsert(Channel channel, MessageHeader header, ChannelBuffer buffer) throws IOException {
+    private Object handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         final int flags = buffer.readInt();
         if (flags != 0)
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
 
-        final String fullCollectionName =bsonDecoder. decodeCString(buffer);
+        final String fullCollectionName = bsonDecoder.decodeCString(buffer);
 
         List<BSONObject> documents = new ArrayList<BSONObject>();
-        while (buffer.readable()) {
+        while (buffer.isReadable()) {
             BSONObject document = bsonDecoder.decodeBson(buffer);
             if (document == null) {
                 return null;
@@ -166,17 +170,17 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoInsert(channel, header, fullCollectionName, documents);
     }
 
-    private Object handleQuery(Channel channel, MessageHeader header, ChannelBuffer buffer) throws IOException {
+    private Object handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         int flags = buffer.readInt();
 
-        final String fullCollectionName =bsonDecoder. decodeCString(buffer);
+        final String fullCollectionName = bsonDecoder.decodeCString(buffer);
         final int numberToSkip = buffer.readInt();
         final int numberToReturn = buffer.readInt();
 
         BSONObject query = bsonDecoder.decodeBson(buffer);
         BSONObject returnFieldSelector = null;
-        if (buffer.readable()) {
+        if (buffer.isReadable()) {
             returnFieldSelector = bsonDecoder.decodeBson(buffer);
         }
 

@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.memory;
 
+import io.netty.channel.Channel;
+
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,7 +13,6 @@ import java.util.TreeMap;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
-import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +103,7 @@ public class MemoryBackend implements MongoBackend {
 
         if (command.equalsIgnoreCase("whatsmyuri")) {
             BSONObject response = new BasicBSONObject();
-            InetSocketAddress remoteAddress = (InetSocketAddress) channel.getRemoteAddress();
+            InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
             response.put("you", remoteAddress.getAddress().getHostAddress() + ":" + remoteAddress.getPort());
             Utils.markOkay(response);
             return response;

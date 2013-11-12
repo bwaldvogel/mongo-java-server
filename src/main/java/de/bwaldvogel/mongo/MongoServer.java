@@ -1,21 +1,21 @@
 package de.bwaldvogel.mongo;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteOrder;
-import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.buffer.HeapChannelBufferFactory;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +33,13 @@ public class MongoServer {
 
     private MongoBackend backend;
 
-    private ChannelFactory factory;
-    private ChannelGroup channelGroup = new DefaultChannelGroup(getClass().getSimpleName());
-    private Channel serverChannel;
+    private EventLoopGroup bossGroup;
+
+    private EventLoopGroup workerGroup;
+
+    private ChannelGroup channelGroup;
+
+    private Channel channel;
 
     public static void main(String[] args) throws Exception {
         final MongoServer mongoServer = new MongoServer();
@@ -61,20 +65,30 @@ public class MongoServer {
     }
 
     public void bind(SocketAddress socketAddress) {
-        factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
-        final ServerBootstrap bootstrap = new ServerBootstrap(factory);
-        bootstrap.setOption("child.bufferFactory", new HeapChannelBufferFactory(ByteOrder.LITTLE_ENDIAN));
 
-        // Set up the pipeline factory.
-        bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-            public ChannelPipeline getPipeline() throws Exception {
-                return Channels.pipeline(new MongoWireEncoder(), new MongoWireProtocolHandler(),
-                        new MongoDatabaseHandler(backend, channelGroup));
-            }
-        });
+        bossGroup = new NioEventLoopGroup();
+        workerGroup = new NioEventLoopGroup();
+        channelGroup = new DefaultChannelGroup("mongodb-channels", workerGroup.next());
 
         try {
-            serverChannel = bootstrap.bind(socketAddress);
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap//
+                    .group(bossGroup, workerGroup)//
+                    .channel(NioServerSocketChannel.class)//
+                    .option(ChannelOption.SO_BACKLOG, 100)//
+                    .localAddress(socketAddress)//
+                    .childOption(ChannelOption.TCP_NODELAY, true)//
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                        @Override
+                        public void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(new MongoWireEncoder());
+                            ch.pipeline().addLast(new MongoWireProtocolHandler());
+                            ch.pipeline().addLast(new MongoDatabaseHandler(backend, channelGroup));
+                        }
+                    });
+
+            channel = bootstrap.bind().syncUninterruptibly().channel();
+
             log.info("started {}", this);
         } catch (RuntimeException e) {
             shutdownNow();
@@ -93,23 +107,26 @@ public class MongoServer {
     }
 
     protected InetSocketAddress getLocalAddress() {
-        if (serverChannel == null)
+        if (channel == null)
             return null;
-        return (InetSocketAddress) serverChannel.getLocalAddress();
+        return (InetSocketAddress) channel.localAddress();
     }
 
     /**
-     * Stop accepting new clients. Wait until all resources (such as client connection) are closed and then shutdown.
-     * This method blocks until all clients are finished.
-     * Use {@link #shutdownNow()} if the shutdown should be forced.
+     * Stop accepting new clients. Wait until all resources (such as client
+     * connection) are closed and then shutdown. This method blocks until all
+     * clients are finished. Use {@link #shutdownNow()} if the shutdown should
+     * be forced.
      */
     public void shutdown() {
         stopListenting();
 
-        if (factory != null) {
-            factory.releaseExternalResources();
-            factory = null;
-        }
+        // Shut down all event loops to terminate all threads.
+        bossGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+        workerGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+
+        bossGroup.terminationFuture().syncUninterruptibly();
+        workerGroup.terminationFuture().syncUninterruptibly();
 
         log.info("completed shutdown of {}", this);
     }
@@ -118,31 +135,30 @@ public class MongoServer {
      * Closes the server socket. No new clients are accepted afterwards.
      */
     public void stopListenting() {
-        if (serverChannel != null) {
+        if (channel != null) {
             log.info("closing server channel");
-            serverChannel.close().awaitUninterruptibly();
-            serverChannel = null;
+            channel.close().syncUninterruptibly();
+            channel = null;
         }
     }
 
     /**
-     * Stops accepting new clients, closes all clients and finally shuts down the server
-     * In contrast to {@link #shutdown()}, this method should not block.
+     * Stops accepting new clients, closes all clients and finally shuts down
+     * the server In contrast to {@link #shutdown()}, this method should not
+     * block.
      */
     public void shutdownNow() {
-        // stop accepting new clients, before all remaining clients can be killed
         stopListenting();
         closeClients();
-        // ready to finally shutdown and close all remaining resources
-        // should not block
         shutdown();
     }
 
     private void closeClients() {
-        if (!channelGroup.isEmpty()) {
-            log.warn("{} channels still open. closing now...", channelGroup.size());
-            channelGroup.close().awaitUninterruptibly();
+        final int numClients = channelGroup.size();
+        if (numClients > 0) {
+            log.warn("Closing {} clients", numClients);
         }
+        channelGroup.close().syncUninterruptibly();
     }
 
     @Override

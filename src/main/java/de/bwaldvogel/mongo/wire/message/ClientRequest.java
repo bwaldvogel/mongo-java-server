@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import org.jboss.netty.channel.Channel;
+import io.netty.channel.Channel;
 
 public abstract class ClientRequest implements Message {
 

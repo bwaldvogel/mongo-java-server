@@ -1,5 +1,10 @@
 package de.bwaldvogel.mongo.wire;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.group.ChannelGroup;
+
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -12,12 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.group.ChannelGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +27,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -35,44 +35,43 @@ import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
-public class MongoDatabaseHandler extends SimpleChannelUpstreamHandler {
+public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequest> {
+
+    private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
 
     private final AtomicInteger idSequence = new AtomicInteger();
     private final MongoBackend mongoBackend;
 
-    private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
-    private ChannelGroup channelGroup;
-    private long started;
-    private Date startDate;
+    private final ChannelGroup channelGroup;
+    private final long started;
+    private final Date startDate;
 
     public MongoDatabaseHandler(MongoBackend mongoBackend, ChannelGroup channelGroup) {
-        this.mongoBackend = mongoBackend;
         this.channelGroup = channelGroup;
+        this.mongoBackend = mongoBackend;
         this.started = System.nanoTime();
         this.startDate = new Date();
     }
 
     @Override
-    public void channelOpen(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        Channel channel = e.getChannel();
-        channelGroup.add(channel);
-        log.info("client {} connected", channel);
-        super.channelClosed(ctx, e);
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        channelGroup.add(ctx.channel());
+        log.info("client {} connected", ctx.channel());
+        super.channelActive(ctx);
     }
 
     @Override
-    public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        Channel channel = e.getChannel();
-        log.info("channel {} closed", channel);
-        mongoBackend.handleClose(channel);
-        super.channelClosed(ctx, e);
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        log.info("channel {} closed", ctx.channel());
+        channelGroup.remove(ctx.channel());
+        mongoBackend.handleClose(ctx.channel());
+        super.channelInactive(ctx);
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent event) throws MongoServerException {
-        final Object object = event.getMessage();
+    protected void channelRead0(ChannelHandlerContext ctx, ClientRequest object) throws Exception {
         if (object instanceof MongoQuery) {
-            event.getChannel().write(handleQuery(event.getChannel(), (MongoQuery) object));
+            ctx.channel().writeAndFlush(handleQuery(ctx.channel(), (MongoQuery) object));
         } else if (object instanceof MongoInsert) {
             MongoInsert insert = (MongoInsert) object;
             mongoBackend.handleInsert(insert);

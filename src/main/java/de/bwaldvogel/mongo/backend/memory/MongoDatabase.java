@@ -1,7 +1,8 @@
 package de.bwaldvogel.mongo.backend.memory;
 
+import io.netty.channel.Channel;
+
 import org.bson.BSONObject;
-import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;

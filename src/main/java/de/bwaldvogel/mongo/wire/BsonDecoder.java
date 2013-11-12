@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.wire;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -14,13 +16,12 @@ import org.bson.types.BSONTimestamp;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-import org.jboss.netty.buffer.ChannelBuffer;
 
 import de.bwaldvogel.mongo.backend.Utils;
 
 class BsonDecoder {
 
-    public BSONObject decodeBson(ChannelBuffer buffer) throws IOException {
+    public BSONObject decodeBson(ByteBuf buffer) throws IOException {
         final int totalObjectLength = buffer.readInt();
         final int length = totalObjectLength - 4;
         if (buffer.readableBytes() < length) {
@@ -44,7 +45,7 @@ class BsonDecoder {
         throw new IOException("illegal BSON object");
     }
 
-    private Object decodeValue(byte type, ChannelBuffer buffer) throws IOException {
+    private Object decodeValue(byte type, ByteBuf buffer) throws IOException {
         Object value;
         switch (type) {
         case BsonConstants.TYPE_DOUBLE:
@@ -104,13 +105,13 @@ class BsonDecoder {
         return value;
     }
 
-    private Pattern decodePattern(ChannelBuffer buffer) throws IOException {
+    private Pattern decodePattern(ByteBuf buffer) throws IOException {
         String regex = decodeCString(buffer);
         String options = decodeCString(buffer);
         return Utils.createPattern(regex, options);
     }
 
-    private List<Object> decodeArray(ChannelBuffer buffer) throws IOException {
+    private List<Object> decodeArray(ByteBuf buffer) throws IOException {
         List<Object> array = new ArrayList<Object>();
         BSONObject arrayObject = decodeBson(buffer);
         for (String key : arrayObject.keySet()) {
@@ -119,13 +120,13 @@ class BsonDecoder {
         return array;
     }
 
-    private ObjectId decodeObjectId(ChannelBuffer buffer) {
+    private ObjectId decodeObjectId(ByteBuf buffer) {
         byte[] b = new byte[BsonConstants.LENGTH_OBJECTID];
         buffer.readBytes(b);
         return new ObjectId(b);
     }
 
-    private String decodeString(ChannelBuffer buffer) throws IOException {
+    private String decodeString(ByteBuf buffer) throws IOException {
         int length = buffer.readInt();
         byte[] data = new byte[length - 1];
         buffer.readBytes(data);
@@ -138,7 +139,7 @@ class BsonDecoder {
     }
 
     // default visibility for unit test
-    String decodeCString(ChannelBuffer buffer) throws IOException {
+    String decodeCString(ByteBuf buffer) throws IOException {
         int length = buffer.bytesBefore(BsonConstants.STRING_TERMINATION);
         if (length < 0)
             throw new IOException("string termination not found");
@@ -148,7 +149,7 @@ class BsonDecoder {
         return result;
     }
 
-    private Object decodeBinary(ChannelBuffer buffer) throws IOException {
+    private Object decodeBinary(ByteBuf buffer) throws IOException {
         int length = buffer.readInt();
         int subtype = buffer.readByte();
         switch (subtype) {
@@ -170,7 +171,7 @@ class BsonDecoder {
         }
     }
 
-    private Object decodeBoolean(ChannelBuffer buffer) throws IOException {
+    private Object decodeBoolean(ByteBuf buffer) throws IOException {
         switch (buffer.readByte()) {
         case BsonConstants.BOOLEAN_VALUE_FALSE:
             return Boolean.FALSE;

@@ -1,51 +1,48 @@
 package de.bwaldvogel.mongo.wire;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToByteEncoder;
+
 import java.nio.ByteOrder;
 import java.util.List;
 
 import org.bson.BSON;
 import org.bson.BSONObject;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBuffers;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 
-public class MongoWireEncoder extends OneToOneEncoder {
+public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
 
     private static final Logger log = LoggerFactory.getLogger(MongoWireEncoder.class);
 
     @Override
-    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, MongoReply reply, ByteBuf buf) throws Exception {
 
-        final ChannelBuffer buffer = ChannelBuffers.dynamicBuffer(ByteOrder.LITTLE_ENDIAN, 32);
-        buffer.writeInt(0); // write length later
+        ByteBuf out = buf.order(ByteOrder.LITTLE_ENDIAN);
 
-        final MongoReply reply = (MongoReply) msg;
+        out.writeInt(0); // write length later
 
-        buffer.writeInt(reply.getHeader().getRequestID());
-        buffer.writeInt(reply.getHeader().getResponseTo());
-        buffer.writeInt(OpCode.OP_REPLY.getId());
+        out.writeInt(reply.getHeader().getRequestID());
+        out.writeInt(reply.getHeader().getResponseTo());
+        out.writeInt(OpCode.OP_REPLY.getId());
 
-        buffer.writeInt(reply.getFlags());
-        buffer.writeLong(reply.getCursorId());
-        buffer.writeInt(reply.getStartingFrom());
+        out.writeInt(reply.getFlags());
+        out.writeLong(reply.getCursorId());
+        out.writeInt(reply.getStartingFrom());
         final List<BSONObject> documents = reply.getDocuments();
-        buffer.writeInt(documents.size());
+        out.writeInt(documents.size());
 
         for (final BSONObject bsonObject : documents) {
-            buffer.writeBytes(BSON.encode(bsonObject));
+            out.writeBytes(BSON.encode(bsonObject));
         }
 
         log.debug("wrote reply: " + reply);
 
         // now set the length
-        final int writerIndex = buffer.writerIndex();
-        buffer.setInt(0, writerIndex);
-        return buffer;
+        final int writerIndex = out.writerIndex();
+        out.setInt(0, writerIndex);
     }
 }

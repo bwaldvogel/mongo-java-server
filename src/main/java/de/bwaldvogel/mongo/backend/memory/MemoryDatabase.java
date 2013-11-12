@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.memory;
 
+import io.netty.channel.Channel;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,7 +10,6 @@ import java.util.Map;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
-import org.jboss.netty.channel.Channel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -335,7 +336,9 @@ public class MemoryDatabase extends CommonDatabase {
         } else {
             error.put("err", ex.getMessage());
         }
-        error.put("connectionId", channel.getId());
+        // TODO: https://github.com/netty/netty/issues/1810
+        // also note: http://stackoverflow.com/questions/17690094/channel-id-has-been-removed-in-netty4-0-final-version-how-can-i-solve
+        error.put("connectionId",Integer.valueOf( channel.hashCode()));
         putLastResult(channel, error);
     }
 

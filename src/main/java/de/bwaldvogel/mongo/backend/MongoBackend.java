@@ -1,9 +1,10 @@
 package de.bwaldvogel.mongo.backend;
 
+import io.netty.channel.Channel;
+
 import java.util.Collection;
 
 import org.bson.BSONObject;
-import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;

@@ -1,11 +1,12 @@
 package de.bwaldvogel.mongo.backend;
 
+import io.netty.channel.Channel;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.bson.BSONObject;
-import org.jboss.netty.channel.Channel;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
