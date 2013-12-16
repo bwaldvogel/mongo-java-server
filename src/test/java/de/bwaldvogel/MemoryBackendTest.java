@@ -985,6 +985,13 @@ public class MemoryBackendTest {
     }
 
     @Test
+    public void testQueryWithDotNotationFieldSelector() throws Exception {
+    	collection.insert(json("index: 1, foo: { a: 'a1', b: 'b1'}"));
+    	DBObject obj = collection.findOne(json("{}"), json("foo.a: 1, foo.b: 1"));
+        assertThat(obj.keySet()).containsOnly("_id", "foo");
+    }
+
+    @Test
     public void testQuerySystemNamespace() throws Exception {
         assertThat(db.getCollection("system.foobar").findOne()).isNull();
         assertThat(db.getCollectionNames()).containsOnly("system.indexes");
