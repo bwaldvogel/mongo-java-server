@@ -986,9 +986,21 @@ public class MemoryBackendTest {
 
     @Test
     public void testQueryWithDotNotationFieldSelector() throws Exception {
-    	collection.insert(json("index: 1, foo: { a: 'a1', b: 'b1'}"));
-    	DBObject obj = collection.findOne(json("{}"), json("foo.a: 1, foo.b: 1"));
-        assertThat(obj.keySet()).containsOnly("_id", "foo");
+        collection.insert(json("_id: 123, index: false, foo: { a: 'a1', b: 0}"));
+        DBObject obj = collection.findOne(json("{}"), json("foo.a: 1, foo.b: 1"));
+        assertThat(obj).isEqualTo(json("_id: 123, foo: {a: 'a1', b: 0}"));
+
+        obj = collection.findOne(json("{}"), json("foo.a: 1"));
+        assertThat(obj).isEqualTo(json("_id: 123, foo: {a: 'a1'}"));
+
+        obj = collection.findOne(json("{}"), json("foo.a: 1, index: 1, _id: 0"));
+        assertThat(obj).isEqualTo(json("foo: {a: 'a1'}, index: false"));
+
+        obj = collection.findOne(json("{}"), json("foo: 1, _id: 0"));
+        assertThat(obj).isEqualTo(json("foo: {a: 'a1', b: 0}"));
+
+        obj = collection.findOne(json("{}"), json("foo.a.b.c.d: 1"));
+        assertThat(obj).isEqualTo(json("_id: 123, foo: {}"));
     }
 
     @Test
