@@ -522,14 +522,7 @@ public class MemoryCollection extends MongoCollection {
     }
 
     private BSONObject projectDocument(BSONObject document, BSONObject fields) {
-        if (document == null)
-            return null;
-        BSONObject newDocument = new BasicBSONObject();
-        for (String key : fields.keySet()) {
-            if (Utils.isTrue(fields.get(key))) {
-                newDocument.put(key, document.get(key));
-            }
-        }
+        BSONObject newDocument = projectDocumentSeparingDots(document, fields);
 
         // implicitly add _id if not mentioned
         // http://docs.mongodb.org/manual/core/read-operations/#result-projections
@@ -540,7 +533,44 @@ public class MemoryCollection extends MongoCollection {
         return newDocument;
     }
 
-    public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn)
+	private BSONObject projectDocumentSeparingDots(BSONObject document,
+			BSONObject fields) {
+		if (document == null)
+            return null;
+        BSONObject newDocument = new BasicBSONObject();
+        for (String key : fields.keySet()) {
+        	if (Utils.isTrue(fields.get(key)))
+        		projectField(document, newDocument, key);
+        }
+		return newDocument;
+	}
+
+	private void projectField(BSONObject document, BSONObject newDocument,
+			String key) {
+		String[] splittedKeys = key.split("\\.");
+		String currentField = splittedKeys[0];
+		if (Utils.isTrue(document.get(currentField))) {
+			if (splittedKeys.length == 1)
+				newDocument.put(currentField, document.get(currentField));
+			else {
+				BSONObject remainingFields = new BasicBSONObject();
+				remainingFields.put(key.substring(currentField.length() + 1), new Integer(1));
+				if (newDocument.containsField(currentField))
+					mergeFields((BSONObject)newDocument.get(currentField), projectDocumentSeparingDots((BSONObject)document.get(currentField), remainingFields));
+				else
+					newDocument.put(currentField, projectDocumentSeparingDots((BSONObject)document.get(currentField), remainingFields));
+			}
+		}
+	}
+
+    private Object mergeFields(BSONObject object1,
+			BSONObject object2) {
+    	object1.putAll(object2);
+    	
+		return object1;
+	}
+
+	public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn)
             throws MongoServerException {
         return handleQuery(queryObject, numberToSkip, numberToReturn, null);
     }
