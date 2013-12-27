@@ -82,7 +82,7 @@ public class SimpleTest {
 	* shares the basic idea of implementing the wire protocol with Netty
 	* focus on in-memory backend for unit testing
 
-* [jongo][jongo]
+* [fongo][fongo]
 	* focus on unit testing
 	* no wire protocol implementation
 	* intercepts the java mongo driver
@@ -92,5 +92,5 @@ public class SimpleTest {
 [wire-protocol]: http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol
 [netty]: http://netty.io/
 [jmockmongo]: https://github.com/thiloplanz/jmockmongo/
-[jongo]: https://github.com/foursquare/fongo/
+[fongo]: https://github.com/foursquare/fongo/
 [nosql-unit]: https://github.com/lordofthejars/nosql-unit/
