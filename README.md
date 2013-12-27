@@ -91,6 +91,6 @@ public class SimpleTest {
 [mongodb]: http://www.mongodb.org/
 [wire-protocol]: http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol
 [netty]: http://netty.io/
-[jmockmongo]: https://github.com/thiloplanz/jmockmongo/
-[fongo]: https://github.com/foursquare/fongo/
-[nosql-unit]: https://github.com/lordofthejars/nosql-unit/
+[jmockmongo]: https://github.com/thiloplanz/jmockmongo
+[fongo]: https://github.com/fakemongo/fongo
+[nosql-unit]: https://github.com/lordofthejars/nosql-unit
