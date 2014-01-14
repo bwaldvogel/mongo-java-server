@@ -145,9 +145,13 @@ public class MemoryDatabase extends CommonDatabase {
             boolean ascending = Utils.normalizeValue(key.get("_id")).equals(Double.valueOf(1.0));
             collection.addIndex(new UniqueIndex("_id", ascending));
         } else {
-            // non-id indexes not yet implemented
-            // we can ignore that for a moment since it will not break the
-            // functionality
+            if ((Boolean) indexDescription.get("unique")) {
+                for (Map.Entry<String, Integer> uniqueIndex : ((Map<String, Integer>) indexDescription.get("key")).entrySet()) {
+                    collection.addIndex(new UniqueIndex(uniqueIndex.getKey(), Utils.isTrue(uniqueIndex.getValue())));
+                }
+            } else {
+                // TODO: non-unique non-id indexes not yet implemented
+            }
         }
     }
 
