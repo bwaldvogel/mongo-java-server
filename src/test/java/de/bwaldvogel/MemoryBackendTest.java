@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -39,6 +41,7 @@ import com.mongodb.util.JSON;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
+import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 
 public class MemoryBackendTest {
 
@@ -1810,15 +1813,20 @@ public class MemoryBackendTest {
         assertThat(retrievedOid.isNew()).as("retrieved should not be new").isFalse();
     }
 
-    @Test(expected = DuplicateKey.class)
-    public void testInsertWithNonIdIndexesThrowsException() {
-        Map<String, Object> keys = new HashMap<String, Object>() {{
-            put("uniqueKeyField", 1);
-        }};
-        collection.ensureIndex(new BasicDBObject(keys), "unique_key", true);
+    @Test
+    public void testInsertsWithUniqueIndex() {
+        collection.ensureIndex(new BasicDBObject("uniqueKeyField", 1), "unique_key", true);
 
-        collection.insert(json("uniqueKeyField: 'abc', afield: 'avalue'"));
-        collection.insert(json("uniqueKeyField: 'abc', afield: 'avalue'"));
+        collection.insert(json("uniqueKeyField: 'abc1', afield: 'avalue'"));
+        collection.insert(json("uniqueKeyField: 'abc2', afield: 'avalue'"));
+        collection.insert(json("uniqueKeyField: 'abc3', afield: 'avalue'"));
+
+        try {
+            collection.insert(json("uniqueKeyField: 'abc2', afield: 'avalue'"));
+            fail("DuplicateKeyError expected");
+        } catch (DuplicateKey e) {
+            // expected
+        }
     }
 
 }
