@@ -1810,4 +1810,15 @@ public class MemoryBackendTest {
         assertThat(retrievedOid.isNew()).as("retrieved should not be new").isFalse();
     }
 
+    @Test(expected = DuplicateKey.class)
+    public void testInsertWithNonIdIndexesThrowsException() {
+        Map<String, Object> keys = new HashMap<String, Object>() {{
+            put("uniqueKeyField", 1);
+        }};
+        collection.ensureIndex(new BasicDBObject(keys), "unique_key", true);
+
+        collection.insert(json("uniqueKeyField: 'abc', afield: 'avalue'"));
+        collection.insert(json("uniqueKeyField: 'abc', afield: 'avalue'"));
+    }
+
 }
