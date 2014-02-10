@@ -1,4 +1,4 @@
-package de.bwaldvogel;
+package de.bwaldvogel.mongo.backend.memory;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
@@ -8,9 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -40,8 +38,6 @@ import com.mongodb.util.JSON;
 
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.Constants;
-import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
-import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 
 public class MemoryBackendTest {
 
