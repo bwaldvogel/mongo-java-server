@@ -46,7 +46,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("exception for client " + ctx.channel().hashCode(), cause);
+        log.error("exception for client {}", ctx.channel().hashCode(), cause);
         ctx.channel().close();
     }
 
@@ -130,7 +130,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         }
 
         BSONObject selector = bsonDecoder.decodeBson(buffer);
-        log.debug("delete " + selector + " from " + fullCollectionName);
+        log.debug("delete {} from {}", selector, fullCollectionName);
         return new MongoDelete(channel, header, fullCollectionName, selector, singleRemove);
     }
 
@@ -146,7 +146,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
         BSONObject selector = bsonDecoder.decodeBson(buffer);
         BSONObject update = bsonDecoder.decodeBson(buffer);
-        log.debug("update " + selector + " in " + fullCollectionName);
+        log.debug("update {} in {}", selector, fullCollectionName);
         return new MongoUpdate(channel, header, fullCollectionName, selector, update, upsert, multi);
     }
 
@@ -166,7 +166,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             }
             documents.add(document);
         }
-        log.debug("insert " + documents + " in " + fullCollectionName);
+        log.debug("insert {} in {}", documents, fullCollectionName);
         return new MongoInsert(channel, header, fullCollectionName, documents);
     }
 
@@ -194,7 +194,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         if (flags != 0)
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
 
-        log.debug("query " + query + " from " + fullCollectionName);
+        log.debug("query {} from {}", query, fullCollectionName);
 
         return mongoQuery;
     }

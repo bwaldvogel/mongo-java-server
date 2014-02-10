@@ -39,7 +39,7 @@ public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
             out.writeBytes(BSON.encode(bsonObject));
         }
 
-        log.debug("wrote reply: " + reply);
+        log.debug("wrote reply: {}", reply);
 
         // now set the length
         final int writerIndex = out.writerIndex();

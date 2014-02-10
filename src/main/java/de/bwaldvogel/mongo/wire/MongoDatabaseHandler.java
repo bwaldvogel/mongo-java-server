@@ -102,14 +102,14 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                 }
             }
         } catch (NoSuchCommandException e) {
-            log.error("unknown command: " + query, e);
+            log.error("unknown command: {}", query, e);
             BSONObject obj = new BasicBSONObject();
             obj.put("errmsg", "no such cmd: " + e.getCommand());
             obj.put("bad cmd", query.getQuery());
             obj.put("ok", Integer.valueOf(0));
             documents.add(obj);
         } catch (MongoServerError e) {
-            log.error("failed to handle query " + query, e);
+            log.error("failed to handle query {}", query, e);
             BSONObject obj = new BasicBSONObject();
             obj.put("errmsg", e.getMessage());
             obj.put("code", Integer.valueOf(e.getCode()));
@@ -121,7 +121,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             obj.put("ok", Integer.valueOf(0));
             documents.add(obj);
         } catch (MongoServerException e) {
-            log.error("failed to handle query " + query, e);
+            log.error("failed to handle query {}", query, e);
             BSONObject obj = new BasicBSONObject();
             obj.put("errmsg", e.getMessage());
             obj.put("ok", Integer.valueOf(0));

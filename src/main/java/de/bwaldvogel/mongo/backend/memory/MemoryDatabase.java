@@ -123,7 +123,7 @@ public class MemoryDatabase extends CommonDatabase {
             collection.handleInsert(insert);
             putLastResult(channel, new BasicBSONObject("n", Integer.valueOf(0)));
         } catch (MongoServerError e) {
-            log.error("failed to insert " + insert, e);
+            log.error("failed to insert {}", insert, e);
             putLastError(channel, e);
         }
     }
@@ -197,7 +197,7 @@ public class MemoryDatabase extends CommonDatabase {
             }
             putLastResult(channel, new BasicBSONObject("n", Integer.valueOf(n)));
         } catch (MongoServerError e) {
-            log.error("failed to delete " + delete, e);
+            log.error("failed to delete {}", delete, e);
             putLastError(channel, e);
         }
     }
@@ -220,7 +220,7 @@ public class MemoryDatabase extends CommonDatabase {
             BSONObject result = collection.handleUpdate(update);
             putLastResult(channel, result);
         } catch (MongoServerException e) {
-            log.error("failed to update " + update, e);
+            log.error("failed to update {}", update, e);
             putLastError(channel, e);
         }
     }
