@@ -14,6 +14,7 @@ import org.bson.BSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -45,7 +46,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     }
 
     @Override
-    protected Object decode(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
+    protected ClientRequest decode(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
 
         ByteBuf in = buf.order(ByteOrder.LITTLE_ENDIAN);
 
@@ -81,7 +82,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         }
 
         final Channel channel = ctx.channel();
-        Object ret;
+        final ClientRequest ret;
 
         switch (opCode) {
         case OP_QUERY:
@@ -107,7 +108,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return ret;
     }
 
-    private Object handleDelete(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
+    private ClientRequest handleDelete(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         buffer.skipBytes(4); // reserved
 
@@ -128,7 +129,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoDelete(channel, header, fullCollectionName, selector, singleRemove);
     }
 
-    private Object handleUpdate(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
+    private ClientRequest handleUpdate(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         buffer.skipBytes(4); // reserved
 
@@ -144,7 +145,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoUpdate(channel, header, fullCollectionName, selector, update, upsert, multi);
     }
 
-    private Object handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
+    private ClientRequest handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         final int flags = buffer.readInt();
         if (flags != 0)
@@ -164,7 +165,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoInsert(channel, header, fullCollectionName, documents);
     }
 
-    private Object handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
+    private ClientRequest handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         int flags = buffer.readInt();
 
