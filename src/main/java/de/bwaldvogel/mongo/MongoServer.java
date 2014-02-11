@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import de.bwaldvogel.mongo.wire.MongoDatabaseHandler;
+import de.bwaldvogel.mongo.wire.MongoExceptionHandler;
 import de.bwaldvogel.mongo.wire.MongoWireEncoder;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 
@@ -84,6 +85,7 @@ public class MongoServer {
                             ch.pipeline().addLast(new MongoWireEncoder());
                             ch.pipeline().addLast(new MongoWireProtocolHandler());
                             ch.pipeline().addLast(new MongoDatabaseHandler(backend, channelGroup));
+                            ch.pipeline().addLast(new MongoExceptionHandler());
                         }
                     });
 

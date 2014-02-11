@@ -1825,4 +1825,22 @@ public class MemoryBackendTest {
         }
     }
 
+    @Test
+    public void testAddNonUniqueIndexOnNonIdField() {
+        collection.ensureIndex(new BasicDBObject("someField", 1), "unique_key", false);
+
+        collection.insert(json("someField: 'abc'"));
+        collection.insert(json("someField: 'abc'"));
+    }
+
+    @Test
+    public void testCompoundUniqueIndicesNotSupportedAndThrowsException() {
+        try {
+            collection.ensureIndex(new BasicDBObject("a", 1).append("b", 1), "unique_key", true);
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            // expected
+        }
+    }
+
 }

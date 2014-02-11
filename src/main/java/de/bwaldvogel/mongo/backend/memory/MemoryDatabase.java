@@ -144,14 +144,17 @@ public class MemoryDatabase extends CommonDatabase {
         if (key.keySet().equals(Collections.singleton("_id"))) {
             boolean ascending = Utils.normalizeValue(key.get("_id")).equals(Double.valueOf(1.0));
             collection.addIndex(new UniqueIndex("_id", ascending));
-        } else {
-            if ((Boolean) indexDescription.get("unique")) {
-                for (Map.Entry<String, Integer> uniqueIndex : ((Map<String, Integer>) indexDescription.get("key")).entrySet()) {
-                    collection.addIndex(new UniqueIndex(uniqueIndex.getKey(), Utils.isTrue(uniqueIndex.getValue())));
-                }
-            } else {
-                // TODO: non-unique non-id indexes not yet implemented
+        } else if (Utils.isTrue(indexDescription.get("unique"))) {
+            if (key.keySet().size() != 1) {
+                throw new MongoServerException("Compound unique indices are not yet implemented");
             }
+
+            final String field = key.keySet().iterator().next();
+            boolean ascending = Utils.normalizeValue(key.get(field)).equals(Double.valueOf(1.0));
+            collection.addIndex(new UniqueIndex(field, ascending));
+        } else {
+            // TODO: non-unique non-id indexes not yet implemented
+            log.warn("adding non-unique non-id index with key {} is not yet implemented", key);
         }
     }
 
@@ -341,8 +344,9 @@ public class MemoryDatabase extends CommonDatabase {
             error.put("err", ex.getMessage());
         }
         // TODO: https://github.com/netty/netty/issues/1810
-        // also note: http://stackoverflow.com/questions/17690094/channel-id-has-been-removed-in-netty4-0-final-version-how-can-i-solve
-        error.put("connectionId",Integer.valueOf( channel.hashCode()));
+        // also note:
+        // http://stackoverflow.com/questions/17690094/channel-id-has-been-removed-in-netty4-0-final-version-how-can-i-solve
+        error.put("connectionId", Integer.valueOf(channel.hashCode()));
         putLastResult(channel, error);
     }
 
