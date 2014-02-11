@@ -108,7 +108,11 @@ public class MongoServer {
         return getLocalAddress();
     }
 
-    protected InetSocketAddress getLocalAddress() {
+    /**
+     * @return the local address the server was bound or null if the server is
+     *         not listening
+     */
+    public InetSocketAddress getLocalAddress() {
         if (channel == null)
             return null;
         return (InetSocketAddress) channel.localAddress();

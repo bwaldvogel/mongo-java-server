@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo;
 
+import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
@@ -56,6 +57,20 @@ public class MongoServerTest {
         client.getDB("admin").command("serverStatus").throwOnError();
 
         server.shutdownNow();
+    }
+
+    @Test(timeout = 1000)
+    public void testGetLocalAddress() {
+        MongoServer server = new MongoServer();
+        assertThat(server.getLocalAddress()).isNull();
+        try {
+            InetSocketAddress serverAddress = server.bind();
+            InetSocketAddress localAddress = server.getLocalAddress();
+            assertThat(localAddress).isEqualTo(serverAddress);
+        } finally {
+            server.shutdownNow();
+        }
+        assertThat(server.getLocalAddress()).isNull();
     }
 
     @Test(timeout = 1000)
