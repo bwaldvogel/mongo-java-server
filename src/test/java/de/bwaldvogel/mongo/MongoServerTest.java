@@ -73,29 +73,37 @@ public class MongoServerTest {
         assertThat(server.getLocalAddress()).isNull();
     }
 
-    @Test(timeout = 1000)
-    public void testShutdownAndRestart() {
+    @Test
+    public void testShutdownAndRestart() throws Exception {
         MongoServer server = new MongoServer();
-        MongoClient client = null;
         InetSocketAddress serverAddress = server.bind();
-        client = new MongoClient(new ServerAddress(serverAddress));
+        {
+            final MongoClient client = new MongoClient(new ServerAddress(serverAddress));
 
-        // request something to open a connection
-        client.getDB("admin").command("serverStatus").throwOnError();
+            // request something to open a connection
+            client.getDB("admin").command("serverStatus").throwOnError();
 
-        server.shutdownNow();
+            server.shutdownNow();
 
-        try {
-            client.getDB("admin").command("serverStatus");
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            // okay
+            try {
+                client.getDB("admin").command("serverStatus");
+                fail("MongoException expected");
+            } catch (MongoException e) {
+                // okay
+            }
+
+            server.bind(serverAddress);
+
+            client.close();
         }
-
-        server.bind(serverAddress);
-
-        client.getDB("admin").command("serverStatus").throwOnError();
-
+        {
+            // Explicitly reconnect the client.
+            // Fails otherwise with mongo-java-driver 2.12.0 unless we would use
+            // a Thread.sleep(100) or so.
+            final MongoClient client = new MongoClient(new ServerAddress(serverAddress));
+            client.getDB("admin").command("serverStatus").throwOnError();
+            client.close();
+        }
         server.shutdownNow();
     }
 }

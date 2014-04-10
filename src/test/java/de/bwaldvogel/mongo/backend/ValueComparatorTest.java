@@ -24,11 +24,11 @@ public class ValueComparatorTest {
 
     @Test
     public void testCompareObjectIds() {
-        assertThat(comparator.compare(new ObjectId(1, 2, 3), new ObjectId(1, 2, 3))).isZero();
-        assertThat(comparator.compare(new ObjectId(1, 2, 3), new ObjectId(2, 2, 3))).isLessThan(0);
-        assertThat(comparator.compare(new ObjectId(1, 2, 3), new ObjectId(1, 2, 4))).isLessThan(0);
-        assertThat(comparator.compare(new ObjectId(3, 2, 3), new ObjectId(2, 2, 3))).isGreaterThan(0);
-        assertThat(comparator.compare(new ObjectId(1, 2, 5), new ObjectId(1, 2, 4))).isGreaterThan(0);
+        assertThat(comparator.compare(new ObjectId(new Date(123000), 0), new ObjectId(new Date(123000), 0))).isZero();
+        assertThat(comparator.compare(new ObjectId(new Date(123000), 0), new ObjectId(new Date(223000), 0))).isLessThan(0);
+        assertThat(comparator.compare(new ObjectId(new Date(123000), 0), new ObjectId(new Date(124000), 0))).isLessThan(0);
+        assertThat(comparator.compare(new ObjectId(new Date(323000), 0), new ObjectId(new Date(223000), 0))).isGreaterThan(0);
+        assertThat(comparator.compare(new ObjectId(new Date(125000), 0), new ObjectId(new Date(124000), 0))).isGreaterThan(0);
     }
 
     @Test

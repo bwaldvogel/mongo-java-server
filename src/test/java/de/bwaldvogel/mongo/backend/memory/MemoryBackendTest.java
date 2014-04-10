@@ -27,10 +27,10 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.DuplicateKeyException;
 import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import com.mongodb.MongoException.DuplicateKey;
 import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
@@ -189,8 +189,8 @@ public class MemoryBackendTest {
 
     @Test
     public void testCreateIndexes() {
-        collection.ensureIndex("n");
-        collection.ensureIndex("b");
+        collection.createIndex(new BasicDBObject("n", 1));
+        collection.createIndex(new BasicDBObject("b", 1));
         List<DBObject> indexes = db.getCollection("system.indexes").find().toArray();
         assertThat(indexes).containsExactly(
 
@@ -603,91 +603,6 @@ public class MemoryBackendTest {
         assertThat(db.getCollectionNames()).contains("coll");
     }
 
-    @Test
-    public void testGetLastError() {
-
-        assertThat(db.getLastError().get("err")).isNull();
-
-        WriteResult result = collection.insert(json("_id: 1"));
-        CommandResult error = db.getLastError();
-        assertThat(error.ok()).isTrue();
-        assertThat(error).isEqualTo(result.getCachedLastError());
-
-        assertThat(db.getLastError()).isEqualTo(error);
-
-        try {
-            collection.insert(json("_id: 1"));
-            fail("DuplicateKey expected");
-        } catch (DuplicateKey e) {
-            // okay
-        }
-
-        // getlasterror must show the error
-        CommandResult lastError = db.getLastError();
-        assertThat(lastError.getString("err")).startsWith("duplicate key error");
-        assertThat(db.getLastError()).isEqualTo(lastError);
-
-        collection.findOne(json("{}"));
-        assertThat(db.getLastError().getString("err")).isNull();
-    }
-
-    @Test
-    public void testGetPreviousError() {
-
-        assertThat(db.getPreviousError().getString("err")).isNull();
-        assertThat(db.getPreviousError().getInt("nPrev")).isEqualTo(-1);
-
-        collection.insert(json("_id: 1"));
-        try {
-            collection.insert(json("_id: 1"));
-            fail("DuplicateKey expected");
-        } catch (DuplicateKey e) {
-            // okay
-        }
-
-        // getlasterror must show the error
-        CommandResult lastError = db.getLastError();
-        assertThat(lastError.getString("err")).startsWith("duplicate key error");
-        CommandResult previousError = db.getPreviousError();
-        assertThat(previousError).isEqualTo(db.getLastError().append("nPrev", 1));
-        assertThat(db.getPreviousError()).isEqualTo(previousError);
-
-        collection.findOne(json("{}"));
-        assertThat(db.getLastError().getString("err")).isNull();
-        assertThat(db.getPreviousError()).isEqualTo(lastError.append("nPrev", 2));
-
-        collection.findOne(json("{}"));
-        assertThat(db.getPreviousError()).isEqualTo(lastError.append("nPrev", 3));
-
-        collection.update(json("{}"), json("a:1"));
-        assertThat(db.getPreviousError().getInt("nPrev")).isEqualTo(1);
-        assertThat(db.getPreviousError().getInt("n")).isEqualTo(1);
-
-    }
-
-    @Test
-    public void testResetError() {
-        collection.insert(json("_id: 1"));
-        try {
-            collection.insert(json("_id: 1"));
-            fail("DuplicateKey expected");
-        } catch (DuplicateKey e) {
-            // okay
-        }
-
-        // getlasterror must show the error
-        CommandResult lastError = db.getLastError();
-        assertThat(lastError.getString("err")).startsWith("duplicate key error");
-        CommandResult previousError = db.getPreviousError();
-        assertThat(previousError).isEqualTo(db.getLastError().append("nPrev", 1));
-
-        db.resetError();
-        assertThat(db.getLastError().get("err")).isNull();
-        assertThat(db.getPreviousError().get("err")).isNull();
-        assertThat(db.getPreviousError().getInt("nPrev")).isEqualTo(-1);
-
-    }
-
     /**
      * Test that ObjectId is getting generated even if _id is present in
      * DBObject but it's value is null
@@ -764,7 +679,7 @@ public class MemoryBackendTest {
 
         WriteResult result = collection.insert(json("foo: [1,2,3]"));
         assertThat(result.getN()).isZero();
-        assertThat(result.getField("updatedExisting")).isNull();
+        assertThat(result.isUpdateOfExisting()).isFalse();
 
         collection.insert(new BasicDBObject("foo", new byte[10]));
         BasicDBObject insertedObject = new BasicDBObject("foo", UUID.randomUUID());
@@ -796,13 +711,13 @@ public class MemoryBackendTest {
         assertThat(collection.count()).isEqualTo(1);
     }
 
-    @Test(expected = MongoException.DuplicateKey.class)
+    @Test(expected = DuplicateKeyException.class)
     public void testInsertDuplicateThrows() {
         collection.insert(json("_id: 1"));
         collection.insert(json("_id: 1"));
     }
 
-    @Test(expected = MongoException.DuplicateKey.class)
+    @Test(expected = DuplicateKeyException.class)
     public void testInsertDuplicateWithConcernThrows() {
         collection.insert(json("_id: 1"));
         collection.insert(json("_id: 1"), WriteConcern.SAFE);
@@ -1056,8 +971,6 @@ public class MemoryBackendTest {
 
         result = collection.remove(json("{}"));
         assertThat(result.getN()).isEqualTo(0);
-
-        assertThat(result.getError()).isNull();
     }
 
     @Test
@@ -1106,7 +1019,7 @@ public class MemoryBackendTest {
         assertThat(before.after(serverTime)).isFalse();
 
         BSONObject connections = (BSONObject) serverStatus.get("connections");
-        assertThat(connections.get("current")).isEqualTo(Integer.valueOf(1));
+        assertThat(connections.get("current")).isNotNull();
     }
 
     @Test
@@ -1161,8 +1074,8 @@ public class MemoryBackendTest {
         collection.insert(object);
         WriteResult result = collection.update(object, newObject);
         assertThat(result.getN()).isEqualTo(1);
-        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.TRUE);
-        assertThat(result.getField("upserted")).isNull();
+        assertThat(result.isUpdateOfExisting()).isTrue();
+        assertThat(result.getUpsertedId()).isNull();
         assertThat(collection.findOne(object)).isEqualTo(newObject);
     }
 
@@ -1171,7 +1084,8 @@ public class MemoryBackendTest {
         BasicDBObject object = json("_id: 1");
         WriteResult result = collection.update(object, object);
         assertThat(result.getN()).isEqualTo(0);
-        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
+        assertThat(result.isUpdateOfExisting()).isFalse();
+        assertThat(result.getUpsertedId()).isNull();
     }
 
     @Test
@@ -1585,13 +1499,13 @@ public class MemoryBackendTest {
         WriteResult result = collection.update(json("a: 1"), json("$set: {b: 2}"));
 
         assertThat(result.getN()).isEqualTo(1);
-        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.TRUE);
+        assertThat(result.isUpdateOfExisting()).isTrue();
 
         assertThat(collection.find(new BasicDBObject("b", 2)).count()).isEqualTo(1);
 
         result = collection.update(json("a: 1"), json("$set: {b: 3}"), false, true);
         assertThat(result.getN()).isEqualTo(2);
-        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.TRUE);
+        assertThat(result.isUpdateOfExisting()).isTrue();
         assertThat(collection.find(new BasicDBObject("b", 2)).count()).isEqualTo(0);
         assertThat(collection.find(new BasicDBObject("b", 3)).count()).isEqualTo(2);
     }
@@ -1680,17 +1594,17 @@ public class MemoryBackendTest {
     public void testUpsert() {
         WriteResult result = collection.update(json("n:'jon'"), json("$inc:{a:1}"), true, false);
         assertThat(result.getN()).isEqualTo(1);
-        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
+        assertThat(result.isUpdateOfExisting()).isFalse();
 
         DBObject object = collection.findOne();
-        assertThat(result.getField("upserted")).isEqualTo(object.get("_id"));
+        assertThat(result.getUpsertedId()).isEqualTo(object.get("_id"));
 
         object.removeField("_id");
         assertThat(object).isEqualTo(json("n:'jon', a:1"));
 
         result = collection.update(json("_id: 17, n:'jon'"), json("$inc:{a:1}"), true, false);
-        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
-        assertThat(result.getField("upserted")).isNull();
+        assertThat(result.isUpdateOfExisting()).isFalse();
+        assertThat(result.getUpsertedId()).isNull();
         assertThat(collection.findOne(json("_id:17"))).isEqualTo(json("_id: 17, n:'jon', a:1"));
     }
 
@@ -1707,7 +1621,7 @@ public class MemoryBackendTest {
     public void testUpsertWithoutId() {
         WriteResult result = collection.update(json("a:1"), json("a:2"), true, false);
         assertThat(result.getN()).isEqualTo(1);
-        assertThat(result.getField("updatedExisting")).isEqualTo(Boolean.FALSE);
+        assertThat(result.isUpdateOfExisting()).isFalse();
         assertThat(collection.findOne().get("_id")).isInstanceOf(ObjectId.class);
         assertThat(collection.findOne().get("a")).isEqualTo(2);
     }
@@ -1790,28 +1704,9 @@ public class MemoryBackendTest {
         assertThat(objs).as("should return all documents").hasSize(5);
     }
 
-    // https://github.com/foursquare/fongo/issues/28
-    @Test
-    public void testExplicitlyAddedObjectIdNotNew() {
-        ObjectId oid = new ObjectId();
-        assertThat(oid.isNew()).as("should be new").isTrue();
-        collection.save(new BasicDBObject("_id", oid));
-        ObjectId retrievedOid = (ObjectId) collection.findOne().get("_id");
-        assertThat(retrievedOid).as("retrieved should still equal the inserted").isEqualTo(oid);
-        assertThat(retrievedOid.isNew()).as("retrieved should not be new").isFalse();
-    }
-
-    // https://github.com/foursquare/fongo/issues/28
-    @Test
-    public void testAutoCreatedObjectIdNotNew() {
-        collection.save(new BasicDBObject());
-        ObjectId retrievedOid = (ObjectId) collection.findOne().get("_id");
-        assertThat(retrievedOid.isNew()).as("retrieved should not be new").isFalse();
-    }
-
     @Test
     public void testInsertsWithUniqueIndex() {
-        collection.ensureIndex(new BasicDBObject("uniqueKeyField", 1), "unique_key", true);
+        collection.createIndex(new BasicDBObject("uniqueKeyField", 1), new BasicDBObject("unique", true));
 
         collection.insert(json("uniqueKeyField: 'abc1', afield: 'avalue'"));
         collection.insert(json("uniqueKeyField: 'abc2', afield: 'avalue'"));
@@ -1819,15 +1714,15 @@ public class MemoryBackendTest {
 
         try {
             collection.insert(json("uniqueKeyField: 'abc2', afield: 'avalue'"));
-            fail("DuplicateKeyError expected");
-        } catch (DuplicateKey e) {
+            fail("DuplicateKeyException expected");
+        } catch (DuplicateKeyException e) {
             // expected
         }
     }
 
     @Test
     public void testAddNonUniqueIndexOnNonIdField() {
-        collection.ensureIndex(new BasicDBObject("someField", 1), "unique_key", false);
+        collection.createIndex(new BasicDBObject("someField", 1), new BasicDBObject("unique", false));
 
         collection.insert(json("someField: 'abc'"));
         collection.insert(json("someField: 'abc'"));
@@ -1836,7 +1731,7 @@ public class MemoryBackendTest {
     @Test
     public void testCompoundUniqueIndicesNotSupportedAndThrowsException() {
         try {
-            collection.ensureIndex(new BasicDBObject("a", 1).append("b", 1), "unique_key", true);
+            collection.createIndex(new BasicDBObject("a", 1).append("b", 1), new BasicDBObject("unique", true));
             fail("MongoException expected");
         } catch (MongoException e) {
             // expected

@@ -31,6 +31,8 @@ import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MemoryBackend implements MongoBackend {
 
+    private static int[] VERSION = new int[] { 2, 4, 0 };
+
     private static final Logger log = LoggerFactory.getLogger(MemoryBackend.class);
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
@@ -60,18 +62,28 @@ public class MemoryBackend implements MongoBackend {
         }
     }
 
+    private String join(int[] array, char c) {
+        final StringBuilder sb = new StringBuilder();
+        for (int value : array) {
+            if (sb.length() > 0)
+                sb.append(c);
+            sb.append(Integer.toString(value));
+        }
+        return sb.toString();
+    }
+
     private BSONObject getLog(String argument) throws MongoServerException {
         log.debug("getLog: {}", argument);
         BSONObject response = new BasicBSONObject();
         if (argument.equals("*")) {
             response.put("names", Arrays.asList("startupWarnings"));
             Utils.markOkay(response);
-        } else if (argument.equals("startupWarnings")){
+        } else if (argument.equals("startupWarnings")) {
             response.put("totalLinesWritten", Integer.valueOf(0));
             response.put("log", new ArrayList<String>());
             Utils.markOkay(response);
         } else {
-           throw new MongoSilentServerException("no RamLog named: " + argument);
+            throw new MongoSilentServerException("no RamLog named: " + argument);
         }
         return response;
     }
@@ -112,6 +124,12 @@ public class MemoryBackend implements MongoBackend {
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
             response.put("localTime", new Date());
+            Utils.markOkay(response);
+            return response;
+        } else if (command.equalsIgnoreCase("buildinfo")) {
+            BSONObject response = new BasicBSONObject("version", join(VERSION, '.'));
+            response.put("versionArray", VERSION);
+            response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             Utils.markOkay(response);
             return response;
         }
