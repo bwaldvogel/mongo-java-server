@@ -144,10 +144,13 @@ public class MemoryDatabase extends CommonDatabase {
         if (key.keySet().equals(Collections.singleton("_id"))) {
             boolean ascending = Utils.normalizeValue(key.get("_id")).equals(Double.valueOf(1.0));
             collection.addIndex(new UniqueIndex("_id", ascending));
+            log.info("adding unique _id index for collection {}", collectionName);
         } else if (Utils.isTrue(indexDescription.get("unique"))) {
             if (key.keySet().size() != 1) {
                 throw new MongoServerException("Compound unique indices are not yet implemented");
             }
+
+            log.info("adding unique index {} for collection {}", key.keySet(), collectionName);
 
             final String field = key.keySet().iterator().next();
             boolean ascending = Utils.normalizeValue(key.get(field)).equals(Double.valueOf(1.0));
