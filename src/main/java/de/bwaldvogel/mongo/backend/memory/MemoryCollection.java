@@ -646,21 +646,18 @@ public class MemoryCollection extends MongoCollection {
         return response;
     }
 
-    public synchronized int handleInsert(MongoInsert insert) throws MongoServerException {
-        int n = 0;
-        for (BSONObject document : insert.getDocuments()) {
+    public synchronized int insertDocuments(List<BSONObject> documents) throws MongoServerException {
+        for (BSONObject document : documents) {
             addDocument(document);
-            n++;
         }
-        return n;
+        return documents.size();
     }
 
-    public synchronized int handleDelete(MongoDelete delete) throws MongoServerException {
+    public synchronized int deleteDocuments(BSONObject selector, int limit) throws MongoServerException {
         int n = 0;
-        int numToReturn = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
-        for (BSONObject document : handleQuery(delete.getSelector(), 0, numToReturn)) {
-            if (n >= numToReturn) {
-                throw new MongoServerException("internal error: too many elements (" + n + " >= " + numToReturn + ")");
+        for (BSONObject document : handleQuery(selector, 0, limit)) {
+            if (limit > 0 && n >= limit) {
+                throw new MongoServerException("internal error: too many elements (" + n + " >= " + limit + ")");
             }
             removeDocument(document);
             n++;
@@ -668,13 +665,12 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
-    public synchronized BSONObject handleUpdate(MongoUpdate update) throws MongoServerException {
-        BSONObject updateQuery = update.getUpdate();
+    public synchronized BSONObject updateDocuments(BSONObject selector, BSONObject updateQuery, boolean isMulti,
+            boolean isUpsert) throws MongoServerException {
         int n = 0;
         boolean updatedExisting = false;
-        BSONObject selector = update.getSelector();
 
-        if (update.isMulti()) {
+        if (isMulti) {
             for (String key : updateQuery.keySet()) {
                 if (!key.startsWith("$")) {
                     throw new MongoServerError(10158, "multi update only works with $ operators");
@@ -689,7 +685,7 @@ public class MemoryCollection extends MongoCollection {
             updatedExisting = true;
             n++;
 
-            if (!update.isMulti()) {
+            if (!isMulti) {
                 break;
             }
         }
@@ -697,7 +693,7 @@ public class MemoryCollection extends MongoCollection {
         BSONObject result = new BasicBSONObject();
 
         // insert?
-        if (n == 0 && update.isUpsert()) {
+        if (n == 0 && isUpsert) {
             BSONObject newDocument = handleUpsert(updateQuery, selector);
             if (!selector.containsField(idField)) {
                 result.put("upserted", newDocument.get(idField));

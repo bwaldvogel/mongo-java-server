@@ -29,4 +29,6 @@ public interface MongoBackend {
 
     Collection<BSONObject> getCurrentOperations(MongoQuery query);
 
+    int[] getVersion();
+
 }

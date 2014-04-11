@@ -20,7 +20,6 @@ import org.bson.BasicBSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -158,7 +157,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         } catch (UnknownHostException e) {
             throw new MongoServerException("failed to get hostname", e);
         }
-        serverStatus.put("version", MongoServer.VERSION);
+        serverStatus.put("version", Utils.join(mongoBackend.getVersion(), '.'));
         serverStatus.put("process", "java");
         serverStatus.put("pid", getProcessId());
 

@@ -711,13 +711,13 @@ public class MemoryBackendTest {
         assertThat(collection.count()).isEqualTo(1);
     }
 
-    @Test(expected = DuplicateKeyException.class)
+    @Test(expected = MongoException.class)
     public void testInsertDuplicateThrows() {
         collection.insert(json("_id: 1"));
         collection.insert(json("_id: 1"));
     }
 
-    @Test(expected = DuplicateKeyException.class)
+    @Test(expected = MongoException.class)
     public void testInsertDuplicateWithConcernThrows() {
         collection.insert(json("_id: 1"));
         collection.insert(json("_id: 1"), WriteConcern.SAFE);
@@ -1084,7 +1084,6 @@ public class MemoryBackendTest {
         BasicDBObject object = json("_id: 1");
         WriteResult result = collection.update(object, object);
         assertThat(result.getN()).isEqualTo(0);
-        assertThat(result.isUpdateOfExisting()).isFalse();
         assertThat(result.getUpsertedId()).isNull();
     }
 
@@ -1594,7 +1593,6 @@ public class MemoryBackendTest {
     public void testUpsert() {
         WriteResult result = collection.update(json("n:'jon'"), json("$inc:{a:1}"), true, false);
         assertThat(result.getN()).isEqualTo(1);
-        assertThat(result.isUpdateOfExisting()).isFalse();
 
         DBObject object = collection.findOne();
         assertThat(result.getUpsertedId()).isEqualTo(object.get("_id"));
@@ -1603,7 +1601,6 @@ public class MemoryBackendTest {
         assertThat(object).isEqualTo(json("n:'jon', a:1"));
 
         result = collection.update(json("_id: 17, n:'jon'"), json("$inc:{a:1}"), true, false);
-        assertThat(result.isUpdateOfExisting()).isFalse();
         assertThat(result.getUpsertedId()).isNull();
         assertThat(collection.findOne(json("_id:17"))).isEqualTo(json("_id: 17, n:'jon', a:1"));
     }

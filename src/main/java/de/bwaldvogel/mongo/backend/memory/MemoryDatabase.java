@@ -2,6 +2,9 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import io.netty.channel.Channel;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -104,39 +107,116 @@ public class MemoryDatabase extends CommonDatabase {
     @Override
     public void handleInsert(MongoInsert insert) throws MongoServerException {
         Channel channel = insert.getChannel();
-        clearLastStatus(channel);
-        try {
-            String collectionName = insert.getCollectionName();
-            if (collectionName.equals(indexes.getCollectionName())) {
-                for (BSONObject indexDescription : insert.getDocuments()) {
-                    addIndex(indexDescription);
-                }
-                return;
+        String collectionName = insert.getCollectionName();
+        final List<BSONObject> documents = insert.getDocuments();
+
+        if (collectionName.equals(indexes.getCollectionName())) {
+            for (BSONObject indexDescription : documents) {
+                addIndex(indexDescription);
             }
-            if (collectionName.startsWith("system.")) {
-                throw new MongoServerError(16459, "attempt to insert in system namespace");
+        } else {
+            try {
+                insertDocuments(channel, collectionName, documents);
+            } catch (MongoServerException e) {
+                log.error("failed to insert {}", insert, e);
             }
-            MongoCollection collection = resolveCollection(collectionName, false);
-            if (collection == null) {
-                collection = createCollection(collectionName);
-            }
-            collection.handleInsert(insert);
-            putLastResult(channel, new BasicBSONObject("n", Integer.valueOf(0)));
-        } catch (MongoServerError e) {
-            log.error("failed to insert {}", insert, e);
-            putLastError(channel, e);
         }
+    }
+
+    protected void addNamespace(MongoCollection collection) throws MongoServerException {
+        collections.put(collection.getCollectionName(), collection);
+        namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
+    }
+
+    @Override
+    public void handleDelete(MongoDelete delete) throws MongoServerException {
+        Channel channel = delete.getChannel();
+        final String collectionName = delete.getCollectionName();
+        final BSONObject selector = delete.getSelector();
+        final int limit = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
+
+        try {
+            deleteDocuments(channel, collectionName, selector, limit);
+        } catch (MongoServerException e) {
+            log.error("failed to delete {}", delete, e);
+        }
+    }
+
+    @Override
+    public void handleUpdate(MongoUpdate updateCommand) throws MongoServerException {
+        final Channel channel = updateCommand.getChannel();
+        final String collectionName = updateCommand.getCollectionName();
+        final BSONObject selector = updateCommand.getSelector();
+        final BSONObject update = updateCommand.getUpdate();
+        final boolean multi = updateCommand.isMulti();
+        final boolean upsert = updateCommand.isUpsert();
+
+        try {
+            BSONObject result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
+            putLastResult(channel, result);
+        } catch (MongoServerException e) {
+            log.error("failed to update {}", updateCommand, e);
+        }
+    }
+
+    @Override
+    public BSONObject handleCommand(Channel channel, String command, BSONObject query) throws MongoServerException {
+
+        // getlasterror must not clear the last error
+        if (command.equalsIgnoreCase("getlasterror")) {
+            return commandGetLastError(channel, command, query);
+        } else if (command.equalsIgnoreCase("getpreverror")) {
+            return commandGetPrevError(channel, command, query);
+        } else if (command.equalsIgnoreCase("reseterror")) {
+            return commandResetError(channel, command, query);
+        }
+
+        clearLastStatus(channel);
+
+        if (command.equalsIgnoreCase("insert")) {
+            return commandInsert(channel, command, query);
+        } else if (command.equalsIgnoreCase("update")) {
+            return commandUpdate(channel, command, query);
+        } else if (command.equalsIgnoreCase("delete")) {
+            return commandDelete(channel, command, query);
+        } else if (command.equalsIgnoreCase("createIndexes")) {
+            return commandCreateIndexes(channel, command, query);
+        } else if (command.equalsIgnoreCase("count")) {
+            return commandCount(command, query);
+        } else if (command.equalsIgnoreCase("distinct")) {
+            String collectionName = query.get(command).toString();
+            MongoCollection collection = resolveCollection(collectionName, true);
+            return collection.handleDistinct(query);
+        } else if (command.equalsIgnoreCase("drop")) {
+            return commandDrop(query);
+        } else if (command.equalsIgnoreCase("dropDatabase")) {
+            return commandDropDatabase();
+        } else if (command.equalsIgnoreCase("dbstats")) {
+            return commandDatabaseStats();
+        } else if (command.equalsIgnoreCase("collstats")) {
+            String collectionName = query.get("collstats").toString();
+            MongoCollection collection = resolveCollection(collectionName, true);
+            return collection.getStats();
+        } else if (command.equalsIgnoreCase("validate")) {
+            String collectionName = query.get("validate").toString();
+            MongoCollection collection = resolveCollection(collectionName, true);
+            return collection.validate();
+        } else if (command.equalsIgnoreCase("findAndModify")) {
+            String collectionName = query.get(command).toString();
+            MongoCollection collection = resolveOrCreateCollection(collectionName);
+            return collection.findAndModify(query);
+        } else {
+            log.error("unknown query: {}", query);
+        }
+        throw new NoSuchCommandException(command);
     }
 
     private void addIndex(BSONObject indexDescription) throws MongoServerException {
 
-        String ns = indexDescription.get("ns").toString();
-        int index = ns.indexOf('.');
-        String collectionName = ns.substring(index + 1);
-        MongoCollection collection = resolveCollection(collectionName, false);
-        if (collection == null) {
-            collection = createCollection(collectionName);
-        }
+        final String ns = indexDescription.get("ns").toString();
+        final int index = ns.indexOf('.');
+        final String collectionName = ns.substring(index + 1);
+        final MongoCollection collection = resolveOrCreateCollection(collectionName);
 
         indexes.addDocument(indexDescription);
 
@@ -180,17 +260,29 @@ public class MemoryDatabase extends CommonDatabase {
         return collection;
     }
 
-    protected void addNamespace(MongoCollection collection) throws MongoServerException {
-        collections.put(collection.getCollectionName(), collection);
-        namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
-    }
-
-    @Override
-    public void handleDelete(MongoDelete delete) throws MongoServerException {
-        Channel channel = delete.getChannel();
+    private BSONObject insertDocuments(final Channel channel, final String collectionName,
+            final List<BSONObject> documents) throws MongoServerException {
         clearLastStatus(channel);
         try {
-            String collectionName = delete.getCollectionName();
+            if (collectionName.startsWith("system.")) {
+                throw new MongoServerError(16459, "attempt to insert in system namespace");
+            }
+            final MongoCollection collection = resolveOrCreateCollection(collectionName);
+            int n = collection.insertDocuments(documents);
+            assert n == documents.size();
+            final BSONObject result = new BasicBSONObject("n", Integer.valueOf(n));
+            putLastResult(channel, result);
+            return result;
+        } catch (MongoServerError e) {
+            putLastError(channel, e);
+            throw e;
+        }
+    }
+
+    private BSONObject deleteDocuments(final Channel channel, final String collectionName, final BSONObject selector,
+            final int limit) throws MongoServerException {
+        clearLastStatus(channel);
+        try {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(12050, "cannot delete from system namespace");
             }
@@ -199,83 +291,151 @@ public class MemoryDatabase extends CommonDatabase {
             if (collection == null) {
                 n = 0;
             } else {
-                n = collection.handleDelete(delete);
+                n = collection.deleteDocuments(selector, limit);
             }
-            putLastResult(channel, new BasicBSONObject("n", Integer.valueOf(n)));
+            final BSONObject result = new BasicBSONObject("n", Integer.valueOf(n));
+            putLastResult(channel, result);
+            return result;
         } catch (MongoServerError e) {
-            log.error("failed to delete {}", delete, e);
             putLastError(channel, e);
+            throw e;
         }
     }
 
-    @Override
-    public void handleUpdate(MongoUpdate update) throws MongoServerException {
-        Channel channel = update.getChannel();
+    private BSONObject updateDocuments(final Channel channel, final String collectionName, final BSONObject selector,
+            final BSONObject update, final boolean multi, final boolean upsert) throws MongoServerException {
         clearLastStatus(channel);
         try {
-            String collectionName = update.getCollectionName();
-
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(10156, "cannot update system collection");
             }
 
-            MongoCollection collection = resolveCollection(collectionName, false);
-            if (collection == null) {
-                collection = createCollection(collectionName);
-            }
-            BSONObject result = collection.handleUpdate(update);
-            putLastResult(channel, result);
+            MongoCollection collection = resolveOrCreateCollection(collectionName);
+            return collection.updateDocuments(selector, update, multi, upsert);
         } catch (MongoServerException e) {
-            log.error("failed to update {}", update, e);
             putLastError(channel, e);
+            throw e;
         }
     }
 
-    @Override
-    public BSONObject handleCommand(Channel channel, String command, BSONObject query) throws MongoServerException {
-
-        // getlasterror must not clear the last error
-        if (command.equalsIgnoreCase("getlasterror")) {
-            return commandGetLastError(channel, command, query);
-        } else if (command.equalsIgnoreCase("getpreverror")) {
-            return commandGetPrevError(channel, command, query);
-        } else if (command.equalsIgnoreCase("reseterror")) {
-            return commandResetError(channel, command, query);
-        }
-
-        clearLastStatus(channel);
-
-        if (command.equalsIgnoreCase("count")) {
-            return commandCount(command, query);
-        } else if (command.equalsIgnoreCase("distinct")) {
-            String collectionName = query.get(command).toString();
-            MongoCollection collection = resolveCollection(collectionName, true);
-            return collection.handleDistinct(query);
-        } else if (command.equalsIgnoreCase("drop")) {
-            return commandDrop(query);
-        } else if (command.equalsIgnoreCase("dropDatabase")) {
-            return commandDropDatabase();
-        } else if (command.equalsIgnoreCase("dbstats")) {
-            return commandDatabaseStats();
-        } else if (command.equalsIgnoreCase("collstats")) {
-            String collectionName = query.get("collstats").toString();
-            MongoCollection collection = resolveCollection(collectionName, true);
-            return collection.getStats();
-        } else if (command.equalsIgnoreCase("validate")) {
-            String collectionName = query.get("validate").toString();
-            MongoCollection collection = resolveCollection(collectionName, true);
-            return collection.validate();
-        } else if (command.equalsIgnoreCase("findAndModify")) {
-            String collectionName = query.get(command).toString();
-            MongoCollection collection = resolveCollection(collectionName, false);
-            if (collection == null) {
-                collection = createCollection(collectionName);
-            }
-            return collection.findAndModify(query);
+    private MongoCollection resolveOrCreateCollection(final String collectionName) throws MongoServerException {
+        final MongoCollection collection = resolveCollection(collectionName, false);
+        if (collection != null) {
+            return collection;
         } else {
-            log.error("unknown query: {}", query);
+            return createCollection(collectionName);
         }
-        throw new NoSuchCommandException(command);
+    }
+
+    private BSONObject commandInsert(Channel channel, String command, BSONObject query) throws MongoServerException {
+        String collectionName = query.get(command).toString();
+        boolean isOrdered = Utils.isTrue(query.get("ordered"));
+        if (!isOrdered)
+            throw new RuntimeException("unexpected insert query: " + query);
+
+        @SuppressWarnings("unchecked")
+        List<BSONObject> documents = (List<BSONObject>) query.get("documents");
+
+        List<BSONObject> writeErrors = new ArrayList<BSONObject>();
+        int n = 0;
+        for (BSONObject document : documents) {
+            try {
+                insertDocuments(channel, collectionName, Arrays.asList(document));
+                n++;
+            } catch (MongoServerError e) {
+                BSONObject error = new BasicBSONObject();
+                error.put("index", Integer.valueOf(n));
+                error.put("code", Integer.valueOf(e.getCode()));
+                error.put("errmsg", e.getMessage());
+                writeErrors.add(error);
+            }
+        }
+        BSONObject result = new BasicBSONObject();
+        result.put("n", Integer.valueOf(n));
+        if (!writeErrors.isEmpty()) {
+            result.put("writeErrors", writeErrors);
+        }
+        // odd by true: also mark error as okay
+        Utils.markOkay(result);
+        return result;
+    }
+
+    private BSONObject commandUpdate(Channel channel, String command, BSONObject query) throws MongoServerException {
+        String collectionName = query.get(command).toString();
+        boolean isOrdered = Utils.isTrue(query.get("ordered"));
+        if (!isOrdered)
+            throw new RuntimeException("unexpected update query: " + query);
+
+        @SuppressWarnings("unchecked")
+        List<BSONObject> updates = (List<BSONObject>) query.get("updates");
+        int n = 0;
+        boolean updatedExisting = false;
+        Collection<BSONObject> upserts = new ArrayList<BSONObject>();
+        for (BSONObject updateObj : updates) {
+            BSONObject selector = (BSONObject) updateObj.get("q");
+            BSONObject update = (BSONObject) updateObj.get("u");
+            boolean multi = Utils.isTrue(updateObj.get("multi"));
+            boolean upsert = Utils.isTrue(updateObj.get("upsert"));
+            final BSONObject result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
+            updatedExisting |= Utils.isTrue(result.get("updatedExisting"));
+            if (result.containsField("upserted")) {
+                final Object id = result.get("upserted");
+                final BSONObject upserted = new BasicBSONObject("index", upserts.size());
+                upserted.put("_id", id);
+                upserts.add(upserted);
+            }
+            n += ((Integer) result.get("n")).intValue();
+        }
+
+        BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
+        response.put("updatedExisting", Boolean.valueOf(updatedExisting));
+        if (!upserts.isEmpty()) {
+            response.put("upserted", upserts);
+        }
+        Utils.markOkay(response);
+        putLastResult(channel, response);
+        return response;
+    }
+
+    private BSONObject commandDelete(Channel channel, String command, BSONObject query) throws MongoServerException {
+        String collectionName = query.get(command).toString();
+        boolean isOrdered = Utils.isTrue(query.get("ordered"));
+        if (!isOrdered)
+            throw new RuntimeException("unexpected delete query: " + query);
+
+        @SuppressWarnings("unchecked")
+        List<BSONObject> deletes = (List<BSONObject>) query.get("deletes");
+        int n = 0;
+        for (BSONObject delete : deletes) {
+            final BSONObject selector = (BSONObject) delete.get("q");
+            final int limit = ((Number) delete.get("limit")).intValue();
+            BSONObject result = deleteDocuments(channel, collectionName, selector, limit);
+            n += ((Integer) result.get("n")).intValue();
+        }
+
+        BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
+        Utils.markOkay(response);
+        return response;
+    }
+
+    private BSONObject commandCreateIndexes(Channel channel, String command, BSONObject query)
+            throws MongoServerException {
+
+        int indexesBefore = indexes.count();
+
+        @SuppressWarnings("unchecked")
+        final Collection<BSONObject> indexDescriptions = (Collection<BSONObject>) query.get("indexes");
+        for (BSONObject indexDescription : indexDescriptions) {
+            addIndex(indexDescription);
+        }
+
+        int indexesAfter = indexes.count();
+
+        BSONObject response = new BasicBSONObject();
+        response.put("numIndexesBefore", Integer.valueOf(indexesBefore));
+        response.put("numIndexesAfter", Integer.valueOf(indexesAfter));
+        Utils.markOkay(response);
+        return response;
     }
 
     private BSONObject commandDatabaseStats() throws MongoServerException {
@@ -358,7 +518,7 @@ public class MemoryDatabase extends CommonDatabase {
         // list must not be empty
         BSONObject last = results.get(results.size() - 1);
         if (last != null) {
-            throw new IllegalStateException();
+            throw new IllegalStateException("last result already set: " + last);
         }
         results.set(results.size() - 1, result);
     }

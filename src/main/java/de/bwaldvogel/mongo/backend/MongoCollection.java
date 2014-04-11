@@ -1,12 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.List;
+
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public abstract class MongoCollection {
 
@@ -35,13 +34,14 @@ public abstract class MongoCollection {
     public abstract Iterable<BSONObject> handleQuery(BSONObject query, int numberToSkip, int numberToReturn,
             BSONObject returnFieldSelector) throws MongoServerException;
 
-    public abstract int handleInsert(MongoInsert insert) throws MongoServerException;
+    public abstract int insertDocuments(List<BSONObject> documents) throws MongoServerException;
 
-    public abstract int handleDelete(MongoDelete delete) throws MongoServerException;
+    public abstract BSONObject updateDocuments(BSONObject selector, BSONObject update, boolean isMulti,
+            boolean isUpsert) throws MongoServerException;
+
+    public abstract int deleteDocuments(BSONObject selector, int limit) throws MongoServerException;
 
     public abstract BSONObject handleDistinct(BSONObject query) throws MongoServerException;
-
-    public abstract BSONObject handleUpdate(MongoUpdate update) throws MongoServerException;
 
     public abstract BSONObject getStats() throws MongoServerException;
 

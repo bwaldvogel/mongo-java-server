@@ -30,8 +30,6 @@ public class MongoServer {
 
     private static final Logger log = LoggerFactory.getLogger(MongoServer.class);
 
-    public static final String VERSION = "0.1";
-
     private MongoBackend backend;
 
     private EventLoopGroup bossGroup;

@@ -69,6 +69,11 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
+    public int[] getVersion() {
+        return backend.getVersion();
+    }
+
+    @Override
     public void handleInsert(MongoInsert insert) throws MongoServerException {
         throw new ReadOnlyException("insert not allowed");
     }

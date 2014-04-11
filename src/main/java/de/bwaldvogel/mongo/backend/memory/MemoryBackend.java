@@ -31,11 +31,11 @@ import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public class MemoryBackend implements MongoBackend {
 
-    private static int[] VERSION = new int[] { 2, 4, 0 };
-
     private static final Logger log = LoggerFactory.getLogger(MemoryBackend.class);
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
+
+    private static int[] VERSION = new int[] { 2, 6, 0 };
 
     protected BSONObject handleAdminCommand(Channel channel, String command, BSONObject query)
             throws MongoServerException {
@@ -60,16 +60,6 @@ public class MemoryBackend implements MongoBackend {
         } else {
             throw new NoSuchCommandException(command);
         }
-    }
-
-    private String join(int[] array, char c) {
-        final StringBuilder sb = new StringBuilder();
-        for (int value : array) {
-            if (sb.length() > 0)
-                sb.append(c);
-            sb.append(Integer.toString(value));
-        }
-        return sb.toString();
     }
 
     private BSONObject getLog(String argument) throws MongoServerException {
@@ -127,7 +117,7 @@ public class MemoryBackend implements MongoBackend {
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
-            BSONObject response = new BasicBSONObject("version", join(VERSION, '.'));
+            BSONObject response = new BasicBSONObject("version", Utils.join(VERSION, '.'));
             response.put("versionArray", VERSION);
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             Utils.markOkay(response);
@@ -174,6 +164,11 @@ public class MemoryBackend implements MongoBackend {
 
     public void dropDatabase(MemoryDatabase memoryDatabase) {
         databases.remove(memoryDatabase.getDatabaseName());
+    }
+
+    @Override
+    public int[] getVersion() {
+        return MemoryBackend.VERSION;
     }
 
 }

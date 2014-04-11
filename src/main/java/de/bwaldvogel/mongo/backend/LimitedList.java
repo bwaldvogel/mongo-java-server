@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 
-public class LimitedList<E> extends LinkedList<E> {
+public class LimitedList<E> extends ArrayList<E> {
 
     private static final long serialVersionUID = -4265811949513159615L;
 
@@ -16,7 +16,7 @@ public class LimitedList<E> extends LinkedList<E> {
     public boolean add(E o) {
         super.add(o);
         while (size() > limit) {
-            super.remove();
+            super.remove(0);
         }
         return true;
     }

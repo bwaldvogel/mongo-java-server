@@ -195,4 +195,14 @@ public class Utils {
         }
     }
 
+    public static String join(int[] array, char c) {
+        final StringBuilder sb = new StringBuilder();
+        for (int value : array) {
+            if (sb.length() > 0)
+                sb.append(c);
+            sb.append(Integer.toString(value));
+        }
+        return sb.toString();
+    }
+
 }
