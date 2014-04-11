@@ -13,7 +13,7 @@ import com.mongodb.ServerAddress;
 
 public class MongoServerTest {
 
-    @Test(timeout = 5000)
+    @Test(timeout = 10000)
     public void testStopListenting() {
         MongoServer server = new MongoServer();
         MongoClient client = null;
@@ -46,7 +46,7 @@ public class MongoServerTest {
         }
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 10000)
     public void testShutdownNow() {
         MongoServer server = new MongoServer();
         MongoClient client = null;
@@ -59,7 +59,7 @@ public class MongoServerTest {
         server.shutdownNow();
     }
 
-    @Test(timeout = 1000)
+    @Test(timeout = 5000)
     public void testGetLocalAddress() {
         MongoServer server = new MongoServer();
         assertThat(server.getLocalAddress()).isNull();
@@ -73,7 +73,7 @@ public class MongoServerTest {
         assertThat(server.getLocalAddress()).isNull();
     }
 
-    @Test
+    @Test(timeout = 10000)
     public void testShutdownAndRestart() throws Exception {
         MongoServer server = new MongoServer();
         InetSocketAddress serverAddress = server.bind();
