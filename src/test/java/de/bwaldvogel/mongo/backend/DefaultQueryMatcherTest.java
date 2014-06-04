@@ -267,6 +267,37 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isTrue();
     }
 
+    /**
+     * Test case for https://github.com/bwaldvogel/mongo-java-server/issues/7
+     */
+    @Test
+    public void testMatchesNotIn() throws Exception {
+        BSONObject query1 = json("{ \"map.key2\" : { \"$nin\" : [\"value 2.2\"] }}");
+        BSONObject query2 = json("{ \"map.key2\" : { \"$not\" : {\"$in\" : [\"value 2.2\"] }}}");
+        BSONObject query3 = json("{ \"map.key2\" : { \"$not\" : {\"$nin\" : [\"value 2.2\"] }}}");
+        BSONObject query4 = json("{ \"map.key2\" : { \"$not\" : {\"$not\" : {\"$in\" : [\"value 2.2\"] }}}}");
+
+        BSONObject document1 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 1.1\" ], \"key2\" : [ \"value 2.1\" ] } }");
+        BSONObject document2 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 1.2\" ], \"key2\" : [ \"value 2.2\" ] } }");
+        BSONObject document3 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 2.1\" ], \"key2\" : [ \"value 2.1\" ] } }");
+
+        assertThat(matcher.matches(document1, query1)).isTrue();
+        assertThat(matcher.matches(document2, query1)).isFalse();
+        assertThat(matcher.matches(document3, query1)).isTrue();
+
+        assertThat(matcher.matches(document1, query2)).isTrue();
+        assertThat(matcher.matches(document2, query2)).isFalse();
+        assertThat(matcher.matches(document3, query2)).isTrue();
+
+        assertThat(matcher.matches(document1, query3)).isFalse();
+        assertThat(matcher.matches(document2, query3)).isTrue();
+        assertThat(matcher.matches(document3, query3)).isFalse();
+
+        assertThat(matcher.matches(document1, query4)).isFalse();
+        assertThat(matcher.matches(document2, query4)).isTrue();
+        assertThat(matcher.matches(document3, query4)).isFalse();
+    }
+
     @Test
     public void testMatchesNotPattern() throws Exception {
 
@@ -412,18 +443,13 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesSize() throws Exception {
 
-        BSONObject document = json("{}");
         BSONObject query = json("a: {$size: 1}");
 
-        assertThat(matcher.matches(document, query)).isFalse();
-        document.put("a", "x");
-        assertThat(matcher.matches(document, query)).isFalse();
-        document.put("a", Arrays.asList());
-        assertThat(matcher.matches(document, query)).isFalse();
-        document.put("a", Arrays.asList(1));
-        assertThat(matcher.matches(document, query)).isTrue();
-        document.put("a", Arrays.asList(1, 2));
-        assertThat(matcher.matches(document, query)).isFalse();
+        assertThat(matcher.matches(json("{}"), query)).isFalse();
+        assertThat(matcher.matches(json("a : \"x\""), query)).isFalse();
+        assertThat(matcher.matches(json("a:[]"), query)).isFalse();
+        assertThat(matcher.matches(json("a:[1]"), query)).isTrue();
+        assertThat(matcher.matches(json("a:[1,2]"), query)).isFalse();
 
     }
 
