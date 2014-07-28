@@ -3,8 +3,11 @@
 /.classpath
 /.project
 /.settings
+/.gradle
 /target
+/build
 
-pom.xml.asc
-pom.xml.releaseBackup
+*.class
+bin/
+
 release.properties

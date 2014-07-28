@@ -1,0 +1,93 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'nexus'
+
+sourceCompatibility = 1.6
+version = '1.2.0-SNAPSHOT'
+
+ext {
+    title = 'mongo-java-server'
+    description = 'Stub implementation of MongoDB in Java that speaks the wire protocol.'
+    url = 'https://www.github.com/bwaldvogel/mongo-java-server'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': title, 'Implementation-Version': version
+    }
+}
+
+// https://github.com/bmuschko/gradle-nexus-plugin
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.7.1'
+    }
+}
+
+ext {
+    nettyVersion = '4.0.21.Final'
+    slf4jVersion = '1.7.5'
+}
+
+modifyPom {
+    project {
+        groupId        'de.bwaldvogel'
+        artifactId     'mongo-java-server'
+        name           title
+        description    description
+        url            url
+        inceptionYear '2012'
+
+        scm {
+            url 'git@github.com:bwaldvogel/mongo-java-server.git'
+            connection 'scm:git:git@github.com:bwaldvogel/mongo-java-server.git'
+            developerConnection 'scm:git:git@github.com:bwaldvogel/mongo-java-server.git'
+        }
+
+        licenses {
+            license {
+                name 'The BSD License'
+                url 'http://www.opensource.org/licenses/bsd-license.php'
+                distribution 'repo'
+            }
+        }
+
+        developers {
+            developer {
+                id 'bwaldvogel'
+                name 'Benedikt Waldvogel'
+                email 'mail@bwaldvogel.de'
+            }
+        }
+    }
+}
+
+nexus {
+    attachSources = true
+    attachTests = false
+    attachJavadoc = true
+    sign = true
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
+    compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.12.0'
+    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+
+    testCompile group: 'junit', name: 'junit', version: '4.9'
+    testCompile group: 'org.easytesting', name: 'fest-assert', version: '1.4'
+    testCompile group: 'org.powermock', name: 'powermock-api-easymock', version: '1.4.10'
+    testCompile group: 'org.easymock', name: 'easymockclassextension', version: '3.0'
+    testRuntime group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.1'
+}
+
+// vim: set ts=4 sw=4 et:
