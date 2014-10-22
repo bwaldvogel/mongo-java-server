@@ -2,8 +2,11 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'nexus'
 
-sourceCompatibility = 1.6
 version = '1.2.0-SNAPSHOT'
+
+sourceCompatibility = 1.6
+
+compileJava.options.encoding = 'UTF-8'
 
 ext {
     title = 'mongo-java-server'
