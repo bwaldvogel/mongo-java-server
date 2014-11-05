@@ -186,6 +186,10 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             flags = QueryFlag.SLAVE_OK.removeFrom(flags);
         }
 
+        if (QueryFlag.NO_CURSOR_TIMEOUT.isSet(flags)) {
+            flags = QueryFlag.NO_CURSOR_TIMEOUT.removeFrom(flags);
+        }
+        
         if (flags != 0)
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
 
