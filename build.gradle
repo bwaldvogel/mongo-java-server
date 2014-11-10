@@ -87,7 +87,7 @@ task wrapper(type: Wrapper) {
 dependencies {
     compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
     compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
-    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.12.0'
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.12.4'
     compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
 
     testCompile group: 'junit', name: 'junit', version: '4.9'

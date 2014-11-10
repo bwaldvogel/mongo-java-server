@@ -3,7 +3,9 @@ package de.bwaldvogel.mongo;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 
 import org.junit.Test;
 
@@ -14,7 +16,7 @@ import com.mongodb.ServerAddress;
 public class MongoServerTest {
 
     @Test(timeout = 10000)
-    public void testStopListenting() {
+    public void testStopListenting() throws Exception {
         MongoServer server = new MongoServer();
         MongoClient client = null;
         try {
@@ -30,12 +32,14 @@ public class MongoServerTest {
 
             // new clients must fail
             client.close();
+            Socket socket = new Socket();
             try {
-                client = new MongoClient(new ServerAddress(serverAddress));
-                client.getDB("admin").command("serverStatus");
-                fail("MongoException expected");
-            } catch (MongoException e) {
+                socket.connect(serverAddress);
+                fail("IOException expected");
+            } catch (IOException e) {
                 // expected
+            } finally {
+                socket.close();
             }
 
         } finally {
