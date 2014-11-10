@@ -1,17 +1,14 @@
 package de.bwaldvogel.mongo.wire;
 
-public enum QueryFlag implements Flag {
-    TAILABLE(1),
-    SLAVE_OK(2),
-    OPLOG_REPLAY(3),
-    NO_CURSOR_TIMEOUT(4),
-    AWAIT_DATA(5),
-    EXHAUST(6),
-    PARTIAL(7);
+public enum ReplyFlag implements Flag {
+    CURSOR_NOT_FOUND(0),
+    QUERY_FAILURE(1),
+    SHARD_CONFIG_STALE(2),
+    AWAIT_CAPABLE(3);
 
     private int value;
 
-    private QueryFlag(int bit) {
+    private ReplyFlag(int bit) {
         this.value = 1 << bit;
     }
 
@@ -24,4 +21,5 @@ public enum QueryFlag implements Flag {
     public int removeFrom(int flags) {
         return flags - value;
     }
+
 }
