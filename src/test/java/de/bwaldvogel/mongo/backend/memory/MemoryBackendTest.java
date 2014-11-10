@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
+import static org.junit.Assert.assertFalse;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.Bytes;
 import com.mongodb.CommandFailureException;
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
@@ -1732,6 +1734,16 @@ public class MemoryBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             // expected
+        }
+    }
+
+    @Test
+    public void testCursorOptionNoTimeout() throws Exception {
+        DBCursor cursor = collection.find().addOption(Bytes.QUERYOPTION_NOTIMEOUT);
+        try {
+            assertFalse(cursor.iterator().hasNext());
+        } finally {
+            cursor.close();
         }
     }
 
