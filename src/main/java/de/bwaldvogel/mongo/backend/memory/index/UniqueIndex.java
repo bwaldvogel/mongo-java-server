@@ -42,7 +42,8 @@ public class UniqueIndex extends Index {
 
     @Override
     protected Object getKeyValue(BSONObject document) {
-        return Utils.normalizeValue(document.get(key));
+        Object value = Utils.getSubdocumentValue(document, key);
+        return Utils.normalizeValue(value);
     }
 
     @Override

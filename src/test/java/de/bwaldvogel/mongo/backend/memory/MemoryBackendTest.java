@@ -1719,6 +1719,25 @@ public class MemoryBackendTest {
         }
     }
 
+    // see https://github.com/bwaldvogel/mongo-java-server/issues/9
+    @Test
+    public void testUniqueIndexWithSubdocument() {
+        collection.createIndex(new BasicDBObject("action.actionId", 1), new BasicDBObject("unique", true));
+
+        collection.insert(json("action: 'abc1'"));
+        collection.insert(json("action: { actionId: 1 }"));
+        collection.insert(json("action: { actionId: 2 }"));
+        collection.insert(json("action: { actionId: 3 }"));
+
+        try {
+            collection.insert(json("action: { actionId: 1 }"));
+            fail("DuplicateKeyException expected");
+        } catch (DuplicateKeyException e) {
+            // expected
+        }
+    }
+
+
     @Test
     public void testAddNonUniqueIndexOnNonIdField() {
         collection.createIndex(new BasicDBObject("someField", 1), new BasicDBObject("unique", false));
