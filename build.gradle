@@ -32,8 +32,8 @@ buildscript {
 }
 
 ext {
-    nettyVersion = '4.0.23.Final'
-    slf4jVersion = '1.7.7'
+    nettyVersion = '4.0.25.Final'
+    slf4jVersion = '1.7.10'
 }
 
 modifyPom {
