@@ -81,18 +81,18 @@ repositories {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.1'
+    gradleVersion = '2.3'
 }
 
 dependencies {
     compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
     compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
-    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.12.4'
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.13.0'
     compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
 
-    testCompile group: 'junit', name: 'junit', version: '4.11'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
     testCompile group: 'org.easytesting', name: 'fest-assert', version: '1.4'
-    testCompile group: 'org.powermock', name: 'powermock-api-easymock', version: '1.5.6'
+    testCompile group: 'org.powermock', name: 'powermock-api-easymock', version: '1.6.1'
     testCompile group: 'org.easymock', name: 'easymockclassextension', version: '3.2'
     testRuntime group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
 }
