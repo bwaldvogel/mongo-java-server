@@ -117,7 +117,8 @@ public class UniqueIndex extends Index {
 
     @Override
     public synchronized Iterable<Integer> getPositions(BSONObject query) {
-        Object keyValue = getKeyValue(query);
+        // Do not use getKeyValue, it's only valid for document.
+        Object keyValue = Utils.normalizeValue(query.get(key));
 
         if (keyValue instanceof BSONObject) {
             BSONObject keyObj = (BSONObject) keyValue;
