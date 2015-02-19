@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.backend.memory;
+package de.bwaldvogel.mongo;
 
 import io.netty.channel.Channel;
 

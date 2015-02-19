@@ -18,17 +18,17 @@ import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.bson.types.ObjectId;
 
+import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
-import de.bwaldvogel.mongo.backend.MongoCollection;
+import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.QueryMatcher;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
-import de.bwaldvogel.mongo.backend.memory.index.Index;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public class MemoryCollection extends MongoCollection {
+public class MemoryCollection extends AbstractMongoCollection {
 
     private List<Index> indexes = new ArrayList<Index>();
 
@@ -46,6 +46,7 @@ public class MemoryCollection extends MongoCollection {
         this.idField = idField;
     }
 
+    @Override
     public void addIndex(Index index) {
         indexes.add(index);
     }
@@ -403,11 +404,13 @@ public class MemoryCollection extends MongoCollection {
         return newDocument;
     }
 
+    @Override
     public synchronized void addDocument(BSONObject document) throws MongoServerException {
 
         Integer pos = emptyPositions.poll();
-        if (pos == null)
+        if (pos == null) {
             pos = Integer.valueOf(documents.size());
+        }
 
         for (Index index : indexes) {
             index.checkAdd(document);
@@ -423,6 +426,7 @@ public class MemoryCollection extends MongoCollection {
         }
     }
 
+    @Override
     public synchronized void removeDocument(BSONObject document) throws MongoServerException {
         Integer pos = null;
 
@@ -445,10 +449,12 @@ public class MemoryCollection extends MongoCollection {
         emptyPositions.add(pos);
     }
 
+    @Override
     public synchronized int count() {
         return documents.size() - emptyPositions.size();
     }
 
+    @Override
     public synchronized BSONObject findAndModify(BSONObject query) throws MongoServerException {
 
         boolean returnNew = Utils.isTrue(query.get("new"));
@@ -520,8 +526,9 @@ public class MemoryCollection extends MongoCollection {
 
     private BSONObject projectDocument(BSONObject document, BSONObject fields) {
 
-        if (document == null)
+        if (document == null) {
             return null;
+        }
 
         BSONObject newDocument = new BasicBSONObject();
         for (String key : fields.keySet()) {
@@ -541,8 +548,9 @@ public class MemoryCollection extends MongoCollection {
 
     private void projectField(BSONObject document, BSONObject newDocument, String key) {
 
-        if (document == null)
+        if (document == null) {
             return;
+        }
 
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
@@ -567,6 +575,7 @@ public class MemoryCollection extends MongoCollection {
         return handleQuery(queryObject, numberToSkip, numberToReturn, null);
     }
 
+    @Override
     public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn,
             BSONObject fieldSelector) throws MongoServerException {
 
@@ -615,8 +624,9 @@ public class MemoryCollection extends MongoCollection {
             }
         }
 
-        if (numberToReturn > 0 && objs.size() > numberToReturn)
+        if (numberToReturn > 0 && objs.size() > numberToReturn) {
             objs = objs.subList(0, numberToReturn);
+        }
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
             for (int i = 0; i < objs.size(); i++) {
@@ -627,6 +637,7 @@ public class MemoryCollection extends MongoCollection {
         return objs;
     }
 
+    @Override
     public synchronized BSONObject handleDistinct(BSONObject query) throws MongoServerException {
         String key = query.get("key").toString();
         BSONObject q = (BSONObject) query.get("query");
@@ -634,8 +645,9 @@ public class MemoryCollection extends MongoCollection {
 
         for (Integer pos : queryDocuments(q)) {
             BSONObject document = documents.get(pos.intValue());
-            if (document.containsField(key))
+            if (document.containsField(key)) {
                 values.add(document.get(key));
+            }
         }
 
         BSONObject response = new BasicBSONObject("values", new ArrayList<Object>(values));
@@ -643,6 +655,7 @@ public class MemoryCollection extends MongoCollection {
         return response;
     }
 
+    @Override
     public synchronized int insertDocuments(List<BSONObject> documents) throws MongoServerException {
         for (BSONObject document : documents) {
             addDocument(document);
@@ -650,6 +663,7 @@ public class MemoryCollection extends MongoCollection {
         return documents.size();
     }
 
+    @Override
     public synchronized int deleteDocuments(BSONObject selector, int limit) throws MongoServerException {
         int n = 0;
         for (BSONObject document : handleQuery(selector, 0, limit)) {
@@ -662,6 +676,7 @@ public class MemoryCollection extends MongoCollection {
         return n;
     }
 
+    @Override
     public synchronized BSONObject updateDocuments(BSONObject selector, BSONObject updateQuery, boolean isMulti,
             boolean isUpsert) throws MongoServerException {
         int n = 0;
@@ -785,8 +800,9 @@ public class MemoryCollection extends MongoCollection {
     BSONObject convertSelectorToDocument(BSONObject selector) throws MongoServerException {
         BSONObject document = new BasicBSONObject();
         for (String key : selector.keySet()) {
-            if (key.startsWith("$"))
+            if (key.startsWith("$")) {
                 continue;
+            }
 
             Object value = selector.get(key);
             if (!Utils.containsQueryExpression(value)) {
@@ -796,10 +812,12 @@ public class MemoryCollection extends MongoCollection {
         return document;
     }
 
+    @Override
     public int getNumIndexes() {
         return indexes.size();
     }
 
+    @Override
     public int count(BSONObject query) throws MongoServerException {
         if (query.keySet().isEmpty()) {
             return count();
@@ -814,6 +832,7 @@ public class MemoryCollection extends MongoCollection {
         return count;
     }
 
+    @Override
     public BSONObject getStats() {
         BSONObject response = new BasicBSONObject("ns", getFullName());
         response.put("count", Integer.valueOf(documents.size()));
@@ -837,6 +856,7 @@ public class MemoryCollection extends MongoCollection {
         return response;
     }
 
+    @Override
     public BSONObject validate() {
         BSONObject response = new BasicBSONObject("ns", getFullName());
         response.put("extentCount", Integer.valueOf(0));

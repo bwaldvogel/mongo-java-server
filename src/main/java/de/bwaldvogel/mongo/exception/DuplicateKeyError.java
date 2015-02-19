@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.exception;
 
-import de.bwaldvogel.mongo.backend.memory.index.Index;
+import de.bwaldvogel.mongo.backend.Index;
 
 public class DuplicateKeyError extends KeyConstraintError {
 

@@ -45,6 +45,7 @@ public class ReadOnlyProxy implements MongoBackend {
 
     }
 
+    @Override
     public void handleClose(Channel channel) {
         backend.handleClose(channel);
     }
@@ -86,6 +87,11 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public void handleUpdate(MongoUpdate update) throws MongoServerException {
         throw new ReadOnlyException("update not allowed");
+    }
+
+    @Override
+    public void dropDatabase(String database) throws MongoServerException {
+        throw new ReadOnlyException("dropping of databases is not allowed");
     }
 
 }

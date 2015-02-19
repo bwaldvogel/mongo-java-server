@@ -17,6 +17,7 @@ import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
 
 import de.bwaldvogel.mongo.MongoServer;
+import de.bwaldvogel.mongo.backend.AbstractMongoBackend;
 import de.bwaldvogel.mongo.backend.ReadOnlyProxy;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 
@@ -28,7 +29,7 @@ public class ReadOnlyProxyTest {
 
     @Before
     public void setUp() throws Exception {
-        MemoryBackend memoryBackend = new MemoryBackend();
+        AbstractMongoBackend memoryBackend = new MemoryBackend();
         writeableServer = new MongoServer(memoryBackend);
         writeClient = new MongoClient(new ServerAddress(writeableServer.bind()));
 

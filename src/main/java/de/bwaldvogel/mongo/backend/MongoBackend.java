@@ -27,8 +27,11 @@ public interface MongoBackend {
 
     void handleUpdate(MongoUpdate update) throws MongoServerException;
 
+    void dropDatabase(String database) throws MongoServerException;
+
     Collection<BSONObject> getCurrentOperations(MongoQuery query);
 
     int[] getVersion();
+
 
 }
