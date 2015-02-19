@@ -66,11 +66,13 @@ public class MemoryDatabase extends CommonDatabase {
 
     private void checkCollectionName(String collectionName) throws MongoServerException {
 
-        if (collectionName.length() > Constants.MAX_NS_LENGTH)
+        if (collectionName.length() > Constants.MAX_NS_LENGTH) {
             throw new MongoServerError(10080, "ns name too long, max size is " + Constants.MAX_NS_LENGTH);
+        }
 
-        if (collectionName.isEmpty())
+        if (collectionName.isEmpty()) {
             throw new MongoServerError(16256, "Invalid ns [" + collectionName + "]");
+        }
     }
 
     @Override
@@ -527,8 +529,9 @@ public class MemoryDatabase extends CommonDatabase {
             throws MongoServerException {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
-        if (!cmd.equals(command))
+        if (!cmd.equals(command)) {
             throw new IllegalStateException();
+        }
         if (it.hasNext()) {
             String subCommand = it.next();
             if (subCommand.equals("w")) {
