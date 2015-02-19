@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
