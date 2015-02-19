@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.*;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -937,6 +937,21 @@ public class MemoryBackendTest {
 
         assertThat(collection.find(json("'_id.x':{$all:[1,2]}")).toArray()).hasSize(1);
         assertThat(collection.find(json("'_id.x':{$all:[2,3]}")).toArray()).hasSize(1);
+    }
+
+    @Test
+    public void testQueryWithSubdocumentIndex() throws Exception {
+        collection.createIndex(new BasicDBObject("action.actionId", 1), new BasicDBObject("unique", true));
+
+        collection.insert(json("action: { actionId: 1 }, value: 'a'"));
+        collection.insert(json("action: { actionId: 2 }, value: 'b'"));
+        collection.insert(json("action: { actionId: 3 }, value: 'c'"));
+
+        DBObject foundWithNestedDocument = collection.findOne(json("action: { actionId: 2 }"));
+        assertThat(foundWithNestedDocument.get("value")).isEqualTo("b");
+
+        DBObject foundWithDotNotation = collection.findOne(json("action.actionId: 2"));
+        assertThat(foundWithDotNotation.get("value")).isEqualTo("b");
     }
 
     @Test
