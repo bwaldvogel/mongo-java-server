@@ -22,6 +22,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.BulkWriteRequestBuilder;
+import com.mongodb.BulkWriteResult;
 import com.mongodb.Bytes;
 import com.mongodb.CommandFailureException;
 import com.mongodb.CommandResult;
@@ -1802,6 +1805,53 @@ public class MemoryBackendTest {
         } finally {
             cursor.close();
         }
+    }
+
+    @Test
+    public void testBulkInsert() throws Exception {
+        BulkWriteOperation bulk = collection.initializeOrderedBulkOperation();
+        bulk.insert(json("_id: 1"));
+        bulk.insert(json("_id: 2"));
+        bulk.insert(json("_id: 3"));
+        BulkWriteResult result = bulk.execute();
+        assertThat(result.getInsertedCount()).isEqualTo(3);
+    }
+
+    @Test
+    public void testBulkUpdateOrdered() throws Exception {
+        insertUpdateInBulk(collection.initializeOrderedBulkOperation());
+        removeInBulk(collection.initializeOrderedBulkOperation());
+    }
+
+    @Test
+    public void testBulkUpdateUnordered() throws Exception {
+        insertUpdateInBulk(collection.initializeUnorderedBulkOperation());
+        removeInBulk(collection.initializeUnorderedBulkOperation());
+    }
+
+    private void insertUpdateInBulk(BulkWriteOperation bulk) {
+        bulk.insert(json("_id: 1, field: 'x'"));
+        bulk.insert(json("_id: 2, field: 'x'"));
+        bulk.insert(json("_id: 3, field: 'x'"));
+
+        BulkWriteRequestBuilder bulkRequest = bulk.find(json("field: 'x'"));
+        bulkRequest.update(json("$set: {field: 'y'}"));
+        BulkWriteResult result = bulk.execute();
+        assertThat(result.getInsertedCount()).isEqualTo(3);
+
+        long totalDocuments = collection.getCount();
+        assertThat(totalDocuments).isEqualTo(3);
+
+        int documentsWithY = collection.find(json("field: 'y'")).count();
+        assertThat(documentsWithY).isEqualTo(3);
+    }
+
+    private void removeInBulk(BulkWriteOperation bulk) {
+        BulkWriteRequestBuilder bulkRequest = bulk.find(json("field: 'y'"));
+        bulkRequest.remove();
+        BulkWriteResult result = bulk.execute();
+        assertThat(result.getRemovedCount()).isEqualTo(3);
+        assertThat(collection.getCount()).isZero();
     }
 
 }

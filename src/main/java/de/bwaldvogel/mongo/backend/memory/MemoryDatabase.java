@@ -332,8 +332,7 @@ public class MemoryDatabase extends CommonDatabase {
     private BSONObject commandInsert(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
-        if (!isOrdered)
-            throw new RuntimeException("unexpected insert query: " + query);
+        log.trace("ordered: {}", isOrdered);
 
         @SuppressWarnings("unchecked")
         List<BSONObject> documents = (List<BSONObject>) query.get("documents");
@@ -365,8 +364,7 @@ public class MemoryDatabase extends CommonDatabase {
     private BSONObject commandUpdate(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
-        if (!isOrdered)
-            throw new RuntimeException("unexpected update query: " + query);
+        log.trace("ordered: {}", isOrdered);
 
         @SuppressWarnings("unchecked")
         List<BSONObject> updates = (List<BSONObject>) query.get("updates");
@@ -402,8 +400,7 @@ public class MemoryDatabase extends CommonDatabase {
     private BSONObject commandDelete(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
-        if (!isOrdered)
-            throw new RuntimeException("unexpected delete query: " + query);
+        log.trace("ordered: {}", isOrdered);
 
         @SuppressWarnings("unchecked")
         List<BSONObject> deletes = (List<BSONObject>) query.get("deletes");
