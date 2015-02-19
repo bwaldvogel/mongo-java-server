@@ -55,6 +55,12 @@ public class UtilsTest {
         assertThat(Utils.nullAwareEquals(4, 4)).isTrue();
         assertThat(Utils.nullAwareEquals(4, 4.0)).isTrue();
         assertThat(Utils.nullAwareEquals(Float.valueOf(3.0f), Double.valueOf(3.0))).isTrue();
+        assertThat(Utils.nullAwareEquals(new byte[] {}, new byte[] {})).isTrue();
+        assertThat(Utils.nullAwareEquals(new byte[] {}, new byte[] { 0x01 })).isFalse();
+        assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new byte[] { 0x01 })).isTrue();
+        assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new byte[] { 0x01, 0x02 })).isFalse();
+        assertThat(Utils.nullAwareEquals(new byte[] { 0x01, 0x02, 0x03 }, new byte[] { 0x01, 0x02 })).isFalse();
+        assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new int[] { 0x01 })).isFalse();
     }
 
     @Test

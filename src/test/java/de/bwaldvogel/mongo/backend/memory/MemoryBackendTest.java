@@ -954,6 +954,24 @@ public class MemoryBackendTest {
         assertThat(foundWithDotNotation.get("value")).isEqualTo("b");
     }
 
+    // see https://github.com/bwaldvogel/mongo-java-server/issues/12
+    @Test
+    public void testQueryBinaryData() throws Exception {
+        byte[] firstBytes = new byte[] { 0x01, 0x02, 0x03 };
+        byte[] secondBytes = new byte[] { 0x03, 0x02, 0x01 };
+
+        collection.insert(new BasicDBObject("_id", 1).append("test", firstBytes));
+        collection.insert(new BasicDBObject("_id", 2).append("test", secondBytes));
+
+        DBObject first = collection.findOne(new BasicDBObject("test", firstBytes));
+        assertThat(first).isNotNull();
+        assertThat(first.get("_id")).isEqualTo(1);
+
+        DBObject second = collection.findOne(new BasicDBObject("test", secondBytes));
+        assertThat(second).isNotNull();
+        assertThat(second.get("_id")).isEqualTo(2);
+    }
+
     @Test
     public void testRemove() {
         collection.insert(json("_id: 1"));
@@ -1732,6 +1750,11 @@ public class MemoryBackendTest {
         } catch (DuplicateKeyException e) {
             // expected
         }
+    }
+
+    @Test
+    public void testInsertBinaryData() throws Exception {
+        collection.insert(new BasicDBObject("test", new byte[] { 0x01, 0x02, 0x03 }));
     }
 
     // see https://github.com/bwaldvogel/mongo-java-server/issues/9

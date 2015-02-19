@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -67,14 +68,19 @@ public class Utils {
     }
 
     public static boolean nullAwareEquals(Object a, Object b) {
-        if (a == b)
+        if (a == b) {
             return true;
-
-        if (a != null) {
-            return normalizeValue(a).equals(normalizeValue(b));
+        } else if (a == null || b == null) {
+            return (a == b);
+        } else if (a instanceof byte[] && b instanceof byte[]) {
+            byte[] bytesA = (byte[]) a;
+            byte[] bytesB = (byte[]) b;
+            return Arrays.equals(bytesA, bytesB);
+        } else {
+            Object normalizedA = normalizeValue(a);
+            Object normalizedB = normalizeValue(b);
+            return normalizedA.equals(normalizedB);
         }
-
-        return a == b;
     }
 
     public static long calculateSize(BSONObject document) {
