@@ -384,7 +384,8 @@ public class MemoryDatabase extends CommonDatabase {
                 upserted.put("_id", id);
                 upserts.add(upserted);
             }
-            n += ((Integer) result.get("n")).intValue();
+            Integer resultNumber = (Integer) result.get("n");
+            n += resultNumber.intValue();
         }
 
         BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
@@ -409,7 +410,8 @@ public class MemoryDatabase extends CommonDatabase {
             final BSONObject selector = (BSONObject) delete.get("q");
             final int limit = ((Number) delete.get("limit")).intValue();
             BSONObject result = deleteDocuments(channel, collectionName, selector, limit);
-            n += ((Integer) result.get("n")).intValue();
+            Integer resultNumber = (Integer) result.get("n");
+            n += resultNumber.intValue();
         }
 
         BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
