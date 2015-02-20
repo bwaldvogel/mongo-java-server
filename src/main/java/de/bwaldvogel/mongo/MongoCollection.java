@@ -5,15 +5,16 @@ import java.util.List;
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.Position;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public interface MongoCollection {
+public interface MongoCollection<P extends Position> {
 
     String getFullName();
 
     String getCollectionName();
 
-    void addIndex(Index index);
+    void addIndex(Index<P> index);
 
     void addDocument(BSONObject document) throws MongoServerException;
 

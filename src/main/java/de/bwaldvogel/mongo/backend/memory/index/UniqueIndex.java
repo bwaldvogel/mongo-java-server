@@ -16,13 +16,14 @@ import org.bson.BSONObject;
 import de.bwaldvogel.mongo.backend.Constants;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.memory.IntegerPosition;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public class UniqueIndex extends Index {
+public class UniqueIndex extends Index<IntegerPosition> {
 
-    private Map<Object, Integer> index = new HashMap<Object, Integer>();
+    private Map<Object, IntegerPosition> index = new HashMap<Object, IntegerPosition>();
 
     private final boolean ascending;
     private final String key;
@@ -33,6 +34,7 @@ public class UniqueIndex extends Index {
         this.ascending = ascending;
     }
 
+    @Override
     public String getName() {
         if (key.equals(Constants.ID_FIELD)) {
             return Constants.ID_INDEX_NAME;
@@ -48,7 +50,7 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public synchronized Integer remove(BSONObject document) {
+    public synchronized IntegerPosition remove(BSONObject document) {
         Object value = getKeyValue(document);
         return index.remove(value);
     }
@@ -56,8 +58,9 @@ public class UniqueIndex extends Index {
     @Override
     public synchronized void checkAdd(BSONObject document) throws KeyConstraintError {
         Object value = getKeyValue(document);
-        if (value == null)
+        if (value == null) {
             return;
+        }
 
         if (index.containsKey(value)) {
             throw new DuplicateKeyError(this, value);
@@ -65,7 +68,7 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public synchronized void add(BSONObject document, Integer position) throws KeyConstraintError {
+    public synchronized void add(BSONObject document, IntegerPosition position) throws KeyConstraintError {
         checkAdd(document);
         Object value = getKeyValue(document);
         if (value != null) {
@@ -117,7 +120,7 @@ public class UniqueIndex extends Index {
     }
 
     @Override
-    public synchronized Iterable<Integer> getPositions(BSONObject query) {
+    public synchronized Iterable<IntegerPosition> getPositions(BSONObject query) {
         // Do not use getKeyValue, it's only valid for document.
         Object keyValue = Utils.normalizeValue(query.get(key));
 
@@ -134,8 +137,8 @@ public class UniqueIndex extends Index {
                 }
             }
         } else if (keyValue instanceof Pattern) {
-            List<Integer> positions = new ArrayList<Integer>();
-            for (Entry<Object, Integer> entry : index.entrySet()) {
+            List<IntegerPosition> positions = new ArrayList<IntegerPosition>();
+            for (Entry<Object, IntegerPosition> entry : index.entrySet()) {
                 Object obj = entry.getKey();
                 Matcher matcher = ((Pattern) keyValue).matcher(obj.toString());
                 if (matcher.find()) {
@@ -145,20 +148,20 @@ public class UniqueIndex extends Index {
             return positions;
         }
 
-        Integer object = index.get(keyValue);
+        IntegerPosition object = index.get(keyValue);
         if (object == null) {
             return Collections.emptyList();
         }
         return Collections.singletonList(object);
     }
 
-    private Iterable<Integer> getPositionsForExpression(BSONObject keyObj, String operator) {
+    private Iterable<IntegerPosition> getPositionsForExpression(BSONObject keyObj, String operator) {
         if (operator.equals("$in")) {
             Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(operator));
-            List<Integer> allPositions = new ArrayList<Integer>();
+            List<IntegerPosition> allPositions = new ArrayList<IntegerPosition>();
             for (Object object : queriedObjects) {
                 Object value = Utils.normalizeValue(object);
-                Integer pos = index.get(value);
+                IntegerPosition pos = index.get(value);
                 if (pos != null) {
                     allPositions.add(pos);
                 }

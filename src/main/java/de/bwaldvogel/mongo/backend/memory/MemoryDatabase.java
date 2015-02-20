@@ -8,7 +8,7 @@ import de.bwaldvogel.mongo.backend.MongoBackend;
 import de.bwaldvogel.mongo.backend.memory.index.UniqueIndex;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public class MemoryDatabase extends AbstractMongoDatabase {
+public class MemoryDatabase extends AbstractMongoDatabase<IntegerPosition> {
 
     public static final Logger log = LoggerFactory.getLogger(MemoryDatabase.class);
 

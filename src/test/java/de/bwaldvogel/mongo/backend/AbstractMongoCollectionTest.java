@@ -1,9 +1,10 @@
-package de.bwaldvogel.mongo.backend.memory;
+package de.bwaldvogel.mongo.backend;
 
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Arrays;
 
+import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
 import org.bson.types.ObjectId;
 import org.junit.Before;
@@ -11,13 +12,63 @@ import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
 
-public class MemoryCollectionTest {
+import de.bwaldvogel.mongo.exception.MongoServerException;
 
-    private MemoryCollection collection;
+public class AbstractMongoCollectionTest {
+
+    private static class TestCollection extends AbstractMongoCollection<Position> {
+
+        protected TestCollection(String databaseName, String collectionName, String idField) {
+            super(databaseName, collectionName, idField);
+        }
+
+        @Override
+        public void addDocument(BSONObject document) throws MongoServerException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int count() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected BSONObject getDocumentAt(Position position) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected Iterable<DocumentWithPosition> iterateAllDocuments() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected void removeDocumentAt(Position position) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected Position scanDocumentPosition(BSONObject document) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected int getRecordCount() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected int getDeletedCount() {
+            throw new UnsupportedOperationException();
+        }
+
+    }
+
+    private TestCollection collection;
 
     @Before
     public void setUp() {
-        collection = new MemoryCollection("db", "coll", "_id");
+        this.collection = new TestCollection("some database", "some collection", "_id");
     }
 
     @Test
@@ -62,5 +113,4 @@ public class MemoryCollectionTest {
         assertThat(collection.deriveDocumentId(new BasicBSONObject("_id", new BasicDBObject("$in", Arrays.asList())))) //
                 .isInstanceOf(ObjectId.class);
     }
-
 }

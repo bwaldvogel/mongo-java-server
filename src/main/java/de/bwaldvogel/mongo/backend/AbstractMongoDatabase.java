@@ -29,18 +29,18 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
-public abstract class AbstractMongoDatabase implements MongoDatabase {
+public abstract class AbstractMongoDatabase<P extends Position> implements MongoDatabase {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoDatabase.class);
 
     private final String databaseName;
     private final MongoBackend backend;
 
-    private Map<String, MongoCollection> collections = new HashMap<String, MongoCollection>();
+    private Map<String, MongoCollection<P>> collections = new HashMap<String, MongoCollection<P>>();
 
-    private MongoCollection namespaces;
+    private MongoCollection<P> namespaces;
 
-    private MongoCollection indexes;
+    private MongoCollection<P> indexes;
 
     private Map<Channel, List<BSONObject>> lastResults = new HashMap<Channel, List<BSONObject>>();
 
@@ -54,9 +54,9 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         addNamespace(indexes);
     }
 
-    protected abstract MongoCollection createNamespacesCollection(String databaseName);
+    protected abstract MongoCollection<P> createNamespacesCollection(String databaseName);
 
-    protected abstract MongoCollection createIndexesCollection(String databaseName);
+    protected abstract MongoCollection<P> createIndexesCollection(String databaseName);
 
     @Override
     public final String getDatabaseName() {
@@ -101,7 +101,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("distinct")) {
             String collectionName = query.get(command).toString();
-            MongoCollection collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(collectionName, true);
             return collection.handleDistinct(query);
         } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query);
@@ -111,15 +111,15 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
             String collectionName = query.get("collstats").toString();
-            MongoCollection collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(collectionName, true);
             return collection.getStats();
         } else if (command.equalsIgnoreCase("validate")) {
             String collectionName = query.get("validate").toString();
-            MongoCollection collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(collectionName, true);
             return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {
             String collectionName = query.get(command).toString();
-            MongoCollection collection = resolveOrCreateCollection(collectionName);
+            MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
             return collection.findAndModify(query);
         } else {
             log.error("unknown query: {}", query);
@@ -127,8 +127,8 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         throw new NoSuchCommandException(command);
     }
 
-    protected MongoCollection resolveOrCreateCollection(final String collectionName) throws MongoServerException {
-        final MongoCollection collection = resolveCollection(collectionName, false);
+    protected MongoCollection<P> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
+        final MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             return collection;
         } else {
@@ -254,7 +254,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         long dataSize = 0;
         double averageObjectSize = 0;
 
-        for (MongoCollection collection : collections.values()) {
+        for (MongoCollection<P> collection : collections.values()) {
             BSONObject stats = collection.getStats();
             objects += ((Number) stats.get("count")).longValue();
             dataSize += ((Number) stats.get("size")).longValue();
@@ -283,7 +283,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
 
     protected BSONObject commandDrop(BSONObject query) throws MongoServerException {
         String collectionName = query.get("drop").toString();
-        MongoCollection collection = collections.remove(collectionName);
+        MongoCollection<P> collection = collections.remove(collectionName);
 
         if (collection == null) {
             throw new MongoSilentServerException("ns not found");
@@ -374,7 +374,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
     protected BSONObject commandCount(String command, BSONObject query) throws MongoServerException {
         String collection = query.get(command).toString();
         BSONObject response = new BasicBSONObject();
-        MongoCollection coll = collections.get(collection);
+        MongoCollection<P> coll = collections.get(collection);
         if (coll == null) {
             response.put("missing", Boolean.TRUE);
             response.put("n", Integer.valueOf(0));
@@ -389,7 +389,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
     public Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException {
         clearLastStatus(query.getChannel());
         String collectionName = query.getCollectionName();
-        MongoCollection collection = resolveCollection(collectionName, false);
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
             return Collections.emptyList();
         }
@@ -430,9 +430,9 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         }
     }
 
-    public synchronized MongoCollection resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException {
+    public synchronized MongoCollection<P> resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException {
         checkCollectionName(collectionName);
-        MongoCollection collection = collections.get(collectionName);
+        MongoCollection<P> collection = collections.get(collectionName);
         if (collection == null && throwIfNotFound) {
             throw new MongoServerException("ns not found");
         }
@@ -455,7 +455,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         return collections.isEmpty();
     }
 
-    protected void addNamespace(MongoCollection collection) throws MongoServerException {
+    protected void addNamespace(MongoCollection<P> collection) throws MongoServerException {
         collections.put(collection.getCollectionName(), collection);
         namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
     }
@@ -496,7 +496,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         final String ns = indexDescription.get("ns").toString();
         final int index = ns.indexOf('.');
         final String collectionName = ns.substring(index + 1);
-        final MongoCollection collection = resolveOrCreateCollection(collectionName);
+        final MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
 
         indexes.addDocument(indexDescription);
 
@@ -521,7 +521,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         }
     }
 
-    protected abstract Index createUniqueIndex(String key, boolean ascending);
+    protected abstract Index<P> createUniqueIndex(String key, boolean ascending);
 
     protected BSONObject insertDocuments(final Channel channel, final String collectionName, final List<BSONObject> documents) throws MongoServerException {
         clearLastStatus(channel);
@@ -529,7 +529,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
-            final MongoCollection collection = resolveOrCreateCollection(collectionName);
+            final MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
             int n = collection.insertDocuments(documents);
             assert n == documents.size();
             final BSONObject result = new BasicBSONObject("n", Integer.valueOf(n));
@@ -547,7 +547,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(12050, "cannot delete from system namespace");
             }
-            MongoCollection collection = resolveCollection(collectionName, false);
+            MongoCollection<P> collection = resolveCollection(collectionName, false);
             int n;
             if (collection == null) {
                 n = 0;
@@ -571,7 +571,7 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
                         throw new MongoServerError(10156, "cannot update system collection");
                     }
 
-                    MongoCollection collection = resolveOrCreateCollection(collectionName);
+                    MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
                     return collection.updateDocuments(selector, update, multi, upsert);
                 } catch (MongoServerException e) {
                     putLastError(channel, e);
@@ -605,12 +605,12 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         results.set(results.size() - 1, result);
     }
 
-    protected MongoCollection createCollection(String collectionName) throws MongoServerException {
+    protected MongoCollection<P> createCollection(String collectionName) throws MongoServerException {
         checkCollectionName(collectionName);
         if (collectionName.contains("$")) {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
         }
-        MongoCollection collection = createNewCollection(collectionName);
+        MongoCollection<P> collection = createNewCollection(collectionName);
         addNamespace(collection);
 
         BSONObject indexDescription = new BasicBSONObject();
@@ -624,6 +624,6 @@ public abstract class AbstractMongoDatabase implements MongoDatabase {
         return collection;
     }
 
-    protected abstract MongoCollection createNewCollection(String collectionName);
+    protected abstract MongoCollection<P> createNewCollection(String collectionName);
 
 }
