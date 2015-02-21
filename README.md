@@ -92,11 +92,6 @@ public class Application {
 }
 ```
 
-
-The in-memory backend is the default, such that mongo-java-server can be used
-as stub in unit tests. It does not support all fatures of the original
-MongoDB, and probably never will.
-
 ## Ideas for other backends ##
 
 ### Faulty backend ###
