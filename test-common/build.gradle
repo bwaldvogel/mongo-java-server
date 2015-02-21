@@ -1,0 +1,10 @@
+dependencies {
+    compile project(':mongo-java-server-core')
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
+
+    compile group: 'junit', name: 'junit', version: junitVersion
+    compile group: 'org.easytesting', name: 'fest-assert', version: festAssertVersion
+    compile group: 'org.powermock', name: 'powermock-api-easymock', version: powerMockVersion
+    compile group: 'org.easymock', name: 'easymockclassextension', version: powerMockClassExtensionVersion
+    runtime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+}

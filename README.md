@@ -6,24 +6,6 @@ Stub implementation of the core [MongoDB][mongodb] server in Java.
 The [MongoDB Wire Protocol][wire-protocol] is implemented with [Netty][netty].
 Different backends are possible and can be easily extended.
 
-## In-Memory backend ##
-
-The in-memory backend is the default, such that mongo-java-server can be used
-as stub in unit tests. It does not support all features of the original
-MongoDB, and probably never will.
-
-## Ideas for other backends ##
-
-### Faulty backend ###
-
-A faulty backend could randomly fail queries or cause timeouts. This could be
-used to test the client for error resilience.
-
-### Fuzzy backend ###
-
-Fuzzing the wire protocol could be used to check the robustness of client
-drivers.
-
 ## Usage
 Add the following Maven dependency to your project:
 
@@ -31,11 +13,17 @@ Add the following Maven dependency to your project:
 <dependency>
 	<groupId>de.bwaldvogel</groupId>
 	<artifactId>mongo-java-server</artifactId>
-	<version>1.3.1</version>
+	<version>1.4.0</version>
 </dependency>
 ```
 
-### Unit test example ###
+## In-Memory backend ##
+
+The in-memory backend is the default, such that mongo-java-server can be used
+as stub in unit tests. It does not support all features of the original
+MongoDB, and probably never will.
+
+### Example ###
 
 ```java
 public class SimpleTest {
@@ -76,6 +64,51 @@ public class SimpleTest {
 }
 ```
 
+## H2 MVStore backend ##
+
+The [H2 MVStore][h2-mvstore] backend connects the server to a `MVStore` that
+can either be in-memory or on-disk.
+
+```xml
+<dependency>
+	<groupId>de.bwaldvogel</groupId>
+	<artifactId>mongo-java-server-h2-backend</artifactId>
+	<version>1.4.0</version>
+</dependency>
+```
+
+### Example ###
+
+```java
+public class Application {
+
+	private MongoServer embeddedServer;
+
+    public static void main(String[] args) throws Exception {
+		embeddedServer = new H2MongoServer("database.mv");
+		embeddedServer.bind("localhost", "27017");
+	}
+
+}
+```
+
+
+The in-memory backend is the default, such that mongo-java-server can be used
+as stub in unit tests. It does not support all fatures of the original
+MongoDB, and probably never will.
+
+## Ideas for other backends ##
+
+### Faulty backend ###
+
+A faulty backend could randomly fail queries or cause timeouts. This could be
+used to test the client for error resilience.
+
+### Fuzzy backend ###
+
+Fuzzing the wire protocol could be used to check the robustness of client
+drivers.
+
 ## Related Work ##
 
 * [jmockmongo][jmockmongo]
@@ -94,3 +127,4 @@ public class SimpleTest {
 [jmockmongo]: https://github.com/thiloplanz/jmockmongo
 [fongo]: https://github.com/fakemongo/fongo
 [nosql-unit]: https://github.com/lordofthejars/nosql-unit
+[h2-mvstore]: http://www.h2database.com/html/mvstore.html

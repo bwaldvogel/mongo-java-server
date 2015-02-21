@@ -1,22 +1,36 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
-apply plugin: 'nexus'
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
 
-version = '1.4.0'
+    version = '1.4.0'
 
-sourceCompatibility = 1.6
+    sourceCompatibility = 1.6
 
-compileJava.options.encoding = 'UTF-8'
+    compileJava.options.encoding = 'UTF-8'
 
-ext {
-    title = 'mongo-java-server'
-    description = 'Stub implementation of MongoDB in Java that speaks the wire protocol.'
-    url = 'https://www.github.com/bwaldvogel/mongo-java-server'
-}
+    ext {
+        nettyVersion = '4.0.25.Final'
+        mongoJavaDriverVersion = '2.13.0'
+        slf4jVersion = '1.7.10'
+        junitVersion = '4.12'
+        festAssertVersion = '1.4'
+        powerMockVersion = '1.6.1'
+        powerMockClassExtensionVersion = '3.2'
+        logbackVersion = '1.1.2'
+    }
 
-jar {
-    manifest {
-        attributes 'Implementation-Title': title, 'Implementation-Version': version
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+
+        testCompile group: 'junit', name: 'junit', version: junitVersion
+        testCompile group: 'org.easytesting', name: 'fest-assert', version: festAssertVersion
+        testCompile group: 'org.powermock', name: 'powermock-api-easymock', version: powerMockVersion
+        testCompile group: 'org.easymock', name: 'easymockclassextension', version: powerMockClassExtensionVersion
+        testRuntime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
     }
 }
 
@@ -32,52 +46,61 @@ buildscript {
 }
 
 ext {
-    nettyVersion = '4.0.25.Final'
-    slf4jVersion = '1.7.10'
+    title = 'mongo-java-server'
+    description = 'Stub implementation of MongoDB in Java that speaks the wire protocol.'
+    url = 'https://www.github.com/bwaldvogel/mongo-java-server'
 }
 
-modifyPom {
-    project {
-        groupId        'de.bwaldvogel'
-        artifactId     'mongo-java-server'
-        name           title
-        description    description
-        url            url
-        inceptionYear '2012'
-
-        scm {
-            url 'git@github.com:bwaldvogel/mongo-java-server.git'
-            connection 'scm:git:git@github.com:bwaldvogel/mongo-java-server.git'
-            developerConnection 'scm:git:git@github.com:bwaldvogel/mongo-java-server.git'
-        }
-
-        licenses {
-            license {
-                name 'The BSD License'
-                url 'http://www.opensource.org/licenses/bsd-license.php'
-                distribution 'repo'
-            }
-        }
-
-        developers {
-            developer {
-                id 'bwaldvogel'
-                name 'Benedikt Waldvogel'
-                email 'mail@bwaldvogel.de'
-            }
-        }
+jar {
+    manifest {
+        attributes 'Implementation-Title': title, 'Implementation-Version': version
     }
 }
 
-nexus {
-    attachSources = true
-    attachTests = false
-    attachJavadoc = true
-    sign = true
-}
+allprojects {
+    apply plugin: 'nexus'
 
-repositories {
-    mavenCentral()
+    def projectName = project.name
+
+    modifyPom {
+        project {
+            groupId        'de.bwaldvogel'
+            artifactId     projectName
+            name           title
+            description    description
+            url            url
+            inceptionYear '2012'
+
+            scm {
+                url 'git@github.com:bwaldvogel/mongo-java-server.git'
+                connection 'scm:git:git@github.com:bwaldvogel/mongo-java-server.git'
+                developerConnection 'scm:git:git@github.com:bwaldvogel/mongo-java-server.git'
+            }
+
+            licenses {
+                license {
+                    name 'The BSD License'
+                    url 'http://www.opensource.org/licenses/bsd-license.php'
+                    distribution 'repo'
+                }
+            }
+
+            developers {
+                developer {
+                    id 'bwaldvogel'
+                    name 'Benedikt Waldvogel'
+                    email 'mail@bwaldvogel.de'
+                }
+            }
+        }
+    }
+
+    nexus {
+        attachSources = true
+        attachTests = false
+        attachJavadoc = true
+        sign = true
+    }
 }
 
 task wrapper(type: Wrapper) {
@@ -85,16 +108,8 @@ task wrapper(type: Wrapper) {
 }
 
 dependencies {
-    compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
-    compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
-    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.13.0'
-    compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
-
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile group: 'org.easytesting', name: 'fest-assert', version: '1.4'
-    testCompile group: 'org.powermock', name: 'powermock-api-easymock', version: '1.6.1'
-    testCompile group: 'org.easymock', name: 'easymockclassextension', version: '3.2'
-    testRuntime group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
+    compile project(':mongo-java-server-core')
+    compile project(':mongo-java-server-memory-backend')
 }
 
 // vim: set ts=4 sw=4 et:

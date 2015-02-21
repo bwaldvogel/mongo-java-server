@@ -1,11 +1,11 @@
 .*.swp
-/.idea
-/.classpath
-/.project
-/.settings
-/.gradle
-/target
-/build
+.idea/
+.classpath
+.project
+.settings/
+.gradle
+target/
+build/
 
 *.class
 bin/
