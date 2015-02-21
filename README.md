@@ -31,7 +31,7 @@ Add the following Maven dependency to your project:
 <dependency>
 	<groupId>de.bwaldvogel</groupId>
 	<artifactId>mongo-java-server</artifactId>
-	<version>1.3.0</version>
+	<version>1.3.1</version>
 </dependency>
 ```
 
