@@ -30,6 +30,12 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
     public static final int MAX_MESSAGE_SIZE_BYTES = 48 * 1000 * 1000;
 
+    public static final int MAX_WIRE_VERSION = 2;
+
+    public static final int MIN_WIRE_VERSION = 0;
+
+    public static final int MAX_WRITE_BATCH_SIZE = 1000;
+
     private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
 
     private static final int maxFrameLength = Integer.MAX_VALUE;

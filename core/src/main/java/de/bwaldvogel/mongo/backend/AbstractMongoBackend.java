@@ -108,7 +108,10 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("ismaster")) {
             BSONObject response = new BasicBSONObject("ismaster", Boolean.TRUE);
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
+            response.put("maxWriteBatchSize", Integer.valueOf(MongoWireProtocolHandler.MAX_WRITE_BATCH_SIZE));
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
+            response.put("maxWireVersion", Integer.valueOf(MongoWireProtocolHandler.MAX_WIRE_VERSION));
+            response.put("minWireVersion", Integer.valueOf(MongoWireProtocolHandler.MAX_WIRE_VERSION));
             response.put("localTime", new Date());
             Utils.markOkay(response);
             return response;
