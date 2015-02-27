@@ -36,7 +36,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
 
-    private static int[] VERSION = new int[] { 2, 6, 0 };
+    private static int[] VERSION = new int[] { 3, 0, 0 };
 
     private MongoDatabase resolveDatabase(Message message) throws MongoServerException {
         return resolveDatabase(message.getDatabaseName());
