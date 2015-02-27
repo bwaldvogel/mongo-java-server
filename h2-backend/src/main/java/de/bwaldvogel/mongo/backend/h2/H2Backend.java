@@ -43,7 +43,16 @@ public class H2Backend extends AbstractMongoBackend {
     }
 
     public H2Backend(String fileName) {
-        this(MVStore.open(fileName));
+        this(openMvStore(fileName));
+    }
+
+    private static MVStore openMvStore(String fileName) {
+        if (fileName == null) {
+            log.info("opening in-memory MVStore");
+        } else {
+            log.info("opening MVStore in '{}'", fileName);
+        }
+        return MVStore.open(fileName);
     }
 
     @Override
