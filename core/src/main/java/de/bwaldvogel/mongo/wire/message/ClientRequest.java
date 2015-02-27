@@ -22,6 +22,7 @@ public abstract class ClientRequest implements Message {
         return header;
     }
 
+    @Override
     public String getDatabaseName() {
         int index = fullCollectionName.indexOf('.');
         return fullCollectionName.substring(0, index);

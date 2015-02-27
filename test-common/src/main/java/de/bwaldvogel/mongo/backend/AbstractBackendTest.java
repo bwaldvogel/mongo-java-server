@@ -132,6 +132,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         DBCursor cursor = collection.find().sort(json("a:1, _id:-1"));
         assertThat(cursor.toArray()).containsExactly(json("a:1, _id:3"), json("a:1, _id:2"), json("a:1, _id:1"),
                 json("a:2, _id:5"), json("a:2, _id:4"));
+        cursor.close();
     }
 
     @Test
@@ -328,6 +329,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
                 json("_id: 1"),
                 json("_id: 2"),
                 json("_id: 3"));
+        cursor.close();
     }
 
     @Test
@@ -553,6 +555,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         DBCursor cursor = collection.find(json("name: 'neil'"));
         assertThat(cursor.toArray()).hasSize(2);
+        cursor.close();
     }
 
     @Test
@@ -564,6 +567,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         DBCursor cursor = collection.find().sort(json("_id: 1")).limit(2).skip(2);
         assertThat(cursor.toArray()).containsExactly(json("_id: 3"), json("_id: 4"));
+        cursor.close();
     }
 
     @Test
@@ -575,6 +579,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         DBCursor cursor = collection.find().sort(json("_id: -1")).limit(2).skip(2);
         assertThat(cursor.toArray()).containsExactly(json("_id: 2"), json("_id: 1"));
+        cursor.close();
     }
 
     @Test
@@ -590,6 +595,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         DBCursor cursor = collection.find().sort(json("_id: 1")).limit(2).skip(2);
         assertThat(cursor.toArray()).containsExactly(json("_id: 5"));
+        cursor.close();
     }
 
     @Test
@@ -637,6 +643,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         DBCursor cursor = collection.find(json("_id: {$in: [3,2,1]}"));
         assertThat(cursor.toArray()).containsExactly(json("_id: 1"), json("_id: 2"), json("_id: 3"));
+        cursor.close();
     }
 
     @Test
@@ -865,9 +872,11 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         DBCursor cursor = collection.find().skip(3);
         assertThat(cursor.itcount()).isEqualTo(7);
+        cursor.close();
 
         cursor = collection.find().skip(3).limit(5);
         assertThat(cursor.itcount()).isEqualTo(5);
+        cursor.close();
     }
 
     @Test
@@ -1094,6 +1103,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         DBCursor cursor = collection.find().sort(json("a: -1"));
         assertThat(cursor.toArray()).containsExactly(json("a:4, _id:4"), json("a:3, _id:3"), json("a:2, _id:2"),
                 json("a:1, _id:1"), json("_id: 5"));
+        cursor.close();
     }
 
     @Test
@@ -1781,7 +1791,6 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             // expected
         }
     }
-
 
     @Test
     public void testAddNonUniqueIndexOnNonIdField() {
