@@ -72,12 +72,12 @@ public abstract class AbstractSimpleBackendTest {
     }
 
     @Test
-    public void testInsert() throws Exception {
+    public void testSimpleInsert() throws Exception {
         collection.insert(json("_id: 1"));
     }
 
     @Test
-    public void testInsertDelete() throws Exception {
+    public void testSimpleInsertDelete() throws Exception {
         collection.insert(json("_id: 1"));
         collection.remove(json("_id: 1"));
     }
