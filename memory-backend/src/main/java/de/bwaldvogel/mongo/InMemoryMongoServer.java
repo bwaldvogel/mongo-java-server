@@ -1,8 +1,5 @@
 package de.bwaldvogel.mongo;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +11,7 @@ public class InMemoryMongoServer extends MongoServer {
 
     public static void main(String[] args) throws Exception {
         final MongoServer mongoServer = new InMemoryMongoServer();
-        mongoServer.bind(new InetSocketAddress(InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }), 27017));
+        mongoServer.bind("localhost", 27017);
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
