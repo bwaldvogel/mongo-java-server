@@ -140,10 +140,36 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             String collectionName = query.get(command).toString();
             MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
             return collection.findAndModify(query);
+        } else if (command.equalsIgnoreCase("listCollections")) {
+            return listCollections();
         } else {
             log.error("unknown query: {}", query);
         }
         throw new NoSuchCommandException(command);
+    }
+
+    protected BSONObject listCollections() throws MongoServerException {
+        BSONObject cursor = new BasicBSONObject();
+        cursor.put("id", Long.valueOf(0));
+        cursor.put("ns", getDatabaseName() + ".$cmd.listCollections");
+
+        List<BSONObject> firstBatch = new ArrayList<BSONObject>();
+        for (BSONObject collection : namespaces.handleQuery(new BasicBSONObject(), 0, 0, null)) {
+            BSONObject collectionDescription = new BasicBSONObject();
+            BSONObject collectionOptions = new BasicBSONObject();
+            String namespace = (String) collection.get("name");
+            String collectionName = extractCollectionNameFromNamespace(namespace);
+            collectionDescription.put("name", collectionName);
+            collectionDescription.put("options", collectionOptions);
+            firstBatch.add(collectionDescription);
+        }
+
+        cursor.put("firstBatch", firstBatch);
+
+        BSONObject response = new BasicBSONObject();
+        response.put("cursor", cursor);
+        Utils.markOkay(response);
+        return response;
     }
 
     protected MongoCollection<KEY> resolveOrCreateCollection(final String collectionName) throws MongoServerException {

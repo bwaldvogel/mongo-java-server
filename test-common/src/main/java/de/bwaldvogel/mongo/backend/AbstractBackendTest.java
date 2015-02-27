@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -165,6 +166,52 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         DBObject currentOperations = getAdminDb().getCollection("$cmd.sys.inprog").findOne();
         assertThat(currentOperations).isNotNull();
         assertThat(currentOperations.get("inprog")).isInstanceOf(List.class);
+    }
+
+    @Test
+    public void testListCollectionsEmpty() throws Exception {
+        CommandResult result = db.command(json("listCollections: 1"));
+        result.throwOnError();
+        BSONObject cursor = (BSONObject) result.get("cursor");
+        assertThat(cursor.keySet()).containsOnly("id", "ns", "firstBatch");
+        assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
+        assertThat(cursor.get("ns")).isEqualTo(db.getName() + ".$cmd.listCollections");
+        List<?> firstBatch = (List<?>) cursor.get("firstBatch");
+        assertThat(firstBatch).isEmpty();
+    }
+
+    @Test
+    public void testListCollections() throws Exception {
+        List<String> collections = Arrays.asList("coll1", "coll2", "coll3");
+        for (String collection : collections) {
+            getCollection(collection).insert(json("_id: 1"));
+        }
+
+        CommandResult result = db.command(json("listCollections: 1"));
+        result.throwOnError();
+        BSONObject cursor = (BSONObject) result.get("cursor");
+        assertThat(cursor.keySet()).containsOnly("id", "ns", "firstBatch");
+        assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
+        assertThat(cursor.get("ns")).isEqualTo(db.getName() + ".$cmd.listCollections");
+        assertThat(cursor.get("firstBatch")).isInstanceOf(List.class);
+        @SuppressWarnings("unchecked")
+        List<BSONObject> firstBatch = (List<BSONObject>) cursor.get("firstBatch");
+
+        Set<String> expectedCollections = new HashSet<String>();
+        expectedCollections.addAll(collections);
+        expectedCollections.add("system.indexes");
+
+        assertThat(firstBatch).hasSize(expectedCollections.size());
+
+        Set<String> collectionNames = new HashSet<String>();
+        for (BSONObject collection : firstBatch) {
+            assertThat(collection.keySet()).containsOnly("name", "options");
+            assertThat(collection.get("options")).isEqualTo(json("{}"));
+            assertThat(collection.get("name")).isInstanceOf(String.class);
+            collectionNames.add((String)collection.get("name"));
+        }
+
+        assertThat(collectionNames).isEqualTo(expectedCollections);
     }
 
     @Test
