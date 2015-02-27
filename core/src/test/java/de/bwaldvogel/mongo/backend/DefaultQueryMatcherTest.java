@@ -224,6 +224,78 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isTrue();
     }
 
+    // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
+    @Test
+    public void testMatchesEqual() throws Exception {
+        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+
+        BSONObject query = json("qty: { $eq: 20 }");
+
+        assertThat(matcher.matches(document1, query)).isFalse();
+        assertThat(matcher.matches(document2, query)).isTrue();
+        assertThat(matcher.matches(document3, query)).isFalse();
+        assertThat(matcher.matches(document4, query)).isFalse();
+        assertThat(matcher.matches(document5, query)).isTrue();
+    }
+
+    // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
+    @Test
+    public void testMatchesEqualEmbeddedDocument() throws Exception {
+        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+
+        BSONObject query = json("\"item.name\": { $eq: \"ab\" }");
+
+        assertThat(matcher.matches(document1, query)).isTrue();
+        assertThat(matcher.matches(document2, query)).isFalse();
+        assertThat(matcher.matches(document3, query)).isFalse();
+        assertThat(matcher.matches(document4, query)).isFalse();
+        assertThat(matcher.matches(document5, query)).isFalse();
+    }
+
+    // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
+    @Test
+    public void testMatchesEqualOneArrayValue() throws Exception {
+        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+
+        BSONObject query = json("tags: { $eq: \"B\" }");
+
+        assertThat(matcher.matches(document1, query)).isTrue();
+        assertThat(matcher.matches(document2, query)).isTrue();
+        assertThat(matcher.matches(document3, query)).isTrue();
+        assertThat(matcher.matches(document4, query)).isTrue();
+        assertThat(matcher.matches(document5, query)).isFalse();
+    }
+
+    // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
+    @Test
+    public void testMatchesEqualTwoArrayValues() throws Exception {
+        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+
+        BSONObject query = json("tags: { $eq: [ \"A\", \"B\" ] }");
+
+        assertThat(matcher.matches(document1, query)).isFalse();
+        assertThat(matcher.matches(document2, query)).isFalse();
+        assertThat(matcher.matches(document3, query)).isTrue();
+        assertThat(matcher.matches(document4, query)).isFalse();
+        assertThat(matcher.matches(document5, query)).isTrue();
+    }
+
     @Test
     public void testMatchesNot() throws Exception {
 

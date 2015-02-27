@@ -316,6 +316,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return false;
         case NOT:
             return !checkMatchesValue(expressionValue, value, valueExists);
+        case EQUAL:
+            return Utils.nullAwareEquals(value, expressionValue);
         case NOT_EQUALS:
             return !Utils.nullAwareEquals(value, expressionValue);
         case NOT_IN:
