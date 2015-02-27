@@ -62,8 +62,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
             throw new MongoServerException("illegal keys: " + keys);
         }
 
-        if (document == null)
+        if (document == null) {
             return false;
+        }
 
         String firstKey = keys.get(0);
         List<String> subKeys = Collections.emptyList();
@@ -130,14 +131,17 @@ public class DefaultQueryMatcher implements QueryMatcher {
                         }
                     } else if (queryOperator.equals(QueryOperator.IN.getValue())) {
                         final BasicBSONObject inQuery = new BasicBSONObject(queryOperator, subQuery);
-                        if (!checkMatchesAnyValue(inQuery, value))
+                        if (!checkMatchesAnyValue(inQuery, value)) {
                             return false;
+                        }
                     } else if (queryOperator.equals(QueryOperator.NOT_IN.getValue())) {
-                        if (checkMatchesAllValues(subQuery, value))
+                        if (checkMatchesAllValues(subQuery, value)) {
                             return false;
+                        }
                     } else if (queryOperator.equals(QueryOperator.NOT.getValue())) {
-                        if (checkMatchesAnyValue(subQuery, value))
+                        if (checkMatchesAnyValue(subQuery, value)) {
                             return false;
+                        }
                     } else {
                         if (!checkMatchesAnyValue(queryValue, value) && !checkMatchesValue(queryValue, value, valueExists)) {
                             return false;
@@ -210,8 +214,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
         int i = 0;
         for (Object object : (Collection<Object>) document) {
             if (checkMatch(queryValue, keys, object)) {
-                if (lastPosition == null)
+                if (lastPosition == null) {
                     lastPosition = Integer.valueOf(i);
+                }
                 return true;
             }
             i++;
@@ -280,8 +285,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
         int i = 0;
         for (Object value : (Collection<Object>) values) {
             if (checkMatchesValue(queryValue, value, true)) {
-                if (lastPosition == null)
+                if (lastPosition == null) {
                     lastPosition = Integer.valueOf(i);
+                }
                 return true;
             }
             i++;
@@ -317,20 +323,24 @@ public class DefaultQueryMatcher implements QueryMatcher {
         case EXISTS:
             return (valueExists == Utils.isTrue(expressionValue));
         case GREATER_THAN:
-            if (!comparableTypes(value, expressionValue))
+            if (!comparableTypes(value, expressionValue)) {
                 return false;
+            }
             return comparator.compare(value, expressionValue) > 0;
         case GREATER_THAN_OR_EQUAL:
-            if (!comparableTypes(value, expressionValue))
+            if (!comparableTypes(value, expressionValue)) {
                 return false;
+            }
             return comparator.compare(value, expressionValue) >= 0;
         case LESS_THAN:
-            if (!comparableTypes(value, expressionValue))
+            if (!comparableTypes(value, expressionValue)) {
                 return false;
+            }
             return comparator.compare(value, expressionValue) < 0;
         case LESS_THAN_OR_EQUAL:
-            if (!comparableTypes(value, expressionValue))
+            if (!comparableTypes(value, expressionValue)) {
                 return false;
+            }
             return comparator.compare(value, expressionValue) <= 0;
         case MOD: {
             if (!(value instanceof Number)) {
@@ -360,8 +370,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
     private boolean comparableTypes(Object value1, Object value2) {
         value1 = Utils.normalizeValue(value1);
         value2 = Utils.normalizeValue(value2);
-        if (value1 == null || value2 == null)
+        if (value1 == null || value2 == null) {
             return false;
+        }
 
         return value1.getClass().equals(value2.getClass());
     }
