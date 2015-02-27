@@ -148,8 +148,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     private ClientRequest handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
         final int flags = buffer.readInt();
-        if (flags != 0)
+        if (flags != 0) {
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
+        }
 
         final String fullCollectionName = bsonDecoder.decodeCString(buffer);
 
@@ -190,8 +191,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             flags = QueryFlag.NO_CURSOR_TIMEOUT.removeFrom(flags);
         }
 
-        if (flags != 0)
+        if (flags != 0) {
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
+        }
 
         log.debug("query {} from {}", query, fullCollectionName);
 
