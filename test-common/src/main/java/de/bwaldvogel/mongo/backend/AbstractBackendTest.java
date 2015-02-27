@@ -203,10 +203,10 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     public void testDatabaseStats() throws Exception {
         CommandResult stats = db.getStats();
         stats.throwOnError();
-        assertThat(((Number) stats.get("objects")).longValue()).isEqualTo(1);
-        assertThat(((Number) stats.get("collections")).longValue()).isEqualTo(1);
-        assertThat(((Number) stats.get("indexes")).longValue()).isEqualTo(0);
-        assertThat(((Number) stats.get("dataSize")).longValue()).isEqualTo(37);
+        assertThat(((Number) stats.get("objects")).longValue()).isZero();
+        assertThat(((Number) stats.get("collections")).longValue()).isZero();
+        assertThat(((Number) stats.get("indexes")).longValue()).isZero();
+        assertThat(((Number) stats.get("dataSize")).longValue()).isZero();
 
         getCollection("foo").insert(json("{}"));
         getCollection("foo").insert(json("{}"));
@@ -939,7 +939,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     @Test
     public void testQuerySystemNamespace() throws Exception {
         assertThat(getCollection("system.foobar").findOne()).isNull();
-        assertThat(db.getCollectionNames()).containsOnly("system.indexes");
+        assertThat(db.getCollectionNames()).isEmpty();
 
         collection.insert(json("{}"));
         BasicDBObject expectedObj = new BasicDBObject("name", collection.getFullName());

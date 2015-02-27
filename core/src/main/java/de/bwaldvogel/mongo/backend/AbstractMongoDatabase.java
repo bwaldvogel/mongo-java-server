@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
@@ -45,7 +46,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     private MongoCollection<KEY> namespaces;
 
-    private MongoCollection<KEY> indexes;
+    private AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<MongoCollection<KEY>>();
 
     private Map<Channel, List<BSONObject>> lastResults = new HashMap<Channel, List<BSONObject>>();
 
@@ -68,15 +69,12 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
                 log.debug("opened collection '{}'", collectionName);
             }
 
-            indexes = collections.get(INDEXES_COLLECTION_NAME);
-            for (BSONObject indexDescription : indexes.handleQuery(new BasicDBObject(), 0, 0, null)) {
+            MongoCollection<KEY> indexCollection = collections.get(INDEXES_COLLECTION_NAME);
+            indexes.set(indexCollection);
+            for (BSONObject indexDescription : indexCollection.handleQuery(new BasicDBObject(), 0, 0, null)) {
                 openOrCreateIndex(indexDescription);
             }
-        } else {
-            this.indexes = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
-            addNamespace(indexes);
         }
-
     }
 
     @Override
@@ -249,7 +247,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     protected BSONObject commandCreateIndexes(Channel channel, String command, BSONObject query) throws MongoServerException {
 
-        int indexesBefore = indexes.count();
+        int indexesBefore = countIndexes();
 
         @SuppressWarnings("unchecked")
         final Collection<BSONObject> indexDescriptions = (Collection<BSONObject>) query.get("indexes");
@@ -257,13 +255,25 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             addIndex(indexDescription);
         }
 
-        int indexesAfter = indexes.count();
+        int indexesAfter = countIndexes();
 
         BSONObject response = new BasicBSONObject();
         response.put("numIndexesBefore", Integer.valueOf(indexesBefore));
         response.put("numIndexesAfter", Integer.valueOf(indexesAfter));
         Utils.markOkay(response);
         return response;
+    }
+
+    protected int countIndexes() {
+        final MongoCollection<KEY> indexesCollection;
+        synchronized (indexes) {
+            indexesCollection = indexes.get();
+        }
+        if (indexesCollection == null) {
+            return 0;
+        } else {
+            return indexesCollection.count();
+        }
     }
 
     protected BSONObject commandDatabaseStats() throws MongoServerException {
@@ -296,7 +306,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         response.put("dataSize", Long.valueOf(dataSize));
         response.put("storageSize", Long.valueOf(storageSize));
         response.put("numExtents", Integer.valueOf(0));
-        response.put("indexes", Integer.valueOf(indexes.count()));
+        response.put("indexes", Integer.valueOf(countIndexes()));
         response.put("indexSize", Long.valueOf(indexSize));
         response.put("fileSize", Long.valueOf(fileSize));
         response.put("nsSizeMB", Integer.valueOf(0));
@@ -444,7 +454,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         String collectionName = insert.getCollectionName();
         final List<BSONObject> documents = insert.getDocuments();
 
-        if (collectionName.equals(indexes.getCollectionName())) {
+        if (collectionName.equals(INDEXES_COLLECTION_NAME)) {
             for (BSONObject indexDescription : documents) {
                 addIndex(indexDescription);
             }
@@ -520,7 +530,18 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     protected void addIndex(BSONObject indexDescription) throws MongoServerException {
         openOrCreateIndex(indexDescription);
-        indexes.addDocument(indexDescription);
+        getOrCreateIndexesCollection().addDocument(indexDescription);
+    }
+
+    private MongoCollection<KEY> getOrCreateIndexesCollection() throws MongoServerException {
+        synchronized(indexes) {
+            if (indexes.get() == null) {
+                MongoCollection<KEY> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
+                addNamespace(indexCollection);
+                indexes.set(indexCollection);
+            }
+            return indexes.get();
+        }
     }
 
     private String extractCollectionNameFromNamespace(String namespace) {
