@@ -32,6 +32,15 @@ allprojects {
         testCompile group: 'org.easymock', name: 'easymockclassextension', version: powerMockClassExtensionVersion
         testRuntime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
     }
+
+	task copyEclipseSettings(type: Copy) {
+		from rootProject.file('eclipse/settings')
+		into project.file('.settings')
+		include 'org.eclipse.*.prefs'
+	}
+
+	tasks["eclipse"].dependsOn copyEclipseSettings
+
 }
 
 // https://github.com/bmuschko/gradle-nexus-plugin
