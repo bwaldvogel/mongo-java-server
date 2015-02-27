@@ -22,12 +22,37 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(H2Collection.class);
 
-    private MVMap<Object, BSONObject> mvMap;
+    private final MVMap<Object, BSONObject> dataMap;
+    private final MVMap<String, Object> metaMap;
 
-    public H2Collection(String databaseName, String collectionName, String idField, MVMap<Object, BSONObject> mvMap) {
+    private static final String DATA_SIZE_KEY = "dataSize";
+
+    public H2Collection(String databaseName, String collectionName, String idField, MVMap<Object, BSONObject> dataMap, MVMap<String, Object> metaMap) {
         super(databaseName, collectionName, idField);
-        this.mvMap = mvMap;
+        this.dataMap = dataMap;
+        this.metaMap = metaMap;
+        if (!this.metaMap.containsKey(DATA_SIZE_KEY)) {
+            this.metaMap.put(DATA_SIZE_KEY, Long.valueOf(0));
+        } else {
+            log.debug("dataSize of {}: {}", getFullName(), getDataSize());
+        }
     }
+
+    @Override
+    protected void updateDataSize(long sizeDelta) {
+        synchronized (metaMap) {
+            Number value = (Number) metaMap.get(DATA_SIZE_KEY);
+            Long newValue = Long.valueOf(value.longValue() + sizeDelta);
+            metaMap.put(DATA_SIZE_KEY, newValue);
+        }
+    }
+
+    @Override
+    protected long getDataSize() {
+        Number value = (Number) metaMap.get(DATA_SIZE_KEY);
+        return value.longValue();
+    }
+
 
     @Override
     protected Object addDocumentInternal(BSONObject document) {
@@ -38,7 +63,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             key = UUID.randomUUID();
         }
 
-        BSONObject previous = mvMap.put(key, document);
+        BSONObject previous = dataMap.put(key, document);
         if (previous != null) {
             throw new IllegalArgumentException("Document with key '" + key + "' already existed in " + this + ": "
                     + previous);
@@ -48,17 +73,17 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
     @Override
     public int count() {
-        return mvMap.size();
+        return dataMap.size();
     }
 
     @Override
     protected BSONObject getDocument(Object key) {
-        return mvMap.get(key);
+        return dataMap.get(key);
     }
 
     @Override
     protected void removeDocumentWithKey(Object key) {
-        BSONObject remove = mvMap.remove(key);
+        BSONObject remove = dataMap.remove(key);
         if (remove == null) {
             throw new NoSuchElementException("No document with key " + key);
         }
@@ -66,7 +91,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
     @Override
     protected Object findDocument(BSONObject document) {
-        for (Entry<Object, BSONObject> entry : mvMap.entrySet()) {
+        for (Entry<Object, BSONObject> entry : dataMap.entrySet()) {
             if (entry.getValue().equals(document)) {
                 return entry.getKey();
             }
@@ -118,7 +143,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             int numberToReturn) throws MongoServerException {
         List<BSONObject> matchedDocuments = new ArrayList<BSONObject>();
 
-        for(BSONObject document : mvMap.values()) {
+        for(BSONObject document : dataMap.values()) {
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }
@@ -161,8 +186,8 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     @Override
     public void drop() {
         log.debug("dropping {}", this);
-        MVStore mvStore = mvMap.getStore();
-        mvStore.removeMap(mvMap);
+        MVStore mvStore = dataMap.getStore();
+        mvStore.removeMap(dataMap);
     }
 
 }

@@ -32,6 +32,10 @@ import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 
 public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
+    private static final String NAMESPACES_COLLECTION_NAME = "system.namespaces";
+
+    private static final String INDEXES_COLLECTION_NAME = "system.indexes";
+
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoDatabase.class);
 
     protected final String databaseName;
@@ -51,28 +55,28 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     }
 
     protected void initializeNamespacesAndIndexes() throws MongoServerException {
-        this.namespaces = openOrCreateCollection("system.namespaces", "name");
+        this.namespaces = openOrCreateCollection(NAMESPACES_COLLECTION_NAME, "name");
         this.collections.put(namespaces.getCollectionName(), namespaces);
-
-        this.indexes = openOrCreateCollection("system.indexes", null);
 
         if (this.namespaces.count() > 0) {
             for (BSONObject namespace : namespaces.handleQuery(new BasicDBObject(), 0, 0, null)) {
                 String name = namespace.get("name").toString();
+                log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
                 MongoCollection<KEY> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
                 collections.put(collectionName, collection);
                 log.debug("opened collection '{}'", collectionName);
             }
-        } else {
-            addNamespace(indexes);
-        }
 
-        if (this.indexes.count() > 0) {
+            indexes = collections.get(INDEXES_COLLECTION_NAME);
             for (BSONObject indexDescription : indexes.handleQuery(new BasicDBObject(), 0, 0, null)) {
                 openOrCreateIndex(indexDescription);
             }
+        } else {
+            this.indexes = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
+            addNamespace(indexes);
         }
+
     }
 
     @Override
@@ -266,6 +270,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         BSONObject response = new BasicBSONObject("db", getDatabaseName());
         response.put("collections", Integer.valueOf(namespaces.count()));
 
+        long storageSize = getStorageSize();
+        long fileSize = getFileSize();
         long indexSize = 0;
         long objects = 0;
         long dataSize = 0;
@@ -288,15 +294,19 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         response.put("objects", Long.valueOf(objects));
         response.put("avgObjSize", Double.valueOf(averageObjectSize));
         response.put("dataSize", Long.valueOf(dataSize));
-        response.put("storageSize", Long.valueOf(0));
+        response.put("storageSize", Long.valueOf(storageSize));
         response.put("numExtents", Integer.valueOf(0));
         response.put("indexes", Integer.valueOf(indexes.count()));
         response.put("indexSize", Long.valueOf(indexSize));
-        response.put("fileSize", Integer.valueOf(0));
+        response.put("fileSize", Long.valueOf(fileSize));
         response.put("nsSizeMB", Integer.valueOf(0));
         Utils.markOkay(response);
         return response;
     }
+
+    protected abstract long getFileSize();
+
+    protected abstract long getStorageSize();
 
     protected BSONObject commandDrop(BSONObject query) throws MongoServerException {
         String collectionName = query.get("drop").toString();

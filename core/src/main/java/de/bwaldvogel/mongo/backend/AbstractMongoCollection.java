@@ -9,7 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.bson.BSONObject;
@@ -27,8 +26,6 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     private List<Index<KEY>> indexes = new ArrayList<Index<KEY>>();
     private QueryMatcher matcher = new DefaultQueryMatcher();
     protected final String idField;
-
-    private AtomicLong dataSize = new AtomicLong();
 
     protected AbstractMongoCollection(String databaseName, String collectionName, String idField) {
         this.databaseName = databaseName;
@@ -59,9 +56,9 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
     protected abstract BSONObject getDocument(KEY key);
 
-    private void updateDataSize(long sizeDelta) {
-        dataSize.addAndGet(sizeDelta);
-    }
+    protected abstract void updateDataSize(long sizeDelta);
+
+    protected abstract long getDataSize();
 
     protected abstract KEY addDocumentInternal(BSONObject document);
 
@@ -723,7 +720,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
                 long oldSize = Utils.calculateSize(oldDocument);
                 long newSize = Utils.calculateSize(newDocument);
-                dataSize.addAndGet(newSize - oldSize);
+                updateDataSize(newSize - oldSize);
 
                 // only keep fields that are also in the updated document
                 Set<String> fields = new HashSet<String>(document.keySet());
@@ -820,13 +817,15 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
     @Override
     public BSONObject getStats() {
+        long dataSize = getDataSize();
+
         BSONObject response = new BasicBSONObject("ns", getFullName());
         response.put("count", Integer.valueOf(count()));
-        response.put("size", Long.valueOf(dataSize.get()));
+        response.put("size", Long.valueOf(dataSize));
 
         double averageSize = 0;
         if (count() > 0) {
-            averageSize = dataSize.get() / (double) count();
+            averageSize = dataSize / (double) count();
         }
         response.put("avgObjSize", Double.valueOf(averageSize));
         response.put("storageSize", Integer.valueOf(0));
@@ -867,7 +866,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     public BSONObject validate() {
         BSONObject response = new BasicBSONObject("ns", getFullName());
         response.put("extentCount", Integer.valueOf(0));
-        response.put("datasize", Long.valueOf(dataSize.get()));
+        response.put("datasize", Long.valueOf(getDataSize()));
         response.put("nrecords", Integer.valueOf(getRecordCount()));
         response.put("padding", Integer.valueOf(1));
         response.put("deletedCount", Integer.valueOf(getDeletedCount()));

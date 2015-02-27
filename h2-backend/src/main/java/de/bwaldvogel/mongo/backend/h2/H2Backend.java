@@ -1,8 +1,5 @@
 package de.bwaldvogel.mongo.backend.h2;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import org.h2.mvstore.MVStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,21 +20,24 @@ public class H2Backend extends AbstractMongoBackend {
         return new H2Backend(mvStore);
     }
 
+    public void commit() {
+        mvStore.commit();
+    }
+
     public H2Backend(MVStore mvStore) {
         this.mvStore = mvStore;
 
-        Set<String> databases = new HashSet<String>();
         for (String mapName : mvStore.getMapNames()) {
-            String databaseName = mapName.substring(0, mapName.indexOf('.'));
-            databases.add(databaseName);
-        }
+            if (mapName.startsWith(H2Database.DATABASES_PREFIX)) {
+                String fullName = mapName.substring(H2Database.DATABASES_PREFIX.length());
+                String databaseName = fullName.substring(0, fullName.indexOf('.'));
 
-        for (String database : databases) {
-            log.info("opening database '{}'", database);
-            try {
-                resolveDatabase(database);
-            } catch (MongoServerException e) {
-                log.error("Failed to open {}", e);
+                log.info("opening database '{}'", databaseName);
+                try {
+                    resolveDatabase(databaseName);
+                } catch (MongoServerException e) {
+                    log.error("Failed to open {}", e);
+                }
             }
         }
     }

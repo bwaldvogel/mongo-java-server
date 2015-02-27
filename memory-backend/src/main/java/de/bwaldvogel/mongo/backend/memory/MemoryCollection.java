@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.bson.BSONObject;
 import org.slf4j.Logger;
@@ -21,9 +22,20 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     private List<BSONObject> documents = new ArrayList<BSONObject>();
     private Queue<Integer> emptyPositions = new LinkedList<Integer>();
+    private AtomicLong dataSize = new AtomicLong();
 
     public MemoryCollection(String databaseName, String collectionName, String idField) {
         super(databaseName, collectionName, idField);
+    }
+
+    @Override
+    protected void updateDataSize(long sizeDelta) {
+        dataSize.addAndGet(sizeDelta);
+    }
+
+    @Override
+    protected long getDataSize() {
+        return dataSize.get();
     }
 
     @Override

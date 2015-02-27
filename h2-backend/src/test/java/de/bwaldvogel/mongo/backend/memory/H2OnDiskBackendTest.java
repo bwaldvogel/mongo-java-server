@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend.memory;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Rule;
@@ -11,6 +12,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.CommandResult;
 import com.mongodb.DBObject;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -24,6 +26,8 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
+    private H2Backend backend;
+
     private File tempFile;
 
     @Override
@@ -35,7 +39,8 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
     @Override
     protected MongoBackend createBackend() throws Exception {
-        return new H2Backend(tempFile.toString());
+        backend = new H2Backend(tempFile.toString());
+        return backend;
     }
 
     @Test
@@ -43,14 +48,30 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         collection.insert(json("_id: 1"));
         collection.insert(json("_id: 2"));
 
-        shutdownServer();
-        spinUpServer();
+        restart();
 
         assertThat(collection.find().toArray()).containsOnly(json("_id: 1"), json("_id: 2"));
     }
 
     @Test
-    public void testShutdownAndRestartOpenesIndexes() throws Exception {
+    public void testShutdownAndRestartOpensDatabasesAndCollections() throws Exception {
+        List<String> dbs = Arrays.asList("testdb1", "testdb2");
+        for (String db : dbs) {
+            for (String coll : new String[] { "collection1", "collection2" }) {
+                client.getDB(db).getCollection(coll).insert(json(""));
+            }
+        }
+        List<String> dbNamesBefore = client.getDatabaseNames();
+        assertThat(dbNamesBefore).isEqualTo(dbs);
+
+        restart();
+
+        List<String> dbNamesAfter = client.getDatabaseNames();
+        assertThat(dbNamesAfter).isEqualTo(dbs);
+    }
+
+    @Test
+    public void testShutdownAndRestartOpensIndexes() throws Exception {
         collection.createIndex(json("a: 1"));
         collection.createIndex(json("b: 1"));
         List<DBObject> indexes = getCollection("system.indexes").find().toArray();
@@ -61,13 +82,44 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
         List<String> databaseNames = client.getDatabaseNames();
 
-        shutdownServer();
-        spinUpServer();
+        restart();
 
         assertThat(client.getDatabaseNames()).isEqualTo(databaseNames);
 
         List<DBObject> indexesAfterRestart = getCollection("system.indexes").find().toArray();
         assertThat(indexesAfterRestart).isEqualTo(indexes);
+    }
+
+    @Test
+    public void testShutdownAndRestartKeepsStatistics() throws Exception {
+        collection.createIndex(json("a: 1"));
+        collection.createIndex(json("b: 1"));
+
+        collection.insert(json("_id: 1"));
+        collection.insert(json("_id: 2"));
+
+        backend.commit();
+
+        CommandResult statsBefore = db.getStats();
+
+        restart();
+
+        CommandResult statsAfter = db.getStats();
+
+        for (String fieldToIgnore : new String[] { "serverUsed" }) {
+            Object valueBefore = statsBefore.removeField(fieldToIgnore);
+            assertThat(valueBefore).isNotNull();
+
+            Object valueAfter = statsAfter.removeField(fieldToIgnore);
+            assertThat(valueAfter).isNotNull();
+        }
+
+        assertThat(statsAfter).isEqualTo(statsBefore);
+    }
+
+    private void restart() throws Exception {
+        shutdownServer();
+        spinUpServer();
     }
 
 }

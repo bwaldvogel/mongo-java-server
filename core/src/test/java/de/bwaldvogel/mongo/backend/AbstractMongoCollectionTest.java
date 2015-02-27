@@ -73,6 +73,14 @@ public class AbstractMongoCollectionTest {
         public void drop() {
         }
 
+        @Override
+        protected void updateDataSize(long sizeDelta) {
+        }
+
+        @Override
+        protected long getDataSize() {
+            throw new UnsupportedOperationException();
+        }
 
     }
 

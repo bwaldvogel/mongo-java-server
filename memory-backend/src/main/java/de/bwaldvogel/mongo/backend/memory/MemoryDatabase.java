@@ -27,4 +27,14 @@ public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
         return new MemoryUniqueIndex(key, ascending);
     }
 
+    @Override
+    protected long getStorageSize() {
+        return 0;
+    }
+
+    @Override
+    protected long getFileSize() {
+        return 0;
+    }
+
 }

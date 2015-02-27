@@ -59,7 +59,8 @@ public abstract class AbstractSimpleBackendTest {
     }
 
     protected void spinUpServer() throws Exception {
-        mongoServer = new MongoServer(createBackend());
+        MongoBackend backend = createBackend();
+        mongoServer = new MongoServer(backend);
         InetSocketAddress serverAddress = mongoServer.bind();
         client = new MongoClient(new ServerAddress(serverAddress));
         db = client.getDB("testdb");
