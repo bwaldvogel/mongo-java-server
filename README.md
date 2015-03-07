@@ -11,9 +11,9 @@ Add the following Maven dependency to your project:
 
 ```xml
 <dependency>
-	<groupId>de.bwaldvogel</groupId>
-	<artifactId>mongo-java-server</artifactId>
-	<version>1.4.0</version>
+    <groupId>de.bwaldvogel</groupId>
+    <artifactId>mongo-java-server</artifactId>
+    <version>1.4.0</version>
 </dependency>
 ```
 
@@ -28,38 +28,38 @@ MongoDB, and probably never will.
 ```java
 public class SimpleTest {
 
-	private DBCollection collection;
-	private MongoClient client;
-	private MongoServer server;
+    private DBCollection collection;
+    private MongoClient client;
+    private MongoServer server;
 
-	@Before
-	public void setUp() {
-		server = new MongoServer(new MemoryBackend());
+    @Before
+    public void setUp() {
+        server = new MongoServer(new MemoryBackend());
 
-		// bind on a random local port
-		InetSocketAddress serverAddress = server.bind();
+        // bind on a random local port
+        InetSocketAddress serverAddress = server.bind();
 
-		client = new MongoClient(new ServerAddress(serverAddress));
-		collection = client.getDB("testdb").getCollection("testcollection");
-	}
+        client = new MongoClient(new ServerAddress(serverAddress));
+        collection = client.getDB("testdb").getCollection("testcollection");
+    }
 
-	@After
-	public void tearDown() {
-		client.close();
-		server.shutdownNow();
-	}
+    @After
+    public void tearDown() {
+        client.close();
+        server.shutdownNow();
+    }
 
-	@Test
-	public void testSimpleInsertQuery() throws Exception {
-		assertEquals(0, collection.count());
+    @Test
+    public void testSimpleInsertQuery() throws Exception {
+        assertEquals(0, collection.count());
 
-		// creates the database and collection in memory and insert the object
-		DBObject obj = new BasicDBObject("_id", 1).append("key", "value");
-		collection.insert(obj);
+        // creates the database and collection in memory and insert the object
+        DBObject obj = new BasicDBObject("_id", 1).append("key", "value");
+        collection.insert(obj);
 
-		assertEquals(1, collection.count());
-		assertEquals(obj, collection.findOne());
-	}
+        assertEquals(1, collection.count());
+        assertEquals(obj, collection.findOne());
+    }
 
 }
 ```
@@ -71,9 +71,9 @@ can either be in-memory or on-disk.
 
 ```xml
 <dependency>
-	<groupId>de.bwaldvogel</groupId>
-	<artifactId>mongo-java-server-h2-backend</artifactId>
-	<version>1.4.0</version>
+    <groupId>de.bwaldvogel</groupId>
+    <artifactId>mongo-java-server-h2-backend</artifactId>
+    <version>1.4.0</version>
 </dependency>
 ```
 
@@ -105,14 +105,14 @@ drivers.
 ## Related Work ##
 
 * [jmockmongo][jmockmongo]
-	* shares the basic idea of implementing the wire protocol with Netty
-	* focus on in-memory backend for unit testing
+    * shares the basic idea of implementing the wire protocol with Netty
+    * focus on in-memory backend for unit testing
 
 * [fongo][fongo]
-	* focus on unit testing
-	* no wire protocol implementation
-	* intercepts the java mongo driver
-	* currently used in [nosql-unit][nosql-unit]
+    * focus on unit testing
+    * no wire protocol implementation
+    * intercepts the java mongo driver
+    * currently used in [nosql-unit][nosql-unit]
 
 [mongodb]: http://www.mongodb.org/
 [wire-protocol]: http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol
