@@ -82,12 +82,10 @@ can either be in-memory or on-disk.
 ```java
 public class Application {
 
-	private MongoServer embeddedServer;
-
     public static void main(String[] args) throws Exception {
-		embeddedServer = new H2MongoServer("database.mv");
-		embeddedServer.bind("localhost", "27017");
-	}
+        MongoServer server = new MongoServer(new H2Backend("database.mv"));
+        server.bind("localhost", 27017);
+    }
 
 }
 ```
