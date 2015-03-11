@@ -1636,27 +1636,27 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     // see http://docs.mongodb.org/manual/reference/operator/update/max
     @Test
     public void testUpdateMaxCompareDates() throws Exception {
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.US);
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
 
         DBObject object = new BasicDBObject("_id", 1).append("desc", "crafts")
-                .append("dateEntered", df.parse("2013-10-01T05:00:00Z"))
-                .append("dateExpired", df.parse("2013-10-01T16:38:16Z"));
+                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
+                .append("dateExpired", df.parse("2013-10-01T16:38:16"));
 
         collection.insert(object);
 
         collection.update(json("_id: 1"),
-                new BasicDBObject("$max", new BasicDBObject("dateExpired", df.parse("2013-09-30T00:00:00Z"))));
+                new BasicDBObject("$max", new BasicDBObject("dateExpired", df.parse("2013-09-30T00:00:00"))));
         assertThat(collection.findOne(json("_id: 1"))) //
                 .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                        .append("dateEntered", df.parse("2013-10-01T05:00:00Z")) //
-                        .append("dateExpired", df.parse("2013-10-01T16:38:16Z")));
+                        .append("dateEntered", df.parse("2013-10-01T05:00:00")) //
+                        .append("dateExpired", df.parse("2013-10-01T16:38:16")));
 
         collection.update(json("_id: 1"),
-                new BasicDBObject("$max", new BasicDBObject("dateExpired", df.parse("2014-01-07T00:00:00Z"))));
+                new BasicDBObject("$max", new BasicDBObject("dateExpired", df.parse("2014-01-07T00:00:00"))));
         assertThat(collection.findOne(json("_id: 1"))) //
         .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                .append("dateEntered", df.parse("2013-10-01T05:00:00Z")) //
-                .append("dateExpired", df.parse("2014-01-07T00:00:00Z")));
+                .append("dateEntered", df.parse("2013-10-01T05:00:00")) //
+                .append("dateExpired", df.parse("2014-01-07T00:00:00")));
     }
 
     // see http://docs.mongodb.org/manual/reference/operator/update/min
@@ -1676,27 +1676,27 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     // see http://docs.mongodb.org/manual/reference/operator/update/min
     @Test
     public void testUpdateMinCompareDates() throws Exception {
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.US);
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
 
         DBObject object = new BasicDBObject("_id", 1).append("desc", "crafts")
-                .append("dateEntered", df.parse("2013-10-01T05:00:00Z"))
-                .append("dateExpired", df.parse("2013-10-01T16:38:16Z"));
+                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
+                .append("dateExpired", df.parse("2013-10-01T16:38:16"));
 
         collection.insert(object);
 
         collection.update(json("_id: 1"),
-                new BasicDBObject("$min", new BasicDBObject("dateEntered", df.parse("2013-09-25T00:00:00Z"))));
+                new BasicDBObject("$min", new BasicDBObject("dateEntered", df.parse("2013-09-25T00:00:00"))));
         assertThat(collection.findOne(json("_id: 1"))) //
                 .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                        .append("dateEntered", df.parse("2013-09-25T00:00:00Z")) //
-                        .append("dateExpired", df.parse("2013-10-01T16:38:16Z")));
+                        .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
+                        .append("dateExpired", df.parse("2013-10-01T16:38:16")));
 
         collection.update(json("_id: 1"),
-                new BasicDBObject("$min", new BasicDBObject("dateEntered", df.parse("2014-01-07T00:00:00Z"))));
+                new BasicDBObject("$min", new BasicDBObject("dateEntered", df.parse("2014-01-07T00:00:00"))));
         assertThat(collection.findOne(json("_id: 1"))) //
         .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                .append("dateEntered", df.parse("2013-09-25T00:00:00Z")) //
-                .append("dateExpired", df.parse("2013-10-01T16:38:16Z")));
+                .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
+                .append("dateExpired", df.parse("2013-10-01T16:38:16")));
     }
 
     @Test
