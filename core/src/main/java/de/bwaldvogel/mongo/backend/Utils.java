@@ -26,6 +26,22 @@ public class Utils {
         }
     }
 
+    public static Number multiplyNumbers(Number a, Number b) {
+        if (a instanceof Double || b instanceof Double) {
+            return Double.valueOf(a.doubleValue() * b.doubleValue());
+        } else if (a instanceof Float || b instanceof Float) {
+            return Float.valueOf(a.floatValue() * b.floatValue());
+        } else if (a instanceof Long || b instanceof Long) {
+            return Long.valueOf(a.longValue() * b.longValue());
+        } else if (a instanceof Integer || b instanceof Integer) {
+            return Integer.valueOf(a.intValue() * b.intValue());
+        } else if (a instanceof Short || b instanceof Short) {
+            return Short.valueOf((short) (a.shortValue() * b.shortValue()));
+        } else {
+            throw new UnsupportedOperationException("can not multiply " + a + " and " + b);
+        }
+    }
+
     public static Object getSubdocumentValue(BSONObject document, String key) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {

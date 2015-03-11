@@ -209,7 +209,14 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos, boolean isUpsert)
             throws MongoServerException {
 
-        if (!modifier.equals("$unset")) {
+        final UpdateOperator op;
+        try {
+            op = UpdateOperator.fromValue(modifier);
+        } catch (IllegalArgumentException e) {
+            throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
+        }
+
+        if (op != UpdateOperator.UNSET) {
             for (String key : change.keySet()) {
                 if (key.startsWith("$")) {
                     throw new MongoServerError(15896, "Modified field name may not start with $");
@@ -217,7 +224,14 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             }
         }
 
-        if (modifier.equals("$set") || (modifier.equals("$setOnInsert") && isUpsert)) {
+        switch (op) {
+        case SET_ON_INSERT:
+            if (!isUpsert) {
+                // no upsert → ignore
+                return;
+            }
+            //$FALL-THROUGH$
+        case SET:
             for (String key : change.keySet()) {
                 Object newValue = change.get(key);
                 Object oldValue = getSubdocumentValue(document, key, matchPos);
@@ -231,17 +245,23 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
                 changeSubdocumentValue(document, key, newValue, matchPos);
             }
-        } else if (modifier.equals("$setOnInsert")) {
-            // no upsert → ignore
-        } else if (modifier.equals("$unset")) {
+            break;
+
+        case UNSET:
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
                 removeSubdocumentValue(document, key, matchPos);
             }
-        } else if (modifier.equals("$push") || modifier.equals("$pushAll") || modifier.equals("$addToSet")) {
-            updatePushAllAddToSet(document, modifier, change, matchPos);
-        } else if (modifier.equals("$pull") || modifier.equals("$pullAll")) {
-            // http://docs.mongodb.org/manual/reference/operator/pull/
+            break;
+
+        case PUSH:
+        case PUSH_ALL:
+        case ADD_TO_SET:
+            updatePushAllAddToSet(document, op, change, matchPos);
+            break;
+
+        case PULL:
+        case PULL_ALL:
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
                 List<Object> list;
@@ -268,7 +288,9 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 }
                 // no need to put something back
             }
-        } else if (modifier.equals("$pop")) {
+            break;
+
+        case POP:
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
                 List<Object> list;
@@ -290,11 +312,14 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 }
                 // no need to put something back
             }
-        } else if (modifier.equals("$inc")) {
-            // http://docs.mongodb.org/manual/reference/operator/inc/
+            break;
+
+        case INC:
+        case MUL:
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
 
+                String operation = (op == UpdateOperator.INC) ? "increment" : "multiply";
                 Object value = getSubdocumentValue(document, key, matchPos);
                 Number number;
                 if (value == null) {
@@ -302,12 +327,29 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 } else if (value instanceof Number) {
                     number = (Number) value;
                 } else {
-                    throw new MongoServerException("can not increment '" + value + "'");
+                    throw new MongoServerException("cannot " + operation + " value '" + value + "'");
                 }
 
-                changeSubdocumentValue(document, key, Utils.addNumbers(number, (Number) change.get(key)), matchPos);
+                Object changeObject = change.get(key);
+                if (!(changeObject instanceof Number)) {
+                    throw new MongoServerException("cannot " + operation + " with non-numeric value: " + change);
+                }
+                Number changeValue = (Number) changeObject;
+                final Number newValue;
+                if (op == UpdateOperator.INC) {
+                    newValue = Utils.addNumbers(number, changeValue);
+                } else if (op == UpdateOperator.MUL) {
+                    newValue = Utils.multiplyNumbers(number, changeValue);
+                } else {
+                    throw new RuntimeException();
+                }
+
+                changeSubdocumentValue(document, key, newValue, matchPos);
             }
-        } else if (modifier.equals("$max") || modifier.equals("$min")) {
+            break;
+
+        case MIN:
+        case MAX:
             Comparator<Object> comparator = new ValueComparator();
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
@@ -318,12 +360,13 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 int valueComparison = comparator.compare(newValue, oldValue);
 
                 final boolean shouldChange;
-                // If the field does not exists, the $min/$max operator sets the field to the specified value
+                // If the field does not exists, the $min/$max operator sets the
+                // field to the specified value
                 if (oldValue == null && !hasSubdocumentValue(document, key)) {
                     shouldChange = true;
-                } else if (modifier.equals("$max")) {
+                } else if (op == UpdateOperator.MAX) {
                     shouldChange = valueComparison > 0;
-                } else if (modifier.equals("$min")) {
+                } else if (op == UpdateOperator.MIN) {
                     shouldChange = valueComparison < 0;
                 } else {
                     throw new RuntimeException();
@@ -333,7 +376,9 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                     changeSubdocumentValue(document, key, newValue, matchPos);
                 }
             }
-        } else if (modifier.equals("$currentDate")) {
+            break;
+
+        case CURRENT_DATE:
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
 
@@ -349,7 +394,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                     } else if (type.equals("date")) {
                         useDate = true;
                     } else {
-                        throw new MongoServerError(2, "The '$type' string field is required to be 'date' or 'timestamp': " + change);
+                        throw new MongoServerError(2,
+                                "The '$type' string field is required to be 'date' or 'timestamp': " + change);
                     }
                 } else {
                     final String type;
@@ -372,13 +418,14 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
                 changeSubdocumentValue(document, key, newValue, matchPos);
             }
-        } else {
+            break;
+
+        default:
             throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
         }
-
     }
 
-    private void updatePushAllAddToSet(BSONObject document, String modifier, BSONObject change, Integer matchPos)
+    private void updatePushAllAddToSet(BSONObject document, UpdateOperator updateOperator, BSONObject change, Integer matchPos)
             throws MongoServerException {
         // http://docs.mongodb.org/manual/reference/operator/push/
         for (String key : change.keySet()) {
@@ -389,13 +436,13 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             } else if (value instanceof List<?>) {
                 list = Utils.asList(value);
             } else {
-                throw new MongoServerError(10141, "Cannot apply " + modifier + " modifier to non-array");
+                throw new MongoServerError(10141, "Cannot apply " + updateOperator + " modifier to non-array");
             }
 
             Object changeValue = change.get(key);
-            if (modifier.equals("$pushAll")) {
+            if (updateOperator == UpdateOperator.PUSH_ALL) {
                 if (!(changeValue instanceof Collection<?>)) {
-                    throw new MongoServerError(10153, "Modifier " + modifier + " allowed for arrays only");
+                    throw new MongoServerError(10153, "Modifier " + updateOperator + " allowed for arrays only");
                 }
                 @SuppressWarnings("unchecked")
                 Collection<Object> valueList = (Collection<Object>) changeValue;
@@ -412,14 +459,14 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 }
 
                 for (Object val : pushValues) {
-                    if (modifier.equals("$push")) {
+                    if (updateOperator == UpdateOperator.PUSH) {
                         list.add(val);
-                    } else if (modifier.equals("$addToSet")) {
+                    } else if (updateOperator == UpdateOperator.ADD_TO_SET) {
                         if (!list.contains(val)) {
                             list.add(val);
                         }
                     } else {
-                        throw new MongoServerException("internal server error. illegal modifier here: " + modifier);
+                        throw new MongoServerException("internal server error. illegal modifier here: " + updateOperator);
                     }
                 }
             }

@@ -54,7 +54,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     @Test
-    public void testAnotherUpsert() {
+    public void testUpsertWithInc() {
         DBObject query = json("_id:{ f: 'ca', 1: { l: 2 }, t: { t: 11 } }");
         DBObject update = json("'$inc': { 'n.!' : 1 , 'n.a.b:false' : 1}");
 
@@ -1775,12 +1775,20 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testUpdateIllegalInt() throws Exception {
-        collection.insert(json("_id: 1, a:{x:1}"));
+        collection.insert(json("_id: 1, a: {x:1}"));
+
         try {
             collection.update(json("_id: 1"), json("$inc: {a: 1}"));
             fail("MongoException expected");
         } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("can not increment");
+            assertThat(e.getMessage()).contains("cannot increment value");
+        }
+
+        try {
+            collection.update(json("_id: 1"), json("$inc: {'a.x': 'b'}"));
+            fail("MongoException expected");
+        } catch (MongoException e) {
+            assertThat(e.getMessage()).contains("cannot increment with non-numeric value");
         }
     }
 
@@ -1927,6 +1935,47 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         // create a random object id
         DBObject actual = collection.findOne();
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    public void testUpdateWithMultiplyOperator() throws Exception {
+        DBObject object = json("_id: 1");
+
+        collection.insert(object);
+
+        collection.update(object, json("$mul: {a: 2}, $set: {b: 2}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, a: 0, b: 2"));
+
+        collection.update(object, json("$mul: {b: 2.5}, $inc: {a: 0.5}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, a: 0.5, b: 5.0"));
+    }
+
+    @Test
+    public void testUpdateWithIllegalMultiplyFails() throws Exception {
+        DBObject object = json("_id: 1, foo: 'x', bar: 1");
+
+        collection.insert(object);
+
+        try {
+            collection.update(object, json("$mul: {_id: 2}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("_id");
+        }
+
+        try {
+            collection.update(object, json("$mul: {foo: 2}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("cannot multiply value 'x'");
+        }
+
+        try {
+            collection.update(object, json("$mul: {bar: 'x'}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("cannot multiply with non-numeric value");
+        }
     }
 
     @Test
