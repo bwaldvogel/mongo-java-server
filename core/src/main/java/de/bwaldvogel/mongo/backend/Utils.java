@@ -232,15 +232,17 @@ public class Utils {
         }
     }
 
-    public static void removeListSafe(Object document, String key) {
+    public static Object removeListSafe(Object document, String key) {
         if (document instanceof BSONObject) {
-            ((BSONObject) document).removeField(key);
+            return ((BSONObject) document).removeField(key);
         } else if (document instanceof List<?>) {
             int pos = Integer.parseInt(key);
             @SuppressWarnings("unchecked")
             List<Object> list = ((List<Object>) document);
             if (list.size() > pos) {
-                list.set(pos, null);
+                return list.set(pos, null);
+            } else {
+                return null;
             }
         } else {
             throw new IllegalArgumentException();

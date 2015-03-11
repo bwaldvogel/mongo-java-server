@@ -2147,7 +2147,6 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     @Test
     public void testUpdateCurrentDate() throws Exception {
         DBObject object = json("_id: 1");
-
         collection.insert(object);
 
         collection.update(object, json("$currentDate: {'x.lastModified': true}"));
@@ -2158,6 +2157,59 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.update(object, json("$currentDate: {'x.lastModified': {$type: 'timestamp'}}"));
         assertThat(((DBObject) collection.findOne(object).get("x")).get("lastModified")).isInstanceOf(BSONTimestamp.class);
+    }
+
+    @Test
+    public void testRenameField() throws Exception {
+        DBObject object = json("_id: 1, foo: 'x', bar: 'y'");
+        collection.insert(object);
+
+        collection.update(json("_id: 1"), json("$rename: {foo: 'foo2', bar: 'bar2'}"));
+        assertThat(collection.findOne()).isEqualTo(json("_id: 1, foo2: 'x', bar2: 'y'"));
+
+        collection.update(json("_id: 1"), json("$rename: {'bar2': 'foo', foo2: 'bar'}"));
+        assertThat(collection.findOne()).isEqualTo(json("_id: 1, bar: 'x', foo: 'y'"));
+    }
+
+    @Test
+    public void testRenameFieldIllegalValue() throws Exception {
+        DBObject object = json("_id: 1, foo: 'x', bar: 'y'");
+        collection.insert(object);
+
+        try {
+            collection.update(json("_id: 1"), json("$rename: {foo: 12345}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("The 'to' field for $rename must be a string");
+        }
+
+        try {
+            collection.update(json("_id: 1"), json("$rename: {'_id': 'id'}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("Mod on _id not allowed");
+        }
+
+        try {
+            collection.update(json("_id: 1"), json("$rename: {foo: '_id'}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("Mod on _id not allowed");
+        }
+
+        try {
+            collection.update(json("_id: 1"), json("$rename: {foo: 'bar', 'bar': 'bar2'}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("Cannot update 'bar' and 'bar' at the same time");
+        }
+
+        try {
+            collection.update(json("_id: 1"), json("$rename: {bar: 'foo', bar2: 'foo'}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getMessage()).contains("Cannot update 'foo' and 'foo' at the same time");
+        }
     }
 
     private void insertUpdateInBulk(BulkWriteOperation bulk) {

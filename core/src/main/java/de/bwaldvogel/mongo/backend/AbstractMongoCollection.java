@@ -8,7 +8,10 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -147,11 +150,11 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return subKey;
     }
 
-    private void removeSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
-        removeSubdocumentValue(document, key, new AtomicReference<Integer>(matchPos));
+    private Object removeSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
+        return removeSubdocumentValue(document, key, new AtomicReference<Integer>(matchPos));
     }
 
-    private void removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
+    private Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
             throws MongoServerException {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
@@ -159,12 +162,12 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             String subKey = getSubkey(key, dotPos, matchPos);
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject || subObject instanceof List<?>) {
-                removeSubdocumentValue(subObject, subKey, matchPos);
+                return removeSubdocumentValue(subObject, subKey, matchPos);
             } else {
                 throw new MongoServerException("failed to remove subdocument");
             }
         } else {
-            Utils.removeListSafe(document, key);
+            return Utils.removeListSafe(document, key);
         }
     }
 
@@ -420,8 +423,36 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             }
             break;
 
+        case RENAME:
+            Map<String, String> renames = new LinkedHashMap<String, String>();
+            for (String key : change.keySet()) {
+                assertNotKeyField(key);
+                Object toField = change.get(key);
+                if (!(toField instanceof String)) {
+                    throw new MongoServerError(2, "The 'to' field for $rename must be a string: " + toField);
+                }
+                String newKey = (String) toField;
+                assertNotKeyField(newKey);
+
+                if (renames.containsKey(key) || renames.containsValue(key)) {
+                    throw new MongoServerError(16837, "Cannot update '" + key + "' and '" + key + "' at the same time");
+                }
+                if (renames.containsKey(newKey) || renames.containsValue(newKey)) {
+                    throw new MongoServerError(16837, "Cannot update '" + newKey + "' and '" + newKey
+                            + "' at the same time");
+                }
+
+                renames.put(key, newKey);
+            }
+
+            for (Entry<String, String> entry : renames.entrySet()) {
+                Object value = removeSubdocumentValue(document, entry.getKey(), matchPos);
+                changeSubdocumentValue(document, entry.getValue(), value, matchPos);
+            }
+            break;
+
         default:
-            throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
+            throw new MongoServerError(10147, "Unsupported modifier: " + modifier);
         }
     }
 
