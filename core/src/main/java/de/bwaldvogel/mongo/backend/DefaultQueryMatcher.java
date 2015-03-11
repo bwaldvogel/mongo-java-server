@@ -80,7 +80,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
         if (document instanceof List<?>) {
             if (firstKey.matches("\\d+")) {
-                Object listValue = Utils.getListSafe(document, firstKey);
+                Object listValue = Utils.getFieldValueListSafe(document, firstKey);
                 if (subKeys.isEmpty()) {
                     return checkMatchesValue(queryValue, listValue, listValue != null);
                 } else {
@@ -103,7 +103,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         if (!subKeys.isEmpty()) {
-            Object subObject = Utils.getListSafe(document, firstKey);
+            Object subObject = Utils.getFieldValueListSafe(document, firstKey);
             return checkMatch(queryValue, subKeys, subObject);
         }
 

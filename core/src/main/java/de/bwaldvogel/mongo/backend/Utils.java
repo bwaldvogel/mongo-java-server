@@ -31,20 +31,21 @@ public class Utils {
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
-            Object subObject = Utils.getListSafe(document, mainKey);
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject) {
                 return getSubdocumentValue((BSONObject) subObject, subKey);
             } else {
                 return null;
             }
         } else {
-            return Utils.getListSafe(document, key);
+            return Utils.getFieldValueListSafe(document, key);
         }
     }
 
     public static boolean isTrue(Object value) {
-        if (value == null)
+        if (value == null) {
             return false;
+        }
 
         if (value instanceof Boolean) {
             return ((Boolean) value).booleanValue();
@@ -58,8 +59,9 @@ public class Utils {
     }
 
     public static Object normalizeValue(Object value) {
-        if (value == null)
+        if (value == null) {
             return null;
+        }
         if (value instanceof Number) {
             return Double.valueOf(((Number) value).doubleValue());
         } else {
@@ -93,8 +95,9 @@ public class Utils {
     }
 
     public static boolean containsQueryExpression(Object value) {
-        if (value == null)
+        if (value == null) {
             return false;
+        }
 
         if (!(value instanceof BSONObject)) {
             return false;
@@ -112,13 +115,14 @@ public class Utils {
         return false;
     }
 
-    public static Object getListSafe(Object document, String field) throws IllegalArgumentException {
+    public static Object getFieldValueListSafe(Object document, String field) throws IllegalArgumentException {
         if (document == null) {
             return null;
         }
 
-        if (field.equals("$") || field.contains("."))
+        if (field.equals("$") || field.contains(".")) {
             throw new IllegalArgumentException("illegal field: " + field);
+        }
 
         if (document instanceof List<?>) {
             if (field.matches("\\d+")) {
@@ -126,6 +130,8 @@ public class Utils {
                 List<?> list = (List<?>) document;
                 if (pos >= 0 && pos < list.size()) {
                     return list.get(pos);
+                } else {
+                    return null;
                 }
             } else {
                 throw new IllegalArgumentException("illegal field: " + field);
@@ -134,7 +140,31 @@ public class Utils {
             return ((BSONObject) document).get(field);
         }
 
-        return null;
+        throw new IllegalArgumentException("illegal document: " + document);
+    }
+
+    public static boolean hasFieldValueListSafe(Object document, String field) throws IllegalArgumentException {
+        if (document == null) {
+            return false;
+        }
+
+        if (field.equals("$") || field.contains(".")) {
+            throw new IllegalArgumentException("illegal field: " + field);
+        }
+
+        if (document instanceof List<?>) {
+            if (field.matches("\\d+")) {
+                int pos = Integer.parseInt(field);
+                List<?> list = (List<?>) document;
+                return (pos >= 0 && pos < list.size());
+            } else {
+                throw new IllegalArgumentException("illegal field: " + field);
+            }
+        } else if (document instanceof BSONObject) {
+            return ((BSONObject) document).containsField(field);
+        }
+
+        throw new IllegalArgumentException("illegal document: " + document);
     }
 
     public static void markOkay(BSONObject result) {
@@ -204,8 +234,9 @@ public class Utils {
     public static String join(int[] array, char c) {
         final StringBuilder sb = new StringBuilder();
         for (int value : array) {
-            if (sb.length() > 0)
+            if (sb.length() > 0) {
                 sb.append(c);
+            }
             sb.append(Integer.toString(value));
         }
         return sb.toString();

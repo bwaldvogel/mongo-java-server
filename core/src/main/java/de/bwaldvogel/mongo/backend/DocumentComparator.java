@@ -24,14 +24,14 @@ public class DocumentComparator implements Comparator<BSONObject> {
             if (subKey.startsWith("$.")) {
                 throw new IllegalArgumentException();
             }
-            Object subObject = Utils.getListSafe(document, mainKey);
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject) {
                 return getSubdocumentValue((BSONObject) subObject, subKey);
             } else {
                 return null;
             }
         } else {
-            return Utils.getListSafe(document, key);
+            return Utils.getFieldValueListSafe(document, key);
         }
     }
 

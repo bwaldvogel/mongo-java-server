@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static org.fest.assertions.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import org.bson.BSONObject;
@@ -81,6 +82,26 @@ public class UtilsTest {
         assertThat(Utils.getSubdocumentValue(document, "foo.b.x")).isEqualTo(29);
         assertThat(Utils.getSubdocumentValue(document, "foo.b.z")).isEqualTo(17);
         assertThat(Utils.getSubdocumentValue(document, "foo.c")).isNull();
+    }
+
+    @Test
+    public void testGetFieldValueListSafe() throws Exception {
+        assertThat(Utils.getFieldValueListSafe(null, "foo")).isNull();
+        BSONObject document = new BasicBSONObject("foo", 25);
+        assertThat(Utils.getFieldValueListSafe(document, "foo")).isEqualTo(25);
+        assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isEqualTo("b");
+    }
+
+    @Test
+    public void testHasFieldValueListSafe() throws Exception {
+        assertThat(Utils.hasFieldValueListSafe(null, "foo")).isFalse();
+        BSONObject document = new BasicBSONObject("foo", 25);
+        assertThat(Utils.hasFieldValueListSafe(document, "foo")).isTrue();
+        assertThat(Utils.hasFieldValueListSafe(document, "bar")).isFalse();
+        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "0")).isTrue();
+        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isTrue();
+        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "2")).isTrue();
+        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "3")).isFalse();
     }
 
 }

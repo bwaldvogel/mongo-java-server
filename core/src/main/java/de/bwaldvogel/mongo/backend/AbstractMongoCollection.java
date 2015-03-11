@@ -117,7 +117,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             String mainKey = key.substring(0, dotPos);
             String subKey = getSubkey(key, dotPos, matchPos);
 
-            Object subObject = Utils.getListSafe(document, mainKey);
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject || subObject instanceof List<?>) {
                 changeSubdocumentValue(subObject, subKey, newValue, matchPos);
             } else {
@@ -155,7 +155,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = getSubkey(key, dotPos, matchPos);
-            Object subObject = Utils.getListSafe(document, mainKey);
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject || subObject instanceof List<?>) {
                 removeSubdocumentValue(subObject, subKey, matchPos);
             } else {
@@ -176,14 +176,31 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = getSubkey(key, dotPos, matchPos);
-            Object subObject = Utils.getListSafe(document, mainKey);
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject || subObject instanceof List<?>) {
                 return getSubdocumentValue(subObject, subKey, matchPos);
             } else {
                 return null;
             }
         } else {
-            return Utils.getListSafe(document, key);
+            return Utils.getFieldValueListSafe(document, key);
+        }
+    }
+
+    private boolean hasSubdocumentValue(Object document, String key)
+            throws MongoServerException {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = getSubkey(key, dotPos, new AtomicReference<Integer>());
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+                return hasSubdocumentValue(subObject, subKey);
+            } else {
+                return false;
+            }
+        } else {
+            return Utils.hasFieldValueListSafe(document, key);
         }
     }
 
@@ -288,7 +305,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
                 changeSubdocumentValue(document, key, Utils.addNumbers(number, (Number) change.get(key)), matchPos);
             }
-        } else if (modifier.equals("$max")) {
+        } else if (modifier.equals("$max") || modifier.equals("$min")) {
             Comparator<Object> comparator = new ValueComparator();
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
@@ -296,7 +313,21 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 Object newValue = change.get(key);
                 Object oldValue = getSubdocumentValue(document, key, matchPos);
 
-                if (comparator.compare(newValue, oldValue) > 0) {
+                int valueComparison = comparator.compare(newValue, oldValue);
+
+                final boolean shouldChange;
+                // If the field does not exists, the $min/$max operator sets the field to the specified value
+                if (oldValue == null && !hasSubdocumentValue(document, key)) {
+                    shouldChange = true;
+                } else if (modifier.equals("$max")) {
+                    shouldChange = valueComparison > 0;
+                } else if (modifier.equals("$min")) {
+                    shouldChange = valueComparison < 0;
+                } else {
+                    throw new RuntimeException();
+                }
+
+                if (shouldChange) {
                     changeSubdocumentValue(document, key, newValue, matchPos);
                 }
             }

@@ -489,6 +489,17 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(result).isEqualTo(json("_id: 1, a: 2, b: {c: 2}, d : 'd'"));
     }
 
+    @Test
+    public void testFindAndModifyMin() {
+        collection.insert(json("_id: 1, a: 2, b: {c: 1}"));
+
+        DBObject query = json("_id: 1");
+        DBObject update = json("$min: {a: 1, 'b.c': 2, d : 'd'}");
+        DBObject result = collection.findAndModify(query, null, null, false, update, true, false);
+
+        assertThat(result).isEqualTo(json("_id: 1, a: 1, b: {c: 1}, d : 'd'"));
+    }
+
     // https://github.com/foursquare/fongo/issues/32
     @Test
     public void testFindAndModifyReturnOld() {
@@ -1577,6 +1588,37 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : '2'}, buz : 1"));
     }
 
+    @Test
+    public void testUpdateMin() throws Exception {
+        DBObject object = json("_id: 1");
+
+        collection.insert(object);
+
+        collection.update(object, json("$min: {'foo.bar': 'b'}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 'b'}"));
+
+        collection.update(object, json("$min: {'foo.bar': 'a'}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 'a'}"));
+
+        collection.update(object, json("$min: {'foo.bar': 10}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 10}"));
+
+        collection.update(object, json("$min: {'foo.bar': 10}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 10}"));
+
+        collection.update(object, json("$min: {'foo.bar': 1}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 1}"));
+
+        collection.update(object, json("$min: {'foo.bar': 100}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 1}"));
+
+        collection.update(object, json("$min: {'foo.bar': null}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : null}"));
+
+        collection.update(object, json("$min: {'foo.bar': 'a'}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : null}"));
+    }
+
     // see http://docs.mongodb.org/manual/reference/operator/update/max
     @Test
     public void testUpdateMaxCompareNumbers() throws Exception {
@@ -1615,6 +1657,46 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         .isEqualTo(json("_id: 1, desc: 'crafts'") //
                 .append("dateEntered", df.parse("2013-10-01T05:00:00Z")) //
                 .append("dateExpired", df.parse("2014-01-07T00:00:00Z")));
+    }
+
+    // see http://docs.mongodb.org/manual/reference/operator/update/min
+    @Test
+    public void testUpdateMinCompareNumbers() throws Exception {
+        DBObject object = json("_id: 1, highScore: 800, lowScore: 200");
+
+        collection.insert(object);
+
+        collection.update(json("_id: 1"), json("$min: { lowScore: 150 }"));
+        assertThat(collection.findOne(json("_id: 1"))).isEqualTo(json("_id: 1, highScore: 800, lowScore: 150"));
+
+        collection.update(json("_id: 1"), json("$min: { lowScore: 250 }"));
+        assertThat(collection.findOne(json("_id: 1"))).isEqualTo(json("_id: 1, highScore: 800, lowScore: 150"));
+    }
+
+    // see http://docs.mongodb.org/manual/reference/operator/update/min
+    @Test
+    public void testUpdateMinCompareDates() throws Exception {
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.US);
+
+        DBObject object = new BasicDBObject("_id", 1).append("desc", "crafts")
+                .append("dateEntered", df.parse("2013-10-01T05:00:00Z"))
+                .append("dateExpired", df.parse("2013-10-01T16:38:16Z"));
+
+        collection.insert(object);
+
+        collection.update(json("_id: 1"),
+                new BasicDBObject("$min", new BasicDBObject("dateEntered", df.parse("2013-09-25T00:00:00Z"))));
+        assertThat(collection.findOne(json("_id: 1"))) //
+                .isEqualTo(json("_id: 1, desc: 'crafts'") //
+                        .append("dateEntered", df.parse("2013-09-25T00:00:00Z")) //
+                        .append("dateExpired", df.parse("2013-10-01T16:38:16Z")));
+
+        collection.update(json("_id: 1"),
+                new BasicDBObject("$min", new BasicDBObject("dateEntered", df.parse("2014-01-07T00:00:00Z"))));
+        assertThat(collection.findOne(json("_id: 1"))) //
+        .isEqualTo(json("_id: 1, desc: 'crafts'") //
+                .append("dateEntered", df.parse("2013-09-25T00:00:00Z")) //
+                .append("dateExpired", df.parse("2013-10-01T16:38:16Z")));
     }
 
     @Test
