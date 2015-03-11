@@ -4,12 +4,15 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 import static org.junit.Assert.assertFalse;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -1548,7 +1551,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testUpdateMax() throws Exception {
-        BasicDBObject object = json("_id: 1");
+        DBObject object = json("_id: 1");
 
         collection.insert(object);
 
@@ -1572,6 +1575,46 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.update(object, json("$max: {'foo.bar': '2', 'buz' : 1}"));
         assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : '2'}, buz : 1"));
+    }
+
+    // see http://docs.mongodb.org/manual/reference/operator/update/max
+    @Test
+    public void testUpdateMaxCompareNumbers() throws Exception {
+        DBObject object = json("_id: 1, highScore: 800, lowScore: 200");
+
+        collection.insert(object);
+
+        collection.update(json("_id: 1"), json("$max: { highScore: 950 }"));
+        assertThat(collection.findOne(json("_id: 1"))).isEqualTo(json("_id: 1, highScore: 950, lowScore: 200"));
+
+        collection.update(json("_id: 1"), json("$max: { highScore: 870 }"));
+        assertThat(collection.findOne(json("_id: 1"))).isEqualTo(json("_id: 1, highScore: 950, lowScore: 200"));
+    }
+
+    // see http://docs.mongodb.org/manual/reference/operator/update/max
+    @Test
+    public void testUpdateMaxCompareDates() throws Exception {
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX", Locale.US);
+
+        DBObject object = new BasicDBObject("_id", 1).append("desc", "crafts")
+                .append("dateEntered", df.parse("2013-10-01T05:00:00Z"))
+                .append("dateExpired", df.parse("2013-10-01T16:38:16Z"));
+
+        collection.insert(object);
+
+        collection.update(json("_id: 1"),
+                new BasicDBObject("$max", new BasicDBObject("dateExpired", df.parse("2013-09-30T00:00:00Z"))));
+        assertThat(collection.findOne(json("_id: 1"))) //
+                .isEqualTo(json("_id: 1, desc: 'crafts'") //
+                        .append("dateEntered", df.parse("2013-10-01T05:00:00Z")) //
+                        .append("dateExpired", df.parse("2013-10-01T16:38:16Z")));
+
+        collection.update(json("_id: 1"),
+                new BasicDBObject("$max", new BasicDBObject("dateExpired", df.parse("2014-01-07T00:00:00Z"))));
+        assertThat(collection.findOne(json("_id: 1"))) //
+        .isEqualTo(json("_id: 1, desc: 'crafts'") //
+                .append("dateEntered", df.parse("2013-10-01T05:00:00Z")) //
+                .append("dateExpired", df.parse("2014-01-07T00:00:00Z")));
     }
 
     @Test
