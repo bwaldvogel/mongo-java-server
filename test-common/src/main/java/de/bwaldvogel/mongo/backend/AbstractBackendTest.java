@@ -475,6 +475,17 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(result).isEqualTo(json("_id: 1, a: 2, b: {c: 2}"));
     }
 
+    @Test
+    public void testFindAndModifyMax() {
+        collection.insert(json("_id: 1, a: 1, b: {c: 1}"));
+
+        DBObject query = json("_id: 1");
+        DBObject update = json("$max: {a: 2, 'b.c': 2, d : 'd'}");
+        DBObject result = collection.findAndModify(query, null, null, false, update, true, false);
+
+        assertThat(result).isEqualTo(json("_id: 1, a: 2, b: {c: 2}, d : 'd'"));
+    }
+
     // https://github.com/foursquare/fongo/issues/32
     @Test
     public void testFindAndModifyReturnOld() {
@@ -1533,6 +1544,34 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.update(json("{}"), json("$unset: {'a.10': 1}"));
         assertThat(collection.findOne()).isEqualTo(json("_id: 1, a:[null]"));
+    }
+
+    @Test
+    public void testUpdateMax() throws Exception {
+        BasicDBObject object = json("_id: 1");
+
+        collection.insert(object);
+
+        collection.update(object, json("$max: {'foo.bar': 1}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 1}"));
+
+        collection.update(object, json("$max: {'foo.bar': 1}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 1}"));
+
+        collection.update(object, json("$max: {'foo.bar': 10}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 10}"));
+
+        collection.update(object, json("$max: {'foo.bar': -100}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : 10}"));
+
+        collection.update(object, json("$max: {'foo.bar': '1'}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : '1'}"));
+
+        collection.update(object, json("$max: {'foo.bar': null}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : '1'}"));
+
+        collection.update(object, json("$max: {'foo.bar': '2', 'buz' : 1}"));
+        assertThat(collection.findOne(object)).isEqualTo(json("_id: 1, foo : {bar : '2'}, buz : 1"));
     }
 
     @Test
