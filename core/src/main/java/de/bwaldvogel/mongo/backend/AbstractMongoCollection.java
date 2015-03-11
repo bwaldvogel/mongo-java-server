@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
+import org.bson.types.BSONTimestamp;
 import org.bson.types.ObjectId;
 
 import de.bwaldvogel.mongo.MongoCollection;
@@ -330,6 +332,45 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 if (shouldChange) {
                     changeSubdocumentValue(document, key, newValue, matchPos);
                 }
+            }
+        } else if (modifier.equals("$currentDate")) {
+            for (String key : change.keySet()) {
+                assertNotKeyField(key);
+
+                Object typeSpecification = change.get(key);
+
+                final boolean useDate;
+                if (typeSpecification instanceof Boolean && Utils.isTrue(typeSpecification)) {
+                    useDate = true;
+                } else if (typeSpecification instanceof BSONObject) {
+                    Object type = ((BSONObject) typeSpecification).get("$type");
+                    if (type.equals("timestamp")) {
+                        useDate = false;
+                    } else if (type.equals("date")) {
+                        useDate = true;
+                    } else {
+                        throw new MongoServerError(2, "The '$type' string field is required to be 'date' or 'timestamp': " + change);
+                    }
+                } else {
+                    final String type;
+                    if (typeSpecification != null) {
+                        type = typeSpecification.getClass().getSimpleName();
+                    } else {
+                        type = "NULL";
+                    }
+                    throw new MongoServerError(2, type + " is not a valid type for $currentDate." + //
+                            " Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'})");
+                }
+
+                final Object newValue;
+                if (useDate) {
+                    newValue = new Date();
+                } else {
+                    int time = (int) (System.currentTimeMillis() / 1000);
+                    newValue = new BSONTimestamp(time, 1);
+                }
+
+                changeSubdocumentValue(document, key, newValue, matchPos);
             }
         } else {
             throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);

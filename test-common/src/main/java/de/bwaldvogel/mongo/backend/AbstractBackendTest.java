@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
+import org.bson.types.BSONTimestamp;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 
@@ -2051,6 +2052,63 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     public void testBulkUpdateUnordered() throws Exception {
         insertUpdateInBulk(collection.initializeUnorderedBulkOperation());
         removeInBulk(collection.initializeUnorderedBulkOperation());
+    }
+
+    @Test
+    public void testUpdateCurrentDateIllegalTypeSpecification() throws Exception {
+        DBObject object = json("_id: 1");
+
+        collection.insert(object);
+
+        try {
+            collection.update(object, json("$currentDate: {lastModified: null}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getCode()).isEqualTo(2);
+            assertThat(e.getErrorMessage()).startsWith("NULL").contains("is not a valid type");
+        }
+
+        try {
+            collection.update(object, json("$currentDate: {lastModified: 123.456}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getCode()).isEqualTo(2);
+            assertThat(e.getErrorMessage()).startsWith("Double").contains("is not a valid type");
+        }
+
+        try {
+            collection.update(object, json("$currentDate: {lastModified: 'foo'}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getCode()).isEqualTo(2);
+            assertThat(e.getErrorMessage()).startsWith("String").contains("is not a valid type");
+        }
+
+        try {
+            collection.update(object, json("$currentDate: {lastModified: {$type: 'foo'}}"));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getCode()).isEqualTo(2);
+            assertThat(e.getErrorMessage()).startsWith("The '$type' string field is required to be 'date' or 'timestamp'");
+        }
+
+        assertThat(collection.findOne(object)).isEqualTo(object);
+    }
+
+    @Test
+    public void testUpdateCurrentDate() throws Exception {
+        DBObject object = json("_id: 1");
+
+        collection.insert(object);
+
+        collection.update(object, json("$currentDate: {'x.lastModified': true}"));
+        assertThat(((DBObject) collection.findOne(object).get("x")).get("lastModified")).isInstanceOf(Date.class);
+
+        collection.update(object, json("$currentDate: {'x.lastModified': {$type: 'date'}}"));
+        assertThat(((DBObject) collection.findOne(object).get("x")).get("lastModified")).isInstanceOf(Date.class);
+
+        collection.update(object, json("$currentDate: {'x.lastModified': {$type: 'timestamp'}}"));
+        assertThat(((DBObject) collection.findOne(object).get("x")).get("lastModified")).isInstanceOf(BSONTimestamp.class);
     }
 
     private void insertUpdateInBulk(BulkWriteOperation bulk) {
