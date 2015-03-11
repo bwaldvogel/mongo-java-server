@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -286,6 +287,18 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 }
 
                 changeSubdocumentValue(document, key, Utils.addNumbers(number, (Number) change.get(key)), matchPos);
+            }
+        } else if (modifier.equals("$max")) {
+            Comparator<Object> comparator = new ValueComparator();
+            for (String key : change.keySet()) {
+                assertNotKeyField(key);
+
+                Object newValue = change.get(key);
+                Object oldValue = getSubdocumentValue(document, key, matchPos);
+
+                if (comparator.compare(newValue, oldValue) > 0) {
+                    changeSubdocumentValue(document, key, newValue, matchPos);
+                }
             }
         } else {
             throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
