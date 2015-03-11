@@ -693,7 +693,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(db.getCollectionNames()).contains("coll");
     }
 
-    /**
+    /*
      * Test that ObjectId is getting generated even if _id is present in
      * DBObject but it's value is null
      */
