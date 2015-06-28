@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.exception;
 
-public class NoSuchCommandException extends MongoServerException {
+public class NoSuchCommandException extends MongoServerError {
 
     private static final long serialVersionUID = 772416798455878545L;
 
@@ -9,16 +9,12 @@ public class NoSuchCommandException extends MongoServerException {
     private String command;
 
     public NoSuchCommandException(String command) {
-        super("no such cmd: " + command);
+        super(ERROR_CODE, "no such cmd: " + command);
         this.command = command;
     }
 
     public String getCommand() {
         return command;
-    }
-
-    public int getCode() {
-        return ERROR_CODE;
     }
 
 }

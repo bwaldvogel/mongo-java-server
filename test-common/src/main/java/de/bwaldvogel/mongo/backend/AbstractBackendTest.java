@@ -80,7 +80,8 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     public void testCollectionStats() throws Exception {
         CommandResult stats = collection.getStats();
         assertThat(stats.ok()).isFalse();
-        assertThat(stats.getErrorMessage()).isEqualTo("ns not found");
+        assertThat(stats.getException().getCode()).isEqualTo(26);
+        assertThat(stats.getErrorMessage()).isEqualTo("No such collection");
 
         collection.insert(json("{}"));
         collection.insert(json("abc: 'foo'"));
@@ -2265,6 +2266,26 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
 
         assertThat(getCollection("other-collection-name").count()).isEqualTo(3);
+    }
+
+    @Test
+    public void testGetIndexes_empty() throws Exception {
+        List<DBObject> indexInfo = collection.getIndexInfo();
+        assertThat(indexInfo).isEmpty();
+    }
+
+    @Test
+    public void testGetIndexes() throws Exception {
+        collection.insert(json("_id: 1"));
+        db.getCollection("other").insert(json("_id: 1"));
+
+        collection.createIndex("bla");
+
+        List<DBObject> indexInfo = collection.getIndexInfo();
+        assertThat(indexInfo).containsOnly( //
+                json("name:'_id_', ns:'testdb.testcoll', key:{_id:1}"), //
+                json("name:'_id_', ns:'testdb.other', key:{_id:1}"), //
+                json("name:'bla_1', ns:'testdb.testcoll', key:{bla:1}"));
     }
 
     private void insertUpdateInBulk(BulkWriteOperation bulk) {

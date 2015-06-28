@@ -25,6 +25,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
+import de.bwaldvogel.mongo.exception.NoSuchCollectionException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -142,6 +143,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             return collection.findAndModify(query);
         } else if (command.equalsIgnoreCase("listCollections")) {
             return listCollections();
+        } else if (command.equalsIgnoreCase("listIndexes")) {
+            return listIndexes();
         } else {
             log.error("unknown query: {}", query);
         }
@@ -162,6 +165,26 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             collectionDescription.put("name", collectionName);
             collectionDescription.put("options", collectionOptions);
             firstBatch.add(collectionDescription);
+        }
+
+        cursor.put("firstBatch", firstBatch);
+
+        BSONObject response = new BasicBSONObject();
+        response.put("cursor", cursor);
+        Utils.markOkay(response);
+        return response;
+    }
+
+    protected BSONObject listIndexes() throws MongoServerException {
+        MongoCollection<KEY> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
+
+        BSONObject cursor = new BasicBSONObject();
+        cursor.put("id", Long.valueOf(0));
+        cursor.put("ns", getDatabaseName() + ".$cmd.listIndexes");
+
+        List<BSONObject> firstBatch = new ArrayList<BSONObject>();
+        for (BSONObject description : indexes.handleQuery(new BasicBSONObject(), 0, 0, null)) {
+            firstBatch.add(description);
         }
 
         cursor.put("firstBatch", firstBatch);
@@ -498,7 +521,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         checkCollectionName(collectionName);
         MongoCollection<KEY> collection = collections.get(collectionName);
         if (collection == null && throwIfNotFound) {
-            throw new MongoServerException("ns not found");
+            throw new NoSuchCollectionException(collectionName);
         }
         return collection;
     }
