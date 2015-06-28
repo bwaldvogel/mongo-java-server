@@ -2288,6 +2288,60 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
                 json("name:'bla_1', ns:'testdb.testcoll', key:{bla:1}"));
     }
 
+    @Test
+    public void testFieldSelection_deselectId() {
+        BasicDBObject obj = json("_id: 1, order:1, visits: 2");
+        collection.insert(obj);
+
+        BasicDBObject fieldsMap = new BasicDBObject();
+        fieldsMap.put("_id", 0);
+
+        DBCursor cur = collection.find(new BasicDBObject(), new BasicDBObject(fieldsMap));
+        assertThat(cur.toArray()).containsExactly(json("order:1, visits:2"));
+        cur.close();
+    }
+
+    @Test
+    public void testFieldSelection_deselectOneField() {
+        BasicDBObject obj = json("_id: 1, order:1, visits: 2, eid: 12345");
+        collection.insert(obj);
+
+        BasicDBObject fieldsMap = new BasicDBObject();
+        fieldsMap.put("visits", 0);
+
+        DBCursor cur = collection.find(new BasicDBObject(), new BasicDBObject(fieldsMap));
+        assertThat(cur.toArray()).containsExactly(json("_id:1, order:1, eid: 12345"));
+        cur.close();
+    }
+
+    @Test
+    public void testFieldSelection_deselectTwoFields() {
+        BasicDBObject obj = json("_id: 1, order:1, visits: 2, eid: 12345");
+        collection.insert(obj);
+
+        BasicDBObject fieldsMap = new BasicDBObject();
+        fieldsMap.put("visits", 0);
+        fieldsMap.put("eid", 0);
+
+        DBCursor cur = collection.find(new BasicDBObject(), new BasicDBObject(fieldsMap));
+        assertThat(cur.toArray()).containsExactly(json("_id:1, order:1"));
+        cur.close();
+    }
+
+    @Test
+    public void testFieldSelection_selectAndDeselectFields() {
+        BasicDBObject obj = json("_id: 1, order:1, visits: 2, eid: 12345");
+        collection.insert(obj);
+
+        BasicDBObject fieldsMap = new BasicDBObject();
+        fieldsMap.put("visits", 0);
+        fieldsMap.put("eid", 1);
+
+        DBCursor cur = collection.find(new BasicDBObject(), new BasicDBObject(fieldsMap));
+        assertThat(cur.toArray()).containsExactly(json("_id:1, eid: 12345"));
+        cur.close();
+    }
+
     private void insertUpdateInBulk(BulkWriteOperation bulk) {
         bulk.insert(json("_id: 1, field: 'x'"));
         bulk.insert(json("_id: 2, field: 'x'"));

@@ -662,19 +662,35 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
 
         BSONObject newDocument = new BasicBSONObject();
-        for (String key : fields.keySet()) {
-            if (Utils.isTrue(fields.get(key))) {
-                projectField(document, newDocument, key);
+        if (onlyExclusions(fields)) {
+            newDocument.putAll(document);
+            for (String excludedField : fields.keySet()) {
+                newDocument.removeField(excludedField);
+            }
+        } else {
+            for (String key : fields.keySet()) {
+                if (Utils.isTrue(fields.get(key))) {
+                    projectField(document, newDocument, key);
+                }
             }
         }
 
         // implicitly add _id if not mentioned
-        // http://docs.mongodb.org/manual/core/read-operations/#result-projections
+        // http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-the-specified-fields-and-the-id-field-only
         if (!fields.containsField(idField)) {
             newDocument.put(idField, document.get(idField));
         }
 
         return newDocument;
+    }
+
+    private static boolean onlyExclusions(BSONObject fields) {
+        for (String key : fields.keySet()) {
+            if (Utils.isTrue(fields.get(key))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static void projectField(BSONObject document, BSONObject newDocument, String key) {
