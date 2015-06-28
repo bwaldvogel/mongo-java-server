@@ -2212,6 +2212,61 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         }
     }
 
+    @Test
+    public void testRenameCollection() throws Exception {
+        collection.insert(json("_id: 1"));
+        collection.insert(json("_id: 2"));
+        collection.insert(json("_id: 3"));
+
+        DBCollection renamedCollection = collection.rename("other-collection-name");
+        assertThat(renamedCollection.getName()).isEqualTo("other-collection-name");
+
+        Set<String> collectionNames = db.getCollectionNames();
+        assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
+
+        assertThat(getCollection("other-collection-name").count()).isEqualTo(3);
+    }
+
+    @Test
+    public void testRenameCollection_targetAlreadyExists() throws Exception {
+        collection.insert(json("_id: 1"));
+        collection.insert(json("_id: 2"));
+        collection.insert(json("_id: 3"));
+
+        DBCollection otherCollection = db.getCollection("other-collection-name");
+        otherCollection.insert(json("_id: 1"));
+
+        try {
+            collection.rename("other-collection-name");
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getErrorMessage()).isEqualTo("target namespace already exists");
+        }
+        Set<String> collectionNames = db.getCollectionNames();
+        assertThat(collectionNames).containsOnly("system.indexes", collection.getName(), "other-collection-name");
+
+        assertThat(collection.count()).isEqualTo(3);
+        assertThat(getCollection("other-collection-name").count()).isEqualTo(1);
+    }
+
+    @Test
+    public void testRenameCollection_dropTarget() throws Exception {
+        collection.insert(json("_id: 1"));
+        collection.insert(json("_id: 2"));
+        collection.insert(json("_id: 3"));
+
+        DBCollection otherCollection = db.getCollection("other-collection-name");
+        otherCollection.insert(json("_id: 1"));
+
+        DBCollection renamedCollection = collection.rename("other-collection-name", true);
+        assertThat(renamedCollection.getName()).isEqualTo("other-collection-name");
+
+        Set<String> collectionNames = db.getCollectionNames();
+        assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
+
+        assertThat(getCollection("other-collection-name").count()).isEqualTo(3);
+    }
+
     private void insertUpdateInBulk(BulkWriteOperation bulk) {
         bulk.insert(json("_id: 1, field: 'x'"));
         bulk.insert(json("_id: 2, field: 'x'"));

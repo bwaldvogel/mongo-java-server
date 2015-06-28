@@ -85,8 +85,13 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
+    public String getDatabaseName() {
+        return databaseName;
+    }
+
+    @Override
     public String getFullName() {
-        return databaseName + "." + getCollectionName();
+        return getDatabaseName() + "." + getCollectionName();
     }
 
     @Override
@@ -1046,6 +1051,12 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         response.put("errors", Arrays.asList());
         Utils.markOkay(response);
         return response;
+    }
+
+    @Override
+    public void renameTo(String newDatabaseName, String newCollectionName) {
+        this.databaseName = newDatabaseName;
+        this.collectionName = newCollectionName;
     }
 
     protected abstract void removeDocumentWithKey(KEY key);

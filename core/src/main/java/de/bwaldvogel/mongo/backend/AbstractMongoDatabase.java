@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.bson.BSONObject;
@@ -42,13 +42,13 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     protected final String databaseName;
     private final MongoBackend backend;
 
-    private Map<String, MongoCollection<KEY>> collections = new HashMap<String, MongoCollection<KEY>>();
+    private Map<String, MongoCollection<KEY>> collections = new ConcurrentHashMap<String, MongoCollection<KEY>>();
 
     private MongoCollection<KEY> namespaces;
 
     private AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<MongoCollection<KEY>>();
 
-    private Map<Channel, List<BSONObject>> lastResults = new HashMap<Channel, List<BSONObject>>();
+    private Map<Channel, List<BSONObject>> lastResults = new ConcurrentHashMap<Channel, List<BSONObject>>();
 
     protected AbstractMongoDatabase(String databaseName, MongoBackend backend) {
         this.databaseName = databaseName;
@@ -493,6 +493,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
+    @Override
     public synchronized MongoCollection<KEY> resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException {
         checkCollectionName(collectionName);
         MongoCollection<KEY> collection = collections.get(collectionName);
@@ -712,11 +713,37 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     protected abstract MongoCollection<KEY> openOrCreateCollection(String collectionName, String idField);
 
     @Override
-    public void drop() {
+    public void drop() throws MongoServerException {
         log.debug("dropping {}", this);
-        for (MongoCollection<KEY> collection : collections.values()) {
-            collection.drop();
+        for (String collectionName : collections.keySet()) {
+            dropCollection(collectionName);
         }
+    }
+
+    @Override
+    public void dropCollection(String collectionName) throws MongoServerException {
+        deregisterCollection(collectionName);
+    }
+
+    @Override
+    public MongoCollection<KEY> deregisterCollection(String collectionName) throws MongoServerException {
+        MongoCollection<KEY> removedCollection = collections.remove(collectionName);
+        namespaces.deleteDocuments(new BasicBSONObject("name", removedCollection.getFullName()), 1);
+        return removedCollection;
+    }
+
+    @Override
+    public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
+            throws MongoServerException {
+        oldDatabase.deregisterCollection(collection.getCollectionName());
+        collection.renameTo(getDatabaseName(), newCollectionName);
+        // TODO resolve cast
+        @SuppressWarnings("unchecked")
+        MongoCollection<KEY> newCollection = (MongoCollection<KEY>) collection;
+        collections.put(newCollectionName, newCollection);
+        List<BSONObject> newDocuments = new ArrayList<BSONObject>();
+        newDocuments.add(new BasicBSONObject("name", collection.getFullName()));
+        namespaces.insertDocuments(newDocuments);
     }
 
 }

@@ -104,4 +104,16 @@ public class UtilsTest {
         assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "3")).isFalse();
     }
 
+    @Test
+    public void testGetDatabaseNameFromFullName() throws Exception {
+        assertThat(Utils.getDatabaseNameFromFullName("foo.bar")).isEqualTo("foo");
+        assertThat(Utils.getDatabaseNameFromFullName("foo.bar.bla")).isEqualTo("foo");
+    }
+
+    @Test
+    public void testGetCollectionNameFromFullName() throws Exception {
+        assertThat(Utils.getCollectionNameFromFullName("foo.bar")).isEqualTo("bar");
+        assertThat(Utils.getCollectionNameFromFullName("foo.bar.bla")).isEqualTo("bar.bla");
+    }
+
 }

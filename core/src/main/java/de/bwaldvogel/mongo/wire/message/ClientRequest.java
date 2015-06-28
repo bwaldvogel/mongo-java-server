@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.wire.message;
 
 import io.netty.channel.Channel;
+import de.bwaldvogel.mongo.backend.Utils;
 
 public abstract class ClientRequest implements Message {
 
@@ -24,13 +25,11 @@ public abstract class ClientRequest implements Message {
 
     @Override
     public String getDatabaseName() {
-        int index = fullCollectionName.indexOf('.');
-        return fullCollectionName.substring(0, index);
+        return Utils.getDatabaseNameFromFullName(fullCollectionName);
     }
 
     public String getCollectionName() {
-        int index = fullCollectionName.indexOf('.');
-        return fullCollectionName.substring(index + 1);
+        return Utils.getCollectionNameFromFullName(fullCollectionName);
     }
 
     public String getFullCollectionName() {

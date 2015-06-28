@@ -28,6 +28,15 @@ public interface MongoDatabase {
 
     boolean isEmpty();
 
-    void drop();
+    MongoCollection<?> resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException;
+
+    void drop() throws MongoServerException;
+
+    void dropCollection(String collectionName) throws MongoServerException;
+
+    void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
+            throws MongoServerException;
+
+    MongoCollection<?> deregisterCollection(String collectionName) throws MongoServerException;
 
 }

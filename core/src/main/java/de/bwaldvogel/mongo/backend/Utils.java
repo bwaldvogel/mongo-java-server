@@ -58,6 +58,16 @@ public class Utils {
         }
     }
 
+    public static String getDatabaseNameFromFullName(String fullName) {
+        int dotPos = fullName.indexOf('.');
+        return fullName.substring(0, dotPos);
+    }
+
+    public static String getCollectionNameFromFullName(String fullName) {
+        int dotPos = fullName.indexOf('.');
+        return fullName.substring(dotPos + 1);
+    }
+
     public static boolean isTrue(Object value) {
         if (value == null) {
             return false;

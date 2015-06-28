@@ -9,6 +9,7 @@ import org.h2.mvstore.MVStore;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -57,6 +58,29 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     @Override
     protected long getFileSize() {
         return getStorageSize();
+    }
+
+    @Override
+    public void dropCollection(String collectionName) throws MongoServerException {
+        super.dropCollection(collectionName);
+        String fullCollectionName = getDatabaseName() + "." + collectionName;
+        MVMap<Object, BSONObject> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
+        MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
+        mvStore.removeMap(dataMap);
+        mvStore.removeMap(metaMap);
+    }
+
+    @Override
+    public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
+            throws MongoServerException {
+        super.moveCollection(oldDatabase, collection, newCollectionName);
+        String fullCollectionName = collection.getFullName();
+        String newFullName = collection.getDatabaseName() + "." + newCollectionName;
+        MVMap<Object, BSONObject> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
+        MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
+
+        mvStore.renameMap(dataMap, DATABASES_PREFIX + newFullName);
+        mvStore.renameMap(metaMap, META_PREFIX + newFullName);
     }
 
 }

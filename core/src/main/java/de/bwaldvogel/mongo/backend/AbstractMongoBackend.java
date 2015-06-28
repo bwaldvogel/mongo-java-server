@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoBackend;
+import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -88,9 +89,59 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             final Object argument = query.get(command);
             BSONObject response = getLog(argument == null ? null : argument.toString());
             return response;
+        } else if (command.equalsIgnoreCase("renameCollection")) {
+            return handleRenameCollection(command, query);
         } else {
             throw new NoSuchCommandException(command);
         }
+    }
+
+    private BSONObject handleRenameCollection(String command, BSONObject query) throws MongoServerException {
+        final String oldNamespace = query.get(command).toString();
+        final String newNamespace = query.get("to").toString();
+        boolean dropTarget = Utils.isTrue(query.get("dropTarget"));
+        BSONObject response = new BasicBSONObject();
+
+        if (!oldNamespace.equals(newNamespace)) {
+            MongoCollection<?> oldCollection = resolveCollection(oldNamespace);
+            if (oldCollection == null) {
+                throw new MongoServerException("source namespace does not exist");
+            }
+
+            String newDatabaseName = Utils.getDatabaseNameFromFullName(newNamespace);
+            String newCollectionName = Utils.getCollectionNameFromFullName(newNamespace);
+            MongoDatabase oldDatabase = resolveDatabase(oldCollection.getDatabaseName());
+            MongoDatabase newDatabase = resolveDatabase(newDatabaseName);
+            MongoCollection<?> newCollection = newDatabase.resolveCollection(newCollectionName, false);
+            if (newCollection != null) {
+                if (dropTarget) {
+                    newDatabase.dropCollection(newCollectionName);
+                } else {
+                    throw new MongoServerException("target namespace already exists");
+                }
+            }
+
+            newDatabase.moveCollection(oldDatabase, oldCollection, newCollectionName);
+        }
+        Utils.markOkay(response);
+        return response;
+    }
+
+    private MongoCollection<?> resolveCollection(final String namespace) throws MongoServerException {
+        final String databaseName = Utils.getDatabaseNameFromFullName(namespace);
+        final String collectionName = Utils.getCollectionNameFromFullName(namespace);
+
+        MongoDatabase database = databases.get(databaseName);
+        if (database == null) {
+            return null;
+        }
+
+        MongoCollection<?> collection = database.resolveCollection(collectionName, false);
+        if (collection == null) {
+            return null;
+        }
+
+        return collection;
     }
 
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName) throws MongoServerException;
@@ -162,7 +213,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public void dropDatabase(String databaseName) {
+    public void dropDatabase(String databaseName) throws MongoServerException {
         MongoDatabase removedDatabase = databases.remove(databaseName);
         removedDatabase.drop();
     }

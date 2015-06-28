@@ -9,6 +9,8 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public interface MongoCollection<KEY> {
 
+    String getDatabaseName();
+
     String getFullName();
 
     String getCollectionName();
@@ -44,5 +46,7 @@ public interface MongoCollection<KEY> {
     int getNumIndexes();
 
     void drop();
+
+    void renameTo(String newDatabaseName, String newCollectionName);
 
 }
