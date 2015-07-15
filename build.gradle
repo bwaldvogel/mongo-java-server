@@ -11,9 +11,9 @@ allprojects {
     compileJava.options.encoding = 'UTF-8'
 
     ext {
-        nettyVersion = '4.0.25.Final'
-        mongoJavaDriverVersion = '2.13.0'
-        slf4jVersion = '1.7.10'
+        nettyVersion = '4.0.29.Final'
+        mongoJavaDriverVersion = '2.13.2'
+        slf4jVersion = '1.7.12'
         junitVersion = '4.12'
         festAssertVersion = '1.4'
         powerMockVersion = '1.6.2'

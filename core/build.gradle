@@ -1,5 +1,5 @@
 dependencies {
     compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
     compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
-    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '2.13.0'
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
 }
