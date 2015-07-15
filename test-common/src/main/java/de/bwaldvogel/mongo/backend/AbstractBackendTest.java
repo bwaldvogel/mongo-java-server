@@ -80,6 +80,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     public void testCollectionStats() throws Exception {
         try {
             collection.getStats();
+            fail("MongoCommandException expected");
         } catch (MongoCommandException e) {
             assertThat(e.getCode()).isEqualTo(26);
             assertThat(e.getMessage()).contains("No such collection");
