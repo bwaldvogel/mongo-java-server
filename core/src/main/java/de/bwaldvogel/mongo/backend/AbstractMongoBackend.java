@@ -91,6 +91,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return response;
         } else if (command.equalsIgnoreCase("renameCollection")) {
             return handleRenameCollection(command, query);
+        } else if (command.equalsIgnoreCase("getLastError")) {
+            BSONObject response = new BasicBSONObject();
+            log.debug("getLastError on admin database");
+            Utils.markOkay(response);
+            return response;
         } else {
             throw new NoSuchCommandException(command);
         }

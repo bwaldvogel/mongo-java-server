@@ -106,14 +106,6 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
         CommandResult statsAfter = db.getStats();
 
-        for (String fieldToIgnore : new String[] { "serverUsed" }) {
-            Object valueBefore = statsBefore.removeField(fieldToIgnore);
-            assertThat(valueBefore).isNotNull();
-
-            Object valueAfter = statsAfter.removeField(fieldToIgnore);
-            assertThat(valueAfter).isNotNull();
-        }
-
         assertThat(statsAfter).isEqualTo(statsBefore);
     }
 

@@ -130,11 +130,11 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("dbstats")) {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
-            String collectionName = query.get("collstats").toString();
+            String collectionName = query.get(command).toString();
             MongoCollection<KEY> collection = resolveCollection(collectionName, true);
             return collection.getStats();
         } else if (command.equalsIgnoreCase("validate")) {
-            String collectionName = query.get("validate").toString();
+            String collectionName = query.get(command).toString();
             MongoCollection<KEY> collection = resolveCollection(collectionName, true);
             return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {

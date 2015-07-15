@@ -78,14 +78,17 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testCollectionStats() throws Exception {
-        CommandResult stats = collection.getStats();
-        assertThat(stats.ok()).isFalse();
-        assertThat(stats.getException().getCode()).isEqualTo(26);
-        assertThat(stats.getErrorMessage()).isEqualTo("No such collection");
+        try {
+            collection.getStats();
+        } catch (MongoCommandException e) {
+            assertThat(e.getCode()).isEqualTo(26);
+            assertThat(e.getMessage()).contains("No such collection");
+        }
 
         collection.insert(json("{}"));
         collection.insert(json("abc: 'foo'"));
-        stats = collection.getStats();
+
+        CommandResult stats = collection.getStats();
         stats.throwOnError();
         assertThat(((Number) stats.get("count")).longValue()).isEqualTo(2);
         assertThat(((Number) stats.get("size")).longValue()).isEqualTo(57);
@@ -1291,7 +1294,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             collection.update(json("{}"), json("'a.b.c': 123"));
             fail("IllegalArgumentException expected");
         } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).contains("Bad Key");
+            assertThat(e.getMessage()).contains("Invalid BSON field name a.b.c");
         }
     }
 
@@ -1848,18 +1851,6 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.update(json("x:2"), json("$inc:{'x.$': 1}"), false, true);
         assertThat(collection.findOne(json("x:1")).get("x")).isEqualTo(Arrays.asList(1, 3, 3));
-    }
-
-    @Test
-    public void testMultiUpdateNoOperator() throws Exception {
-        collection.insert(json("x:99"));
-        try {
-            collection.update(json("{x:99}"), json("x:99, y:17"), false, true);
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10158);
-            assertThat(e.getMessage()).contains("multi update only works with $ operators");
-        }
     }
 
     @Test
