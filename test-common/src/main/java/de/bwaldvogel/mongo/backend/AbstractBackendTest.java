@@ -42,6 +42,25 @@ import com.mongodb.WriteResult;
 public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
+    public void testCreateCollection() throws Exception {
+        DBCollection someCollection = db.createCollection("some-collection", json(""));
+        assertThat(someCollection).isNotNull();
+        assertThat(someCollection.count()).isEqualTo(0);
+    }
+
+    @Test
+    public void testCreateCollectionAlreadyExists() throws Exception {
+        db.createCollection("some-collection", json(""));
+        try {
+            db.createCollection("some-collection", json(""));
+            fail("MongoCommandException expected");
+        } catch (MongoCommandException e) {
+            assertThat(e.getCode()).isEqualTo(48);
+            assertThat(e.getMessage()).contains("collection already exists");
+        }
+    }
+
+    @Test
     public void testUnsupportedModifier() throws Exception {
         collection.insert(json("{}"));
         try {

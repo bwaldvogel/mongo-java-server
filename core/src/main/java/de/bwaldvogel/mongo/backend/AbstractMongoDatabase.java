@@ -115,6 +115,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             return commandUpdate(channel, command, query);
         } else if (command.equalsIgnoreCase("delete")) {
             return commandDelete(channel, command, query);
+        } else if (command.equalsIgnoreCase("create")) {
+            return commandCreate(channel, command, query);
         } else if (command.equalsIgnoreCase("createIndexes")) {
             return commandCreateIndexes(channel, command, query);
         } else if (command.equalsIgnoreCase("count")) {
@@ -290,6 +292,30 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
 
         BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
+        Utils.markOkay(response);
+        return response;
+   }
+
+    protected BSONObject commandCreate(Channel channel, String command, BSONObject query) throws MongoServerException {
+        String collectionName = query.get(command).toString();
+        boolean isCapped = Utils.isTrue(query.get("capped"));
+        if (isCapped) {
+            throw new MongoServerException("Creating capped collections is not yet implemented");
+        }
+
+        Object autoIndexId = query.get("autoIndexId");
+        if (autoIndexId != null && !Utils.isTrue(autoIndexId)) {
+            throw new MongoServerException("Disabling autoIndexId is not yet implemented");
+        }
+
+        MongoCollection<KEY> collection = resolveCollection(collectionName, false);
+        if (collection != null) {
+            throw new MongoServerError(48, "collection already exists");
+        }
+
+        createCollection(collectionName);
+
+        BSONObject response = new BasicBSONObject();
         Utils.markOkay(response);
         return response;
     }
