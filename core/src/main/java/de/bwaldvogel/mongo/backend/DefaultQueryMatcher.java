@@ -224,6 +224,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
+    @Override
+    public boolean matchesValue(Object queryValue, Object value) throws MongoServerException {
+        return checkMatchesValue(queryValue, value, true);
+    }
+
     private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) throws MongoServerException {
         if (queryValue instanceof BSONObject) {
             BSONObject queryObject = (BSONObject) queryValue;

@@ -183,10 +183,10 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.createIndex(new BasicDBObject("b", 1));
         List<DBObject> indexes = getCollection("system.indexes").find().toArray();
         assertThat(indexes).containsOnly(
-
-        json("key:{_id:1}").append("ns", collection.getFullName()).append("name", "_id_"),
-                json("key:{n:1}").append("ns", collection.getFullName()).append("name", "n_1"),
-                json("key:{b:1}").append("ns", collection.getFullName()).append("name", "b_1"));
+            json("key:{_id:1}").append("ns", collection.getFullName()).append("name", "_id_"),
+            json("key:{n:1}").append("ns", collection.getFullName()).append("name", "n_1"),
+            json("key:{b:1}").append("ns", collection.getFullName()).append("name", "b_1")
+        );
     }
 
     @Test
@@ -399,11 +399,13 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         DBCursor cursor = collection.find(json("c: {$ne:true}")).sort(json("counts.done: -1, _id: 1"));
         assertThat(cursor.toArray()).containsExactly(
-                json("_id: 5, counts:{done:2}"),
-                json("_id: 4, counts:{done:1}"),
-                json("_id: 1"),
-                json("_id: 2"),
-                json("_id: 3"));
+            json("_id: 5, counts:{done:2}"),
+            json("_id: 4, counts:{done:1}"),
+            json("_id: 1"),
+            json("_id: 2"),
+            json("_id: 3")
+        );
+
         cursor.close();
     }
 
@@ -634,10 +636,10 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insert(json("_id: 'jo'"));
 
         assertThat(collection.find(new BasicDBObject("_id", Pattern.compile("mart"))).toArray()).containsOnly(
-                json("_id: 'marta'"));
+        json("_id: 'marta'"));
 
         assertThat(collection.find(new BasicDBObject("foo", Pattern.compile("ba"))).toArray()).containsOnly(
-                json("_id: 'john', foo: 'bar'"), json("_id: 'jon', foo: 'ba'"));
+        json("_id: 'john', foo: 'bar'"), json("_id: 'jon', foo: 'ba'"));
 
         assertThat(collection.find(new BasicDBObject("foo", Pattern.compile("ba$"))).toArray()).containsOnly(
                 json("_id: 'jon', foo: 'ba'"));
@@ -1210,7 +1212,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insert(json("_id: 3, a: { b:3 }"));
         List<DBObject> results = collection.find().sort(json("'a.b': -1")).toArray();
         assertThat(results).containsExactly(json("_id: 3, a: { b:3 }"), json("_id: 2, a: { b:2 }"),
-                json("_id: 1, a: { b:1 }"));
+            json("_id: 1, a: { b:1 }"));
     }
 
     @Test
@@ -1481,6 +1483,36 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         assertThat(collection.findOne(obj).get("field1")).isEqualTo(Arrays.asList("value1", "value1"));
         assertThat(collection.findOne(obj).get("field2")).isEqualTo(Arrays.asList("value1"));
+    }
+
+    @Test
+    public void testUpdatePullValueWithCondition() {
+        collection.insert(json("_id: 1, votes: [ 3, 5, 6, 7, 7, 8 ]"));
+        collection.update(json("_id: 1"), json("$pull: { votes: { $gte: 6 } }"));
+
+        assertThat(collection.findOne()).isEqualTo(json("_id: 1, votes: [ 3, 5 ]"));
+    }
+
+    @Test
+    public void testUpdatePullDocuments() {
+        collection.insert(json("_id: 1, results: [{item: 'A', score: 5}, {item: 'B', score: 8, comment: 'foobar'}]"));
+        collection.insert(json("_id: 2, results: [{item: 'C', score: 8, comment: 'foobar'}, {item: 'B', score: 4}]"));
+
+        collection.update(json("{}"), json("$pull: { results: { score: 8 , item: 'B' } }"), false, true);
+
+        assertThat(collection.findOne(json("_id: 1"))).isEqualTo(json("_id: 1, results: [{item: 'A', score: 5}]"));
+        assertThat(collection.findOne(json("_id: 2"))).isEqualTo(json("_id: 2, results: [{item: 'C', score: 8, comment: 'foobar'}, {item: 'B', score: 4}]"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/20
+    @Test
+    public void testUpdatePullLeavesEmptyArray() {
+        BasicDBObject obj = json("_id: 1");
+        collection.insert(obj);
+        collection.update(obj, json("$set: {field: [{'key1': 'value1', 'key2': 'value2'}]}"));
+        collection.update(obj, json("$pull: {field: {'key1': 'value1'}}"));
+
+        assertThat(collection.findOne(obj)).isEqualTo(json("_id: 1, field: []"));
     }
 
     @Test

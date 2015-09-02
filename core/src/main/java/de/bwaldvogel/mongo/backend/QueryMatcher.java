@@ -8,6 +8,8 @@ public interface QueryMatcher {
 
     boolean matches(BSONObject document, BSONObject query) throws MongoServerException;
 
+    boolean matchesValue(Object queryValue, Object value) throws MongoServerException;
+
     Integer matchPosition(BSONObject document, BSONObject query) throws MongoServerException;
 
 }

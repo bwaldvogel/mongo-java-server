@@ -291,8 +291,13 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                     do {
                     } while (list.removeAll(valueList));
                 } else {
-                    do {
-                    } while (list.remove(pushValue));
+                    Iterator<Object> it = list.iterator();
+                    while (it.hasNext()) {
+                        Object obj = it.next();
+                        if (matcher.matchesValue(pushValue, obj)) {
+                            it.remove();
+                        }
+                    }
                 }
                 // no need to put something back
             }
