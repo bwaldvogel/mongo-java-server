@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1069,7 +1068,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
         response.put("keysPerIndex", keysPerIndex);
         response.put("valid", Boolean.TRUE);
-        response.put("errors", Arrays.asList());
+        response.put("errors", Collections.emptyList());
         Utils.markOkay(response);
         return response;
     }

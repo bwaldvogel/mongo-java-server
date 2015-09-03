@@ -27,7 +27,7 @@ public class MongoServer {
 
     private static final Logger log = LoggerFactory.getLogger(MongoServer.class);
 
-    private MongoBackend backend;
+    private final MongoBackend backend;
 
     private EventLoopGroup bossGroup;
 
@@ -58,7 +58,7 @@ public class MongoServer {
                     .channel(NioServerSocketChannel.class)//
                     .option(ChannelOption.SO_BACKLOG, 100)//
                     .localAddress(socketAddress)//
-                    .childOption(ChannelOption.TCP_NODELAY, true)//
+                    .childOption(ChannelOption.TCP_NODELAY, Boolean.TRUE)//
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
@@ -142,7 +142,7 @@ public class MongoServer {
     }
 
     private void closeClients() {
-        final int numClients = channelGroup.size();
+        int numClients = channelGroup.size();
         if (numClients > 0) {
             log.warn("Closing {} clients", numClients);
         }

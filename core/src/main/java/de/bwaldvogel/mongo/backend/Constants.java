@@ -6,6 +6,6 @@ public class Constants {
 
     public static final int MAX_NS_LENGTH = 128;
 
-    public static String ID_INDEX_NAME = "_id_";
+    public static final String ID_INDEX_NAME = "_id_";
 
 }

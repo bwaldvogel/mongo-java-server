@@ -6,8 +6,6 @@ import java.util.Map;
 // see http://docs.mongodb.org/manual/reference/operator/update/
 enum UpdateOperator {
 
-
-
     // http://docs.mongodb.org/manual/reference/operator/update-field/
     INC("$inc"), // Increments the value of the field by the specified amount.
     MUL("$mul"), // Multiplies the value of the field by the specified amount.
@@ -36,7 +34,7 @@ enum UpdateOperator {
 
     private String value;
 
-    private UpdateOperator(String value) {
+    UpdateOperator(String value) {
         this.value = value;
     }
 

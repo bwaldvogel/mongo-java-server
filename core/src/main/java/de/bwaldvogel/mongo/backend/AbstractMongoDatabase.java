@@ -1,7 +1,5 @@
 package de.bwaldvogel.mongo.backend;
 
-import io.netty.channel.Channel;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,6 +29,7 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
+import io.netty.channel.Channel;
 
 public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
@@ -43,13 +42,13 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     protected final String databaseName;
     private final MongoBackend backend;
 
-    private Map<String, MongoCollection<KEY>> collections = new ConcurrentHashMap<String, MongoCollection<KEY>>();
+    private final Map<String, MongoCollection<KEY>> collections = new ConcurrentHashMap<String, MongoCollection<KEY>>();
+
+    private final AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<MongoCollection<KEY>>();
+
+    private final Map<Channel, List<BSONObject>> lastResults = new ConcurrentHashMap<Channel, List<BSONObject>>();
 
     private MongoCollection<KEY> namespaces;
-
-    private AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<MongoCollection<KEY>>();
-
-    private Map<Channel, List<BSONObject>> lastResults = new ConcurrentHashMap<Channel, List<BSONObject>>();
 
     protected AbstractMongoDatabase(String databaseName, MongoBackend backend) {
         this.databaseName = databaseName;
