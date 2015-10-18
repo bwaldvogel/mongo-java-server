@@ -11,7 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -838,7 +837,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         for (BSONObject document : queryDocuments(selector, null, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
             BSONObject oldDocument = updateDocument(document, updateQuery, matchPos);
-            if (!Objects.equals(oldDocument, document)) {
+            if (!equals(oldDocument, document)) {
                 nModified++;
             }
             nMatched++;
@@ -861,6 +860,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         result.put("n", Integer.valueOf(nMatched));
         result.put("nModified", Integer.valueOf(nModified));
         return result;
+    }
+
+    private static boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
     }
 
     private BSONObject updateDocument(BSONObject document, BSONObject updateQuery, Integer matchPos)
