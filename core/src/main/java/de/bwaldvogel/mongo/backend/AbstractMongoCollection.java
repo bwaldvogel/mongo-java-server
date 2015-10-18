@@ -837,7 +837,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         for (BSONObject document : queryDocuments(selector, null, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
             BSONObject oldDocument = updateDocument(document, updateQuery, matchPos);
-            if (!equals(oldDocument, document)) {
+            if (!Utils.nullAwareEquals(oldDocument, document)) {
                 nModified++;
             }
             nMatched++;
@@ -860,10 +860,6 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         result.put("n", Integer.valueOf(nMatched));
         result.put("nModified", Integer.valueOf(nModified));
         return result;
-    }
-
-    private static boolean equals(Object a, Object b) {
-        return (a == b) || (a != null && a.equals(b));
     }
 
     private BSONObject updateDocument(BSONObject document, BSONObject updateQuery, Integer matchPos)
