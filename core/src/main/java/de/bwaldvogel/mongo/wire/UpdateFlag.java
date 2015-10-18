@@ -5,7 +5,7 @@ public enum UpdateFlag implements Flag {
 
     private int value;
 
-    private UpdateFlag(int bit) {
+    UpdateFlag(int bit) {
         this.value = 1 << bit;
     }
 

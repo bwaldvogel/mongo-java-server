@@ -4,7 +4,6 @@
 .project
 .settings/
 .gradle
-target/
 build/
 
 *.iml
@@ -12,4 +11,4 @@ build/
 *.class
 bin/
 
-release.properties
+*.iml

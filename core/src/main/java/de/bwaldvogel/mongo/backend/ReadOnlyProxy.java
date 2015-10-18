@@ -1,7 +1,5 @@
 package de.bwaldvogel.mongo.backend;
 
-import io.netty.channel.Channel;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -15,6 +13,7 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
+import io.netty.channel.Channel;
 
 public class ReadOnlyProxy implements MongoBackend {
 
@@ -28,6 +27,7 @@ public class ReadOnlyProxy implements MongoBackend {
         allowedCommands.add("collstats");
         allowedCommands.add("serverstatus");
         allowedCommands.add("buildinfo");
+        allowedCommands.add("getlasterror");
     }
 
     private MongoBackend backend;

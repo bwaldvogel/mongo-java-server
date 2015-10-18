@@ -14,7 +14,7 @@ public class MongoReply {
     private int flags;
 
     public MongoReply(MessageHeader header, BSONObject document) {
-        this(header, Arrays.asList(document));
+        this(header, Collections.singletonList(document));
     }
 
     public MongoReply(MessageHeader header, List<? extends BSONObject> documents) {

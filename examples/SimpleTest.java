@@ -2,22 +2,21 @@ import static org.junit.Assert.assertEquals;
 
 import java.net.InetSocketAddress;
 
+import org.bson.Document;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoCollection;
 
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 
 public class SimpleTest {
 
-    private DBCollection collection;
+    private MongoCollection<Document> collection;
     private MongoClient client;
     private MongoServer server;
 
@@ -29,7 +28,7 @@ public class SimpleTest {
         InetSocketAddress serverAddress = server.bind();
 
         client = new MongoClient(new ServerAddress(serverAddress));
-        collection = client.getDB("testdb").getCollection("testcollection");
+        collection = client.getDatabase("testdb").getCollection("testcollection");
     }
 
     @After
@@ -43,11 +42,11 @@ public class SimpleTest {
         assertEquals(0, collection.count());
 
         // creates the database and collection in memory and insert the object
-        DBObject obj = new BasicDBObject("_id", 1).append("key", "value");
-        collection.insert(obj);
+        Document obj = new Document("_id", 1).append("key", "value");
+        collection.insertOne(obj);
 
         assertEquals(1, collection.count());
-        assertEquals(obj, collection.findOne());
+        assertEquals(obj, collection.find().first());
     }
 
 }

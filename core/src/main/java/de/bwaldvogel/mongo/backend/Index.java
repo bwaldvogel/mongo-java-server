@@ -4,6 +4,7 @@ import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public abstract class Index<KEY> {
 
@@ -28,9 +29,9 @@ public abstract class Index<KEY> {
         return Utils.normalizeValue(value);
     }
 
-    public abstract void checkAdd(BSONObject document) throws KeyConstraintError;
+    public abstract void checkAdd(BSONObject document) throws MongoServerException;
 
-    public abstract void add(BSONObject document, KEY key) throws KeyConstraintError;
+    public abstract void add(BSONObject document, KEY key) throws MongoServerException;
 
     public abstract KEY remove(BSONObject document);
 
@@ -42,7 +43,7 @@ public abstract class Index<KEY> {
 
     public abstract long getDataSize();
 
-    public abstract void checkUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError;
+    public abstract void checkUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerException;
 
     public abstract void updateInPlace(BSONObject oldDocument, BSONObject newDocument) throws KeyConstraintError;
 

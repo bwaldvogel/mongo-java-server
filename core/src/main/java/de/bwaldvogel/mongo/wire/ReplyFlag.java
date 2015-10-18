@@ -8,7 +8,7 @@ public enum ReplyFlag implements Flag {
 
     private int value;
 
-    private ReplyFlag(int bit) {
+    ReplyFlag(int bit) {
         this.value = 1 << bit;
     }
 

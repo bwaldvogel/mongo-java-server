@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import org.bson.BSONObject;
 import org.bson.BasicBSONObject;
@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
-
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class AbstractMongoCollectionTest {
@@ -58,9 +57,9 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<Object> keys, BSONObject orderBy, int numberToSkip, int numberToReturn)
-                throws MongoServerException {
-           throw new UnsupportedOperationException();
+        protected Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<Object> keys, BSONObject orderBy,
+                int numberToSkip, int numberToReturn) throws MongoServerException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -121,16 +120,16 @@ public class AbstractMongoCollectionTest {
     public void testDeriveDocumentId() throws Exception {
         assertThat(collection.deriveDocumentId(new BasicBSONObject())).isInstanceOf(ObjectId.class);
 
-        assertThat(collection.deriveDocumentId(new BasicBSONObject("a", 1))) //
-                .isInstanceOf(ObjectId.class);
+        assertThat(collection.deriveDocumentId(new BasicBSONObject("a", 1))).isInstanceOf(ObjectId.class);
 
-        assertThat(collection.deriveDocumentId(new BasicBSONObject("_id", 1))) //
-                .isEqualTo(1);
+        assertThat(collection.deriveDocumentId(new BasicBSONObject("_id", 1))).isEqualTo(1);
 
-        assertThat(collection.deriveDocumentId(new BasicBSONObject("_id", new BasicDBObject("$in", Arrays.asList(1))))) //
-                .isEqualTo(1);
+        assertThat(collection
+                .deriveDocumentId(new BasicBSONObject("_id", new BasicDBObject("$in", Collections.singletonList(1)))))
+                        .isEqualTo(1);
 
-        assertThat(collection.deriveDocumentId(new BasicBSONObject("_id", new BasicDBObject("$in", Arrays.asList())))) //
-                .isInstanceOf(ObjectId.class);
+        assertThat(collection
+                .deriveDocumentId(new BasicBSONObject("_id", new BasicDBObject("$in", Collections.emptyList()))))
+                        .isInstanceOf(ObjectId.class);
     }
 }

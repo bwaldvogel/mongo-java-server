@@ -24,7 +24,7 @@ public enum OpCode {
         }
     }
 
-    private OpCode(final int id) {
+    OpCode(final int id) {
         this.id = id;
     }
 

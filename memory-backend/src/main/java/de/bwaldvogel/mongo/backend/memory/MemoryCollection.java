@@ -121,7 +121,11 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
         }
 
         if (numberToSkip > 0) {
-            matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
+            if (numberToSkip < matchedDocuments.size()) {
+                matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
+            } else {
+                return Collections.emptyList();
+            }
         }
 
         if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {

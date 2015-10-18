@@ -2,11 +2,13 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
 
 import com.mongodb.DefaultDBEncoder;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class Utils {
 
@@ -172,7 +174,38 @@ public class Utils {
         throw new IllegalArgumentException("illegal document: " + document);
     }
 
-    public static boolean hasFieldValueListSafe(Object document, String field) throws IllegalArgumentException {
+    public static boolean hasSubdocumentValue(Object document, String key) throws MongoServerError {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = getSubkey(key, dotPos, new AtomicReference<Integer>());
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+                return hasSubdocumentValue(subObject, subKey);
+            } else {
+                return false;
+            }
+        } else {
+            return Utils.hasFieldValueListSafe(document, key);
+        }
+    }
+
+    public static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) throws MongoServerError {
+        String subKey = key.substring(dotPos + 1);
+
+        if (subKey.matches("\\$(\\..+)?")) {
+            if (matchPos == null || matchPos.get() == null) {
+                throw new MongoServerError(16650, //
+                        "Cannot apply the positional operator without a corresponding query " //
+                                + "field containing an array.");
+            }
+            Integer pos = matchPos.getAndSet(null);
+            return subKey.replaceFirst("\\$", String.valueOf(pos));
+        }
+        return subKey;
+    }
+
+    static boolean hasFieldValueListSafe(Object document, String field) throws IllegalArgumentException {
         if (document == null) {
             return false;
         }

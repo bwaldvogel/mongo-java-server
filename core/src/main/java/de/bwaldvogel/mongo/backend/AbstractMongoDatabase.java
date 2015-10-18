@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -217,7 +216,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         int n = 0;
         for (BSONObject document : documents) {
             try {
-                insertDocuments(channel, collectionName, Arrays.asList(document));
+                insertDocuments(channel, collectionName, Collections.singletonList(document));
                 n++;
             } catch (MongoServerError e) {
                 BSONObject error = new BasicBSONObject();
@@ -244,8 +243,9 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
         @SuppressWarnings("unchecked")
         List<BSONObject> updates = (List<BSONObject>) query.get("updates");
-        int n = 0;
-        boolean updatedExisting = false;
+        int nMatched = 0;
+        int nModified = 0;
+        int nUpserted = 0;
         Collection<BSONObject> upserts = new ArrayList<BSONObject>();
         for (BSONObject updateObj : updates) {
             BSONObject selector = (BSONObject) updateObj.get("q");
@@ -253,19 +253,19 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             boolean multi = Utils.isTrue(updateObj.get("multi"));
             boolean upsert = Utils.isTrue(updateObj.get("upsert"));
             final BSONObject result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
-            updatedExisting |= Utils.isTrue(result.get("updatedExisting"));
             if (result.containsField("upserted")) {
                 final Object id = result.get("upserted");
                 final BSONObject upserted = new BasicBSONObject("index", upserts.size());
                 upserted.put("_id", id);
                 upserts.add(upserted);
             }
-            Integer resultNumber = (Integer) result.get("n");
-            n += resultNumber.intValue();
+            nMatched += ((Integer) result.get("n")).intValue();
+            nModified += ((Integer) result.get("nModified")).intValue();
         }
 
-        BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
-        response.put("updatedExisting", Boolean.valueOf(updatedExisting));
+        BSONObject response = new BasicBSONObject();
+        response.put("n", nMatched);
+        response.put("nModified", nModified);
         if (!upserts.isEmpty()) {
             response.put("upserted", upserts);
         }
@@ -490,10 +490,18 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             response.put("missing", Boolean.TRUE);
             response.put("n", Integer.valueOf(0));
         } else {
-            response.put("n", Integer.valueOf(coll.count((BSONObject) query.get("query"))));
+            BSONObject queryObject = (BSONObject) query.get("query");
+            int limit = getOptionalNumber(query, "limit", -1);
+            int skip = getOptionalNumber(query, "skip", 0);
+            response.put("n", Integer.valueOf(coll.count(queryObject, skip, limit)));
         }
         Utils.markOkay(response);
         return response;
+    }
+
+    private int getOptionalNumber(BSONObject query, String fieldName, int defaultValue) {
+        Number limitNumber = (Number) query.get(fieldName);
+        return limitNumber != null ? limitNumber.intValue() : defaultValue;
     }
 
     @Override

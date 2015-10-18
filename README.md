@@ -28,7 +28,7 @@ MongoDB, and probably never will.
 ```java
 public class SimpleTest {
 
-    private DBCollection collection;
+    private MongoCollection<Document> collection;
     private MongoClient client;
     private MongoServer server;
 
@@ -40,13 +40,13 @@ public class SimpleTest {
         InetSocketAddress serverAddress = server.bind();
 
         client = new MongoClient(new ServerAddress(serverAddress));
-        collection = client.getDB("testdb").getCollection("testcollection");
+        collection = client.getDatabase("testdb").getCollection("testcollection");
     }
 
     @After
     public void tearDown() {
         client.close();
-        server.shutdownNow();
+        server.shutdown();
     }
 
     @Test
@@ -54,11 +54,11 @@ public class SimpleTest {
         assertEquals(0, collection.count());
 
         // creates the database and collection in memory and insert the object
-        DBObject obj = new BasicDBObject("_id", 1).append("key", "value");
-        collection.insert(obj);
+        Document obj = new Document("_id", 1).append("key", "value");
+        collection.insertOne(obj);
 
         assertEquals(1, collection.count());
-        assertEquals(obj, collection.findOne());
+        assertEquals(obj, collection.find().first());
     }
 
 }

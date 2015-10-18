@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import org.bson.Document;
 import org.junit.Test;
 
 import com.mongodb.MongoClient;
@@ -25,12 +26,12 @@ public abstract class MongoServerTest {
             InetSocketAddress serverAddress = server.bind();
             client = new MongoClient(new ServerAddress(serverAddress));
             // request something
-            client.getDB("admin").command("serverStatus").throwOnError();
+            pingServer(client);
 
             server.stopListenting();
 
             // existing clients must still work
-            client.getDB("admin").command("serverStatus").throwOnError();
+            pingServer(client);
 
             // new clients must fail
             client.close();
@@ -60,7 +61,7 @@ public abstract class MongoServerTest {
         client = new MongoClient(new ServerAddress(serverAddress));
 
         // request something to open a connection
-        client.getDB("admin").command("serverStatus").throwOnError();
+        pingServer(client);
 
         server.shutdownNow();
     }
@@ -87,12 +88,12 @@ public abstract class MongoServerTest {
             final MongoClient client = new MongoClient(new ServerAddress(serverAddress));
 
             // request something to open a connection
-            client.getDB("admin").command("serverStatus").throwOnError();
+            pingServer(client);
 
             server.shutdownNow();
 
             try {
-                client.getDB("admin").command("serverStatus");
+                pingServer(client);
                 fail("MongoException expected");
             } catch (MongoException e) {
                 // okay
@@ -107,9 +108,14 @@ public abstract class MongoServerTest {
             // Fails otherwise with mongo-java-driver 2.12.0 unless we would use
             // a Thread.sleep(100) or so.
             final MongoClient client = new MongoClient(new ServerAddress(serverAddress));
-            client.getDB("admin").command("serverStatus").throwOnError();
+            pingServer(client);
             client.close();
         }
         server.shutdownNow();
     }
+
+    private void pingServer(MongoClient client) {
+        client.getDatabase("admin").runCommand(new Document("serverStatus", 1));
+    }
+
 }

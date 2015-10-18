@@ -38,24 +38,25 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     }
 
     @Override
-    public synchronized void checkAdd(BSONObject document) throws KeyConstraintError {
-        Object keyValue = getKeyValue(document);
-        if (keyValue == null) {
+    public synchronized void checkAdd(BSONObject document) throws MongoServerError {
+        if (!Utils.hasSubdocumentValue(document, key)) {
             return;
         }
 
+        Object keyValue = getKeyValue(document);
         if (containsKeyValue(keyValue)) {
             throw new DuplicateKeyError(this, keyValue);
         }
     }
 
     @Override
-    public synchronized void add(BSONObject document, KEY key) throws KeyConstraintError {
+    public synchronized void add(BSONObject document, KEY key) throws MongoServerError {
         checkAdd(document);
-        Object keyValue = getKeyValue(document);
-        if (keyValue != null) {
-            putKeyValue(keyValue, key);
+        if (!Utils.hasSubdocumentValue(document, this.key)) {
+            return;
         }
+        Object keyValue = getKeyValue(document);
+        putKeyValue(keyValue, key);
     }
 
     @Override

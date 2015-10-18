@@ -11,7 +11,7 @@ public enum QueryFlag implements Flag {
 
     private int value;
 
-    private QueryFlag(int bit) {
+    QueryFlag(int bit) {
         this.value = 1 << bit;
     }
 

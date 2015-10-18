@@ -1,19 +1,18 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.json;
+
 import java.net.InetSocketAddress;
 
+import org.bson.Document;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.CommandResult;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.Mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;
-import com.mongodb.util.JSON;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoServer;
@@ -22,28 +21,20 @@ public abstract class AbstractSimpleBackendTest {
 
     private MongoServer mongoServer;
 
-    protected Mongo client;
-    protected DB db;
-    protected DBCollection collection;
+    protected MongoClient client;
+    protected MongoDatabase db;
+    protected MongoCollection<Document> collection;
 
-    protected CommandResult command(String command) {
-        return getAdminDb().command(command);
+    protected Document command(String command) {
+        return getAdminDb().runCommand(new Document(command, Integer.valueOf(1)));
     }
 
-    protected DBCollection getCollection(String collectionName) {
+    protected MongoCollection<Document> getCollection(String collectionName) {
         return db.getCollection(collectionName);
     }
 
-    protected BasicDBObject json(String string) {
-        string = string.trim();
-        if (!string.startsWith("{")) {
-            string = "{" + string + "}";
-        }
-        return (BasicDBObject) JSON.parse(string);
-    }
-
-    protected DB getAdminDb() {
-        return client.getDB("admin");
+    protected MongoDatabase getAdminDb() {
+        return client.getDatabase("admin");
     }
 
     protected abstract MongoBackend createBackend() throws Exception;
@@ -63,7 +54,7 @@ public abstract class AbstractSimpleBackendTest {
         mongoServer = new MongoServer(backend);
         InetSocketAddress serverAddress = mongoServer.bind();
         client = new MongoClient(new ServerAddress(serverAddress));
-        db = client.getDB("testdb");
+        db = client.getDatabase("testdb");
         collection = db.getCollection("testcoll");
     }
 
@@ -74,13 +65,13 @@ public abstract class AbstractSimpleBackendTest {
 
     @Test
     public void testSimpleInsert() throws Exception {
-        collection.insert(json("_id: 1"));
+        collection.insertOne(json("_id: 1"));
     }
 
     @Test
     public void testSimpleInsertDelete() throws Exception {
-        collection.insert(json("_id: 1"));
-        collection.remove(json("_id: 1"));
+        collection.insertOne(json("_id: 1"));
+        collection.deleteOne(json("_id: 1"));
     }
 
 }

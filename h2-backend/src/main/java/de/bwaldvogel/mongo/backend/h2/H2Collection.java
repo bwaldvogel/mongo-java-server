@@ -63,7 +63,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             key = UUID.randomUUID();
         }
 
-        BSONObject previous = dataMap.put(key, document);
+        BSONObject previous = dataMap.put(NullableKey.of(key), document);
         if (previous != null) {
             throw new IllegalArgumentException("Document with key '" + key + "' already existed in " + this + ": "
                     + previous);
@@ -163,7 +163,11 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         }
 
         if (numberToSkip > 0) {
-            matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
+            if (numberToSkip < matchedDocuments.size()) {
+                matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
+            } else {
+                return Collections.emptyList();
+            }
         }
 
         if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {

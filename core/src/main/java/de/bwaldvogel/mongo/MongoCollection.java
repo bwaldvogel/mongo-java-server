@@ -39,7 +39,7 @@ public interface MongoCollection<KEY> {
 
     BSONObject findAndModify(BSONObject query) throws MongoServerException;
 
-    int count(BSONObject query) throws MongoServerException;
+    int count(BSONObject query, int skip, int limit) throws MongoServerException;
 
     int count();
 

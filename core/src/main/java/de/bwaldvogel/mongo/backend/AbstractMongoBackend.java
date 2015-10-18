@@ -57,7 +57,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         log.debug("getLog: {}", argument);
         BSONObject response = new BasicBSONObject();
         if (argument.equals("*")) {
-            response.put("names", Arrays.asList("startupWarnings"));
+            response.put("names", Collections.singletonList("startupWarnings"));
             Utils.markOkay(response);
         } else if (argument.equals("startupWarnings")) {
             response.put("totalLinesWritten", Integer.valueOf(0));

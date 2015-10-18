@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -42,7 +43,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return matcher.matches(document, query);
     }
 
-    protected Iterable<BSONObject> queryDocuments(BSONObject query, BSONObject orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<BSONObject> queryDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+            int numberToReturn) throws MongoServerException {
         synchronized (indexes) {
             for (Index<KEY> index : indexes) {
                 if (index.canHandle(query)) {
@@ -55,9 +57,11 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return matchDocuments(query, orderBy, numberToSkip, numberToReturn);
     }
 
-    protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip, int numberToReturn) throws MongoServerException;
+    protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+            int numberToReturn) throws MongoServerException;
 
-    protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<KEY> keys, BSONObject orderBy, int numberToSkip, int numberToReturn) throws MongoServerException;
+    protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<KEY> keys, BSONObject orderBy,
+            int numberToSkip, int numberToReturn) throws MongoServerException;
 
     protected abstract BSONObject getDocument(KEY key);
 
@@ -124,7 +128,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, matchPos);
+            String subKey = Utils.getSubkey(key, dotPos, matchPos);
 
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject || subObject instanceof List<?>) {
@@ -139,21 +143,6 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) throws MongoServerError {
-        String subKey = key.substring(dotPos + 1);
-
-        if (subKey.matches("\\$(\\..+)?")) {
-            if (matchPos == null || matchPos.get() == null) {
-                throw new MongoServerError(16650, //
-                        "Cannot apply the positional operator without a corresponding query " //
-                                + "field containing an array.");
-            }
-            Integer pos = matchPos.getAndSet(null);
-            return subKey.replaceFirst("\\$", String.valueOf(pos));
-        }
-        return subKey;
-    }
-
     private Object removeSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
         return removeSubdocumentValue(document, key, new AtomicReference<Integer>(matchPos));
     }
@@ -163,7 +152,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, matchPos);
+            String subKey = Utils.getSubkey(key, dotPos, matchPos);
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject || subObject instanceof List<?>) {
                 return removeSubdocumentValue(subObject, subKey, matchPos);
@@ -184,7 +173,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, matchPos);
+            String subKey = Utils.getSubkey(key, dotPos, matchPos);
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject || subObject instanceof List<?>) {
                 return getSubdocumentValue(subObject, subKey, matchPos);
@@ -196,25 +185,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private boolean hasSubdocumentValue(Object document, String key)
-            throws MongoServerException {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, new AtomicReference<Integer>());
-            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
-                return hasSubdocumentValue(subObject, subKey);
-            } else {
-                return false;
-            }
-        } else {
-            return Utils.hasFieldValueListSafe(document, key);
-        }
-    }
-
-    private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos, boolean isUpsert)
-            throws MongoServerException {
+    private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos,
+            boolean isUpsert) throws MongoServerException {
 
         final UpdateOperator op;
         try {
@@ -374,7 +346,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 final boolean shouldChange;
                 // If the field does not exists, the $min/$max operator sets the
                 // field to the specified value
-                if (oldValue == null && !hasSubdocumentValue(document, key)) {
+                if (oldValue == null && !Utils.hasSubdocumentValue(document, key)) {
                     shouldChange = true;
                 } else if (op == UpdateOperator.MAX) {
                     shouldChange = valueComparison > 0;
@@ -447,8 +419,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                     throw new MongoServerError(16837, "Cannot update '" + key + "' and '" + key + "' at the same time");
                 }
                 if (renames.containsKey(newKey) || renames.containsValue(newKey)) {
-                    throw new MongoServerError(16837, "Cannot update '" + newKey + "' and '" + newKey
-                            + "' at the same time");
+                    throw new MongoServerError(16837,
+                            "Cannot update '" + newKey + "' and '" + newKey + "' at the same time");
                 }
 
                 renames.put(key, newKey);
@@ -465,8 +437,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private void updatePushAllAddToSet(BSONObject document, UpdateOperator updateOperator, BSONObject change, Integer matchPos)
-            throws MongoServerException {
+    private void updatePushAllAddToSet(BSONObject document, UpdateOperator updateOperator, BSONObject change,
+            Integer matchPos) throws MongoServerException {
         // http://docs.mongodb.org/manual/reference/operator/push/
         for (String key : change.keySet()) {
             Object value = getSubdocumentValue(document, key, matchPos);
@@ -506,7 +478,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                             list.add(val);
                         }
                     } else {
-                        throw new MongoServerException("internal server error. illegal modifier here: " + updateOperator);
+                        throw new MongoServerException(
+                                "internal server error. illegal modifier here: " + updateOperator);
                     }
                 }
             }
@@ -775,7 +748,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
         @Override
         public boolean hasNext() {
-           return this.iterator.hasNext();
+            return this.iterator.hasNext();
         }
 
         @Override
@@ -787,7 +760,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
         @Override
         public void remove() {
-           this.iterator.remove();
+            this.iterator.remove();
         }
 
     }
@@ -851,8 +824,6 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     @Override
     public synchronized BSONObject updateDocuments(BSONObject selector, BSONObject updateQuery, boolean isMulti,
             boolean isUpsert) throws MongoServerException {
-        int n = 0;
-        boolean updatedExisting = false;
 
         if (isMulti) {
             for (String key : updateQuery.keySet()) {
@@ -862,11 +833,15 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             }
         }
 
+        int nMatched = 0;
+        int nModified = 0;
         for (BSONObject document : queryDocuments(selector, null, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
-            updateDocument(document, updateQuery, matchPos);
-            updatedExisting = true;
-            n++;
+            BSONObject oldDocument = updateDocument(document, updateQuery, matchPos);
+            if (!Objects.equals(oldDocument, document)) {
+                nModified++;
+            }
+            nMatched++;
 
             if (!isMulti) {
                 break;
@@ -876,16 +851,15 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         BSONObject result = new BasicBSONObject();
 
         // insert?
-        if (n == 0 && isUpsert) {
+        if (nModified == 0 && isUpsert) {
             BSONObject newDocument = handleUpsert(updateQuery, selector);
             if (!selector.containsField(idField)) {
                 result.put("upserted", newDocument.get(idField));
             }
-            n++;
         }
 
-        result.put("n", Integer.valueOf(n));
-        result.put("updatedExisting", Boolean.valueOf(updatedExisting));
+        result.put("n", Integer.valueOf(nMatched));
+        result.put("nModified", Integer.valueOf(nModified));
         return result;
     }
 
@@ -989,13 +963,21 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public int count(BSONObject query) throws MongoServerException {
+    public int count(BSONObject query, int skip, int limit) throws MongoServerException {
         if (query.keySet().isEmpty()) {
-            return count();
+            int count = count();
+            if (skip > 0) {
+                count = Math.max(0, count - skip);
+            }
+            if (limit > 0) {
+                return Math.min(limit, count);
+            }
+            return count;
         }
 
+        int numberToReturn = (limit >= 0) ? limit : 0;
         int count = 0;
-        Iterator<?> it = queryDocuments(query, null, 0, 0).iterator();
+        Iterator<?> it = queryDocuments(query, null, skip, numberToReturn).iterator();
         while (it.hasNext()) {
             it.next();
             count++;
@@ -1084,6 +1066,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     protected abstract KEY findDocument(BSONObject document);
 
     protected abstract int getRecordCount();
+
     protected abstract int getDeletedCount();
 
 }

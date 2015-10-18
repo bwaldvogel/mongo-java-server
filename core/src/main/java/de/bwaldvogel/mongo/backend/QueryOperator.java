@@ -22,7 +22,7 @@ enum QueryOperator {
 
     private String value;
 
-    private QueryOperator(String value) {
+    QueryOperator(String value) {
         this.value = value;
     }
 

@@ -17,17 +17,17 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
     @Override
     protected Object removeDocument(Object keyValue) {
-        return mvMap.remove(keyValue);
+        return mvMap.remove(NullableKey.of(keyValue));
     }
 
     @Override
     protected boolean containsKeyValue(Object keyValue) {
-        return mvMap.containsKey(keyValue);
+        return mvMap.containsKey(NullableKey.of(keyValue));
     }
 
     @Override
     protected void putKeyValue(Object keyValue, Object key) {
-        mvMap.put(keyValue, key);
+        mvMap.put(NullableKey.of(keyValue), NullableKey.of(key));
     }
 
     @Override
