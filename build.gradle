@@ -12,7 +12,7 @@ allprojects {
 
     ext {
         nettyVersion = '4.0.34.Final'
-        mongoJavaDriverVersion = '3.1.0'
+        mongoJavaDriverVersion = '3.2.1'
         slf4jVersion = '1.7.14'
         junitVersion = '4.12'
         festAssertVersion = '1.4'
