@@ -16,7 +16,7 @@ allprojects {
         slf4jVersion = '1.7.14'
         junitVersion = '4.12'
         festAssertVersion = '1.4'
-        powerMockVersion = '1.6.2'
+        powerMockVersion = '1.6.4'
         powerMockClassExtensionVersion = '3.2'
         logbackVersion = '1.1.3'
     }
