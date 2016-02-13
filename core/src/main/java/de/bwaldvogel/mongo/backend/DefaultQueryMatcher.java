@@ -234,13 +234,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (queryValue instanceof BSONObject) {
             BSONObject queryObject = (BSONObject) queryValue;
 
-            if (queryObject.containsField("$regex")) {
-                String options = "";
-                if (queryObject.containsField("$options")) {
-                    options = queryObject.get("$options").toString();
-                }
-
-                Pattern pattern = Utils.createPattern(queryObject.get("$regex").toString(), options);
+            if (isRegexQuery(queryObject)) {
+                Pattern pattern = convertToPattern(queryObject);
                 return pattern.matcher(value.toString()).find();
             }
 
@@ -267,6 +262,22 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         return Utils.nullAwareEquals(value, queryValue);
+    }
+
+    private boolean isRegexQuery(BSONObject queryObject) {
+        if (queryObject.keySet().size() == 1) {
+            return queryObject.containsField("$regex");
+        }
+        return false;
+    }
+
+    private Pattern convertToPattern(BSONObject queryObject) {
+        String options = "";
+        if (queryObject.containsField("$options")) {
+            options = queryObject.get("$options").toString();
+        }
+
+        return Utils.createPattern(queryObject.get("$regex").toString(), options);
     }
 
     @SuppressWarnings("unchecked")

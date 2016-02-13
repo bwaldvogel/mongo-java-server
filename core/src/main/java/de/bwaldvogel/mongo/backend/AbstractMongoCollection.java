@@ -187,20 +187,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos,
             boolean isUpsert) throws MongoServerException {
 
-        final UpdateOperator op;
-        try {
-            op = UpdateOperator.fromValue(modifier);
-        } catch (IllegalArgumentException e) {
-            throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
-        }
-
-        if (op != UpdateOperator.UNSET) {
-            for (String key : change.keySet()) {
-                if (key.startsWith("$")) {
-                    throw new MongoServerError(15896, "Modified field name may not start with $");
-                }
-            }
-        }
+        UpdateOperator op = getUpdateOperator(modifier, change);
 
         switch (op) {
         case SET_ON_INSERT:
@@ -251,20 +238,20 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                     throw new MongoServerError(10142, "Cannot apply " + modifier + " modifier to non-array");
                 }
 
-                Object pushValue = change.get(key);
+                Object pullValue = change.get(key);
                 if (modifier.equals("$pullAll")) {
-                    if (!(pushValue instanceof Collection<?>)) {
+                    if (!(pullValue instanceof Collection<?>)) {
                         throw new MongoServerError(10153, "Modifier " + modifier + " allowed for arrays only");
                     }
                     @SuppressWarnings("unchecked")
-                    Collection<Object> valueList = (Collection<Object>) pushValue;
+                    Collection<Object> valueList = (Collection<Object>) pullValue;
                     do {
                     } while (list.removeAll(valueList));
                 } else {
                     Iterator<Object> it = list.iterator();
                     while (it.hasNext()) {
                         Object obj = it.next();
-                        if (matcher.matchesValue(pushValue, obj)) {
+                        if (matcher.matchesValue(pullValue, obj)) {
                             it.remove();
                         }
                     }
@@ -434,6 +421,24 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         default:
             throw new MongoServerError(10147, "Unsupported modifier: " + modifier);
         }
+    }
+
+    private UpdateOperator getUpdateOperator(String modifier, BSONObject change) throws MongoServerError {
+        final UpdateOperator op;
+        try {
+            op = UpdateOperator.fromValue(modifier);
+        } catch (IllegalArgumentException e) {
+            throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
+        }
+
+        if (op != UpdateOperator.UNSET) {
+            for (String key : change.keySet()) {
+                if (key.startsWith("$")) {
+                    throw new MongoServerError(15896, "Modified field name may not start with $");
+                }
+            }
+        }
+        return op;
     }
 
     private void updatePushAllAddToSet(BSONObject document, UpdateOperator updateOperator, BSONObject change,
