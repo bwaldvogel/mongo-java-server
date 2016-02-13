@@ -257,7 +257,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         if (value != null && queryValue instanceof Pattern) {
-            Matcher matcher = ((Pattern) queryValue).matcher(value.toString());
+            Pattern pattern = (Pattern) queryValue;
+            Matcher matcher = pattern.matcher(value.toString());
             return matcher.find();
         }
 
@@ -265,10 +266,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean isRegexQuery(BSONObject queryObject) {
-        if (queryObject.keySet().size() == 1) {
-            return queryObject.containsField("$regex");
-        }
-        return false;
+        return queryObject.containsField("$regex");
     }
 
     private Pattern convertToPattern(BSONObject queryObject) {
@@ -326,7 +324,12 @@ public class DefaultQueryMatcher implements QueryMatcher {
         case IN:
             Collection<?> queriedObjects = (Collection<?>) expressionValue;
             for (Object o : queriedObjects) {
-                if (Utils.nullAwareEquals(o, value)) {
+                if (o instanceof Pattern && value instanceof String) {
+                    Pattern pattern = (Pattern) o;
+                    if (pattern.matcher((String) value).find()) {
+                        return true;
+                    }
+                } else if (Utils.nullAwareEquals(o, value)) {
                     return true;
                 }
             }

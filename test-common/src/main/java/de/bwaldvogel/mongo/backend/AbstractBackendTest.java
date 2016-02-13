@@ -2393,6 +2393,36 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(document).isEqualTo(json("_id:1, eid: 12345"));
     }
 
+    @Test
+    public void testPullWithInPattern() {
+
+        collection.insertOne(json("_id: 1, tags: ['aa', 'bb', 'ab', 'cc']"));
+
+        collection.updateOne(json("_id: 1"), json("$pull: {tags: {$in: [{$regex: 'a+'}]}}"));
+
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, tags: ['bb', 'cc']"));
+    }
+
+    @Test
+    public void testPullWithInPatternAnchored() {
+
+        collection.insertOne(json("_id: 1, tags: ['aa', 'bb', 'ab', 'cc']"));
+
+        collection.updateOne(json("_id: 1"), json("$pull: {tags: {$in: [{$regex: '^a+$'}]}}"));
+
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, tags: ['bb', 'ab', 'cc']"));
+    }
+
+    @Test
+    public void testPullWithInNumbers() {
+
+        collection.insertOne(json("_id: 1, values: [1, 2, 2.5, 3.0]"));
+
+        collection.updateOne(json("_id: 1"), json("$pull: {values: {$in: [2.0, 3]}}"));
+
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, values: [1, 2.5]"));
+    }
+
     private void insertUpdateInBulk(boolean ordered) {
         List<WriteModel<Document>> ops = new ArrayList<>();
 
