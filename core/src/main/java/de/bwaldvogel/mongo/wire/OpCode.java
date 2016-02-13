@@ -16,7 +16,7 @@ public enum OpCode {
 
     private final int id;
 
-    private static Map<Integer, OpCode> byIdMap = new HashMap<Integer, OpCode>();
+    private static Map<Integer, OpCode> byIdMap = new HashMap<>();
 
     static {
         for (final OpCode opCode : values()) {

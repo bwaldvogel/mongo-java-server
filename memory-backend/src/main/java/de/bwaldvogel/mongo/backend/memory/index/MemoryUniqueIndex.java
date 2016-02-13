@@ -8,7 +8,7 @@ import de.bwaldvogel.mongo.backend.AbstractUniqueIndex;
 
 public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
 
-    private Map<Object, Integer> index = new HashMap<Object, Integer>();
+    private Map<Object, Integer> index = new HashMap<>();
 
     public MemoryUniqueIndex(String key, boolean ascending) {
         super(key, ascending);

@@ -20,8 +20,8 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     private static final Logger log = LoggerFactory.getLogger(MemoryCollection.class);
 
-    private List<BSONObject> documents = new ArrayList<BSONObject>();
-    private Queue<Integer> emptyPositions = new LinkedList<Integer>();
+    private List<BSONObject> documents = new ArrayList<>();
+    private Queue<Integer> emptyPositions = new LinkedList<>();
     private AtomicLong dataSize = new AtomicLong();
 
     public MemoryCollection(String databaseName, String collectionName, String idField) {
@@ -56,7 +56,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     @Override
     protected Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<Integer> keys, BSONObject orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
 
-        List<BSONObject> matchedDocuments = new ArrayList<BSONObject>();
+        List<BSONObject> matchedDocuments = new ArrayList<>();
 
         for (Integer key : keys) {
             BSONObject document = getDocument(key);
@@ -94,7 +94,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     @Override
     protected Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
             int numberToReturn) throws MongoServerException {
-        List<BSONObject> matchedDocuments = new ArrayList<BSONObject>();
+        List<BSONObject> matchedDocuments = new ArrayList<>();
 
         boolean ascending = true;
         if (orderBy != null && !orderBy.keySet().isEmpty()) {

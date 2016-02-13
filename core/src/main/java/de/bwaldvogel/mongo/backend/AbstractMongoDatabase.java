@@ -41,11 +41,11 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     protected final String databaseName;
     private final MongoBackend backend;
 
-    private final Map<String, MongoCollection<KEY>> collections = new ConcurrentHashMap<String, MongoCollection<KEY>>();
+    private final Map<String, MongoCollection<KEY>> collections = new ConcurrentHashMap<>();
 
-    private final AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<MongoCollection<KEY>>();
+    private final AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<>();
 
-    private final Map<Channel, List<BSONObject>> lastResults = new ConcurrentHashMap<Channel, List<BSONObject>>();
+    private final Map<Channel, List<BSONObject>> lastResults = new ConcurrentHashMap<>();
 
     private MongoCollection<KEY> namespaces;
 
@@ -151,12 +151,12 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         throw new NoSuchCommandException(command);
     }
 
-    protected BSONObject listCollections() throws MongoServerException {
+    private BSONObject listCollections() throws MongoServerException {
         BSONObject cursor = new BasicBSONObject();
         cursor.put("id", Long.valueOf(0));
         cursor.put("ns", getDatabaseName() + ".$cmd.listCollections");
 
-        List<BSONObject> firstBatch = new ArrayList<BSONObject>();
+        List<BSONObject> firstBatch = new ArrayList<>();
         for (BSONObject collection : namespaces.handleQuery(new BasicBSONObject(), 0, 0, null)) {
             BSONObject collectionDescription = new BasicBSONObject();
             BSONObject collectionOptions = new BasicBSONObject();
@@ -175,14 +175,14 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    protected BSONObject listIndexes() throws MongoServerException {
+    private BSONObject listIndexes() throws MongoServerException {
         MongoCollection<KEY> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
 
         BSONObject cursor = new BasicBSONObject();
         cursor.put("id", Long.valueOf(0));
         cursor.put("ns", getDatabaseName() + ".$cmd.listIndexes");
 
-        List<BSONObject> firstBatch = new ArrayList<BSONObject>();
+        List<BSONObject> firstBatch = new ArrayList<>();
         for (BSONObject description : indexes.handleQuery(new BasicBSONObject(), 0, 0, null)) {
             firstBatch.add(description);
         }
@@ -195,7 +195,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    protected MongoCollection<KEY> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
+    private MongoCollection<KEY> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
         final MongoCollection<KEY> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             return collection;
@@ -204,7 +204,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected BSONObject commandInsert(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private BSONObject commandInsert(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -212,7 +212,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         @SuppressWarnings("unchecked")
         List<BSONObject> documents = (List<BSONObject>) query.get("documents");
 
-        List<BSONObject> writeErrors = new ArrayList<BSONObject>();
+        List<BSONObject> writeErrors = new ArrayList<>();
         int n = 0;
         for (BSONObject document : documents) {
             try {
@@ -236,7 +236,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return result;
     }
 
-    protected BSONObject commandUpdate(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private BSONObject commandUpdate(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -246,7 +246,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         int nMatched = 0;
         int nModified = 0;
         int nUpserted = 0;
-        Collection<BSONObject> upserts = new ArrayList<BSONObject>();
+        Collection<BSONObject> upserts = new ArrayList<>();
         for (BSONObject updateObj : updates) {
             BSONObject selector = (BSONObject) updateObj.get("q");
             BSONObject update = (BSONObject) updateObj.get("u");
@@ -274,7 +274,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    protected BSONObject commandDelete(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private BSONObject commandDelete(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -295,7 +295,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    protected BSONObject commandCreate(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private BSONObject commandCreate(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isCapped = Utils.isTrue(query.get("capped"));
         if (isCapped) {
@@ -319,7 +319,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    protected BSONObject commandCreateIndexes(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private BSONObject commandCreateIndexes(Channel channel, String command, BSONObject query) throws MongoServerException {
 
         int indexesBefore = countIndexes();
 
@@ -338,7 +338,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    protected int countIndexes() {
+    private int countIndexes() {
         final MongoCollection<KEY> indexesCollection;
         synchronized (indexes) {
             indexesCollection = indexes.get();
@@ -350,7 +350,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected BSONObject commandDatabaseStats() throws MongoServerException {
+    private BSONObject commandDatabaseStats() throws MongoServerException {
         BSONObject response = new BasicBSONObject("db", getDatabaseName());
         response.put("collections", Integer.valueOf(namespaces.count()));
 
@@ -392,7 +392,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     protected abstract long getStorageSize();
 
-    protected BSONObject commandDrop(BSONObject query) throws MongoServerException {
+    private BSONObject commandDrop(BSONObject query) throws MongoServerException {
         String collectionName = query.get("drop").toString();
         MongoCollection<KEY> collection = collections.remove(collectionName);
 
@@ -408,7 +408,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     }
 
-    protected BSONObject commandGetLastError(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private BSONObject commandGetLastError(Channel channel, String command, BSONObject query) throws MongoServerException {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
         if (!cmd.equals(command)) {
@@ -416,12 +416,15 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
         if (it.hasNext()) {
             String subCommand = it.next();
-            if (subCommand.equals("w")) {
-                // ignore
-            } else if (subCommand.equals("fsync")) {
-                // ignore
-            } else {
-                throw new MongoServerException("unknown subcommand: " + subCommand);
+            switch (subCommand) {
+                case "w":
+                    // ignore
+                    break;
+                case "fsync":
+                    // ignore
+                    break;
+                default:
+                    throw new MongoServerException("unknown subcommand: " + subCommand);
             }
         }
 
@@ -441,7 +444,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return result;
     }
 
-    protected BSONObject commandGetPrevError(Channel channel, String command, BSONObject query) {
+    private BSONObject commandGetPrevError(Channel channel, String command, BSONObject query) {
         List<BSONObject> results = lastResults.get(channel);
 
         if (results != null) {
@@ -472,7 +475,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return result;
     }
 
-    protected BSONObject commandResetError(Channel channel, String command, BSONObject query) {
+    private BSONObject commandResetError(Channel channel, String command, BSONObject query) {
         List<BSONObject> results = lastResults.get(channel);
         if (results != null) {
             results.clear();
@@ -482,7 +485,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return result;
     }
 
-    protected BSONObject commandCount(String command, BSONObject query) throws MongoServerException {
+    private BSONObject commandCount(String command, BSONObject query) throws MongoServerException {
         String collection = query.get(command).toString();
         BSONObject response = new BasicBSONObject();
         MongoCollection<KEY> coll = collections.get(collection);
@@ -521,10 +524,10 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         lastResults.remove(channel);
     }
 
-    public synchronized void clearLastStatus(Channel channel) {
+    private synchronized void clearLastStatus(Channel channel) {
         List<BSONObject> results = lastResults.get(channel);
         if (results == null) {
-            results = new LimitedList<BSONObject>(10);
+            results = new LimitedList<>(10);
             lastResults.put(channel, results);
         }
         results.add(null);
@@ -559,7 +562,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return collection;
     }
 
-    protected void checkCollectionName(String collectionName) throws MongoServerException {
+    private void checkCollectionName(String collectionName) throws MongoServerException {
 
         if (collectionName.length() > Constants.MAX_NS_LENGTH) {
             throw new MongoServerError(10080, "ns name too long, max size is " + Constants.MAX_NS_LENGTH);
@@ -575,7 +578,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return collections.isEmpty();
     }
 
-    protected void addNamespace(MongoCollection<KEY> collection) throws MongoServerException {
+    private void addNamespace(MongoCollection<KEY> collection) throws MongoServerException {
         collections.put(collection.getCollectionName(), collection);
         namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
     }
@@ -611,7 +614,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected void addIndex(BSONObject indexDescription) throws MongoServerException {
+    private void addIndex(BSONObject indexDescription) throws MongoServerException {
         openOrCreateIndex(indexDescription);
         getOrCreateIndexesCollection().addDocument(indexDescription);
     }
@@ -664,7 +667,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     protected abstract Index<KEY> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending);
 
-    protected BSONObject insertDocuments(final Channel channel, final String collectionName, final List<BSONObject> documents) throws MongoServerException {
+    private BSONObject insertDocuments(final Channel channel, final String collectionName, final List<BSONObject> documents) throws MongoServerException {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -682,7 +685,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected BSONObject deleteDocuments(final Channel channel, final String collectionName, final BSONObject selector, final int limit) throws MongoServerException {
+    private BSONObject deleteDocuments(final Channel channel, final String collectionName, final BSONObject selector, final int limit) throws MongoServerException {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -704,8 +707,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected BSONObject updateDocuments(final Channel channel, final String collectionName, final BSONObject selector,
-            final BSONObject update, final boolean multi, final boolean upsert) throws MongoServerException {
+    private BSONObject updateDocuments(final Channel channel, final String collectionName, final BSONObject selector,
+                                       final BSONObject update, final boolean multi, final boolean upsert) throws MongoServerException {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -720,7 +723,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected void putLastError(Channel channel, MongoServerException ex) {
+    private void putLastError(Channel channel, MongoServerException ex) {
         BSONObject error = new BasicBSONObject();
         if (ex instanceof MongoServerError) {
             MongoServerError err = (MongoServerError) ex;
@@ -736,7 +739,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         putLastResult(channel, error);
     }
 
-    protected synchronized void putLastResult(Channel channel, BSONObject result) {
+    private synchronized void putLastResult(Channel channel, BSONObject result) {
         List<BSONObject> results = lastResults.get(channel);
         // list must not be empty
         BSONObject last = results.get(results.size() - 1);
@@ -746,7 +749,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         results.set(results.size() - 1, result);
     }
 
-    protected MongoCollection<KEY> createCollection(String collectionName) throws MongoServerException {
+    private MongoCollection<KEY> createCollection(String collectionName) throws MongoServerException {
         checkCollectionName(collectionName);
         if (collectionName.contains("$")) {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
@@ -797,7 +800,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         @SuppressWarnings("unchecked")
         MongoCollection<KEY> newCollection = (MongoCollection<KEY>) collection;
         collections.put(newCollectionName, newCollection);
-        List<BSONObject> newDocuments = new ArrayList<BSONObject>();
+        List<BSONObject> newDocuments = new ArrayList<>();
         newDocuments.add(new BasicBSONObject("name", collection.getFullName()));
         namespaces.insertDocuments(newDocuments);
     }

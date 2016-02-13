@@ -16,7 +16,7 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class H2Database extends AbstractMongoDatabase<Object> {
 
-    static final String META_PREFIX = "meta.";
+    private static final String META_PREFIX = "meta.";
     static final String DATABASES_PREFIX = "databases.";
 
     private MVStore mvStore;

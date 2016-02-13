@@ -14,7 +14,7 @@ public class MongoInsert extends ClientRequest {
 
     public MongoInsert(Channel channel, MessageHeader header, String fullCollectionName, List<BSONObject> documents) {
         super(channel, header, fullCollectionName);
-        this.documents = new ArrayList<BSONObject>(documents);
+        this.documents = new ArrayList<>(documents);
     }
 
     @Override

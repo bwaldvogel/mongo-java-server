@@ -103,7 +103,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     @Override
     protected Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<Object> keys, BSONObject orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
 
-        List<BSONObject> matchedDocuments = new ArrayList<BSONObject>();
+        List<BSONObject> matchedDocuments = new ArrayList<>();
 
         for (Object key : keys) {
             BSONObject document = getDocument(key);
@@ -141,7 +141,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     @Override
     protected Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
             int numberToReturn) throws MongoServerException {
-        List<BSONObject> matchedDocuments = new ArrayList<BSONObject>();
+        List<BSONObject> matchedDocuments = new ArrayList<>();
 
         for (BSONObject document : dataMap.values()) {
             if (documentMatchesQuery(document, query)) {

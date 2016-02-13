@@ -114,7 +114,7 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
                 }
             }
         } else if (keyValue instanceof Pattern) {
-            List<KEY> positions = new ArrayList<KEY>();
+            List<KEY> positions = new ArrayList<>();
             for (Entry<Object, KEY> entry : getIterable()) {
                 Object obj = entry.getKey();
                 Matcher matcher = ((Pattern) keyValue).matcher(obj.toString());
@@ -141,7 +141,7 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     private Iterable<KEY> getPositionsForExpression(BSONObject keyObj, String operator) {
         if (operator.equals("$in")) {
             Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(operator));
-            List<KEY> allKeys = new ArrayList<KEY>();
+            List<KEY> allKeys = new ArrayList<>();
             for (Object object : queriedObjects) {
                 Object keyValue = Utils.normalizeValue(object);
                 KEY key = getKey(keyValue);

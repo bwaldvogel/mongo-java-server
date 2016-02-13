@@ -159,7 +159,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return checkMatchesValue(queryValue, value, valueExists);
     }
 
-    public boolean checkMatchAndOrNor(Object queryValue, String key, Object document) throws MongoServerException {
+    private boolean checkMatchAndOrNor(Object queryValue, String key, Object document) throws MongoServerException {
         if (!(queryValue instanceof List<?>)) {
             throw new MongoServerError(14816, key + " expression must be a nonempty array");
         }
@@ -176,24 +176,25 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
         }
 
-        if (key.equals("$and")) {
-            for (Object subqueryValue : list) {
-                if (!matches((BSONObject) document, (BSONObject) subqueryValue)) {
-                    return false;
+        switch (key) {
+            case "$and":
+                for (Object subqueryValue : list) {
+                    if (!matches((BSONObject) document, (BSONObject) subqueryValue)) {
+                        return false;
+                    }
                 }
-            }
-            return true;
-        } else if (key.equals("$or")) {
-            for (Object subqueryValue : list) {
-                if (matches((BSONObject) document, (BSONObject) subqueryValue)) {
-                    return true;
+                return true;
+            case "$or":
+                for (Object subqueryValue : list) {
+                    if (matches((BSONObject) document, (BSONObject) subqueryValue)) {
+                        return true;
+                    }
                 }
-            }
-            return false;
-        } else if (key.equals("$nor")) {
-            return !checkMatchAndOrNor(queryValue, "$or", document);
-        } else {
-            throw new MongoServerException("illegal operation: " + key + ". must not happen");
+                return false;
+            case "$nor":
+                return !checkMatchAndOrNor(queryValue, "$or", document);
+            default:
+                throw new MongoServerException("illegal operation: " + key + ". must not happen");
         }
     }
 

@@ -11,7 +11,7 @@ import org.bson.types.ObjectId;
 
 public class ValueComparator implements Comparator<Object> {
 
-    private static final List<Class<?>> SORT_PRIORITY = new ArrayList<Class<?>>();
+    private static final List<Class<?>> SORT_PRIORITY = new ArrayList<>();
 
     static {
         /*

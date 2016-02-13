@@ -11,7 +11,7 @@ public class TestUtils {
     }
 
     public static <T> List<T> toArray(Iterable<T> iterable) {
-        List<T> array = new ArrayList<T>();
+        List<T> array = new ArrayList<>();
         for (T obj : iterable) {
             array.add(obj);
         }

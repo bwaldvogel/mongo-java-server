@@ -32,7 +32,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoBackend.class);
 
-    private final TreeMap<String, MongoDatabase> databases = new TreeMap<String, MongoDatabase>();
+    private final TreeMap<String, MongoDatabase> databases = new TreeMap<>();
 
     private static int[] VERSION = new int[] { 3, 0, 0 };
 
@@ -53,15 +53,18 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     private BSONObject getLog(String argument) throws MongoServerException {
         log.debug("getLog: {}", argument);
         BSONObject response = new BasicBSONObject();
-        if (argument.equals("*")) {
-            response.put("names", Collections.singletonList("startupWarnings"));
-            Utils.markOkay(response);
-        } else if (argument.equals("startupWarnings")) {
-            response.put("totalLinesWritten", Integer.valueOf(0));
-            response.put("log", new ArrayList<String>());
-            Utils.markOkay(response);
-        } else {
-            throw new MongoSilentServerException("no RamLog named: " + argument);
+        switch (argument) {
+            case "*":
+                response.put("names", Collections.singletonList("startupWarnings"));
+                Utils.markOkay(response);
+                break;
+            case "startupWarnings":
+                response.put("totalLinesWritten", Integer.valueOf(0));
+                response.put("log", new ArrayList<String>());
+                Utils.markOkay(response);
+                break;
+            default:
+                throw new MongoSilentServerException("no RamLog named: " + argument);
         }
         return response;
     }
@@ -71,7 +74,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
         if (command.equalsIgnoreCase("listdatabases")) {
             BSONObject response = new BasicBSONObject();
-            List<BSONObject> dbs = new ArrayList<BSONObject>();
+            List<BSONObject> dbs = new ArrayList<>();
             for (MongoDatabase db : databases.values()) {
                 BasicBSONObject dbObj = new BasicBSONObject("name", db.getDatabaseName());
                 dbObj.put("empty", Boolean.valueOf(db.isEmpty()));

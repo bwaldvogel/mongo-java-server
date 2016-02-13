@@ -89,11 +89,11 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     }
 
     protected MongoReply handleQuery(Channel channel, MongoQuery query) {
-        List<BSONObject> documents = new ArrayList<BSONObject>();
+        List<BSONObject> documents = new ArrayList<>();
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
             if (query.getCollectionName().startsWith("$cmd")) {
-                documents.add(handleCommand(channel, query, documents));
+                documents.add(handleCommand(channel, query));
             } else {
                 for (BSONObject obj : mongoBackend.handleQuery(query)) {
                     documents.add(obj);
@@ -130,7 +130,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         return new MongoReply(header, documents);
     }
 
-    protected BSONObject handleCommand(Channel channel, MongoQuery query, List<BSONObject> documents)
+    protected BSONObject handleCommand(Channel channel, MongoQuery query)
             throws MongoServerException {
         String collectionName = query.getCollectionName();
         if (collectionName.equals("$cmd.sys.inprog")) {

@@ -111,7 +111,7 @@ class BsonDecoder {
     }
 
     private List<Object> decodeArray(ByteBuf buffer) throws IOException {
-        List<Object> array = new ArrayList<Object>();
+        List<Object> array = new ArrayList<>();
         BSONObject arrayObject = decodeBson(buffer);
         for (String key : arrayObject.keySet()) {
             array.add(arrayObject.get(key));

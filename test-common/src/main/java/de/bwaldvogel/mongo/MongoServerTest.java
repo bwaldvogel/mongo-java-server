@@ -35,14 +35,11 @@ public abstract class MongoServerTest {
 
             // new clients must fail
             client.close();
-            Socket socket = new Socket();
-            try {
+            try (Socket socket = new Socket()) {
                 socket.connect(serverAddress);
                 fail("IOException expected");
             } catch (IOException e) {
                 // expected
-            } finally {
-                socket.close();
             }
 
         } finally {
@@ -56,9 +53,8 @@ public abstract class MongoServerTest {
     @Test(timeout = 10000)
     public void testShutdownNow() throws Exception {
         MongoServer server = new MongoServer(createBackend());
-        MongoClient client = null;
         InetSocketAddress serverAddress = server.bind();
-        client = new MongoClient(new ServerAddress(serverAddress));
+        MongoClient client = new MongoClient(new ServerAddress(serverAddress));
 
         // request something to open a connection
         pingServer(client);

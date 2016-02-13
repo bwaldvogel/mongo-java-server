@@ -28,8 +28,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
     private String collectionName;
     private String databaseName;
-    private List<Index<KEY>> indexes = new ArrayList<Index<KEY>>();
-    private QueryMatcher matcher = new DefaultQueryMatcher();
+    private final List<Index<KEY>> indexes = new ArrayList<>();
+    private final QueryMatcher matcher = new DefaultQueryMatcher();
     protected final String idField;
 
     protected AbstractMongoCollection(String databaseName, String collectionName, String idField) {
@@ -42,8 +42,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return matcher.matches(document, query);
     }
 
-    protected Iterable<BSONObject> queryDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
-            int numberToReturn) throws MongoServerException {
+    private Iterable<BSONObject> queryDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+                                                int numberToReturn) throws MongoServerException {
         synchronized (indexes) {
             for (Index<KEY> index : indexes) {
                 if (index.canHandle(query)) {
@@ -119,10 +119,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
     private void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos)
             throws MongoServerException {
-        changeSubdocumentValue(document, key, newValue, new AtomicReference<Integer>(matchPos));
+        changeSubdocumentValue(document, key, newValue, new AtomicReference<>(matchPos));
     }
 
-    void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos)
+    private void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos)
             throws MongoServerException {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
@@ -143,7 +143,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     private Object removeSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
-        return removeSubdocumentValue(document, key, new AtomicReference<Integer>(matchPos));
+        return removeSubdocumentValue(document, key, new AtomicReference<>(matchPos));
     }
 
     private Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
@@ -164,7 +164,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     private Object getSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
-        return getSubdocumentValue(document, key, new AtomicReference<Integer>(matchPos));
+        return getSubdocumentValue(document, key, new AtomicReference<>(matchPos));
     }
 
     private Object getSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
@@ -404,7 +404,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             break;
 
         case RENAME:
-            Map<String, String> renames = new LinkedHashMap<String, String>();
+            Map<String, String> renames = new LinkedHashMap<>();
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
                 Object toField = change.get(key);
@@ -443,7 +443,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             Object value = getSubdocumentValue(document, key, matchPos);
             List<Object> list;
             if (value == null) {
-                list = new ArrayList<Object>();
+                list = new ArrayList<>();
             } else if (value instanceof List<?>) {
                 list = Utils.asList(value);
             } else {
@@ -459,7 +459,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 Collection<Object> valueList = (Collection<Object>) changeValue;
                 list.addAll(valueList);
             } else {
-                Collection<Object> pushValues = new ArrayList<Object>();
+                Collection<Object> pushValues = new ArrayList<>();
                 if (changeValue instanceof BSONObject
                         && ((BSONObject) changeValue).keySet().equals(Collections.singleton("$each"))) {
                     @SuppressWarnings("unchecked")
@@ -693,7 +693,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn)
+    private synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn)
             throws MongoServerException {
         return handleQuery(queryObject, numberToSkip, numberToReturn, null);
     }
@@ -786,7 +786,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     public synchronized BSONObject handleDistinct(BSONObject query) throws MongoServerException {
         String key = query.get("key").toString();
         BSONObject q = (BSONObject) query.get("query");
-        TreeSet<Object> values = new TreeSet<Object>(new ValueComparator());
+        TreeSet<Object> values = new TreeSet<>(new ValueComparator());
 
         for (BSONObject document : queryDocuments(q, null, 0, 0)) {
             if (document.containsField(key)) {
@@ -794,7 +794,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             }
         }
 
-        BSONObject response = new BasicBSONObject("values", new ArrayList<Object>(values));
+        BSONObject response = new BasicBSONObject("values", new ArrayList<>(values));
         Utils.markOkay(response);
         return response;
     }
@@ -884,7 +884,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 updateDataSize(newSize - oldSize);
 
                 // only keep fields that are also in the updated document
-                Set<String> fields = new HashSet<String>(document.keySet());
+                Set<String> fields = new HashSet<>(document.keySet());
                 fields.removeAll(newDocument.keySet());
                 for (String key : fields) {
                     document.removeField(key);
@@ -917,7 +917,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         } else if (value instanceof List<?>) {
             @SuppressWarnings("unchecked")
             List<Object> list = (List<Object>) value;
-            List<Object> newValue = new ArrayList<Object>();
+            List<Object> newValue = new ArrayList<>();
             for (Object v : list) {
                 newValue.add(cloneValue(v));
             }

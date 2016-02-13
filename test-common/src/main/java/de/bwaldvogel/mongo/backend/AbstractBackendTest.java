@@ -250,13 +250,13 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         @SuppressWarnings("unchecked")
         List<Document> firstBatch = (List<Document>) cursor.get("firstBatch");
 
-        Set<String> expectedCollections = new HashSet<String>();
+        Set<String> expectedCollections = new HashSet<>();
         expectedCollections.addAll(collections);
         expectedCollections.add("system.indexes");
 
         assertThat(firstBatch).hasSize(expectedCollections.size());
 
-        Set<String> collectionNames = new HashSet<String>();
+        Set<String> collectionNames = new HashSet<>();
         for (Document collection : firstBatch) {
             assertThat(collection.keySet()).containsOnly("name", "options");
             assertThat(collection.get("options")).isEqualTo(json("{}"));
@@ -916,7 +916,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     private List<String> listDatabaseNames() {
-        List<String> databaseNames = new ArrayList<String>();
+        List<String> databaseNames = new ArrayList<>();
         for (String databaseName : client.listDatabaseNames()) {
             databaseNames.add(databaseName);
         }
@@ -938,7 +938,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testQueryAll() throws Exception {
-        List<Object> inserted = new ArrayList<Object>();
+        List<Object> inserted = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             Document obj = new Document("_id", i);
             collection.insertOne(obj);
@@ -2143,20 +2143,17 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testCursorOptionNoTimeout() throws Exception {
-        MongoCursor<Document> cursor = collection.find().noCursorTimeout(true).iterator();
-        try {
+        try (MongoCursor<Document> cursor = collection.find().noCursorTimeout(true).iterator()) {
             assertFalse(cursor.hasNext());
-        } finally {
-            cursor.close();
         }
     }
 
     @Test
     public void testBulkInsert() throws Exception {
-        List<WriteModel<Document>> inserts = new ArrayList<WriteModel<Document>>();
-        inserts.add(new InsertOneModel<Document>(json("_id: 1")));
-        inserts.add(new InsertOneModel<Document>(json("_id: 2")));
-        inserts.add(new InsertOneModel<Document>(json("_id: 3")));
+        List<WriteModel<Document>> inserts = new ArrayList<>();
+        inserts.add(new InsertOneModel<>(json("_id: 1")));
+        inserts.add(new InsertOneModel<>(json("_id: 2")));
+        inserts.add(new InsertOneModel<>(json("_id: 3")));
 
         BulkWriteResult result = collection.bulkWrite(inserts);
         assertThat(result.getInsertedCount()).isEqualTo(3);
@@ -2397,11 +2394,11 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     private void insertUpdateInBulk(boolean ordered) {
-        List<WriteModel<Document>> ops = new ArrayList<WriteModel<Document>>();
+        List<WriteModel<Document>> ops = new ArrayList<>();
 
-        ops.add(new InsertOneModel<Document>(json("_id: 1, field: 'x'")));
-        ops.add(new InsertOneModel<Document>(json("_id: 2, field: 'x'")));
-        ops.add(new InsertOneModel<Document>(json("_id: 3, field: 'x'")));
+        ops.add(new InsertOneModel<>(json("_id: 1, field: 'x'")));
+        ops.add(new InsertOneModel<>(json("_id: 2, field: 'x'")));
+        ops.add(new InsertOneModel<>(json("_id: 3, field: 'x'")));
         ops.add(new UpdateManyModel<Document>(json("field: 'x'"), json("$set: {field: 'y'}")));
 
         BulkWriteResult result = collection.bulkWrite(ops, new BulkWriteOptions().ordered(ordered));
@@ -2418,7 +2415,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     private void removeInBulk(boolean ordered) {
-        DeleteManyModel<Document> deleteOp = new DeleteManyModel<Document>(json("field: 'y'"));
+        DeleteManyModel<Document> deleteOp = new DeleteManyModel<>(json("field: 'y'"));
         BulkWriteResult result = collection.bulkWrite(Collections.singletonList(deleteOp),
                 new BulkWriteOptions().ordered(ordered));
 
