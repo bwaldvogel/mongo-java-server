@@ -48,7 +48,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
             try {
                 return fileStore.getFile().size();
             } catch (IOException e) {
-               throw new RuntimeException("Failed to calculate filestore size", e);
+                throw new RuntimeException("Failed to calculate filestore size", e);
             }
         } else {
             return 0;

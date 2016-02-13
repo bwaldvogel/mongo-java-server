@@ -18,6 +18,7 @@ import io.netty.channel.Channel;
 public class ReadOnlyProxy implements MongoBackend {
 
     private static final Set<String> allowedCommands = new HashSet<String>();
+
     static {
         allowedCommands.add("ismaster");
         allowedCommands.add("listdatabases");

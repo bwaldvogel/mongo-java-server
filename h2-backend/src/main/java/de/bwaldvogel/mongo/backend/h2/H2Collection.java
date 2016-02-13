@@ -143,7 +143,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             int numberToReturn) throws MongoServerException {
         List<BSONObject> matchedDocuments = new ArrayList<BSONObject>();
 
-        for(BSONObject document : dataMap.values()) {
+        for (BSONObject document : dataMap.values()) {
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }

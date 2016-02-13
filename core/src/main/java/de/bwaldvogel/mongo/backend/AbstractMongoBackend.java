@@ -28,7 +28,6 @@ import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
 
-
 public abstract class AbstractMongoBackend implements MongoBackend {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoBackend.class);

@@ -106,7 +106,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             }
         }
 
-        for(BSONObject document : iterateAllDocuments(ascending)) {
+        for (BSONObject document : iterateAllDocuments(ascending)) {
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }
@@ -178,7 +178,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
         @Override
         protected BSONObject getNext() {
-            while(pos < documents.size()) {
+            while (pos < documents.size()) {
                 BSONObject document = documents.get(pos++);
                 if (document != null) {
                     return document;
@@ -197,7 +197,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
         @Override
         protected BSONObject getNext() {
-            while(pos >= 0) {
+            while (pos >= 0) {
                 BSONObject document = documents.get(pos--);
                 if (document != null) {
                     return document;
@@ -262,7 +262,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     @Override
     protected int getRecordCount() {
-     return documents.size();
+        return documents.size();
     }
 
     @Override

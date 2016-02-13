@@ -293,7 +293,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
         Utils.markOkay(response);
         return response;
-   }
+    }
 
     protected BSONObject commandCreate(Channel channel, String command, BSONObject query) throws MongoServerException {
         String collectionName = query.get(command).toString();
@@ -704,21 +704,21 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected BSONObject updateDocuments(final Channel channel, final String collectionName, final BSONObject selector, final BSONObject update, final boolean multi, final boolean upsert)
-            throws MongoServerException {
-                clearLastStatus(channel);
-                try {
-                    if (collectionName.startsWith("system.")) {
-                        throw new MongoServerError(10156, "cannot update system collection");
-                    }
-
-                    MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
-                    return collection.updateDocuments(selector, update, multi, upsert);
-                } catch (MongoServerException e) {
-                    putLastError(channel, e);
-                    throw e;
-                }
+    protected BSONObject updateDocuments(final Channel channel, final String collectionName, final BSONObject selector,
+            final BSONObject update, final boolean multi, final boolean upsert) throws MongoServerException {
+        clearLastStatus(channel);
+        try {
+            if (collectionName.startsWith("system.")) {
+                throw new MongoServerError(10156, "cannot update system collection");
             }
+
+            MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
+            return collection.updateDocuments(selector, update, multi, upsert);
+        } catch (MongoServerException e) {
+            putLastError(channel, e);
+            throw e;
+        }
+    }
 
     protected void putLastError(Channel channel, MongoServerException ex) {
         BSONObject error = new BasicBSONObject();

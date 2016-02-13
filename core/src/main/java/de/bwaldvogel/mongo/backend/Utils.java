@@ -50,9 +50,9 @@ public class Utils {
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
-			if (subKey.startsWith("$.")) {
-				throw new IllegalArgumentException();
-			}
+            if (subKey.startsWith("$.")) {
+                throw new IllegalArgumentException();
+            }
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof BSONObject) {
                 return getSubdocumentValue((BSONObject) subObject, subKey);

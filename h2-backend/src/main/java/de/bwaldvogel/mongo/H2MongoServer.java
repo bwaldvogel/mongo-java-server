@@ -12,7 +12,7 @@ public class H2MongoServer extends MongoServer {
     public static void main(String[] args) throws Exception {
 
         final MongoServer mongoServer;
-        if (args.length == 1 ) {
+        if (args.length == 1) {
             String fileName = args[0];
             mongoServer = new H2MongoServer(fileName);
         } else {
@@ -33,7 +33,7 @@ public class H2MongoServer extends MongoServer {
         super(H2Backend.inMemory());
     }
 
-    public H2MongoServer(String fileName)  {
+    public H2MongoServer(String fileName) {
         super(new H2Backend(fileName));
     }
 }
