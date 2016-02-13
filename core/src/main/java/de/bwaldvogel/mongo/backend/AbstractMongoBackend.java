@@ -1,10 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
-import io.netty.channel.Channel;
-
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -29,6 +26,7 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
+import io.netty.channel.Channel;
 
 
 public abstract class AbstractMongoBackend implements MongoBackend {

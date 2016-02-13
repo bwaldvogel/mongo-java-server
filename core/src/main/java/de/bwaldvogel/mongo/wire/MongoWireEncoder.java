@@ -1,9 +1,5 @@
 package de.bwaldvogel.mongo.wire;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToByteEncoder;
-
 import java.nio.ByteOrder;
 import java.util.List;
 
@@ -13,6 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.wire.message.MongoReply;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToByteEncoder;
 
 public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
 

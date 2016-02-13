@@ -1,7 +1,7 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import io.netty.channel.Channel;
 import de.bwaldvogel.mongo.backend.Utils;
+import io.netty.channel.Channel;
 
 public abstract class ClientRequest implements Message {
 

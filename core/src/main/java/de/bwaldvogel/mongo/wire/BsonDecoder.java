@@ -1,7 +1,5 @@
 package de.bwaldvogel.mongo.wire;
 
-import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -18,6 +16,7 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 
 import de.bwaldvogel.mongo.backend.Utils;
+import io.netty.buffer.ByteBuf;
 
 class BsonDecoder {
 

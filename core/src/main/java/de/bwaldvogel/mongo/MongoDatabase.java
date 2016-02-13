@@ -1,7 +1,5 @@
 package de.bwaldvogel.mongo;
 
-import io.netty.channel.Channel;
-
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -9,6 +7,7 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
+import io.netty.channel.Channel;
 
 public interface MongoDatabase {
 

@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.mongodb.BasicDBObject;
+
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class AbstractMongoCollectionTest {

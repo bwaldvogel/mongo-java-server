@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import io.netty.channel.Channel;
-
 import org.bson.BSONObject;
+
+import io.netty.channel.Channel;
 
 public class MongoDelete extends ClientRequest {
 

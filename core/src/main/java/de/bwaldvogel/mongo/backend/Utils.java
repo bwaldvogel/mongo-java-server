@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import org.bson.BSONObject;
 
 import com.mongodb.DefaultDBEncoder;
+
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class Utils {

@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

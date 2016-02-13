@@ -1,8 +1,6 @@
 package de.bwaldvogel.mongo.wire;
 
 import static org.fest.assertions.Assertions.assertThat;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -14,6 +12,9 @@ import org.bson.BasicBSONObject;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.junit.Test;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 public class BsonDecoderTest {
 

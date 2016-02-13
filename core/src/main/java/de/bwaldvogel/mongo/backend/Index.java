@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend;
 import org.bson.BSONObject;
 
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
-import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public abstract class Index<KEY> {
