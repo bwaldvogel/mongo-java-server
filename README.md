@@ -115,7 +115,7 @@ drivers.
     * currently used in [nosql-unit][nosql-unit]
 
 [mongodb]: http://www.mongodb.org/
-[wire-protocol]: http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol
+[wire-protocol]: https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/
 [netty]: http://netty.io/
 [jmockmongo]: https://github.com/thiloplanz/jmockmongo
 [fongo]: https://github.com/fakemongo/fongo

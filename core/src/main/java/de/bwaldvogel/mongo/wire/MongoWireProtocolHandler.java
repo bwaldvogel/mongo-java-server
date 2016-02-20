@@ -21,9 +21,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
 /**
- * Based on information from <a
- * href="http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol"
- * >http://www.mongodb.org/display/DOCS/Mongo+Wire+Protocol</a>
+ * Based on information from
+ * <a href="https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/">https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/</a>
  */
 public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
