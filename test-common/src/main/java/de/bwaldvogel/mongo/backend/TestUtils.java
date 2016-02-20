@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.bson.Document;
 
+import com.mongodb.client.MongoDatabase;
+
 public class TestUtils {
 
     private TestUtils() {
@@ -24,5 +26,10 @@ public class TestUtils {
             string = "{" + string + "}";
         }
         return Document.parse(string);
+    }
+
+    public static Document getCollectionStatistics(MongoDatabase database, String collectionName) {
+        Document collStats = new Document("collStats", collectionName);
+        return database.runCommand(collStats);
     }
 }

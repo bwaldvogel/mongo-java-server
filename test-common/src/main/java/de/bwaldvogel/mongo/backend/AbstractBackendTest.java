@@ -13,6 +13,7 @@ import static com.mongodb.client.model.Updates.addEachToSet;
 import static com.mongodb.client.model.Updates.pull;
 import static com.mongodb.client.model.Updates.pullByFilter;
 import static com.mongodb.client.model.Updates.set;
+import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.fest.assertions.Assertions.assertThat;
@@ -149,12 +150,8 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     private Document getCollStats() {
-        return getCollStats(collection.getNamespace().getCollectionName());
-    }
-
-    private Document getCollStats(String collectionName) {
-        MongoDatabase database = this.db;
-        return database.runCommand(new Document("collStats", collectionName));
+        String collectionName = collection.getNamespace().getCollectionName();
+        return getCollectionStatistics(db, collectionName);
     }
 
     @Test

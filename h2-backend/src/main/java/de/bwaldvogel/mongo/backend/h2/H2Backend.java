@@ -65,4 +65,16 @@ public class H2Backend extends AbstractMongoBackend {
         mvStore.close();
     }
 
+    public boolean isInMemory() {
+        return mvStore.getFileStore() == null;
+    }
+
+    @Override
+    public String toString() {
+        if (isInMemory()) {
+            return getClass().getSimpleName() + "[inMemory]";
+        } else {
+            return getClass().getSimpleName() + "[" + mvStore.getFileStore().getFileName() + "]";
+        }
+    }
 }

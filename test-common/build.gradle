@@ -2,6 +2,12 @@ dependencies {
     compile project(':mongo-java-server-core')
     compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
 
+    compile "org.springframework:spring-core:${springVersion}"
+    compile "org.springframework:spring-beans:${springVersion}"
+    compile "org.springframework:spring-context:${springVersion}"
+    compile "org.springframework:spring-test:${springVersion}"
+    compile "org.springframework.data:spring-data-mongodb:${springDataMongoDbVersion}"
+
     compile group: 'junit', name: 'junit', version: junitVersion
     compile group: 'org.easytesting', name: 'fest-assert', version: festAssertVersion
     compile group: 'org.powermock', name: 'powermock-api-easymock', version: powerMockVersion
