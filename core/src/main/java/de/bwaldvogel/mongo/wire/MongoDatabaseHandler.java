@@ -5,8 +5,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -89,9 +91,9 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     }
 
     protected MongoReply handleQuery(Channel channel, MongoQuery query) {
-        List<BSONObject> documents = new ArrayList<>();
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
+            List<BSONObject> documents = new ArrayList<>();
             if (query.getCollectionName().startsWith("$cmd")) {
                 documents.add(handleCommand(channel, query));
             } else {
@@ -99,35 +101,38 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                     documents.add(obj);
                 }
             }
+            return new MongoReply(header, documents);
         } catch (NoSuchCommandException e) {
             log.error("unknown command: {}", query, e);
-            BSONObject obj = new BasicBSONObject();
-            obj.put("errmsg", "no such cmd: " + e.getCommand());
-            obj.put("bad cmd", query.getQuery());
-            obj.put("code", Integer.valueOf(e.getCode()));
-            obj.put("ok", Integer.valueOf(0));
-            documents.add(obj);
+            Map<String, ?> additionalInfo = Collections.singletonMap("bad cmd", query.getQuery());
+            return queryFailure(header, e, additionalInfo);
         } catch (MongoServerError e) {
             log.error("failed to handle query {}", query, e);
-            BSONObject obj = new BasicBSONObject();
-            obj.put("errmsg", e.getMessage());
-            obj.put("code", Integer.valueOf(e.getCode()));
-            obj.put("ok", Integer.valueOf(0));
-            documents.add(obj);
+            return queryFailure(header, e);
         } catch (MongoSilentServerException e) {
-            BSONObject obj = new BasicBSONObject();
-            obj.put("errmsg", e.getMessage());
-            obj.put("ok", Integer.valueOf(0));
-            documents.add(obj);
+            return queryFailure(header, e);
         } catch (MongoServerException e) {
             log.error("failed to handle query {}", query, e);
-            BSONObject obj = new BasicBSONObject();
-            obj.put("errmsg", e.getMessage());
-            obj.put("ok", Integer.valueOf(0));
-            documents.add(obj);
+            return queryFailure(header, e);
         }
+    }
 
-        return new MongoReply(header, documents);
+    private MongoReply queryFailure(MessageHeader header, MongoServerException exception) {
+        Map<String, ?> additionalInfo = Collections.emptyMap();
+        return queryFailure(header, exception, additionalInfo);
+    }
+
+    private MongoReply queryFailure(MessageHeader header, MongoServerException exception, Map<String, ?> additionalInfo) {
+        BSONObject obj = new BasicBSONObject();
+        obj.put("$err", exception.getMessage());
+        obj.put("errmsg", exception.getLocalizedMessage());
+        if (exception instanceof MongoServerError) {
+            MongoServerError error = (MongoServerError) exception;
+            obj.put("code", error.getCode());
+        }
+        obj.putAll(additionalInfo);
+        obj.put("ok", Integer.valueOf(0));
+        return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
     }
 
     protected BSONObject handleCommand(Channel channel, MongoQuery query)

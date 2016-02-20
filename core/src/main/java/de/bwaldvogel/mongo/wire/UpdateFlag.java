@@ -18,4 +18,9 @@ public enum UpdateFlag implements Flag {
     public int removeFrom(int flags) {
         return flags - value;
     }
+
+    @Override
+    public int addTo(int flags) {
+        return flags | value;
+    }
 }

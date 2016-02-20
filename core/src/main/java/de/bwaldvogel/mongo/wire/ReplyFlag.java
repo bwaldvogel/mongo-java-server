@@ -22,4 +22,8 @@ public enum ReplyFlag implements Flag {
         return flags - value;
     }
 
+    @Override
+    public int addTo(int flags) {
+        return flags | value;
+    }
 }

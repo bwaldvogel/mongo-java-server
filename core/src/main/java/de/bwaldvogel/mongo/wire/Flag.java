@@ -4,4 +4,6 @@ public interface Flag {
     boolean isSet(int flags);
 
     int removeFrom(int flags);
+
+    int addTo(int flags);
 }

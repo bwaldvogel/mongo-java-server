@@ -7,6 +7,7 @@ import static com.mongodb.client.model.Filters.gt;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Filters.lt;
 import static com.mongodb.client.model.Filters.ne;
+import static com.mongodb.client.model.Filters.nor;
 import static com.mongodb.client.model.Filters.or;
 import static com.mongodb.client.model.Updates.addEachToSet;
 import static com.mongodb.client.model.Updates.pull;
@@ -45,6 +46,7 @@ import org.junit.Test;
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
+import com.mongodb.MongoQueryException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
@@ -2473,6 +2475,23 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(documents).containsOnly(json("_id: 1"), json("_id: 2"), json("_id: 3"));
     }
 
+    @Test
+    public void testAndOrNorWithEmptyArray() throws Exception {
+        collection.insertOne(json("{}"));
+        assertException(and());
+        assertException(nor());
+        assertException(or());
+    }
+
+    private void assertException(Bson filter) {
+        try {
+            collection.find(filter).first();
+            fail("MongoQueryException expected");
+        } catch (MongoQueryException e) {
+            assertThat(e.getCode()).isEqualTo(14816);
+            assertThat(e.getMessage()).contains("nonempty array");
+        }
+    }
 
     private void insertUpdateInBulk(boolean ordered) {
         List<WriteModel<Document>> ops = new ArrayList<>();
