@@ -72,10 +72,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
             subKeys = keys.subList(1, keys.size());
         }
 
-        if (firstKey.startsWith("$")) {
-            if (firstKey.equals("$and") || firstKey.equals("$or") || firstKey.equals("$nor")) {
-                return checkMatchAndOrNor(queryValue, firstKey, document);
-            }
+        if (QueryFilter.isQueryFilter(firstKey)) {
+            QueryFilter filter = QueryFilter.fromValue(firstKey);
+            return checkMatch(queryValue, filter, document);
         }
 
         if (document instanceof List<?>) {
@@ -159,42 +158,42 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return checkMatchesValue(queryValue, value, valueExists);
     }
 
-    private boolean checkMatchAndOrNor(Object queryValue, String key, Object document) throws MongoServerException {
+    private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) throws MongoServerException {
         if (!(queryValue instanceof List<?>)) {
-            throw new MongoServerError(14816, key + " expression must be a nonempty array");
+            throw new MongoServerError(14816, filter + " expression must be a nonempty array");
         }
 
         @SuppressWarnings("unchecked")
         List<Object> list = (List<Object>) queryValue;
         if (list.isEmpty()) {
-            throw new MongoServerError(14816, key + " expression must be a nonempty array");
+            throw new MongoServerError(14816, filter + " expression must be a nonempty array");
         }
 
         for (Object subqueryValue : list) {
             if (!(subqueryValue instanceof BSONObject)) {
-                throw new MongoServerError(14817, key + " elements must be objects");
+                throw new MongoServerError(14817, filter + " elements must be objects");
             }
         }
 
-        switch (key) {
-            case "$and":
+        switch (filter) {
+            case AND:
                 for (Object subqueryValue : list) {
                     if (!matches((BSONObject) document, (BSONObject) subqueryValue)) {
                         return false;
                     }
                 }
                 return true;
-            case "$or":
+            case OR:
                 for (Object subqueryValue : list) {
                     if (matches((BSONObject) document, (BSONObject) subqueryValue)) {
                         return true;
                     }
                 }
                 return false;
-            case "$nor":
-                return !checkMatchAndOrNor(queryValue, "$or", document);
+            case NOR:
+                return !checkMatch(queryValue, QueryFilter.OR, document);
             default:
-                throw new MongoServerException("illegal operation: " + key + ". must not happen");
+                throw new MongoServerException("illegal query filter: " + filter+ ". must not happen");
         }
     }
 

@@ -515,8 +515,10 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         if (collection == null) {
             return Collections.emptyList();
         }
-        return collection.handleQuery(query.getQuery(), query.getNumberToSkip(), query.getNumberToReturn(),
-                query.getReturnFieldSelector());
+        int numSkip = query.getNumberToSkip();
+        int numReturn = query.getNumberToReturn();
+        BSONObject fieldSelector = query.getReturnFieldSelector();
+        return collection.handleQuery(query.getQuery(), numSkip, numReturn, fieldSelector);
     }
 
     @Override

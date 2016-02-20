@@ -1,0 +1,50 @@
+package de.bwaldvogel.mongo.backend;
+
+import java.util.HashMap;
+import java.util.Map;
+
+enum QueryFilter {
+
+    AND("$and"),
+    OR("$or"),
+    NOR("$nor"),
+    ;
+
+    private final String value;
+
+    QueryFilter(String value) {
+        this.value = value;
+    }
+
+    private static Map<String, QueryFilter> MAP = new HashMap<>();
+
+    static {
+        for (QueryFilter filter : QueryFilter.values()) {
+            QueryFilter old = MAP.put(filter.getValue(), filter);
+            if (old != null) {
+                throw new IllegalStateException("Duplicate value: " + filter.getValue());
+            }
+        }
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    static boolean isQueryFilter(String value) {
+        return MAP.containsKey(value);
+    }
+
+    static QueryFilter fromValue(String value) throws IllegalArgumentException {
+        QueryFilter filter = MAP.get(value);
+        if (filter == null) {
+            throw new IllegalArgumentException("Illegal filter: " + value);
+        }
+        return filter;
+    }
+
+    @Override
+    public String toString() {
+        return value;
+    }
+}
