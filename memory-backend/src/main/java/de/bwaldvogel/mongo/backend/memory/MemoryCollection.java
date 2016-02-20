@@ -65,20 +65,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             }
         }
 
-        if (orderBy != null && !orderBy.keySet().isEmpty()) {
-            if (orderBy.keySet().iterator().next().equals("$natural")) {
-                int sortValue = ((Integer) orderBy.get("$natural")).intValue();
-                if (sortValue == 1) {
-                    // keep it as is
-                } else if (sortValue == -1) {
-                    Collections.reverse(matchedDocuments);
-                } else {
-                    throw new IllegalArgumentException("Illegal sort value: " + sortValue);
-                }
-            } else {
-                Collections.sort(matchedDocuments, new DocumentComparator(orderBy));
-            }
-        }
+        sortDocumentsInMemory(matchedDocuments, orderBy);
 
         if (numberToSkip > 0) {
             matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());

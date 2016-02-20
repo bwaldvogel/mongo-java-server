@@ -56,8 +56,25 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return matchDocuments(query, orderBy, numberToSkip, numberToReturn);
     }
 
+    protected void sortDocumentsInMemory(List<BSONObject> documents, BSONObject orderBy) {
+        if (orderBy != null && !orderBy.keySet().isEmpty()) {
+            if (orderBy.keySet().iterator().next().equals("$natural")) {
+                int sortValue = ((Integer) orderBy.get("$natural")).intValue();
+                if (sortValue == 1) {
+                    // keep it as is
+                } else if (sortValue == -1) {
+                    Collections.reverse(documents);
+                } else {
+                    throw new IllegalArgumentException("Illegal sort value: " + sortValue);
+                }
+            } else {
+                Collections.sort(documents, new DocumentComparator(orderBy));
+            }
+        }
+    }
+
     protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
-            int numberToReturn) throws MongoServerException;
+                                                           int numberToReturn) throws MongoServerException;
 
     protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<KEY> keys, BSONObject orderBy,
             int numberToSkip, int numberToReturn) throws MongoServerException;
