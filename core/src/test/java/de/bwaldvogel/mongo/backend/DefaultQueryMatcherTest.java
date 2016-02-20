@@ -5,6 +5,7 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
@@ -458,33 +459,15 @@ public class DefaultQueryMatcherTest {
         for (String op : new String[] { "$and", "$or", "$nor" }) {
 
             BSONObject query = new BasicBSONObject(op, null);
-            try {
-                matcher.matches(document, query);
-                fail("MongoServerError expected");
-            } catch (MongoServerError e) {
-                assertThat(e.getCode()).isEqualTo(14816);
-                assertThat(e.getMessage()).isEqualTo(op + " expression must be a nonempty array");
-            }
+            assertNonEmptyArrayException(document, op, query);
 
             query.put(op, 2);
-            try {
-                matcher.matches(document, query);
-                fail("MongoServerError expected");
-            } catch (MongoServerError e) {
-                assertThat(e.getCode()).isEqualTo(14816);
-                assertThat(e.getMessage()).isEqualTo(op + " expression must be a nonempty array");
-            }
+            assertNonEmptyArrayException(document, op, query);
 
-            query.put(op, new ArrayList<Object>());
-            try {
-                matcher.matches(document, query);
-                fail("MongoServerError expected");
-            } catch (MongoServerError e) {
-                assertThat(e.getCode()).isEqualTo(14816);
-                assertThat(e.getMessage()).isEqualTo(op + " expression must be a nonempty array");
-            }
+            query.put(op, new ArrayList<>());
+            assertNonEmptyArrayException(document, op, query);
 
-            query.put(op, Arrays.asList("a"));
+            query.put(op, Collections.singletonList("a"));
             try {
                 matcher.matches(document, query);
                 fail("MongoServerError expected");
@@ -492,6 +475,16 @@ public class DefaultQueryMatcherTest {
                 assertThat(e.getCode()).isEqualTo(14817);
                 assertThat(e.getMessage()).isEqualTo(op + " elements must be objects");
             }
+        }
+    }
+
+    private void assertNonEmptyArrayException(BSONObject document, String op, BSONObject query) throws Exception {
+        try {
+            matcher.matches(document, query);
+            fail("MongoServerError expected");
+        } catch (MongoServerError e) {
+            assertThat(e.getCode()).isEqualTo(14816);
+            assertThat(e.getMessage()).isEqualTo(op + " expression must be a nonempty array");
         }
     }
 
