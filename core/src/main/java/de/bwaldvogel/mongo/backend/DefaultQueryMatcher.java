@@ -238,6 +238,16 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 return pattern.matcher(value.toString()).find();
             }
 
+            if (queryObject.keySet().equals(Constants.REFERENCE_KEYS)) {
+                for (String key : queryObject.keySet()) {
+                    Object querySubvalue = queryObject.get(key);
+                    if (!checkMatch(querySubvalue, key, value)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             for (String key : queryObject.keySet()) {
                 Object querySubvalue = queryObject.get(key);
                 if (key.startsWith("$")) {

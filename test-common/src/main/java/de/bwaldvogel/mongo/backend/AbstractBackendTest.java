@@ -43,6 +43,7 @@ import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 
+import com.mongodb.DBRef;
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
@@ -2492,6 +2493,33 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             json("_id: 3"),
             json("_id: 5")
         );
+    }
+
+    @Test
+    public void testQueryWithReference() throws Exception {
+        collection.insertOne(json("_id: 1"));
+        String collectionName = collection.getNamespace().getCollectionName();
+        collection.insertOne(new Document("_id", 2).append("ref", new DBRef(collectionName, 1)));
+        collection.insertOne(new Document("_id", 3).append("ref", new DBRef(collectionName, 2)));
+
+        Document doc = collection.find(new Document("ref", new DBRef(collectionName, 1))).projection(json("_id: 1")).first();
+        assertThat(doc).isEqualTo(json("_id: 2"));
+    }
+
+    @Test
+    public void testQueryWithIllegalReference() throws Exception {
+        collection.insertOne(json("_id: 1"));
+        String collectionName = collection.getNamespace().getCollectionName();
+        collection.insertOne(new Document("_id", 2).append("ref", new DBRef(collectionName, 1)));
+        collection.insertOne(new Document("_id", 3).append("ref", new DBRef(collectionName, 2)));
+
+        try {
+            collection.find(json("ref: {$ref: 'coll'}")).first();
+            fail("MongoQueryException expected");
+        } catch (MongoQueryException e) {
+            assertThat(e.getCode()).isEqualTo(10068);
+            assertThat(e.getMessage()).contains("invalid operator: $ref");
+        }
     }
 
     @Test
