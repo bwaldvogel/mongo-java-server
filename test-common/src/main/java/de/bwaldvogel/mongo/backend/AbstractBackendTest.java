@@ -1,5 +1,17 @@
 package de.bwaldvogel.mongo.backend;
 
+import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.exists;
+import static com.mongodb.client.model.Filters.gt;
+import static com.mongodb.client.model.Filters.in;
+import static com.mongodb.client.model.Filters.lt;
+import static com.mongodb.client.model.Filters.ne;
+import static com.mongodb.client.model.Filters.or;
+import static com.mongodb.client.model.Updates.addEachToSet;
+import static com.mongodb.client.model.Updates.pull;
+import static com.mongodb.client.model.Updates.pullByFilter;
+import static com.mongodb.client.model.Updates.set;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.fest.assertions.Assertions.assertThat;
@@ -13,9 +25,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -24,6 +38,7 @@ import java.util.regex.Pattern;
 import org.bson.BsonObjectId;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 
@@ -40,13 +55,13 @@ import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.CountOptions;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.DeleteManyModel;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.RenameCollectionOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateManyModel;
+import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
@@ -349,7 +364,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         for (String collectionName : Arrays.asList("system.foobar", "system.namespaces")) {
             MongoCollection<Document> collection = getCollection(collectionName);
             try {
-                collection.updateMany(Filters.eq("some", "value"), Updates.set("field", "value"));
+                collection.updateMany(eq("some", "value"), set("field", "value"));
                 fail("MongoException expected");
             } catch (MongoException e) {
                 assertThat(e.getCode()).isEqualTo(10156);
@@ -414,7 +429,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(json("_id: 4, counts:{done:1}"));
         collection.insertOne(json("_id: 5, counts:{done:2}"));
 
-        List<Document> objs = toArray(collection.find(json("c: {$ne:true}")).sort(json("\"counts.done\": -1, _id: 1")));
+        List<Document> objs = toArray(collection.find(ne("c", true)).sort(json("\"counts.done\": -1, _id: 1")));
         assertThat(objs).containsExactly(
                 json("_id: 5, counts:{done:2}"),
                 json("_id: 4, counts:{done:1}"),
@@ -1450,16 +1465,16 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     public void testUpdateAddToSetEach() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        collection.updateOne(json("_id: 1"), json("$addToSet: {a: {$each: [6,5,4]}}"));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(6, 5, 4)));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6,5,4]"));
 
-        collection.updateOne(json("_id: 1"), json("$addToSet: {a: {$each: [3,2,1]}}"));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(3, 2, 1)));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6,5,4,3,2,1]"));
 
-        collection.updateOne(json("_id: 1"), json("$addToSet: {a: {$each: [4,7,9,2]}}"));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(7, 7, 9, 2)));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6,5,4,3,2,1,7,9]"));
 
-        collection.updateOne(json("_id: 1"), json("$addToSet: {a: {$each: [12,13,12]}}"));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(12, 13, 12)));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6,5,4,3,2,1,7,9,12,13]"));
     }
 
@@ -1469,13 +1484,13 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(obj);
         Number oldSize = getCollStats().getLong("size");
 
-        collection.updateOne(json("_id:1"), json("$set:{'a.x.0': 3}"));
+        collection.updateOne(json("_id:1"), set("a.x.0", 3));
         assertThat(collection.find().first().get("a")).isEqualTo(json("x:[3,2,3]"));
         Number newSize = getCollStats().getLong("size");
         assertThat(newSize).isEqualTo(oldSize);
 
         // now increase the db
-        collection.updateOne(json("_id:1"), json("$set:{'a.x.0': 'abc'}"));
+        collection.updateOne(json("_id:1"), set("a.x.0", "abc"));
         Number yetNewSize = getCollStats().getLong("size");
         assertThat(yetNewSize.longValue() - oldSize.longValue()).isEqualTo(4);
     }
@@ -1489,9 +1504,9 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertThat(collection.find(obj).first()).isEqualTo(obj);
 
         // pull from non-array
-        collection.updateOne(obj, json("$set: {field: 'value'}"));
+        collection.updateOne(obj, set("field", "value"));
         try {
-            collection.updateOne(obj, json("$pull: {field: 'value'}"));
+            collection.updateOne(obj, pull("field", "value"));
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(10142);
@@ -1501,7 +1516,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         // pull standard
         collection.updateOne(obj, json("$set: {field: ['value1', 'value2', 'value1']}"));
 
-        collection.updateOne(obj, json("$pull: {field: 'value1'}"));
+        collection.updateOne(obj, pull("field", "value1"));
 
         assertThat(collection.find(obj).first().get("field")).isEqualTo(Collections.singletonList("value2"));
 
@@ -1959,7 +1974,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testUpsertWithoutId() {
-        UpdateResult result = collection.updateOne(Filters.eq("a", 1), Updates.set("a", 2), new UpdateOptions().upsert(true));
+        UpdateResult result = collection.updateOne(eq("a", 1), set("a", 2), new UpdateOptions().upsert(true));
         assertThat(result.getModifiedCount()).isEqualTo(0);
         assertThat(result.getUpsertedId()).isNotNull();
         assertThat(collection.find().first().get("_id")).isInstanceOf(ObjectId.class);
@@ -2073,14 +2088,14 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         List<Document> objs = toArray(collection.find(json("group: null")));
         assertThat(objs).as("should have two neils (neil2, neil3)").hasSize(2);
 
-        objs = toArray(collection.find(json("group: {$exists: false}")));
+        objs = toArray(collection.find(exists("group", false)));
         assertThat(objs).as("should have one neils (neil3)").hasSize(1);
 
         // same check but for fields which do not exist in DB
         objs = toArray(collection.find(json("other: null")));
         assertThat(objs).as("should return all documents").hasSize(5);
 
-        objs = toArray(collection.find(json("other: {$exists: false}")));
+        objs = toArray(collection.find(exists("other", false)));
         assertThat(objs).as("should return all documents").hasSize(5);
     }
 
@@ -2161,14 +2176,18 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testBulkUpdateOrdered() throws Exception {
-        insertUpdateInBulk(true);
-        removeInBulk(true);
+        testBulkUpdate(true);
     }
 
     @Test
     public void testBulkUpdateUnordered() throws Exception {
-        insertUpdateInBulk(false);
-        removeInBulk(false);
+        testBulkUpdate(false);
+    }
+
+    private void testBulkUpdate(boolean ordered) {
+        insertUpdateInBulk(ordered);
+        removeInBulk(ordered);
+        insertUpdateInBulkNoMatch(ordered);
     }
 
     @Test
@@ -2398,7 +2417,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.insertOne(json("_id: 1, tags: ['aa', 'bb', 'ab', 'cc']"));
 
-        collection.updateOne(json("_id: 1"), json("$pull: {tags: {$in: [{$regex: 'a+'}]}}"));
+        collection.updateOne(json("_id: 1"), pullByFilter(in("tags", Pattern.compile("a+"))));
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, tags: ['bb', 'cc']"));
     }
@@ -2408,7 +2427,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.insertOne(json("_id: 1, tags: ['aa', 'bb', 'ab', 'cc']"));
 
-        collection.updateOne(json("_id: 1"), json("$pull: {tags: {$in: [{$regex: '^a+$'}]}}"));
+        collection.updateOne(json("_id: 1"), pullByFilter(in("tags", Pattern.compile("^a+$"))));
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, tags: ['bb', 'ab', 'cc']"));
     }
@@ -2418,10 +2437,42 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.insertOne(json("_id: 1, values: [1, 2, 2.5, 3.0]"));
 
-        collection.updateOne(json("_id: 1"), json("$pull: {values: {$in: [2.0, 3]}}"));
+        collection.updateOne(json("_id: 1"), pullByFilter(in("values", Arrays.asList(2.0, 3))));
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, values: [1, 2.5]"));
     }
+
+    @Test
+    public void testDocumentWithHashMap() {
+        Map<String, String> value = new HashMap<>();
+        value.put("foo", "bar");
+
+        collection.insertOne(new Document("_id", 1).append("map", value));
+        Bson document = collection.find().first();
+        assertThat(document).isEqualTo(json("{_id: 1, map: {foo: 'bar'}}"));
+    }
+
+    @Test
+    public void testFindAndOfOrs() throws Exception {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        collection.insertOne(new Document("_id", 1).append("published", true).append("startDate", dateFormat.parse("2015-03-01 13:20:05")));
+        collection.insertOne(new Document("_id", 2).append("published", true).append("expiration", dateFormat.parse("2020-12-31 18:00:00")));
+        collection.insertOne(new Document("_id", 3).append("published", true));
+        collection.insertOne(new Document("_id", 4).append("published", false));
+        collection.insertOne(new Document("_id", 5).append("published", true).append("startDate", dateFormat.parse("2017-01-01 00:00:00")));
+        collection.insertOne(new Document("_id", 6).append("published", true).append("expiration", dateFormat.parse("2016-01-01 00:00:00")));
+
+        Date now = dateFormat.parse("2016-01-01 00:00:00");
+        Bson query = and(
+            ne("published", false),
+            or(exists("startDate", false), lt("startDate", now)),
+            or(exists("expiration", false), gt("expiration", now))
+        );
+        List<Document> documents = toArray(collection.find(query).projection(json("_id: 1")));
+        assertThat(documents).containsOnly(json("_id: 1"), json("_id: 2"), json("_id: 3"));
+    }
+
 
     private void insertUpdateInBulk(boolean ordered) {
         List<WriteModel<Document>> ops = new ArrayList<>();
@@ -2429,19 +2480,35 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         ops.add(new InsertOneModel<>(json("_id: 1, field: 'x'")));
         ops.add(new InsertOneModel<>(json("_id: 2, field: 'x'")));
         ops.add(new InsertOneModel<>(json("_id: 3, field: 'x'")));
-        ops.add(new UpdateManyModel<Document>(json("field: 'x'"), json("$set: {field: 'y'}")));
+        ops.add(new UpdateManyModel<Document>(json("field: 'x'"), set("field", "y")));
 
         BulkWriteResult result = collection.bulkWrite(ops, new BulkWriteOptions().ordered(ordered));
 
         assertThat(result.getInsertedCount()).isEqualTo(3);
         assertThat(result.getDeletedCount()).isEqualTo(0);
         assertThat(result.getModifiedCount()).isEqualTo(3);
+        assertThat(result.getMatchedCount()).isEqualTo(3);
 
         long totalDocuments = collection.count();
         assertThat(totalDocuments).isEqualTo(3);
 
         long documentsWithY = collection.count(json("field: 'y'"));
         assertThat(documentsWithY).isEqualTo(3);
+    }
+
+    private void insertUpdateInBulkNoMatch(boolean ordered) {
+
+        collection.insertOne(json("foo: 'bar'"));
+
+        List<WriteModel<Document>> ops = new ArrayList<>();
+        ops.add(new UpdateOneModel<Document>(ne("foo", "bar"), set("field", "y")));
+
+        BulkWriteResult result = collection.bulkWrite(ops, new BulkWriteOptions().ordered(ordered));
+
+        assertThat(result.getInsertedCount()).isEqualTo(0);
+        assertThat(result.getDeletedCount()).isEqualTo(0);
+        assertThat(result.getModifiedCount()).isEqualTo(0);
+        assertThat(result.getMatchedCount()).isEqualTo(0);
     }
 
     private void removeInBulk(boolean ordered) {
