@@ -2476,14 +2476,33 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     @Test
-    public void testAndOrNorWithEmptyArray() throws Exception {
-        collection.insertOne(json("{}"));
-        assertException(and());
-        assertException(nor());
-        assertException(or());
+    public void testInOperatorWithNullValue() {
+        collection.insertMany(Arrays.asList(
+            json("_id: 1, a: 1"),
+            json("_id: 2, a: 2"),
+            json("_id: 3, a: 3"),
+            json("_id: 4, a: 4"),
+            json("_id: 5"))
+        );
+
+        Bson inQueryWithNull = in("a", 2, null, 3);
+        List<Document> results = toArray(collection.find(inQueryWithNull).projection(json("_id: 1")));
+        assertThat(results).containsExactly(
+            json("_id: 2"),
+            json("_id: 3"),
+            json("_id: 5")
+        );
     }
 
-    private void assertException(Bson filter) {
+    @Test
+    public void testAndOrNorWithEmptyArray() throws Exception {
+        collection.insertOne(json("{}"));
+        assertMongoQueryException(and());
+        assertMongoQueryException(nor());
+        assertMongoQueryException(or());
+    }
+
+    private void assertMongoQueryException(Bson filter) {
         try {
             collection.find(filter).first();
             fail("MongoQueryException expected");
