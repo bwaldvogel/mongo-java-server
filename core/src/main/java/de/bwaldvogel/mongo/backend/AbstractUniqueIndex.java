@@ -14,26 +14,26 @@ import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
+public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     protected AbstractUniqueIndex(String key, boolean ascending) {
         super(key, ascending);
     }
 
-    protected abstract KEY removeDocument(Object keyValue);
+    protected abstract P removeDocument(Object key);
 
-    protected abstract boolean containsKeyValue(Object keyValue);
+    protected abstract boolean containsKey(Object key);
 
-    protected abstract void putKeyValue(Object keyValue, KEY key);
+    protected abstract boolean putKeyPosition(Object key, P position);
 
-    protected abstract Iterable<Entry<Object, KEY>> getIterable();
+    protected abstract Iterable<Entry<Object, P>> getIterable();
 
-    protected abstract KEY getKey(Object keyValue);
+    protected abstract P getPosition(Object key);
 
     @Override
-    public synchronized KEY remove(Document document) {
-        Object value = getKeyValue(document);
-        return removeDocument(value);
+    public synchronized P remove(Document document) {
+        Object key = getKey(document);
+        return removeDocument(key);
     }
 
     @Override
@@ -42,20 +42,23 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
             return;
         }
 
-        Object keyValue = getKeyValue(document);
-        if (containsKeyValue(keyValue)) {
-            throw new DuplicateKeyError(this, keyValue);
+        Object key = getKey(document);
+        if (containsKey(key)) {
+            throw new DuplicateKeyError(this, key);
         }
     }
 
     @Override
-    public synchronized void add(Document document, KEY key) throws MongoServerError {
+    public synchronized void add(Document document, P position) throws MongoServerError {
         checkAdd(document);
         if (!Utils.hasSubdocumentValue(document, this.key)) {
             return;
         }
-        Object keyValue = getKeyValue(document);
-        putKeyValue(keyValue, key);
+        Object key = getKey(document);
+        boolean added = putKeyPosition(key, position);
+        if (!added) {
+            throw new IllegalStateException("Position " + position + " already exists. Concurrency issue?");
+        }
     }
 
     @Override
@@ -84,7 +87,7 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
         Object queryValue = query.get(key);
         if (queryValue instanceof Document) {
             for (String key : ((Document) queryValue).keySet()) {
-                if (key.equals("$in")) {
+                if (isInQuery(key)) {
                     // okay
                 } else if (key.startsWith("$")) {
                     // not yet supported
@@ -95,8 +98,12 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
         return true;
     }
 
+    private static boolean isInQuery(String key) {
+        return key.equals(QueryOperator.IN.getValue());
+    }
+
     @Override
-    public synchronized Iterable<KEY> getKeys(Document query) {
+    public synchronized Iterable<P> getPositions(Document query) {
         // Do not use getKeyValue, it's only valid for document.
         Object keyValue = Utils.normalizeValue(query.get(key));
 
@@ -113,8 +120,8 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
                 }
             }
         } else if (keyValue instanceof BsonRegularExpression) {
-            List<KEY> positions = new ArrayList<>();
-            for (Entry<Object, KEY> entry : getIterable()) {
+            List<P> positions = new ArrayList<>();
+            for (Entry<Object, P> entry : getIterable()) {
                 Object obj = entry.getKey();
                 Matcher matcher = ((BsonRegularExpression) keyValue).matcher(obj.toString());
                 if (matcher.find()) {
@@ -124,26 +131,26 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
             return positions;
         }
 
-        KEY key = getKey(keyValue);
-        if (key == null) {
+        P position = getPosition(keyValue);
+        if (position == null) {
             return Collections.emptyList();
         }
-        return Collections.singletonList(key);
+        return Collections.singletonList(position);
     }
 
     private boolean nullAwareEqualsKeys(Document oldDocument, Document newDocument) {
-        Object oldKey = getKeyValue(oldDocument);
-        Object newKey = getKeyValue(newDocument);
+        Object oldKey = getKey(oldDocument);
+        Object newKey = getKey(newDocument);
         return Utils.nullAwareEquals(oldKey, newKey);
     }
 
-    private Iterable<KEY> getPositionsForExpression(Document keyObj, String operator) {
-        if (operator.equals("$in")) {
+    private Iterable<P> getPositionsForExpression(Document keyObj, String operator) {
+        if (isInQuery(operator)) {
             Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(operator));
-            List<KEY> allKeys = new ArrayList<>();
+            List<P> allKeys = new ArrayList<>();
             for (Object object : queriedObjects) {
                 Object keyValue = Utils.normalizeValue(object);
-                KEY key = getKey(keyValue);
+                P key = getPosition(keyValue);
                 if (key != null) {
                     allKeys.add(key);
                 }

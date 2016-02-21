@@ -4,7 +4,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public abstract class Index<KEY> {
+public abstract class Index<P> {
 
     protected final String key;
     protected final boolean ascending;
@@ -22,20 +22,20 @@ public abstract class Index<KEY> {
         }
     }
 
-    protected Object getKeyValue(Document document) {
+    protected Object getKey(Document document) {
         Object value = Utils.getSubdocumentValue(document, key);
         return Utils.normalizeValue(value);
     }
 
     public abstract void checkAdd(Document document) throws MongoServerException;
 
-    public abstract void add(Document document, KEY key) throws MongoServerException;
+    public abstract void add(Document document, P position) throws MongoServerException;
 
-    public abstract KEY remove(Document document);
+    public abstract P remove(Document document);
 
     public abstract boolean canHandle(Document query);
 
-    public abstract Iterable<KEY> getKeys(Document query);
+    public abstract Iterable<P> getPositions(Document query);
 
     public abstract long getCount();
 

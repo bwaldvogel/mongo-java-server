@@ -40,26 +40,26 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     @Override
     protected Integer addDocumentInternal(Document document) {
-        Integer pos = emptyPositions.poll();
-        if (pos == null) {
-            pos = Integer.valueOf(documents.size());
+        Integer position = emptyPositions.poll();
+        if (position == null) {
+            position = Integer.valueOf(documents.size());
         }
 
-        if (pos.intValue() == documents.size()) {
+        if (position.intValue() == documents.size()) {
             documents.add(document);
         } else {
-            documents.set(pos.intValue(), document);
+            documents.set(position.intValue(), document);
         }
-        return pos;
+        return position;
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Integer> keys, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Iterable<Integer> positions, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
 
         List<Document> matchedDocuments = new ArrayList<>();
 
-        for (Integer key : keys) {
-            Document document = getDocument(key);
+        for (Integer position : positions) {
+            Document document = getDocument(position);
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }
@@ -258,7 +258,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected void removeDocumentWithKey(Integer position) {
+    protected void removeDocument(Integer position) {
         documents.set(position.intValue(), null);
         emptyPositions.add(position);
     }

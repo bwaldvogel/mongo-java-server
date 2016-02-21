@@ -35,7 +35,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected void removeDocumentWithKey(Object position) {
+        protected void removeDocument(Object position) {
             throw new UnsupportedOperationException();
         }
 
@@ -55,8 +55,8 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Iterable<Document> matchDocuments(Document query, Iterable<Object> keys, Document orderBy,
-                int numberToSkip, int numberToReturn) throws MongoServerException {
+        protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy,
+                                                    int numberToSkip, int numberToReturn) throws MongoServerException {
             throw new UnsupportedOperationException();
         }
 

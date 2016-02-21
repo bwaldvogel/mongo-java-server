@@ -6,7 +6,7 @@ import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public interface MongoCollection<KEY> {
+public interface MongoCollection<P> {
 
     String getDatabaseName();
 
@@ -14,7 +14,7 @@ public interface MongoCollection<KEY> {
 
     String getCollectionName();
 
-    void addIndex(Index<KEY> index);
+    void addIndex(Index<P> index);
 
     void addDocument(Document document) throws MongoServerException;
 

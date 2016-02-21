@@ -22,11 +22,11 @@ import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KEY> {
+public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private String collectionName;
     private String databaseName;
-    private final List<Index<KEY>> indexes = new ArrayList<>();
+    private final List<Index<P>> indexes = new ArrayList<>();
     private final QueryMatcher matcher = new DefaultQueryMatcher();
     protected final String idField;
 
@@ -43,10 +43,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     private Iterable<Document> queryDocuments(Document query, Document orderBy, int numberToSkip,
                                                 int numberToReturn) throws MongoServerException {
         synchronized (indexes) {
-            for (Index<KEY> index : indexes) {
+            for (Index<P> index : indexes) {
                 if (index.canHandle(query)) {
-                    Iterable<KEY> keys = index.getKeys(query);
-                    return matchDocuments(query, keys, orderBy, numberToSkip, numberToReturn);
+                    Iterable<P> positions = index.getPositions(query);
+                    return matchDocuments(query, positions, orderBy, numberToSkip, numberToReturn);
                 }
             }
         }
@@ -74,28 +74,28 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     protected abstract Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
                                                            int numberToReturn) throws MongoServerException;
 
-    protected abstract Iterable<Document> matchDocuments(Document query, Iterable<KEY> keys, Document orderBy,
-            int numberToSkip, int numberToReturn) throws MongoServerException;
+    protected abstract Iterable<Document> matchDocuments(Document query, Iterable<P> positions, Document orderBy,
+                                                         int numberToSkip, int numberToReturn) throws MongoServerException;
 
-    protected abstract Document getDocument(KEY key);
+    protected abstract Document getDocument(P position);
 
     protected abstract void updateDataSize(long sizeDelta);
 
     protected abstract long getDataSize();
 
-    protected abstract KEY addDocumentInternal(Document document);
+    protected abstract P addDocumentInternal(Document document);
 
     @Override
     public synchronized void addDocument(Document document) throws MongoServerException {
 
-        for (Index<KEY> index : indexes) {
+        for (Index<P> index : indexes) {
             index.checkAdd(document);
         }
 
-        KEY pos = addDocumentInternal(document);
+        P position = addDocumentInternal(document);
 
-        for (Index<KEY> index : indexes) {
-            index.add(document, pos);
+        for (Index<P> index : indexes) {
+            index.add(document, position);
         }
 
         updateDataSize(Utils.calculateSize(document));
@@ -122,7 +122,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public void addIndex(Index<KEY> index) {
+    public void addIndex(Index<P> index) {
         indexes.add(index);
     }
 
@@ -889,10 +889,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             Document newDocument = calculateUpdateDocument(document, updateQuery, matchPos, false);
 
             if (!newDocument.equals(oldDocument)) {
-                for (Index<KEY> index : indexes) {
+                for (Index<P> index : indexes) {
                     index.checkUpdate(oldDocument, newDocument);
                 }
-                for (Index<KEY> index : indexes) {
+                for (Index<P> index : indexes) {
                     index.updateInPlace(oldDocument, newDocument);
                 }
 
@@ -1018,7 +1018,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         response.put("numExtents", Integer.valueOf(0));
         response.put("nindexes", Integer.valueOf(indexes.size()));
         Document indexSizes = new Document();
-        for (Index<KEY> index : indexes) {
+        for (Index<P> index : indexes) {
             indexSizes.put(index.getName(), Long.valueOf(index.getDataSize()));
         }
 
@@ -1029,23 +1029,23 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
     @Override
     public synchronized void removeDocument(Document document) throws MongoServerException {
-        KEY key = null;
+        P position = null;
 
         if (!indexes.isEmpty()) {
-            for (Index<KEY> index : indexes) {
-                key = index.remove(document);
+            for (Index<P> index : indexes) {
+                position = index.remove(document);
             }
         } else {
-            key = findDocument(document);
+            position = findDocument(document);
         }
-        if (key == null) {
+        if (position == null) {
             // not found
             return;
         }
 
         updateDataSize(-Utils.calculateSize(document));
 
-        removeDocumentWithKey(key);
+        removeDocument(position);
     }
 
     @Override
@@ -1060,7 +1060,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
         response.put("nIndexes", Integer.valueOf(indexes.size()));
         Document keysPerIndex = new Document();
-        for (Index<KEY> index : indexes) {
+        for (Index<P> index : indexes) {
             keysPerIndex.put(index.getName(), Long.valueOf(index.getCount()));
         }
 
@@ -1077,9 +1077,9 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         this.collectionName = newCollectionName;
     }
 
-    protected abstract void removeDocumentWithKey(KEY key);
+    protected abstract void removeDocument(P position);
 
-    protected abstract KEY findDocument(Document document);
+    protected abstract P findDocument(Document document);
 
     protected abstract int getRecordCount();
 

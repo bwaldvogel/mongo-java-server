@@ -25,23 +25,24 @@ public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
     }
 
     @Override
-    protected Integer removeDocument(Object keyValue) {
-        return index.remove(keyValue);
+    protected Integer removeDocument(Object key) {
+        return index.remove(key);
     }
 
     @Override
-    protected boolean containsKeyValue(Object keyValue) {
-        return index.containsKey(keyValue);
+    protected boolean containsKey(Object key) {
+        return index.containsKey(key);
     }
 
     @Override
-    protected void putKeyValue(Object keyValue, Integer key) {
-        index.put(keyValue, key);
+    protected boolean putKeyPosition(Object key, Integer position) {
+        Integer oldValue = index.put(key, position);
+        return oldValue == null;
     }
 
     @Override
-    protected Integer getKey(Object keyValue) {
-        return index.get(keyValue);
+    protected Integer getPosition(Object key) {
+        return index.get(key);
     }
 
     @Override

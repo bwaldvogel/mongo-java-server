@@ -77,15 +77,15 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected Document getDocument(Object key) {
-        return dataMap.get(key);
+    protected Document getDocument(Object position) {
+        return dataMap.get(position);
     }
 
     @Override
-    protected void removeDocumentWithKey(Object key) {
-        Document remove = dataMap.remove(key);
+    protected void removeDocument(Object position) {
+        Document remove = dataMap.remove(position);
         if (remove == null) {
-            throw new NoSuchElementException("No document with key " + key);
+            throw new NoSuchElementException("No document with key " + position);
         }
     }
 
@@ -101,12 +101,12 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Object> keys, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
 
         List<Document> matchedDocuments = new ArrayList<>();
 
-        for (Object key : keys) {
-            Document document = getDocument(key);
+        for (Object position : positions) {
+            Document document = getDocument(position);
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }

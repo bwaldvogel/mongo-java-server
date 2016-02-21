@@ -16,18 +16,19 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
     }
 
     @Override
-    protected Object removeDocument(Object keyValue) {
-        return mvMap.remove(NullableKey.of(keyValue));
+    protected Object removeDocument(Object key) {
+        return mvMap.remove(NullableKey.of(key));
     }
 
     @Override
-    protected boolean containsKeyValue(Object keyValue) {
-        return mvMap.containsKey(NullableKey.of(keyValue));
+    protected boolean containsKey(Object key) {
+        return mvMap.containsKey(NullableKey.of(key));
     }
 
     @Override
-    protected void putKeyValue(Object keyValue, Object key) {
-        mvMap.put(NullableKey.of(keyValue), NullableKey.of(key));
+    protected boolean putKeyPosition(Object key, Object position) {
+        Object oldValue = mvMap.put(NullableKey.of(key), NullableKey.of(position));
+        return oldValue == null;
     }
 
     @Override
@@ -36,8 +37,8 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
     }
 
     @Override
-    protected Object getKey(Object keyValue) {
-        return mvMap.get(keyValue);
+    protected Object getPosition(Object key) {
+        return mvMap.get(key);
     }
 
     @Override

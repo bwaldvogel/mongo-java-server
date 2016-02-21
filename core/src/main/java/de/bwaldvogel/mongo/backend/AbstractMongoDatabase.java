@@ -27,7 +27,7 @@ import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
 
-public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
+public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private static final String NAMESPACES_COLLECTION_NAME = "system.namespaces";
 
@@ -38,13 +38,13 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     protected final String databaseName;
     private final MongoBackend backend;
 
-    private final Map<String, MongoCollection<KEY>> collections = new ConcurrentHashMap<>();
+    private final Map<String, MongoCollection<P>> collections = new ConcurrentHashMap<>();
 
-    private final AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<>();
+    private final AtomicReference<MongoCollection<P>> indexes = new AtomicReference<>();
 
     private final Map<Channel, List<Document>> lastResults = new ConcurrentHashMap<>();
 
-    private MongoCollection<KEY> namespaces;
+    private MongoCollection<P> namespaces;
 
     protected AbstractMongoDatabase(String databaseName, MongoBackend backend) {
         this.databaseName = databaseName;
@@ -60,12 +60,12 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
                 String name = namespace.get("name").toString();
                 log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
-                MongoCollection<KEY> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
+                MongoCollection<P> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
                 collections.put(collectionName, collection);
                 log.debug("opened collection '{}'", collectionName);
             }
 
-            MongoCollection<KEY> indexCollection = collections.get(INDEXES_COLLECTION_NAME);
+            MongoCollection<P> indexCollection = collections.get(INDEXES_COLLECTION_NAME);
             indexes.set(indexCollection);
             for (Document indexDescription : indexCollection.handleQuery(new Document(), 0, 0, null)) {
                 openOrCreateIndex(indexDescription);
@@ -118,7 +118,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("distinct")) {
             String collectionName = query.get(command).toString();
-            MongoCollection<KEY> collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(collectionName, true);
             return collection.handleDistinct(query);
         } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query);
@@ -128,15 +128,15 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
             String collectionName = query.get(command).toString();
-            MongoCollection<KEY> collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(collectionName, true);
             return collection.getStats();
         } else if (command.equalsIgnoreCase("validate")) {
             String collectionName = query.get(command).toString();
-            MongoCollection<KEY> collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(collectionName, true);
             return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {
             String collectionName = query.get(command).toString();
-            MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
+            MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
             return collection.findAndModify(query);
         } else if (command.equalsIgnoreCase("listCollections")) {
             return listCollections();
@@ -173,7 +173,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     }
 
     private Document listIndexes() throws MongoServerException {
-        MongoCollection<KEY> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
+        MongoCollection<P> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
 
         Document cursor = new Document();
         cursor.put("id", Long.valueOf(0));
@@ -192,8 +192,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    private MongoCollection<KEY> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
-        final MongoCollection<KEY> collection = resolveCollection(collectionName, false);
+    private MongoCollection<P> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
+        final MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             return collection;
         } else {
@@ -304,7 +304,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             throw new MongoServerException("Disabling autoIndexId is not yet implemented");
         }
 
-        MongoCollection<KEY> collection = resolveCollection(collectionName, false);
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             throw new MongoServerError(48, "collection already exists");
         }
@@ -336,7 +336,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     }
 
     private int countIndexes() {
-        final MongoCollection<KEY> indexesCollection;
+        final MongoCollection<P> indexesCollection;
         synchronized (indexes) {
             indexesCollection = indexes.get();
         }
@@ -358,7 +358,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         long dataSize = 0;
         double averageObjectSize = 0;
 
-        for (MongoCollection<KEY> collection : collections.values()) {
+        for (MongoCollection<P> collection : collections.values()) {
             Document stats = collection.getStats();
             objects += ((Number) stats.get("count")).longValue();
             dataSize += ((Number) stats.get("size")).longValue();
@@ -391,7 +391,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     private Document commandDrop(Document query) throws MongoServerException {
         String collectionName = query.get("drop").toString();
-        MongoCollection<KEY> collection = collections.remove(collectionName);
+        MongoCollection<P> collection = collections.remove(collectionName);
 
         if (collection == null) {
             throw new MongoSilentServerException("ns not found");
@@ -485,7 +485,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     private Document commandCount(String command, Document query) throws MongoServerException {
         String collection = query.get(command).toString();
         Document response = new Document();
-        MongoCollection<KEY> coll = collections.get(collection);
+        MongoCollection<P> coll = collections.get(collection);
         if (coll == null) {
             response.put("missing", Boolean.TRUE);
             response.put("n", Integer.valueOf(0));
@@ -508,7 +508,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     public Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException {
         clearLastStatus(query.getChannel());
         String collectionName = query.getCollectionName();
-        MongoCollection<KEY> collection = resolveCollection(collectionName, false);
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
             return Collections.emptyList();
         }
@@ -552,9 +552,9 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     }
 
     @Override
-    public synchronized MongoCollection<KEY> resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException {
+    public synchronized MongoCollection<P> resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException {
         checkCollectionName(collectionName);
-        MongoCollection<KEY> collection = collections.get(collectionName);
+        MongoCollection<P> collection = collections.get(collectionName);
         if (collection == null && throwIfNotFound) {
             throw new NoSuchCollectionException(collectionName);
         }
@@ -577,7 +577,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return collections.isEmpty();
     }
 
-    private void addNamespace(MongoCollection<KEY> collection) throws MongoServerException {
+    private void addNamespace(MongoCollection<P> collection) throws MongoServerException {
         collections.put(collection.getCollectionName(), collection);
         namespaces.addDocument(new Document("name", collection.getFullName()));
     }
@@ -618,10 +618,10 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         getOrCreateIndexesCollection().addDocument(indexDescription);
     }
 
-    private MongoCollection<KEY> getOrCreateIndexesCollection() throws MongoServerException {
+    private MongoCollection<P> getOrCreateIndexesCollection() throws MongoServerException {
         synchronized(indexes) {
             if (indexes.get() == null) {
-                MongoCollection<KEY> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
+                MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
                 addNamespace(indexCollection);
                 indexes.set(indexCollection);
             }
@@ -641,7 +641,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         String ns = indexDescription.get("ns").toString();
         String collectionName = extractCollectionNameFromNamespace(ns);
 
-        MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
+        MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
 
         Document key = (Document) indexDescription.get("key");
         if (key.keySet().equals(Collections.singleton("_id"))) {
@@ -664,7 +664,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    protected abstract Index<KEY> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending);
+    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending);
 
     private Document insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) throws MongoServerException {
         clearLastStatus(channel);
@@ -672,7 +672,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
-            final MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
+            final MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
             int n = collection.insertDocuments(documents);
             assert n == documents.size();
             final Document result = new Document("n", Integer.valueOf(n));
@@ -690,7 +690,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(12050, "cannot delete from system namespace");
             }
-            MongoCollection<KEY> collection = resolveCollection(collectionName, false);
+            MongoCollection<P> collection = resolveCollection(collectionName, false);
             int n;
             if (collection == null) {
                 n = 0;
@@ -714,7 +714,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
                 throw new MongoServerError(10156, "cannot update system collection");
             }
 
-            MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
+            MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
             return collection.updateDocuments(selector, update, multi, upsert);
         } catch (MongoServerException e) {
             putLastError(channel, e);
@@ -748,13 +748,13 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         results.set(results.size() - 1, result);
     }
 
-    private MongoCollection<KEY> createCollection(String collectionName) throws MongoServerException {
+    private MongoCollection<P> createCollection(String collectionName) throws MongoServerException {
         checkCollectionName(collectionName);
         if (collectionName.contains("$")) {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
         }
 
-        MongoCollection<KEY> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
+        MongoCollection<P> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
         addNamespace(collection);
 
         Document indexDescription = new Document();
@@ -768,7 +768,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return collection;
     }
 
-    protected abstract MongoCollection<KEY> openOrCreateCollection(String collectionName, String idField);
+    protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, String idField);
 
     @Override
     public void drop() throws MongoServerException {
@@ -784,8 +784,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     }
 
     @Override
-    public MongoCollection<KEY> deregisterCollection(String collectionName) throws MongoServerException {
-        MongoCollection<KEY> removedCollection = collections.remove(collectionName);
+    public MongoCollection<P> deregisterCollection(String collectionName) throws MongoServerException {
+        MongoCollection<P> removedCollection = collections.remove(collectionName);
         namespaces.deleteDocuments(new Document("name", removedCollection.getFullName()), 1);
         return removedCollection;
     }
@@ -797,7 +797,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         collection.renameTo(getDatabaseName(), newCollectionName);
         // TODO resolve cast
         @SuppressWarnings("unchecked")
-        MongoCollection<KEY> newCollection = (MongoCollection<KEY>) collection;
+        MongoCollection<P> newCollection = (MongoCollection<P>) collection;
         collections.put(newCollectionName, newCollection);
         List<Document> newDocuments = new ArrayList<>();
         newDocuments.add(new Document("name", collection.getFullName()));
