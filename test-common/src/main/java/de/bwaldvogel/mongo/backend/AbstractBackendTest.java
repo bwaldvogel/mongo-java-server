@@ -2527,6 +2527,24 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         assertMongoQueryException(or());
     }
 
+    @Test
+    public void testInsertLargeDocument() throws Exception {
+        insertAndFindLargeDocument(100, 1);
+        insertAndFindLargeDocument(1000, 2);
+        insertAndFindLargeDocument(10000, 3);
+    }
+
+    private void insertAndFindLargeDocument(int numKeyValues, int id) {
+        Document document = new Document("_id", id);
+        for (int i = 0; i < numKeyValues; i++) {
+            document.put("key-" + i, "value-" + i);
+        }
+        collection.insertOne(document);
+
+        Document persistentDocument = collection.find(new Document("_id", id)).first();
+        assertThat(persistentDocument.keySet()).hasSize(numKeyValues + 1);
+    }
+
     private void assertMongoQueryException(Bson filter) {
         try {
             collection.find(filter).first();
