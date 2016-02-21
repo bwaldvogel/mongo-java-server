@@ -192,7 +192,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private MongoCollection<P> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
+    private synchronized MongoCollection<P> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
         final MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             return collection;
