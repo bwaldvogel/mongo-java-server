@@ -46,8 +46,8 @@ public class MongoServer {
 
     public void bind(SocketAddress socketAddress) {
 
-        bossGroup = new NioEventLoopGroup();
-        workerGroup = new NioEventLoopGroup();
+        bossGroup = new NioEventLoopGroup(0, new MongoThreadFactory("mongo-server-boss"));
+        workerGroup = new NioEventLoopGroup(0, new MongoThreadFactory("mongo-server-worker"));
         channelGroup = new DefaultChannelGroup("mongodb-channels", workerGroup.next());
 
         try {
