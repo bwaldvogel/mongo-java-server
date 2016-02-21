@@ -62,7 +62,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testCalculateSize() {
+    public void testCalculateSize() throws Exception {
         assertThat(Utils.calculateSize(new Document())).isEqualTo(5);
         assertThat(Utils.calculateSize(new Document("_id", 7))).isEqualTo(14);
     }

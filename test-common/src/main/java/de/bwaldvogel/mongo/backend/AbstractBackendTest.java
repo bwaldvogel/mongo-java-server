@@ -821,7 +821,8 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(new Document("foo", new byte[10]));
         Document insertedObject = new Document("foo", UUID.randomUUID());
         collection.insertOne(insertedObject);
-        assertThat(collection.find(insertedObject).first()).isEqualTo(insertedObject);
+        Document document = collection.find(insertedObject).first();
+        assertThat(document).isEqualTo(insertedObject);
     }
 
     @Test

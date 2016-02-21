@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.bson.Document;
@@ -72,7 +73,7 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public int[] getVersion() {
+    public List<Integer> getVersion() {
         return backend.getVersion();
     }
 

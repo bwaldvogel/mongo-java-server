@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -33,7 +34,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<>();
 
-    private static int[] VERSION = new int[] { 3, 0, 0 };
+    private static final List<Integer> VERSION = Arrays.asList(3, 0, 0);
 
     private MongoDatabase resolveDatabase(Message message) throws MongoServerException {
         return resolveDatabase(message.getDatabaseName());
@@ -228,7 +229,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public int[] getVersion() {
+    public List<Integer> getVersion() {
         return AbstractMongoBackend.VERSION;
     }
 

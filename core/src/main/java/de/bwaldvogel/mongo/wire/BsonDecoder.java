@@ -1,7 +1,7 @@
 package de.bwaldvogel.mongo.wire;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -142,7 +142,7 @@ class BsonDecoder {
         if (length < 0)
             throw new IOException("string termination not found");
 
-        String result = buffer.toString(buffer.readerIndex(), length, Charset.forName("UTF-8"));
+        String result = buffer.toString(buffer.readerIndex(), length, StandardCharsets.UTF_8);
         buffer.skipBytes(length + 1);
         return result;
     }

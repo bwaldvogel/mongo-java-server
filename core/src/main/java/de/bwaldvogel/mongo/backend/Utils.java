@@ -1,18 +1,19 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.bson.BSONObject;
 import org.bson.BsonRegularExpression;
 import org.bson.Document;
 
-import com.mongodb.BasicDBObject;
-import com.mongodb.DefaultDBEncoder;
-
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.wire.BsonEncoder;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 public class Utils {
 
@@ -120,11 +121,16 @@ public class Utils {
         }
     }
 
-    public static long calculateSize(Document document) {
-        // TODO make more efficient
-        BSONObject dbObject = new BasicDBObject();
-        dbObject.putAll(document);
-        return new DefaultDBEncoder().encode(dbObject).length;
+    public static long calculateSize(Document document) throws MongoServerException {
+        ByteBuf buffer = Unpooled.buffer();
+        try {
+            new BsonEncoder().encodeDocument(document, buffer);
+            return buffer.writerIndex();
+        } catch (IOException e) {
+            throw new MongoServerException("Failed to calculate document size", e);
+        } finally {
+            buffer.release();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -339,7 +345,7 @@ public class Utils {
         }
     }
 
-    public static String join(int[] array, char c) {
+    public static String join(List<Integer> array, char c) {
         final StringBuilder sb = new StringBuilder();
         for (int value : array) {
             if (sb.length() > 0) {

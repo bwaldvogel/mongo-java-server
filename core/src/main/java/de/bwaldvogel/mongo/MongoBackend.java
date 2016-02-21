@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo;
 
 import java.util.Collection;
+import java.util.List;
 
 import org.bson.Document;
 
@@ -29,7 +30,7 @@ public interface MongoBackend {
 
     Collection<Document> getCurrentOperations(MongoQuery query);
 
-    int[] getVersion();
+    List<Integer> getVersion();
 
     void close();
 
