@@ -46,59 +46,59 @@ class BsonDecoder {
     private Object decodeValue(byte type, ByteBuf buffer) throws IOException {
         Object value;
         switch (type) {
-        case BsonConstants.TYPE_DOUBLE:
-            value = Double.valueOf(buffer.readDouble());
-            break;
-        case BsonConstants.TYPE_UTF8_STRING:
-            value = decodeString(buffer);
-            break;
-        case BsonConstants.TYPE_EMBEDDED_DOCUMENT:
-            value = decodeBson(buffer);
-            break;
-        case BsonConstants.TYPE_ARRAY:
-            value = decodeArray(buffer);
-            break;
-        case BsonConstants.TYPE_DATA:
-            value = decodeBinary(buffer);
-            break;
-        case BsonConstants.TYPE_UNDEFINED:
-            value = null;
-            break;
-        case BsonConstants.TYPE_OBJECT_ID:
-            value = decodeObjectId(buffer);
-            break;
-        case BsonConstants.TYPE_BOOLEAN:
-            value = decodeBoolean(buffer);
-            break;
-        case BsonConstants.TYPE_UTC_DATETIME:
-            value = new Date(buffer.readLong());
-            break;
-        case BsonConstants.TYPE_NULL:
-            value = null;
-            break;
-        case BsonConstants.TYPE_REGEX:
-            value = decodePattern(buffer);
-            break;
-        case BsonConstants.TYPE_INT32:
-            value = Integer.valueOf(buffer.readInt());
-            break;
-        case BsonConstants.TYPE_TIMESTAMP:
-            value = new BSONTimestamp(buffer.readInt(), buffer.readInt());
-            break;
-        case BsonConstants.TYPE_INT64:
-            value = Long.valueOf(buffer.readLong());
-            break;
-        case BsonConstants.TYPE_MAX_KEY:
-            value = new MaxKey();
-            break;
-        case BsonConstants.TYPE_MIN_KEY:
-            value = new MinKey();
-            break;
-        case BsonConstants.TYPE_JAVASCRIPT_CODE:
-        case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
-            throw new IOException("unhandled type: 0x" + Integer.toHexString(type));
-        default:
-            throw new IOException("unknown type: 0x" + Integer.toHexString(type));
+            case BsonConstants.TYPE_DOUBLE:
+                value = Double.valueOf(buffer.readDouble());
+                break;
+            case BsonConstants.TYPE_UTF8_STRING:
+                value = decodeString(buffer);
+                break;
+            case BsonConstants.TYPE_EMBEDDED_DOCUMENT:
+                value = decodeBson(buffer);
+                break;
+            case BsonConstants.TYPE_ARRAY:
+                value = decodeArray(buffer);
+                break;
+            case BsonConstants.TYPE_DATA:
+                value = decodeBinary(buffer);
+                break;
+            case BsonConstants.TYPE_UNDEFINED:
+                value = null;
+                break;
+            case BsonConstants.TYPE_OBJECT_ID:
+                value = decodeObjectId(buffer);
+                break;
+            case BsonConstants.TYPE_BOOLEAN:
+                value = decodeBoolean(buffer);
+                break;
+            case BsonConstants.TYPE_UTC_DATETIME:
+                value = new Date(buffer.readLong());
+                break;
+            case BsonConstants.TYPE_NULL:
+                value = null;
+                break;
+            case BsonConstants.TYPE_REGEX:
+                value = decodePattern(buffer);
+                break;
+            case BsonConstants.TYPE_INT32:
+                value = Integer.valueOf(buffer.readInt());
+                break;
+            case BsonConstants.TYPE_TIMESTAMP:
+                value = new BSONTimestamp(buffer.readInt(), buffer.readInt());
+                break;
+            case BsonConstants.TYPE_INT64:
+                value = Long.valueOf(buffer.readLong());
+                break;
+            case BsonConstants.TYPE_MAX_KEY:
+                value = new MaxKey();
+                break;
+            case BsonConstants.TYPE_MIN_KEY:
+                value = new MinKey();
+                break;
+            case BsonConstants.TYPE_JAVASCRIPT_CODE:
+            case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
+                throw new IOException("unhandled type: 0x" + Integer.toHexString(type));
+            default:
+                throw new IOException("unknown type: 0x" + Integer.toHexString(type));
         }
         return value;
     }
@@ -151,32 +151,32 @@ class BsonDecoder {
         int length = buffer.readInt();
         int subtype = buffer.readByte();
         switch (subtype) {
-        case BsonConstants.BINARY_SUBTYPE_GENERIC:
-        case BsonConstants.BINARY_SUBTYPE_USER_DEFINED: {
-            byte[] data = new byte[length];
-            buffer.readBytes(data);
-            return data;
-        }
-        case BsonConstants.BINARY_SUBTYPE_OLD_UUID:
-        case BsonConstants.BINARY_SUBTYPE_UUID: {
-            if (length != BsonConstants.LENGTH_UUID) {
-                throw new IOException();
+            case BsonConstants.BINARY_SUBTYPE_GENERIC:
+            case BsonConstants.BINARY_SUBTYPE_USER_DEFINED: {
+                byte[] data = new byte[length];
+                buffer.readBytes(data);
+                return data;
             }
-            return new UUID(buffer.readLong(), buffer.readLong());
-        }
-        default:
-            throw new IOException();
+            case BsonConstants.BINARY_SUBTYPE_OLD_UUID:
+            case BsonConstants.BINARY_SUBTYPE_UUID: {
+                if (length != BsonConstants.LENGTH_UUID) {
+                    throw new IOException();
+                }
+                return new UUID(buffer.readLong(), buffer.readLong());
+            }
+            default:
+                throw new IOException();
         }
     }
 
     private Object decodeBoolean(ByteBuf buffer) throws IOException {
         switch (buffer.readByte()) {
-        case BsonConstants.BOOLEAN_VALUE_FALSE:
-            return Boolean.FALSE;
-        case BsonConstants.BOOLEAN_VALUE_TRUE:
-            return Boolean.TRUE;
-        default:
-            throw new IOException("illegal boolean value");
+            case BsonConstants.BOOLEAN_VALUE_FALSE:
+                return Boolean.FALSE;
+            case BsonConstants.BOOLEAN_VALUE_TRUE:
+                return Boolean.TRUE;
+            default:
+                throw new IOException("illegal boolean value");
         }
     }
 
