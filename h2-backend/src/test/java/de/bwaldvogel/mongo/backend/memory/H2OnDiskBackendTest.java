@@ -58,15 +58,15 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         List<String> dbs = Arrays.asList("testdb1", "testdb2");
         for (String db : dbs) {
             for (String coll : new String[] { "collection1", "collection2" }) {
-                client.getDatabase(db).getCollection(coll).insertOne(json(""));
+                syncClient.getDatabase(db).getCollection(coll).insertOne(json(""));
             }
         }
-        List<String> dbNamesBefore = toArray(client.listDatabaseNames());
+        List<String> dbNamesBefore = toArray(syncClient.listDatabaseNames());
         assertThat(dbNamesBefore).isEqualTo(dbs);
 
         restart();
 
-        List<String> dbNamesAfter = toArray(client.listDatabaseNames());
+        List<String> dbNamesAfter = toArray(syncClient.listDatabaseNames());
         assertThat(dbNamesAfter).isEqualTo(dbs);
     }
 
@@ -80,11 +80,11 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
 
-        List<String> databaseNames = toArray(client.listDatabaseNames());
+        List<String> databaseNames = toArray(syncClient.listDatabaseNames());
 
         restart();
 
-        assertThat(toArray(client.listDatabaseNames())).isEqualTo(databaseNames);
+        assertThat(toArray(syncClient.listDatabaseNames())).isEqualTo(databaseNames);
 
         List<Document> indexesAfterRestart = toArray(getCollection("system.indexes").find());
         assertThat(indexesAfterRestart).isEqualTo(indexes);

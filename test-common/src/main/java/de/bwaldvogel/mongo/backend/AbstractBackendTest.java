@@ -19,6 +19,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.fest.assertions.Fail.fail;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -32,9 +33,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import org.bson.BsonObjectId;
@@ -43,6 +49,8 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mongodb.DBRef;
 import com.mongodb.MongoCommandException;
@@ -51,6 +59,7 @@ import com.mongodb.MongoNamespace;
 import com.mongodb.MongoQueryException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.WriteConcern;
+import com.mongodb.async.SingleResultCallback;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -73,6 +82,8 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
 public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
 
     @Test
     public void testCreateCollection() throws Exception {
@@ -414,7 +425,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         MongoCollection<Document> collection2 = getCollection("testcoll2");
         collection2.insertOne(json("{}"));
 
-        client.dropDatabase(db.getName());
+        syncClient.dropDatabase(db.getName());
         assertThat(listDatabaseNames()).excludes(db.getName());
         assertThat(collection.count()).isZero();
         assertThat(toArray(db.listCollectionNames())).excludes(collection.getNamespace().getCollectionName(),
@@ -927,12 +938,12 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     private MongoDatabase getDatabase() {
-        return client.getDatabase("bar");
+        return syncClient.getDatabase("bar");
     }
 
     private List<String> listDatabaseNames() {
         List<String> databaseNames = new ArrayList<>();
-        for (String databaseName : client.listDatabaseNames()) {
+        for (String databaseName : syncClient.listDatabaseNames()) {
             databaseNames.add(databaseName);
         }
         return databaseNames;
@@ -940,7 +951,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testMaxBsonSize() throws Exception {
-        int maxBsonObjectSize = client.getMaxBsonObjectSize();
+        int maxBsonObjectSize = syncClient.getMaxBsonObjectSize();
         assertThat(maxBsonObjectSize).isEqualTo(16777216);
     }
 
@@ -1231,7 +1242,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     @Test
     public void testWhatsMyUri() throws Exception {
         for (String dbName : new String[] { "admin", "local", "test" }) {
-            Document result = client.getDatabase(dbName).runCommand(new Document("whatsmyuri", 1));
+            Document result = syncClient.getDatabase(dbName).runCommand(new Document("whatsmyuri", 1));
             assertThat(result.get("you")).isNotNull();
             assertThat(result.get("you").toString()).startsWith("127.0.0.1:");
         }
@@ -2532,6 +2543,72 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         insertAndFindLargeDocument(100, 1);
         insertAndFindLargeDocument(1000, 2);
         insertAndFindLargeDocument(10000, 3);
+    }
+
+    @Test
+    public void testInsertAndUpdateAsynchronously() throws Exception {
+        int numDocuments = 1000;
+        final CountDownLatch latch = new CountDownLatch(numDocuments);
+        final Queue<RuntimeException> errors = new LinkedBlockingQueue<>();
+        final Semaphore concurrentOperationsOnTheFly = new Semaphore(50); // prevent MongoWaitQueueFullException
+
+        for (int i = 1; i <= numDocuments; i++) {
+            final Document document = new Document("_id", i);
+            for (int j = 0; j < 10; j++) {
+                document.append("key-" + i + "-" + j, "value-" + i + "-" + j);
+            }
+            concurrentOperationsOnTheFly.acquire();
+            asyncCollection.insertOne(document, new SingleResultCallback<Void>() {
+                @Override
+                public void onResult(Void result, Throwable t) {
+                    checkError("insert", t);
+                    log.info("inserted {}", document);
+                    final Document query = new Document("_id", document.getInteger("_id"));
+                    asyncCollection.updateOne(query, Updates.set("updated", true), new SingleResultCallback<UpdateResult>() {
+                        @Override
+                        public void onResult(UpdateResult result, Throwable t) {
+                            checkError("update", t);
+                            log.info("updated {}: {}", query, result);
+                            release();
+                        }
+                    });
+                }
+
+                private void checkError(String operation, Throwable t) {
+                    if (t != null) {
+                        log.error(operation + " of {} failed", document, t);
+                        RuntimeException exception = new RuntimeException("Failed to " + operation + " " + document, t);
+                        errors.add(exception);
+                        release();
+                        throw exception;
+                    }
+                }
+
+                private void release() {
+                    latch.countDown();
+                    concurrentOperationsOnTheFly.release();
+                }
+            });
+        }
+
+        boolean success = latch.await(30, TimeUnit.SECONDS);
+        assertTrue(success);
+
+        if (!errors.isEmpty()) {
+            throw errors.poll();
+        }
+
+        log.info("finished");
+
+        for (int i = 1; i <= numDocuments; i++) {
+            Document query = new Document("_id", i);
+            Document document = collection.find(query).first();
+            assertThat(document).describedAs(query.toJson()).isNotNull();
+            assertThat(document.getBoolean("updated")).describedAs(document.toJson()).isTrue();
+        }
+
+        long count = collection.count();
+        assertThat(count).isEqualTo(numDocuments);
     }
 
     private void insertAndFindLargeDocument(int numKeyValues, int id) {

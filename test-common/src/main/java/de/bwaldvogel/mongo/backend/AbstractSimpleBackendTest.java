@@ -9,8 +9,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.mongodb.MongoClient;
+import com.mongodb.MongoNamespace;
 import com.mongodb.ServerAddress;
+import com.mongodb.async.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
@@ -21,9 +22,14 @@ public abstract class AbstractSimpleBackendTest {
 
     private MongoServer mongoServer;
 
-    protected MongoClient client;
+    protected com.mongodb.MongoClient syncClient;
+    protected com.mongodb.async.client.MongoClient asyncClient;
+
     protected MongoDatabase db;
     protected MongoCollection<Document> collection;
+
+    protected com.mongodb.async.client.MongoCollection<Document> asyncCollection;
+    private com.mongodb.async.client.MongoDatabase asyncDb;
 
     protected Document command(String command) {
         return getAdminDb().runCommand(new Document(command, Integer.valueOf(1)));
@@ -34,7 +40,7 @@ public abstract class AbstractSimpleBackendTest {
     }
 
     protected MongoDatabase getAdminDb() {
-        return client.getDatabase("admin");
+        return syncClient.getDatabase("admin");
     }
 
     protected abstract MongoBackend createBackend() throws Exception;
@@ -53,13 +59,19 @@ public abstract class AbstractSimpleBackendTest {
         MongoBackend backend = createBackend();
         mongoServer = new MongoServer(backend);
         InetSocketAddress serverAddress = mongoServer.bind();
-        client = new MongoClient(new ServerAddress(serverAddress));
-        db = client.getDatabase("testdb");
+        syncClient = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
+        asyncClient = MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
+        db = syncClient.getDatabase("testdb");
         collection = db.getCollection("testcoll");
+
+        MongoNamespace namespace = collection.getNamespace();
+        asyncDb = asyncClient.getDatabase(namespace.getDatabaseName());
+        asyncCollection = asyncDb.getCollection(namespace.getCollectionName());
     }
 
     protected void shutdownServer() {
-        client.close();
+        syncClient.close();
+        asyncClient.close();
         mongoServer.shutdownNow();
     }
 
