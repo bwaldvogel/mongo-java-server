@@ -7,7 +7,7 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.slf4j.Logger;
@@ -22,12 +22,12 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(H2Collection.class);
 
-    private final MVMap<Object, BSONObject> dataMap;
+    private final MVMap<Object, Document> dataMap;
     private final MVMap<String, Object> metaMap;
 
     private static final String DATA_SIZE_KEY = "dataSize";
 
-    public H2Collection(String databaseName, String collectionName, String idField, MVMap<Object, BSONObject> dataMap, MVMap<String, Object> metaMap) {
+    public H2Collection(String databaseName, String collectionName, String idField, MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap) {
         super(databaseName, collectionName, idField);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
@@ -55,7 +55,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
 
     @Override
-    protected Object addDocumentInternal(BSONObject document) {
+    protected Object addDocumentInternal(Document document) {
         final Object key;
         if (idField != null) {
             key = Utils.getSubdocumentValue(document, idField);
@@ -63,7 +63,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             key = UUID.randomUUID();
         }
 
-        BSONObject previous = dataMap.put(NullableKey.of(key), document);
+        Document previous = dataMap.put(NullableKey.of(key), document);
         if (previous != null) {
             throw new IllegalArgumentException("Document with key '" + key + "' already existed in " + this + ": "
                     + previous);
@@ -77,21 +77,21 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected BSONObject getDocument(Object key) {
+    protected Document getDocument(Object key) {
         return dataMap.get(key);
     }
 
     @Override
     protected void removeDocumentWithKey(Object key) {
-        BSONObject remove = dataMap.remove(key);
+        Document remove = dataMap.remove(key);
         if (remove == null) {
             throw new NoSuchElementException("No document with key " + key);
         }
     }
 
     @Override
-    protected Object findDocument(BSONObject document) {
-        for (Entry<Object, BSONObject> entry : dataMap.entrySet()) {
+    protected Object findDocument(Document document) {
+        for (Entry<Object, Document> entry : dataMap.entrySet()) {
             if (entry.getValue().equals(document)) {
                 return entry.getKey();
             }
@@ -101,12 +101,12 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
 
     @Override
-    protected Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<Object> keys, BSONObject orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Iterable<Object> keys, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
 
-        List<BSONObject> matchedDocuments = new ArrayList<>();
+        List<Document> matchedDocuments = new ArrayList<>();
 
         for (Object key : keys) {
-            BSONObject document = getDocument(key);
+            Document document = getDocument(key);
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }
@@ -126,11 +126,11 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
             int numberToReturn) throws MongoServerException {
-        List<BSONObject> matchedDocuments = new ArrayList<>();
+        List<Document> matchedDocuments = new ArrayList<>();
 
-        for (BSONObject document : dataMap.values()) {
+        for (Document document : dataMap.values()) {
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }

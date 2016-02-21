@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 public class ValueComparator implements Comparator<Object> {
@@ -23,7 +23,7 @@ public class ValueComparator implements Comparator<Object> {
 
         SORT_PRIORITY.add(Number.class);
         SORT_PRIORITY.add(String.class);
-        SORT_PRIORITY.add(BSONObject.class);
+        SORT_PRIORITY.add(Document.class);
         SORT_PRIORITY.add(byte[].class);
         SORT_PRIORITY.add(ObjectId.class);
         SORT_PRIORITY.add(Boolean.class);
@@ -70,9 +70,9 @@ public class ValueComparator implements Comparator<Object> {
             return (!b1 && b2) ? -1 : (b1 && !b2) ? +1 : 0;
         }
 
-        if (BSONObject.class.isAssignableFrom(clazz)) {
-            for (String key : ((BSONObject) value1).keySet()) {
-                int cmp = compare(((BSONObject) value1).get(key), ((BSONObject) value2).get(key));
+        if (Document.class.isAssignableFrom(clazz)) {
+            for (String key : ((Document) value1).keySet()) {
+                int cmp = compare(((Document) value1).get(key), ((Document) value2).get(key));
                 if (cmp != 0) {
                     return cmp;
                 }

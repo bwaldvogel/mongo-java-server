@@ -1,19 +1,19 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import io.netty.channel.Channel;
 
 public class MongoQuery extends ClientRequest {
 
-    private final BSONObject query;
-    private final BSONObject returnFieldSelector;
+    private final Document query;
+    private final Document returnFieldSelector;
     private boolean slaveOk;
     private int numberToSkip;
     private int numberToReturn;
 
     public MongoQuery(Channel channel, MessageHeader header, String fullCollectionName, int numberToSkip,
-            int numberToReturn, BSONObject query, BSONObject returnFieldSelector) {
+            int numberToReturn, Document query, Document returnFieldSelector) {
         super(channel, header, fullCollectionName);
         this.numberToSkip = numberToSkip;
         this.numberToReturn = numberToReturn;
@@ -29,11 +29,11 @@ public class MongoQuery extends ClientRequest {
         return numberToReturn;
     }
 
-    public BSONObject getQuery() {
+    public Document getQuery() {
         return query;
     }
 
-    public BSONObject getReturnFieldSelector() {
+    public Document getReturnFieldSelector() {
         return returnFieldSelector;
     }
 

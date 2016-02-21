@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -23,27 +23,27 @@ public abstract class Index<KEY> {
         }
     }
 
-    protected Object getKeyValue(BSONObject document) {
+    protected Object getKeyValue(Document document) {
         Object value = Utils.getSubdocumentValue(document, key);
         return Utils.normalizeValue(value);
     }
 
-    public abstract void checkAdd(BSONObject document) throws MongoServerException;
+    public abstract void checkAdd(Document document) throws MongoServerException;
 
-    public abstract void add(BSONObject document, KEY key) throws MongoServerException;
+    public abstract void add(Document document, KEY key) throws MongoServerException;
 
-    public abstract KEY remove(BSONObject document);
+    public abstract KEY remove(Document document);
 
-    public abstract boolean canHandle(BSONObject query);
+    public abstract boolean canHandle(Document query);
 
-    public abstract Iterable<KEY> getKeys(BSONObject query);
+    public abstract Iterable<KEY> getKeys(Document query);
 
     public abstract long getCount();
 
     public abstract long getDataSize();
 
-    public abstract void checkUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerException;
+    public abstract void checkUpdate(Document oldDocument, Document newDocument) throws MongoServerException;
 
-    public abstract void updateInPlace(BSONObject oldDocument, BSONObject newDocument) throws KeyConstraintError;
+    public abstract void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError;
 
 }

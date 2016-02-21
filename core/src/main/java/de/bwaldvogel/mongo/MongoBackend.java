@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo;
 
 import java.util.Collection;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
@@ -15,10 +15,9 @@ public interface MongoBackend {
 
     void handleClose(Channel channel);
 
-    BSONObject handleCommand(Channel channel, String database, String command, BSONObject query)
-            throws MongoServerException;
+    Document handleCommand(Channel channel, String database, String command, Document query) throws MongoServerException;
 
-    Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException;
+    Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException;
 
     void handleInsert(MongoInsert insert) throws MongoServerException;
 
@@ -28,7 +27,7 @@ public interface MongoBackend {
 
     void dropDatabase(String database) throws MongoServerException;
 
-    Collection<BSONObject> getCurrentOperations(MongoQuery query);
+    Collection<Document> getCurrentOperations(MongoQuery query);
 
     int[] getVersion();
 

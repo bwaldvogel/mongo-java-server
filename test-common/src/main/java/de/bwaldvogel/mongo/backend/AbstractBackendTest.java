@@ -783,7 +783,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getMessage())
-                    .contains("cannot change _id of a document old:{ \\\"_id\\\" : 1} new:{ \\\"_id\\\" : 2}");
+                    .contains("cannot change _id of a document old: { \\\"_id\\\" : 1 } new: { \\\"_id\\\" : 2 }");
         }
 
         // test with $set

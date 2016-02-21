@@ -9,12 +9,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.mongodb.BasicDBObject;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
@@ -45,7 +42,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     private final AtomicReference<MongoCollection<KEY>> indexes = new AtomicReference<>();
 
-    private final Map<Channel, List<BSONObject>> lastResults = new ConcurrentHashMap<>();
+    private final Map<Channel, List<Document>> lastResults = new ConcurrentHashMap<>();
 
     private MongoCollection<KEY> namespaces;
 
@@ -59,7 +56,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         this.collections.put(namespaces.getCollectionName(), namespaces);
 
         if (this.namespaces.count() > 0) {
-            for (BSONObject namespace : namespaces.handleQuery(new BasicDBObject(), 0, 0, null)) {
+            for (Document namespace : namespaces.handleQuery(new Document(), 0, 0, null)) {
                 String name = namespace.get("name").toString();
                 log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
@@ -70,7 +67,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
             MongoCollection<KEY> indexCollection = collections.get(INDEXES_COLLECTION_NAME);
             indexes.set(indexCollection);
-            for (BSONObject indexDescription : indexCollection.handleQuery(new BasicDBObject(), 0, 0, null)) {
+            for (Document indexDescription : indexCollection.handleQuery(new Document(), 0, 0, null)) {
                 openOrCreateIndex(indexDescription);
             }
         }
@@ -86,15 +83,15 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    private BSONObject commandDropDatabase() throws MongoServerException {
+    private Document commandDropDatabase() throws MongoServerException {
         backend.dropDatabase(getDatabaseName());
-        BSONObject response = new BasicBSONObject("dropped", getDatabaseName());
+        Document response = new Document("dropped", getDatabaseName());
         Utils.markOkay(response);
         return response;
     }
 
     @Override
-    public BSONObject handleCommand(Channel channel, String command, BSONObject query) throws MongoServerException {
+    public Document handleCommand(Channel channel, String command, Document query) throws MongoServerException {
 
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
@@ -151,15 +148,15 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         throw new NoSuchCommandException(command);
     }
 
-    private BSONObject listCollections() throws MongoServerException {
-        BSONObject cursor = new BasicBSONObject();
+    private Document listCollections() throws MongoServerException {
+        Document cursor = new Document();
         cursor.put("id", Long.valueOf(0));
         cursor.put("ns", getDatabaseName() + ".$cmd.listCollections");
 
-        List<BSONObject> firstBatch = new ArrayList<>();
-        for (BSONObject collection : namespaces.handleQuery(new BasicBSONObject(), 0, 0, null)) {
-            BSONObject collectionDescription = new BasicBSONObject();
-            BSONObject collectionOptions = new BasicBSONObject();
+        List<Document> firstBatch = new ArrayList<>();
+        for (Document collection : namespaces.handleQuery(new Document(), 0, 0, null)) {
+            Document collectionDescription = new Document();
+            Document collectionOptions = new Document();
             String namespace = (String) collection.get("name");
             String collectionName = extractCollectionNameFromNamespace(namespace);
             collectionDescription.put("name", collectionName);
@@ -169,27 +166,27 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
         cursor.put("firstBatch", firstBatch);
 
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
         response.put("cursor", cursor);
         Utils.markOkay(response);
         return response;
     }
 
-    private BSONObject listIndexes() throws MongoServerException {
+    private Document listIndexes() throws MongoServerException {
         MongoCollection<KEY> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
 
-        BSONObject cursor = new BasicBSONObject();
+        Document cursor = new Document();
         cursor.put("id", Long.valueOf(0));
         cursor.put("ns", getDatabaseName() + ".$cmd.listIndexes");
 
-        List<BSONObject> firstBatch = new ArrayList<>();
-        for (BSONObject description : indexes.handleQuery(new BasicBSONObject(), 0, 0, null)) {
+        List<Document> firstBatch = new ArrayList<>();
+        for (Document description : indexes.handleQuery(new Document(), 0, 0, null)) {
             firstBatch.add(description);
         }
 
         cursor.put("firstBatch", firstBatch);
 
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
         response.put("cursor", cursor);
         Utils.markOkay(response);
         return response;
@@ -204,29 +201,29 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    private BSONObject commandInsert(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private Document commandInsert(Channel channel, String command, Document query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
 
         @SuppressWarnings("unchecked")
-        List<BSONObject> documents = (List<BSONObject>) query.get("documents");
+        List<Document> documents = (List<Document>) query.get("documents");
 
-        List<BSONObject> writeErrors = new ArrayList<>();
+        List<Document> writeErrors = new ArrayList<>();
         int n = 0;
-        for (BSONObject document : documents) {
+        for (Document document : documents) {
             try {
                 insertDocuments(channel, collectionName, Collections.singletonList(document));
                 n++;
             } catch (MongoServerError e) {
-                BSONObject error = new BasicBSONObject();
+                Document error = new Document();
                 error.put("index", Integer.valueOf(n));
                 error.put("code", Integer.valueOf(e.getCode()));
                 error.put("errmsg", e.getMessage());
                 writeErrors.add(error);
             }
         }
-        BSONObject result = new BasicBSONObject();
+        Document result = new Document();
         result.put("n", Integer.valueOf(n));
         if (!writeErrors.isEmpty()) {
             result.put("writeErrors", writeErrors);
@@ -236,26 +233,26 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return result;
     }
 
-    private BSONObject commandUpdate(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private Document commandUpdate(Channel channel, String command, Document query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
 
         @SuppressWarnings("unchecked")
-        List<BSONObject> updates = (List<BSONObject>) query.get("updates");
+        List<Document> updates = (List<Document>) query.get("updates");
         int nMatched = 0;
         int nModified = 0;
         int nUpserted = 0;
-        Collection<BSONObject> upserts = new ArrayList<>();
-        for (BSONObject updateObj : updates) {
-            BSONObject selector = (BSONObject) updateObj.get("q");
-            BSONObject update = (BSONObject) updateObj.get("u");
+        Collection<Document> upserts = new ArrayList<>();
+        for (Document updateObj : updates) {
+            Document selector = (Document) updateObj.get("q");
+            Document update = (Document) updateObj.get("u");
             boolean multi = Utils.isTrue(updateObj.get("multi"));
             boolean upsert = Utils.isTrue(updateObj.get("upsert"));
-            final BSONObject result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
-            if (result.containsField("upserted")) {
+            final Document result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
+            if (result.containsKey("upserted")) {
                 final Object id = result.get("upserted");
-                final BSONObject upserted = new BasicBSONObject("index", upserts.size());
+                final Document upserted = new Document("index", upserts.size());
                 upserted.put("_id", id);
                 upserts.add(upserted);
             }
@@ -263,7 +260,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             nModified += ((Integer) result.get("nModified")).intValue();
         }
 
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
         response.put("n", nMatched);
         response.put("nModified", nModified);
         if (!upserts.isEmpty()) {
@@ -274,28 +271,28 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    private BSONObject commandDelete(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private Document commandDelete(Channel channel, String command, Document query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
 
         @SuppressWarnings("unchecked")
-        List<BSONObject> deletes = (List<BSONObject>) query.get("deletes");
+        List<Document> deletes = (List<Document>) query.get("deletes");
         int n = 0;
-        for (BSONObject delete : deletes) {
-            final BSONObject selector = (BSONObject) delete.get("q");
+        for (Document delete : deletes) {
+            final Document selector = (Document) delete.get("q");
             final int limit = ((Number) delete.get("limit")).intValue();
-            BSONObject result = deleteDocuments(channel, collectionName, selector, limit);
+            Document result = deleteDocuments(channel, collectionName, selector, limit);
             Integer resultNumber = (Integer) result.get("n");
             n += resultNumber.intValue();
         }
 
-        BSONObject response = new BasicBSONObject("n", Integer.valueOf(n));
+        Document response = new Document("n", Integer.valueOf(n));
         Utils.markOkay(response);
         return response;
     }
 
-    private BSONObject commandCreate(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private Document commandCreate(Channel channel, String command, Document query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isCapped = Utils.isTrue(query.get("capped"));
         if (isCapped) {
@@ -314,24 +311,24 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
         createCollection(collectionName);
 
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
         Utils.markOkay(response);
         return response;
     }
 
-    private BSONObject commandCreateIndexes(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private Document commandCreateIndexes(Channel channel, String command, Document query) throws MongoServerException {
 
         int indexesBefore = countIndexes();
 
         @SuppressWarnings("unchecked")
-        final Collection<BSONObject> indexDescriptions = (Collection<BSONObject>) query.get("indexes");
-        for (BSONObject indexDescription : indexDescriptions) {
+        final Collection<Document> indexDescriptions = (Collection<Document>) query.get("indexes");
+        for (Document indexDescription : indexDescriptions) {
             addIndex(indexDescription);
         }
 
         int indexesAfter = countIndexes();
 
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
         response.put("numIndexesBefore", Integer.valueOf(indexesBefore));
         response.put("numIndexesAfter", Integer.valueOf(indexesAfter));
         Utils.markOkay(response);
@@ -350,8 +347,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    private BSONObject commandDatabaseStats() throws MongoServerException {
-        BSONObject response = new BasicBSONObject("db", getDatabaseName());
+    private Document commandDatabaseStats() throws MongoServerException {
+        Document response = new Document("db", getDatabaseName());
         response.put("collections", Integer.valueOf(namespaces.count()));
 
         long storageSize = getStorageSize();
@@ -362,11 +359,11 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         double averageObjectSize = 0;
 
         for (MongoCollection<KEY> collection : collections.values()) {
-            BSONObject stats = collection.getStats();
+            Document stats = collection.getStats();
             objects += ((Number) stats.get("count")).longValue();
             dataSize += ((Number) stats.get("size")).longValue();
 
-            BSONObject indexSizes = (BSONObject) stats.get("indexSize");
+            Document indexSizes = (Document) stats.get("indexSize");
             for (String indexName : indexSizes.keySet()) {
                 indexSize += ((Number) indexSizes.get(indexName)).longValue();
             }
@@ -392,15 +389,15 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     protected abstract long getStorageSize();
 
-    private BSONObject commandDrop(BSONObject query) throws MongoServerException {
+    private Document commandDrop(Document query) throws MongoServerException {
         String collectionName = query.get("drop").toString();
         MongoCollection<KEY> collection = collections.remove(collectionName);
 
         if (collection == null) {
             throw new MongoSilentServerException("ns not found");
         }
-        BSONObject response = new BasicBSONObject();
-        namespaces.removeDocument(new BasicBSONObject("name", collection.getFullName()));
+        Document response = new Document();
+        namespaces.removeDocument(new Document("name", collection.getFullName()));
         response.put("nIndexesWas", Integer.valueOf(collection.getNumIndexes()));
         response.put("ns", collection.getFullName());
         Utils.markOkay(response);
@@ -408,7 +405,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     }
 
-    private BSONObject commandGetLastError(Channel channel, String command, BSONObject query) throws MongoServerException {
+    private Document commandGetLastError(Channel channel, String command, Document query) throws MongoServerException {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
         if (!cmd.equals(command)) {
@@ -428,28 +425,28 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             }
         }
 
-        List<BSONObject> results = lastResults.get(channel);
+        List<Document> results = lastResults.get(channel);
 
-        BSONObject result = null;
+        Document result = null;
         if (results != null && !results.isEmpty()) {
             result = results.get(results.size() - 1);
             if (result == null) {
-                result = new BasicBSONObject();
+                result = new Document();
             }
         } else {
-            result = new BasicBSONObject();
+            result = new Document();
             result.put("err", null);
         }
         Utils.markOkay(result);
         return result;
     }
 
-    private BSONObject commandGetPrevError(Channel channel, String command, BSONObject query) {
-        List<BSONObject> results = lastResults.get(channel);
+    private Document commandGetPrevError(Channel channel, String command, Document query) {
+        List<Document> results = lastResults.get(channel);
 
         if (results != null) {
             for (int i = 1; i < results.size(); i++) {
-                BSONObject result = results.get(results.size() - i);
+                Document result = results.get(results.size() - i);
                 if (result == null) {
                     continue;
                 }
@@ -469,31 +466,31 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
 
         // found no prev error
-        BSONObject result = new BasicBSONObject();
+        Document result = new Document();
         result.put("nPrev", Integer.valueOf(-1));
         Utils.markOkay(result);
         return result;
     }
 
-    private BSONObject commandResetError(Channel channel, String command, BSONObject query) {
-        List<BSONObject> results = lastResults.get(channel);
+    private Document commandResetError(Channel channel, String command, Document query) {
+        List<Document> results = lastResults.get(channel);
         if (results != null) {
             results.clear();
         }
-        BSONObject result = new BasicBSONObject();
+        Document result = new Document();
         Utils.markOkay(result);
         return result;
     }
 
-    private BSONObject commandCount(String command, BSONObject query) throws MongoServerException {
+    private Document commandCount(String command, Document query) throws MongoServerException {
         String collection = query.get(command).toString();
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
         MongoCollection<KEY> coll = collections.get(collection);
         if (coll == null) {
             response.put("missing", Boolean.TRUE);
             response.put("n", Integer.valueOf(0));
         } else {
-            BSONObject queryObject = (BSONObject) query.get("query");
+            Document queryObject = (Document) query.get("query");
             int limit = getOptionalNumber(query, "limit", -1);
             int skip = getOptionalNumber(query, "skip", 0);
             response.put("n", Integer.valueOf(coll.count(queryObject, skip, limit)));
@@ -502,13 +499,13 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return response;
     }
 
-    private int getOptionalNumber(BSONObject query, String fieldName, int defaultValue) {
+    private int getOptionalNumber(Document query, String fieldName, int defaultValue) {
         Number limitNumber = (Number) query.get(fieldName);
         return limitNumber != null ? limitNumber.intValue() : defaultValue;
     }
 
     @Override
-    public Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException {
+    public Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException {
         clearLastStatus(query.getChannel());
         String collectionName = query.getCollectionName();
         MongoCollection<KEY> collection = resolveCollection(collectionName, false);
@@ -517,7 +514,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
         int numSkip = query.getNumberToSkip();
         int numReturn = query.getNumberToReturn();
-        BSONObject fieldSelector = query.getReturnFieldSelector();
+        Document fieldSelector = query.getReturnFieldSelector();
         return collection.handleQuery(query.getQuery(), numSkip, numReturn, fieldSelector);
     }
 
@@ -527,7 +524,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     }
 
     private synchronized void clearLastStatus(Channel channel) {
-        List<BSONObject> results = lastResults.get(channel);
+        List<Document> results = lastResults.get(channel);
         if (results == null) {
             results = new LimitedList<>(10);
             lastResults.put(channel, results);
@@ -539,10 +536,10 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     public void handleInsert(MongoInsert insert) throws MongoServerException {
         Channel channel = insert.getChannel();
         String collectionName = insert.getCollectionName();
-        final List<BSONObject> documents = insert.getDocuments();
+        final List<Document> documents = insert.getDocuments();
 
         if (collectionName.equals(INDEXES_COLLECTION_NAME)) {
-            for (BSONObject indexDescription : documents) {
+            for (Document indexDescription : documents) {
                 addIndex(indexDescription);
             }
         } else {
@@ -582,14 +579,14 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     private void addNamespace(MongoCollection<KEY> collection) throws MongoServerException {
         collections.put(collection.getCollectionName(), collection);
-        namespaces.addDocument(new BasicDBObject("name", collection.getFullName()));
+        namespaces.addDocument(new Document("name", collection.getFullName()));
     }
 
     @Override
     public void handleDelete(MongoDelete delete) throws MongoServerException {
         Channel channel = delete.getChannel();
         final String collectionName = delete.getCollectionName();
-        final BSONObject selector = delete.getSelector();
+        final Document selector = delete.getSelector();
         final int limit = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
 
         try {
@@ -603,20 +600,20 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     public void handleUpdate(MongoUpdate updateCommand) throws MongoServerException {
         final Channel channel = updateCommand.getChannel();
         final String collectionName = updateCommand.getCollectionName();
-        final BSONObject selector = updateCommand.getSelector();
-        final BSONObject update = updateCommand.getUpdate();
+        final Document selector = updateCommand.getSelector();
+        final Document update = updateCommand.getUpdate();
         final boolean multi = updateCommand.isMulti();
         final boolean upsert = updateCommand.isUpsert();
 
         try {
-            BSONObject result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
+            Document result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
             putLastResult(channel, result);
         } catch (MongoServerException e) {
             log.error("failed to update {}", updateCommand, e);
         }
     }
 
-    private void addIndex(BSONObject indexDescription) throws MongoServerException {
+    private void addIndex(Document indexDescription) throws MongoServerException {
         openOrCreateIndex(indexDescription);
         getOrCreateIndexesCollection().addDocument(indexDescription);
     }
@@ -640,13 +637,13 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         return collectionName;
     }
 
-    private void openOrCreateIndex(BSONObject indexDescription) throws MongoServerException {
+    private void openOrCreateIndex(Document indexDescription) throws MongoServerException {
         String ns = indexDescription.get("ns").toString();
         String collectionName = extractCollectionNameFromNamespace(ns);
 
         MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
 
-        BSONObject key = (BSONObject) indexDescription.get("key");
+        Document key = (Document) indexDescription.get("key");
         if (key.keySet().equals(Collections.singleton("_id"))) {
             boolean ascending = Utils.normalizeValue(key.get("_id")).equals(Double.valueOf(1.0));
             collection.addIndex(openOrCreateUniqueIndex(collectionName, "_id", ascending));
@@ -669,7 +666,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
 
     protected abstract Index<KEY> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending);
 
-    private BSONObject insertDocuments(final Channel channel, final String collectionName, final List<BSONObject> documents) throws MongoServerException {
+    private Document insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) throws MongoServerException {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -678,7 +675,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             final MongoCollection<KEY> collection = resolveOrCreateCollection(collectionName);
             int n = collection.insertDocuments(documents);
             assert n == documents.size();
-            final BSONObject result = new BasicBSONObject("n", Integer.valueOf(n));
+            final Document result = new Document("n", Integer.valueOf(n));
             putLastResult(channel, result);
             return result;
         } catch (MongoServerError e) {
@@ -687,7 +684,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    private BSONObject deleteDocuments(final Channel channel, final String collectionName, final BSONObject selector, final int limit) throws MongoServerException {
+    private Document deleteDocuments(final Channel channel, final String collectionName, final Document selector, final int limit) throws MongoServerException {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -700,7 +697,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
             } else {
                 n = collection.deleteDocuments(selector, limit);
             }
-            final BSONObject result = new BasicBSONObject("n", Integer.valueOf(n));
+            final Document result = new Document("n", Integer.valueOf(n));
             putLastResult(channel, result);
             return result;
         } catch (MongoServerError e) {
@@ -709,8 +706,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         }
     }
 
-    private BSONObject updateDocuments(final Channel channel, final String collectionName, final BSONObject selector,
-                                       final BSONObject update, final boolean multi, final boolean upsert) throws MongoServerException {
+    private Document updateDocuments(final Channel channel, final String collectionName, final Document selector,
+                                       final Document update, final boolean multi, final boolean upsert) throws MongoServerException {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -726,7 +723,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     }
 
     private void putLastError(Channel channel, MongoServerException ex) {
-        BSONObject error = new BasicBSONObject();
+        Document error = new Document();
         if (ex instanceof MongoServerError) {
             MongoServerError err = (MongoServerError) ex;
             error.put("err", err.getMessage());
@@ -741,10 +738,10 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         putLastResult(channel, error);
     }
 
-    private synchronized void putLastResult(Channel channel, BSONObject result) {
-        List<BSONObject> results = lastResults.get(channel);
+    private synchronized void putLastResult(Channel channel, Document result) {
+        List<Document> results = lastResults.get(channel);
         // list must not be empty
-        BSONObject last = results.get(results.size() - 1);
+        Document last = results.get(results.size() - 1);
         if (last != null) {
             throw new IllegalStateException("last result already set: " + last);
         }
@@ -760,10 +757,10 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         MongoCollection<KEY> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
         addNamespace(collection);
 
-        BSONObject indexDescription = new BasicBSONObject();
+        Document indexDescription = new Document();
         indexDescription.put("name", "_id_");
         indexDescription.put("ns", collection.getFullName());
-        indexDescription.put("key", new BasicBSONObject("_id", Integer.valueOf(1)));
+        indexDescription.put("key", new Document("_id", Integer.valueOf(1)));
         addIndex(indexDescription);
 
         log.info("created collection {}", collection.getFullName());
@@ -789,7 +786,7 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
     @Override
     public MongoCollection<KEY> deregisterCollection(String collectionName) throws MongoServerException {
         MongoCollection<KEY> removedCollection = collections.remove(collectionName);
-        namespaces.deleteDocuments(new BasicBSONObject("name", removedCollection.getFullName()), 1);
+        namespaces.deleteDocuments(new Document("name", removedCollection.getFullName()), 1);
         return removedCollection;
     }
 
@@ -802,8 +799,8 @@ public abstract class AbstractMongoDatabase<KEY> implements MongoDatabase {
         @SuppressWarnings("unchecked")
         MongoCollection<KEY> newCollection = (MongoCollection<KEY>) collection;
         collections.put(newCollectionName, newCollection);
-        List<BSONObject> newDocuments = new ArrayList<>();
-        newDocuments.add(new BasicBSONObject("name", collection.getFullName()));
+        List<Document> newDocuments = new ArrayList<>();
+        newDocuments.add(new Document("name", collection.getFullName()));
         namespaces.insertDocuments(newDocuments);
     }
 

@@ -9,7 +9,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
@@ -32,13 +32,13 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     protected abstract KEY getKey(Object keyValue);
 
     @Override
-    public synchronized KEY remove(BSONObject document) {
+    public synchronized KEY remove(Document document) {
         Object value = getKeyValue(document);
         return removeDocument(value);
     }
 
     @Override
-    public synchronized void checkAdd(BSONObject document) throws MongoServerError {
+    public synchronized void checkAdd(Document document) throws MongoServerError {
         if (!Utils.hasSubdocumentValue(document, key)) {
             return;
         }
@@ -50,7 +50,7 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     }
 
     @Override
-    public synchronized void add(BSONObject document, KEY key) throws MongoServerError {
+    public synchronized void add(Document document, KEY key) throws MongoServerError {
         checkAdd(document);
         if (!Utils.hasSubdocumentValue(document, this.key)) {
             return;
@@ -60,7 +60,7 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     }
 
     @Override
-    public void checkUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerError {
+    public void checkUpdate(Document oldDocument, Document newDocument) throws MongoServerError {
         if (nullAwareEqualsKeys(oldDocument, newDocument)) {
             return;
         }
@@ -68,7 +68,7 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     }
 
     @Override
-    public void updateInPlace(BSONObject oldDocument, BSONObject newDocument) throws KeyConstraintError {
+    public void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError {
         if (nullAwareEqualsKeys(oldDocument, newDocument)) {
             return;
         }
@@ -76,15 +76,15 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     }
 
     @Override
-    public synchronized boolean canHandle(BSONObject query) {
+    public synchronized boolean canHandle(Document query) {
 
         if (!query.keySet().equals(Collections.singleton(key))) {
             return false;
         }
 
         Object queryValue = query.get(key);
-        if (queryValue instanceof BSONObject) {
-            for (String key : ((BSONObject) queryValue).keySet()) {
+        if (queryValue instanceof Document) {
+            for (String key : ((Document) queryValue).keySet()) {
                 if (key.equals("$in")) {
                     // okay
                 } else if (key.startsWith("$")) {
@@ -97,12 +97,12 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
     }
 
     @Override
-    public synchronized Iterable<KEY> getKeys(BSONObject query) {
+    public synchronized Iterable<KEY> getKeys(Document query) {
         // Do not use getKeyValue, it's only valid for document.
         Object keyValue = Utils.normalizeValue(query.get(key));
 
-        if (keyValue instanceof BSONObject) {
-            BSONObject keyObj = (BSONObject) keyValue;
+        if (keyValue instanceof Document) {
+            Document keyObj = (Document) keyValue;
             if (Utils.containsQueryExpression(keyObj)) {
                 if (keyObj.keySet().size() != 1) {
                     throw new UnsupportedOperationException("illegal query key: " + keyValue);
@@ -132,13 +132,13 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
         return Collections.singletonList(key);
     }
 
-    private boolean nullAwareEqualsKeys(BSONObject oldDocument, BSONObject newDocument) {
+    private boolean nullAwareEqualsKeys(Document oldDocument, Document newDocument) {
         Object oldKey = getKeyValue(oldDocument);
         Object newKey = getKeyValue(newDocument);
         return Utils.nullAwareEquals(oldKey, newKey);
     }
 
-    private Iterable<KEY> getPositionsForExpression(BSONObject keyObj, String operator) {
+    private Iterable<KEY> getPositionsForExpression(Document keyObj, String operator) {
         if (operator.equals("$in")) {
             Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(operator));
             List<KEY> allKeys = new ArrayList<>();

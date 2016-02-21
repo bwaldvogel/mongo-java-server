@@ -2,14 +2,14 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.Comparator;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
-public class DocumentComparator implements Comparator<BSONObject> {
+public class DocumentComparator implements Comparator<Document> {
 
     private ValueComparator valueComparator = new ValueComparator();
-    private BSONObject orderBy;
+    private Document orderBy;
 
-    public DocumentComparator(BSONObject orderBy) {
+    public DocumentComparator(Document orderBy) {
         if (orderBy == null || orderBy.keySet().isEmpty()) {
             throw new IllegalArgumentException();
         }
@@ -17,7 +17,7 @@ public class DocumentComparator implements Comparator<BSONObject> {
     }
 
     @Override
-    public int compare(BSONObject document1, BSONObject document2) {
+    public int compare(Document document1, Document document2) {
         for (String sortKey : orderBy.keySet()) {
             Object value1 = Utils.getSubdocumentValue(document1, sortKey);
             Object value2 = Utils.getSubdocumentValue(document2, sortKey);

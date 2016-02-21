@@ -12,8 +12,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,11 +92,11 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     protected MongoReply handleQuery(Channel channel, MongoQuery query) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
-            List<BSONObject> documents = new ArrayList<>();
+            List<Document> documents = new ArrayList<>();
             if (query.getCollectionName().startsWith("$cmd")) {
                 documents.add(handleCommand(channel, query));
             } else {
-                for (BSONObject obj : mongoBackend.handleQuery(query)) {
+                for (Document obj : mongoBackend.handleQuery(query)) {
                     documents.add(obj);
                 }
             }
@@ -123,7 +122,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     }
 
     private MongoReply queryFailure(MessageHeader header, MongoServerException exception, Map<String, ?> additionalInfo) {
-        BSONObject obj = new BasicBSONObject();
+        Document obj = new Document();
         obj.put("$err", exception.getMessage());
         obj.put("errmsg", exception.getLocalizedMessage());
         if (exception instanceof MongoServerError) {
@@ -135,12 +134,12 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
     }
 
-    protected BSONObject handleCommand(Channel channel, MongoQuery query)
+    protected Document handleCommand(Channel channel, MongoQuery query)
             throws MongoServerException {
         String collectionName = query.getCollectionName();
         if (collectionName.equals("$cmd.sys.inprog")) {
-            Collection<BSONObject> currentOperations = mongoBackend.getCurrentOperations(query);
-            return new BasicBSONObject("inprog", currentOperations);
+            Collection<Document> currentOperations = mongoBackend.getCurrentOperations(query);
+            return new Document("inprog", currentOperations);
         }
 
         if (collectionName.equals("$cmd")) {
@@ -155,8 +154,8 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         throw new MongoServerException("unknown collection: " + collectionName);
     }
 
-    private BSONObject getServerStatus() throws MongoServerException {
-        BSONObject serverStatus = new BasicBSONObject();
+    private Document getServerStatus() throws MongoServerException {
+        Document serverStatus = new Document();
         try {
             serverStatus.put("host", InetAddress.getLocalHost().getHostName());
         } catch (UnknownHostException e) {
@@ -170,12 +169,12 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         serverStatus.put("uptimeMillis", Long.valueOf(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)));
         serverStatus.put("localTime", new Date());
 
-        BSONObject connections = new BasicBSONObject();
+        Document connections = new Document();
         connections.put("current", Integer.valueOf(channelGroup.size()));
 
         serverStatus.put("connections", connections);
 
-        BSONObject cursors = new BasicBSONObject();
+        Document cursors = new Document();
         cursors.put("totalOpen", Integer.valueOf(0)); // TODO
 
         serverStatus.put("cursors", cursors);

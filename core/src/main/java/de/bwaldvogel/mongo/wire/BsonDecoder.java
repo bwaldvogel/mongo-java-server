@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
@@ -20,7 +19,7 @@ import io.netty.buffer.ByteBuf;
 
 class BsonDecoder {
 
-    public BSONObject decodeBson(ByteBuf buffer) throws IOException {
+    public Document decodeBson(ByteBuf buffer) throws IOException {
         final int totalObjectLength = buffer.readInt();
         final int length = totalObjectLength - 4;
         if (buffer.readableBytes() < length) {
@@ -30,7 +29,7 @@ class BsonDecoder {
             throw new IOException("BSON object too large: " + length + " bytes");
         }
 
-        BSONObject object = new BasicBSONObject();
+        Document object = new Document();
         int start = buffer.readerIndex();
         while (buffer.readerIndex() - start < length) {
             byte type = buffer.readByte();
@@ -112,7 +111,7 @@ class BsonDecoder {
 
     private List<Object> decodeArray(ByteBuf buffer) throws IOException {
         List<Object> array = new ArrayList<>();
-        BSONObject arrayObject = decodeBson(buffer);
+        Document arrayObject = decodeBson(buffer);
         for (String key : arrayObject.keySet()) {
             array.add(arrayObject.get(key));
         }

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     private static final Logger log = LoggerFactory.getLogger(MemoryCollection.class);
 
-    private List<BSONObject> documents = new ArrayList<>();
+    private List<Document> documents = new ArrayList<>();
     private Queue<Integer> emptyPositions = new LinkedList<>();
     private AtomicLong dataSize = new AtomicLong();
 
@@ -39,7 +39,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Integer addDocumentInternal(BSONObject document) {
+    protected Integer addDocumentInternal(Document document) {
         Integer pos = emptyPositions.poll();
         if (pos == null) {
             pos = Integer.valueOf(documents.size());
@@ -54,12 +54,12 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<Integer> keys, BSONObject orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Iterable<Integer> keys, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
 
-        List<BSONObject> matchedDocuments = new ArrayList<>();
+        List<Document> matchedDocuments = new ArrayList<>();
 
         for (Integer key : keys) {
-            BSONObject document = getDocument(key);
+            Document document = getDocument(key);
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }
@@ -79,9 +79,9 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
             int numberToReturn) throws MongoServerException {
-        List<BSONObject> matchedDocuments = new ArrayList<>();
+        List<Document> matchedDocuments = new ArrayList<>();
 
         boolean ascending = true;
         if (orderBy != null && !orderBy.keySet().isEmpty()) {
@@ -93,7 +93,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             }
         }
 
-        for (BSONObject document : iterateAllDocuments(ascending)) {
+        for (Document document : iterateAllDocuments(ascending)) {
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }
@@ -122,18 +122,18 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
         return matchedDocuments;
     }
 
-    private static abstract class AbstractDocumentIterator implements Iterator<BSONObject> {
+    private static abstract class AbstractDocumentIterator implements Iterator<Document> {
 
         protected int pos;
-        protected final List<BSONObject> documents;
-        protected BSONObject current;
+        protected final List<Document> documents;
+        protected Document current;
 
-        protected AbstractDocumentIterator(List<BSONObject> documents, int pos) {
+        protected AbstractDocumentIterator(List<Document> documents, int pos) {
             this.documents = documents;
             this.pos = pos;
         }
 
-        protected abstract BSONObject getNext();
+        protected abstract Document getNext();
 
         @Override
         public boolean hasNext() {
@@ -144,8 +144,8 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
         }
 
         @Override
-        public BSONObject next() {
-            BSONObject document = current;
+        public Document next() {
+            Document document = current;
             current = getNext();
             return document;
         }
@@ -159,14 +159,14 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     private static class DocumentIterator extends AbstractDocumentIterator {
 
-        protected DocumentIterator(List<BSONObject> documents) {
+        protected DocumentIterator(List<Document> documents) {
             super(documents, 0);
         }
 
         @Override
-        protected BSONObject getNext() {
+        protected Document getNext() {
             while (pos < documents.size()) {
-                BSONObject document = documents.get(pos++);
+                Document document = documents.get(pos++);
                 if (document != null) {
                     return document;
                 }
@@ -178,14 +178,14 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     private static class ReverseDocumentIterator extends AbstractDocumentIterator {
 
-        protected ReverseDocumentIterator(List<BSONObject> documents) {
+        protected ReverseDocumentIterator(List<Document> documents) {
             super(documents, documents.size() - 1);
         }
 
         @Override
-        protected BSONObject getNext() {
+        protected Document getNext() {
             while (pos >= 0) {
-                BSONObject document = documents.get(pos--);
+                Document document = documents.get(pos--);
                 if (document != null) {
                     return document;
                 }
@@ -195,37 +195,37 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     }
 
-    private static class DocumentIterable implements Iterable<BSONObject> {
+    private static class DocumentIterable implements Iterable<Document> {
 
-        private List<BSONObject> documents;
+        private List<Document> documents;
 
-        public DocumentIterable(List<BSONObject> documents) {
+        public DocumentIterable(List<Document> documents) {
             this.documents = documents;
         }
 
         @Override
-        public Iterator<BSONObject> iterator() {
+        public Iterator<Document> iterator() {
             return new DocumentIterator(documents);
         }
 
     }
 
-    private static class ReverseDocumentIterable implements Iterable<BSONObject> {
+    private static class ReverseDocumentIterable implements Iterable<Document> {
 
-        private List<BSONObject> documents;
+        private List<Document> documents;
 
-        public ReverseDocumentIterable(List<BSONObject> documents) {
+        public ReverseDocumentIterable(List<Document> documents) {
             this.documents = documents;
         }
 
         @Override
-        public Iterator<BSONObject> iterator() {
+        public Iterator<Document> iterator() {
             return new ReverseDocumentIterator(documents);
         }
 
     }
 
-    private Iterable<BSONObject> iterateAllDocuments(boolean ascending) {
+    private Iterable<Document> iterateAllDocuments(boolean ascending) {
         if (ascending) {
             return new DocumentIterable(documents);
         } else {
@@ -239,7 +239,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Integer findDocument(BSONObject document) {
+    protected Integer findDocument(Document document) {
         int position = documents.indexOf(document);
         if (position < 0) {
             return null;
@@ -264,7 +264,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected BSONObject getDocument(Integer position) {
+    protected Document getDocument(Integer position) {
         return documents.get(position.intValue());
     }
 

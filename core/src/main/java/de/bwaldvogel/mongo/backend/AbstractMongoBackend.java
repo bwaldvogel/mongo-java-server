@@ -8,8 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.TreeMap;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,9 +49,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return db;
     }
 
-    private BSONObject getLog(String argument) throws MongoServerException {
+    private Document getLog(String argument) throws MongoServerException {
         log.debug("getLog: {}", argument);
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
         switch (argument) {
             case "*":
                 response.put("names", Collections.singletonList("startupWarnings"));
@@ -69,14 +68,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return response;
     }
 
-    private BSONObject handleAdminCommand(Channel channel, String command, BSONObject query)
-            throws MongoServerException {
+    private Document handleAdminCommand(String command, Document query) throws MongoServerException {
 
         if (command.equalsIgnoreCase("listdatabases")) {
-            BSONObject response = new BasicBSONObject();
-            List<BSONObject> dbs = new ArrayList<>();
+            Document response = new Document();
+            List<Document> dbs = new ArrayList<>();
             for (MongoDatabase db : databases.values()) {
-                BasicBSONObject dbObj = new BasicBSONObject("name", db.getDatabaseName());
+                Document dbObj = new Document("name", db.getDatabaseName());
                 dbObj.put("empty", Boolean.valueOf(db.isEmpty()));
                 dbs.add(dbObj);
             }
@@ -87,12 +85,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             throw new MongoSilentServerException("not running with --replSet");
         } else if (command.equalsIgnoreCase("getLog")) {
             final Object argument = query.get(command);
-            BSONObject response = getLog(argument == null ? null : argument.toString());
-            return response;
+            return getLog(argument == null ? null : argument.toString());
         } else if (command.equalsIgnoreCase("renameCollection")) {
             return handleRenameCollection(command, query);
         } else if (command.equalsIgnoreCase("getLastError")) {
-            BSONObject response = new BasicBSONObject();
+            Document response = new Document();
             log.debug("getLastError on admin database");
             Utils.markOkay(response);
             return response;
@@ -101,11 +98,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         }
     }
 
-    private BSONObject handleRenameCollection(String command, BSONObject query) throws MongoServerException {
+    private Document handleRenameCollection(String command, Document query) throws MongoServerException {
         final String oldNamespace = query.get(command).toString();
         final String newNamespace = query.get("to").toString();
         boolean dropTarget = Utils.isTrue(query.get("dropTarget"));
-        BSONObject response = new BasicBSONObject();
+        Document response = new Document();
 
         if (!oldNamespace.equals(newNamespace)) {
             MongoCollection<?> oldCollection = resolveCollection(oldNamespace);
@@ -152,17 +149,17 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName) throws MongoServerException;
 
     @Override
-    public BSONObject handleCommand(Channel channel, String databaseName, String command, BSONObject query)
+    public Document handleCommand(Channel channel, String databaseName, String command, Document query)
             throws MongoServerException {
 
         if (command.equalsIgnoreCase("whatsmyuri")) {
-            BSONObject response = new BasicBSONObject();
+            Document response = new Document();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
             response.put("you", remoteAddress.getAddress().getHostAddress() + ":" + remoteAddress.getPort());
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("ismaster")) {
-            BSONObject response = new BasicBSONObject("ismaster", Boolean.TRUE);
+            Document response = new Document("ismaster", Boolean.TRUE);
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             response.put("maxWriteBatchSize", Integer.valueOf(MongoWireProtocolHandler.MAX_WRITE_BATCH_SIZE));
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
@@ -172,7 +169,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
-            BSONObject response = new BasicBSONObject("version", Utils.join(VERSION, '.'));
+            Document response = new Document("version", Utils.join(VERSION, '.'));
             response.put("versionArray", VERSION);
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             Utils.markOkay(response);
@@ -180,7 +177,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         }
 
         if (databaseName.equals("admin")) {
-            return handleAdminCommand(channel, command, query);
+            return handleAdminCommand(command, query);
         } else {
             MongoDatabase db = resolveDatabase(databaseName);
             return db.handleCommand(channel, command, query);
@@ -188,13 +185,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public Collection<BSONObject> getCurrentOperations(MongoQuery query) {
+    public Collection<Document> getCurrentOperations(MongoQuery query) {
         // TODO
         return Collections.emptyList();
     }
 
     @Override
-    public Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException {
+    public Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException {
         MongoDatabase db = resolveDatabase(query);
         return db.handleQuery(query);
     }

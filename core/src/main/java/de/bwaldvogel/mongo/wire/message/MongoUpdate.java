@@ -1,18 +1,18 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import io.netty.channel.Channel;
 
 public class MongoUpdate extends ClientRequest {
 
-    private BSONObject selector;
-    private BSONObject update;
+    private Document selector;
+    private Document update;
     private boolean upsert;
     private boolean multi;
 
-    public MongoUpdate(Channel channel, MessageHeader header, String fullCollectionName, BSONObject selector,
-            BSONObject update, boolean upsert, boolean multi) {
+    public MongoUpdate(Channel channel, MessageHeader header, String fullCollectionName, Document selector,
+                       Document update, boolean upsert, boolean multi) {
         super(channel, header, fullCollectionName);
         this.selector = selector;
         this.update = update;
@@ -28,11 +28,11 @@ public class MongoUpdate extends ClientRequest {
         return multi;
     }
 
-    public BSONObject getSelector() {
+    public Document getSelector() {
         return selector;
     }
 
-    public BSONObject getUpdate() {
+    public Document getUpdate() {
         return update;
     }
 

@@ -5,11 +5,8 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.util.Arrays;
 import java.util.Date;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.junit.Test;
-
-import com.mongodb.BasicDBObject;
 
 public class UtilsTest {
 
@@ -26,7 +23,7 @@ public class UtilsTest {
 
     @Test
     public void testMarkOkay() throws Exception {
-        BSONObject obj = new BasicBSONObject();
+        Document obj = new Document();
         Utils.markOkay(obj);
         assertThat(obj.get("ok")).isEqualTo(Integer.valueOf(1));
     }
@@ -66,18 +63,18 @@ public class UtilsTest {
 
     @Test
     public void testCalculateSize() {
-        assertThat(Utils.calculateSize(new BasicBSONObject())).isEqualTo(5);
-        assertThat(Utils.calculateSize(new BasicBSONObject("_id", 7))).isEqualTo(14);
+        assertThat(Utils.calculateSize(new Document())).isEqualTo(5);
+        assertThat(Utils.calculateSize(new Document("_id", 7))).isEqualTo(14);
     }
 
     @Test
     public void testGetSubdocumentValue() throws Exception {
-        BSONObject document = new BasicBSONObject("foo", 25);
+        Document document = new Document("foo", 25);
         assertThat(Utils.getSubdocumentValue(document, "foo")).isEqualTo(25);
         assertThat(Utils.getSubdocumentValue(document, "foo.bar")).isNull();
         assertThat(Utils.getSubdocumentValue(document, "foo.bar.x")).isNull();
 
-        document.put("foo", new BasicDBObject("a", 10).append("b", new BasicDBObject("x", 29).append("z", 17)));
+        document.put("foo", new Document("a", 10).append("b", new Document("x", 29).append("z", 17)));
         assertThat(Utils.getSubdocumentValue(document, "foo.a")).isEqualTo(10);
         assertThat(Utils.getSubdocumentValue(document, "foo.b.x")).isEqualTo(29);
         assertThat(Utils.getSubdocumentValue(document, "foo.b.z")).isEqualTo(17);
@@ -87,7 +84,7 @@ public class UtilsTest {
     @Test
     public void testGetFieldValueListSafe() throws Exception {
         assertThat(Utils.getFieldValueListSafe(null, "foo")).isNull();
-        BSONObject document = new BasicBSONObject("foo", 25);
+        Document document = new Document("foo", 25);
         assertThat(Utils.getFieldValueListSafe(document, "foo")).isEqualTo(25);
         assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isEqualTo("b");
     }
@@ -95,7 +92,7 @@ public class UtilsTest {
     @Test
     public void testHasFieldValueListSafe() throws Exception {
         assertThat(Utils.hasFieldValueListSafe(null, "foo")).isFalse();
-        BSONObject document = new BasicBSONObject("foo", 25);
+        Document document = new Document("foo", 25);
         assertThat(Utils.hasFieldValueListSafe(document, "foo")).isTrue();
         assertThat(Utils.hasFieldValueListSafe(document, "bar")).isFalse();
         assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "0")).isTrue();

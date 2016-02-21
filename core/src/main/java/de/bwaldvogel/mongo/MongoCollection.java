@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo;
 
 import java.util.List;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -17,29 +17,29 @@ public interface MongoCollection<KEY> {
 
     void addIndex(Index<KEY> index);
 
-    void addDocument(BSONObject document) throws MongoServerException;
+    void addDocument(Document document) throws MongoServerException;
 
-    void removeDocument(BSONObject document) throws MongoServerException;
+    void removeDocument(Document document) throws MongoServerException;
 
-    Iterable<BSONObject> handleQuery(BSONObject query, int numberToSkip, int numberToReturn,
-            BSONObject returnFieldSelector) throws MongoServerException;
+    Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn,
+            Document returnFieldSelector) throws MongoServerException;
 
-    int insertDocuments(List<BSONObject> documents) throws MongoServerException;
+    int insertDocuments(List<Document> documents) throws MongoServerException;
 
-    BSONObject updateDocuments(BSONObject selector, BSONObject update, boolean isMulti, boolean isUpsert)
+    Document updateDocuments(Document selector, Document update, boolean isMulti, boolean isUpsert)
             throws MongoServerException;
 
-    int deleteDocuments(BSONObject selector, int limit) throws MongoServerException;
+    int deleteDocuments(Document selector, int limit) throws MongoServerException;
 
-    BSONObject handleDistinct(BSONObject query) throws MongoServerException;
+    Document handleDistinct(Document query) throws MongoServerException;
 
-    BSONObject getStats() throws MongoServerException;
+    Document getStats() throws MongoServerException;
 
-    BSONObject validate() throws MongoServerException;
+    Document validate() throws MongoServerException;
 
-    BSONObject findAndModify(BSONObject query) throws MongoServerException;
+    Document findAndModify(Document query) throws MongoServerException;
 
-    int count(BSONObject query, int skip, int limit) throws MongoServerException;
+    int count(Document query, int skip, int limit) throws MongoServerException;
 
     int count();
 

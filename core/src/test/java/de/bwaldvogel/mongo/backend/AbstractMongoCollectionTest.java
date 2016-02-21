@@ -4,13 +4,10 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Collections;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.mongodb.BasicDBObject;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -23,7 +20,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Object addDocumentInternal(BSONObject document) {
+        protected Object addDocumentInternal(Document document) {
             throw new UnsupportedOperationException();
         }
 
@@ -33,7 +30,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected BSONObject getDocument(Object position) {
+        protected Document getDocument(Object position) {
             throw new UnsupportedOperationException();
         }
 
@@ -43,7 +40,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Object findDocument(BSONObject document) {
+        protected Object findDocument(Document document) {
             throw new UnsupportedOperationException();
         }
 
@@ -58,13 +55,13 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<Object> keys, BSONObject orderBy,
+        protected Iterable<Document> matchDocuments(Document query, Iterable<Object> keys, Document orderBy,
                 int numberToSkip, int numberToReturn) throws MongoServerException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        protected Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+        protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
                 int numberToReturn) throws MongoServerException {
             throw new UnsupportedOperationException();
         }
@@ -93,44 +90,47 @@ public class AbstractMongoCollectionTest {
 
     @Test
     public void testConvertSelector() throws Exception {
-        BasicBSONObject selector = new BasicBSONObject();
+        Document selector = new Document();
 
         assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new BasicBSONObject());
+                .isEqualTo(new Document());
 
-        selector = new BasicBSONObject("_id", 1);
+        selector = new Document("_id", 1);
         assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new BasicBSONObject("_id", 1));
+                .isEqualTo(new Document("_id", 1));
 
-        selector = new BasicBSONObject("_id", 1).append("$set", new BasicBSONObject("foo", "bar"));
+        selector = new Document("_id", 1).append("$set", new Document("foo", "bar"));
         assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new BasicBSONObject("_id", 1));
+                .isEqualTo(new Document("_id", 1));
 
-        selector = new BasicBSONObject("_id", 1).append("e.i", 14);
+        selector = new Document("_id", 1).append("e.i", 14);
         assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new BasicBSONObject("_id", 1).append("e", new BasicBSONObject("i", 14)));
+                .isEqualTo(new Document("_id", 1).append("e", new Document("i", 14)));
 
-        selector = new BasicBSONObject("_id", 1).append("e.i.y", new BasicBSONObject("foo", "bar"));
+        selector = new Document("_id", 1).append("e.i.y", new Document("foo", "bar"));
         assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new BasicBSONObject("_id", 1).append("e", //
-                        new BasicBSONObject("i", new BasicBSONObject("y", //
-                                new BasicBSONObject("foo", "bar")))));
+                .isEqualTo(new Document("_id", 1).append("e", //
+                        new Document("i", new Document("y", //
+                                new Document("foo", "bar")))));
     }
 
     @Test
     public void testDeriveDocumentId() throws Exception {
-        assertThat(collection.deriveDocumentId(new BasicBSONObject())).isInstanceOf(ObjectId.class);
+        assertThat(collection.deriveDocumentId(new Document()))
+            .isInstanceOf(ObjectId.class);
 
-        assertThat(collection.deriveDocumentId(new BasicBSONObject("a", 1))).isInstanceOf(ObjectId.class);
+        assertThat(collection.deriveDocumentId(new Document("a", 1)))
+            .isInstanceOf(ObjectId.class);
 
-        assertThat(collection.deriveDocumentId(new BasicBSONObject("_id", 1))).isEqualTo(1);
+        assertThat(collection.deriveDocumentId(new Document("_id", 1)))
+            .isEqualTo(1);
 
-        assertThat(collection
-                .deriveDocumentId(new BasicBSONObject("_id", new BasicDBObject("$in", Collections.singletonList(1)))))
-                        .isEqualTo(1);
+        assertThat(collection.deriveDocumentId(new Document("_id",
+            new Document("$in", Collections.singletonList(1)))))
+                .isEqualTo(1);
 
-        assertThat(collection
-                .deriveDocumentId(new BasicBSONObject("_id", new BasicDBObject("$in", Collections.emptyList()))))
-                        .isInstanceOf(ObjectId.class);
+        assertThat(collection.deriveDocumentId(new Document("_id",
+            new Document("$in", Collections.emptyList()))))
+                .isInstanceOf(ObjectId.class);
     }
 }

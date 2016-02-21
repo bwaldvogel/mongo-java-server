@@ -5,7 +5,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +128,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
         }
 
-        BSONObject selector = bsonDecoder.decodeBson(buffer);
+        Document selector = bsonDecoder.decodeBson(buffer);
         log.debug("delete {} from {}", selector, fullCollectionName);
         return new MongoDelete(channel, header, fullCollectionName, selector, singleRemove);
     }
@@ -143,8 +143,8 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         boolean upsert = UpdateFlag.UPSERT.isSet(flags);
         boolean multi = UpdateFlag.MULTI_UPDATE.isSet(flags);
 
-        BSONObject selector = bsonDecoder.decodeBson(buffer);
-        BSONObject update = bsonDecoder.decodeBson(buffer);
+        Document selector = bsonDecoder.decodeBson(buffer);
+        Document update = bsonDecoder.decodeBson(buffer);
         log.debug("update {} in {}", selector, fullCollectionName);
         return new MongoUpdate(channel, header, fullCollectionName, selector, update, upsert, multi);
     }
@@ -158,9 +158,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
         final String fullCollectionName = bsonDecoder.decodeCString(buffer);
 
-        List<BSONObject> documents = new ArrayList<>();
+        List<Document> documents = new ArrayList<>();
         while (buffer.isReadable()) {
-            BSONObject document = bsonDecoder.decodeBson(buffer);
+            Document document = bsonDecoder.decodeBson(buffer);
             if (document == null) {
                 return null;
             }
@@ -178,8 +178,8 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         final int numberToSkip = buffer.readInt();
         final int numberToReturn = buffer.readInt();
 
-        BSONObject query = bsonDecoder.decodeBson(buffer);
-        BSONObject returnFieldSelector = null;
+        Document query = bsonDecoder.decodeBson(buffer);
+        Document returnFieldSelector = null;
         if (buffer.isReadable()) {
             returnFieldSelector = bsonDecoder.decodeBson(buffer);
         }

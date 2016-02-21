@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend.h2;
 
 import java.io.IOException;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
@@ -36,7 +36,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     @Override
     protected MongoCollection<Object> openOrCreateCollection(String collectionName, String idField) {
         String fullCollectionName = databaseName + "." + collectionName;
-        MVMap<Object, BSONObject> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
+        MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
         return new H2Collection(databaseName, collectionName, idField, dataMap, metaMap);
     }
@@ -64,7 +64,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     public void dropCollection(String collectionName) throws MongoServerException {
         super.dropCollection(collectionName);
         String fullCollectionName = getDatabaseName() + "." + collectionName;
-        MVMap<Object, BSONObject> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
+        MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
         mvStore.removeMap(dataMap);
         mvStore.removeMap(metaMap);
@@ -76,7 +76,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
         super.moveCollection(oldDatabase, collection, newCollectionName);
         String fullCollectionName = collection.getFullName();
         String newFullName = collection.getDatabaseName() + "." + newCollectionName;
-        MVMap<Object, BSONObject> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
+        MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
 
         mvStore.renameMap(dataMap, DATABASES_PREFIX + newFullName);

@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -53,7 +53,7 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public BSONObject handleCommand(Channel channel, String database, String command, BSONObject query)
+    public Document handleCommand(Channel channel, String database, String command, Document query)
             throws MongoServerException {
         if (allowedCommands.contains(command.toLowerCase())) {
             return backend.handleCommand(channel, database, command, query);
@@ -62,12 +62,12 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public Collection<BSONObject> getCurrentOperations(MongoQuery query) {
+    public Collection<Document> getCurrentOperations(MongoQuery query) {
         return backend.getCurrentOperations(query);
     }
 
     @Override
-    public Iterable<BSONObject> handleQuery(MongoQuery query) throws MongoServerException {
+    public Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException {
         return backend.handleQuery(query);
     }
 

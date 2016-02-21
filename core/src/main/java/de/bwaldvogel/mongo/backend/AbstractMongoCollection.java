@@ -15,8 +15,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.bson.types.BSONTimestamp;
 import org.bson.types.ObjectId;
 
@@ -38,11 +37,11 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         this.idField = idField;
     }
 
-    protected boolean documentMatchesQuery(BSONObject document, BSONObject query) throws MongoServerException {
+    protected boolean documentMatchesQuery(Document document, Document query) throws MongoServerException {
         return matcher.matches(document, query);
     }
 
-    private Iterable<BSONObject> queryDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+    private Iterable<Document> queryDocuments(Document query, Document orderBy, int numberToSkip,
                                                 int numberToReturn) throws MongoServerException {
         synchronized (indexes) {
             for (Index<KEY> index : indexes) {
@@ -56,7 +55,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return matchDocuments(query, orderBy, numberToSkip, numberToReturn);
     }
 
-    protected void sortDocumentsInMemory(List<BSONObject> documents, BSONObject orderBy) {
+    protected void sortDocumentsInMemory(List<Document> documents, Document orderBy) {
         if (orderBy != null && !orderBy.keySet().isEmpty()) {
             if (orderBy.keySet().iterator().next().equals("$natural")) {
                 int sortValue = ((Integer) orderBy.get("$natural")).intValue();
@@ -73,22 +72,22 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, BSONObject orderBy, int numberToSkip,
+    protected abstract Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
                                                            int numberToReturn) throws MongoServerException;
 
-    protected abstract Iterable<BSONObject> matchDocuments(BSONObject query, Iterable<KEY> keys, BSONObject orderBy,
+    protected abstract Iterable<Document> matchDocuments(Document query, Iterable<KEY> keys, Document orderBy,
             int numberToSkip, int numberToReturn) throws MongoServerException;
 
-    protected abstract BSONObject getDocument(KEY key);
+    protected abstract Document getDocument(KEY key);
 
     protected abstract void updateDataSize(long sizeDelta);
 
     protected abstract long getDataSize();
 
-    protected abstract KEY addDocumentInternal(BSONObject document);
+    protected abstract KEY addDocumentInternal(Document document);
 
     @Override
-    public synchronized void addDocument(BSONObject document) throws MongoServerException {
+    public synchronized void addDocument(Document document) throws MongoServerException {
 
         for (Index<KEY> index : indexes) {
             index.checkAdd(document);
@@ -147,10 +146,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             String subKey = Utils.getSubkey(key, dotPos, matchPos);
 
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+            if (subObject instanceof Document || subObject instanceof List<?>) {
                 changeSubdocumentValue(subObject, subKey, newValue, matchPos);
             } else {
-                BSONObject obj = new BasicBSONObject();
+                Document obj = new Document();
                 changeSubdocumentValue(obj, subKey, newValue, matchPos);
                 Utils.setListSafe(document, mainKey, obj);
             }
@@ -170,7 +169,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             String mainKey = key.substring(0, dotPos);
             String subKey = Utils.getSubkey(key, dotPos, matchPos);
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+            if (subObject instanceof Document || subObject instanceof List<?>) {
                 return removeSubdocumentValue(subObject, subKey, matchPos);
             } else {
                 throw new MongoServerException("failed to remove subdocument");
@@ -191,7 +190,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             String mainKey = key.substring(0, dotPos);
             String subKey = Utils.getSubkey(key, dotPos, matchPos);
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+            if (subObject instanceof Document || subObject instanceof List<?>) {
                 return getSubdocumentValue(subObject, subKey, matchPos);
             } else {
                 return null;
@@ -201,7 +200,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private void modifyField(BSONObject document, String modifier, BSONObject change, Integer matchPos,
+    private void modifyField(Document document, String modifier, Document change, Integer matchPos,
             boolean isUpsert) throws MongoServerException {
 
         UpdateOperator op = getUpdateOperator(modifier, change);
@@ -374,8 +373,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 final boolean useDate;
                 if (typeSpecification instanceof Boolean && Utils.isTrue(typeSpecification)) {
                     useDate = true;
-                } else if (typeSpecification instanceof BSONObject) {
-                    Object type = ((BSONObject) typeSpecification).get("$type");
+                } else if (typeSpecification instanceof Document) {
+                    Object type = ((Document) typeSpecification).get("$type");
                     if (type.equals("timestamp")) {
                         useDate = false;
                     } else if (type.equals("date")) {
@@ -440,7 +439,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private UpdateOperator getUpdateOperator(String modifier, BSONObject change) throws MongoServerError {
+    private UpdateOperator getUpdateOperator(String modifier, Document change) throws MongoServerError {
         final UpdateOperator op;
         try {
             op = UpdateOperator.fromValue(modifier);
@@ -458,7 +457,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return op;
     }
 
-    private void updatePushAllAddToSet(BSONObject document, UpdateOperator updateOperator, BSONObject change,
+    private void updatePushAllAddToSet(Document document, UpdateOperator updateOperator, Document change,
             Integer matchPos) throws MongoServerException {
         // http://docs.mongodb.org/manual/reference/operator/push/
         for (String key : change.keySet()) {
@@ -482,10 +481,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 list.addAll(valueList);
             } else {
                 Collection<Object> pushValues = new ArrayList<>();
-                if (changeValue instanceof BSONObject
-                        && ((BSONObject) changeValue).keySet().equals(Collections.singleton("$each"))) {
+                if (changeValue instanceof Document
+                        && ((Document) changeValue).keySet().equals(Collections.singleton("$each"))) {
                     @SuppressWarnings("unchecked")
-                    Collection<Object> values = (Collection<Object>) ((BSONObject) changeValue).get("$each");
+                    Collection<Object> values = (Collection<Object>) ((Document) changeValue).get("$each");
                     pushValues.addAll(values);
                 } else {
                     pushValues.add(changeValue);
@@ -508,7 +507,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private void applyUpdate(BSONObject oldDocument, BSONObject newDocument) throws MongoServerException {
+    private void applyUpdate(Document oldDocument, Document newDocument) throws MongoServerException {
 
         if (newDocument.equals(oldDocument)) {
             return;
@@ -518,9 +517,9 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         Object newId = newDocument.get(idField);
 
         if (newId != null && !Utils.nullAwareEquals(oldId, newId)) {
-            oldId = new BasicBSONObject(idField, oldId);
-            newId = new BasicBSONObject(idField, newId);
-            throw new MongoServerError(13596, "cannot change _id of a document old:" + oldId + " new:" + newId);
+            oldId = new Document(idField, oldId).toJson();
+            newId = new Document(idField, newId).toJson();
+            throw new MongoServerError(13596, "cannot change _id of a document old: " + oldId + " new: " + newId);
         }
 
         if (newId == null && oldId != null) {
@@ -530,7 +529,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         cloneInto(oldDocument, newDocument);
     }
 
-    Object deriveDocumentId(BSONObject selector) {
+    Object deriveDocumentId(Document selector) {
         Object value = selector.get(idField);
         if (value != null) {
             if (!Utils.containsQueryExpression(value)) {
@@ -543,7 +542,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     private Object deriveIdFromExpression(Object value) {
-        BSONObject expression = (BSONObject) value;
+        Document expression = (Document) value;
         for (String key : expression.keySet()) {
             Object expressionValue = expression.get(key);
             if (key.equals("$in")) {
@@ -557,7 +556,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return new ObjectId();
     }
 
-    private BSONObject calculateUpdateDocument(BSONObject oldDocument, BSONObject update, Integer matchPos,
+    private Document calculateUpdateDocument(Document oldDocument, Document update, Integer matchPos,
             boolean isUpsert) throws MongoServerException {
 
         int numStartsWithDollar = 0;
@@ -567,12 +566,12 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             }
         }
 
-        BSONObject newDocument = new BasicBSONObject(idField, oldDocument.get(idField));
+        Document newDocument = new Document(idField, oldDocument.get(idField));
 
         if (numStartsWithDollar == update.keySet().size()) {
             cloneInto(newDocument, oldDocument);
             for (String key : update.keySet()) {
-                modifyField(newDocument, key, (BSONObject) update.get(key), matchPos, isUpsert);
+                modifyField(newDocument, key, (Document) update.get(key), matchPos, isUpsert);
             }
         } else if (numStartsWithDollar == 0) {
             applyUpdate(newDocument, update);
@@ -584,67 +583,67 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public synchronized BSONObject findAndModify(BSONObject query) throws MongoServerException {
+    public synchronized Document findAndModify(Document query) throws MongoServerException {
 
         boolean returnNew = Utils.isTrue(query.get("new"));
 
-        if (!query.containsField("remove") && !query.containsField("update")) {
+        if (!query.containsKey("remove") && !query.containsKey("update")) {
             throw new MongoServerException("need remove or update");
         }
 
-        BSONObject queryObject = new BasicBSONObject();
+        Document queryObject = new Document();
 
-        if (query.containsField("query")) {
+        if (query.containsKey("query")) {
             queryObject.put("query", query.get("query"));
         } else {
-            queryObject.put("query", new BasicBSONObject());
+            queryObject.put("query", new Document());
         }
 
-        if (query.containsField("sort")) {
+        if (query.containsKey("sort")) {
             queryObject.put("orderby", query.get("sort"));
         }
 
-        BSONObject lastErrorObject = null;
-        BSONObject returnDocument = null;
+        Document lastErrorObject = null;
+        Document returnDocument = null;
         int num = 0;
-        for (BSONObject document : handleQuery(queryObject, 0, 1)) {
+        for (Document document : handleQuery(queryObject, 0, 1)) {
             num++;
             if (Utils.isTrue(query.get("remove"))) {
                 removeDocument(document);
                 returnDocument = document;
             } else if (query.get("update") != null) {
-                BSONObject updateQuery = (BSONObject) query.get("update");
+                Document updateQuery = (Document) query.get("update");
 
-                Integer matchPos = matcher.matchPosition(document, (BSONObject) queryObject.get("query"));
+                Integer matchPos = matcher.matchPosition(document, (Document) queryObject.get("query"));
 
-                BSONObject oldDocument = updateDocument(document, updateQuery, matchPos);
+                Document oldDocument = updateDocument(document, updateQuery, matchPos);
                 if (returnNew) {
                     returnDocument = document;
                 } else {
                     returnDocument = oldDocument;
                 }
-                lastErrorObject = new BasicBSONObject("updatedExisting", Boolean.TRUE);
+                lastErrorObject = new Document("updatedExisting", Boolean.TRUE);
                 lastErrorObject.put("n", Integer.valueOf(1));
             }
         }
         if (num == 0 && Utils.isTrue(query.get("upsert"))) {
-            BSONObject selector = (BSONObject) query.get("query");
-            BSONObject updateQuery = (BSONObject) query.get("update");
-            BSONObject newDocument = handleUpsert(updateQuery, selector);
+            Document selector = (Document) query.get("query");
+            Document updateQuery = (Document) query.get("update");
+            Document newDocument = handleUpsert(updateQuery, selector);
             if (returnNew) {
                 returnDocument = newDocument;
             } else {
-                returnDocument = new BasicBSONObject();
+                returnDocument = new Document();
             }
             num++;
         }
 
         if (query.get("fields") != null) {
-            BSONObject fields = (BSONObject) query.get("fields");
+            Document fields = (Document) query.get("fields");
             returnDocument = projectDocument(returnDocument, fields, idField);
         }
 
-        BSONObject result = new BasicBSONObject();
+        Document result = new Document();
         if (lastErrorObject != null) {
             result.put("lastErrorObject", lastErrorObject);
         }
@@ -653,17 +652,17 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return result;
     }
 
-    private static BSONObject projectDocument(BSONObject document, BSONObject fields, String idField) {
+    private static Document projectDocument(Document document, Document fields, String idField) {
 
         if (document == null) {
             return null;
         }
 
-        BSONObject newDocument = new BasicBSONObject();
+        Document newDocument = new Document();
         if (onlyExclusions(fields)) {
             newDocument.putAll(document);
             for (String excludedField : fields.keySet()) {
-                newDocument.removeField(excludedField);
+                newDocument.remove(excludedField);
             }
         } else {
             for (String key : fields.keySet()) {
@@ -675,14 +674,14 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
         // implicitly add _id if not mentioned
         // http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-the-specified-fields-and-the-id-field-only
-        if (!fields.containsField(idField)) {
+        if (!fields.containsKey(idField)) {
             newDocument.put(idField, document.get(idField));
         }
 
         return newDocument;
     }
 
-    private static boolean onlyExclusions(BSONObject fields) {
+    private static boolean onlyExclusions(Document fields) {
         for (String key : fields.keySet()) {
             if (Utils.isTrue(fields.get(key))) {
                 return false;
@@ -691,7 +690,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return true;
     }
 
-    private static void projectField(BSONObject document, BSONObject newDocument, String key) {
+    private static void projectField(Document document, Document newDocument, String key) {
 
         if (document == null) {
             return;
@@ -703,41 +702,41 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             String subKey = key.substring(dotPos + 1);
 
             Object object = document.get(mainKey);
-            // do not project the subdocument if it is not of type BSONObject
-            if (object instanceof BSONObject) {
-                if (!newDocument.containsField(mainKey)) {
-                    newDocument.put(mainKey, new BasicBSONObject());
+            // do not project the subdocument if it is not of type Document
+            if (object instanceof Document) {
+                if (!newDocument.containsKey(mainKey)) {
+                    newDocument.put(mainKey, new Document());
                 }
-                projectField((BSONObject) object, (BSONObject) newDocument.get(mainKey), subKey);
+                projectField((Document) object, (Document) newDocument.get(mainKey), subKey);
             }
         } else {
             newDocument.put(key, document.get(key));
         }
     }
 
-    private synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn)
+    private synchronized Iterable<Document> handleQuery(Document queryObject, int numberToSkip, int numberToReturn)
             throws MongoServerException {
         return handleQuery(queryObject, numberToSkip, numberToReturn, null);
     }
 
     @Override
-    public synchronized Iterable<BSONObject> handleQuery(BSONObject queryObject, int numberToSkip, int numberToReturn,
-            BSONObject fieldSelector) throws MongoServerException {
+    public synchronized Iterable<Document> handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
+            Document fieldSelector) throws MongoServerException {
 
-        BSONObject query;
-        BSONObject orderBy = null;
+        Document query;
+        Document orderBy = null;
 
         if (numberToReturn < 0) {
             // actually: request to close cursor automatically
             numberToReturn = -numberToReturn;
         }
 
-        if (queryObject.containsField("query")) {
-            query = (BSONObject) queryObject.get("query");
-            orderBy = (BSONObject) queryObject.get("orderby");
-        } else if (queryObject.containsField("$query")) {
-            query = (BSONObject) queryObject.get("$query");
-            orderBy = (BSONObject) queryObject.get("$orderby");
+        if (queryObject.containsKey("query")) {
+            query = (Document) queryObject.get("query");
+            orderBy = (Document) queryObject.get("orderby");
+        } else if (queryObject.containsKey("$query")) {
+            query = (Document) queryObject.get("$query");
+            orderBy = (Document) queryObject.get("$orderby");
         } else {
             query = queryObject;
         }
@@ -746,7 +745,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             return Collections.emptyList();
         }
 
-        Iterable<BSONObject> objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
+        Iterable<Document> objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
             return new ProjectingIterable(objs, fieldSelector, idField);
@@ -755,13 +754,13 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return objs;
     }
 
-    private static class ProjectingIterator implements Iterator<BSONObject> {
+    private static class ProjectingIterator implements Iterator<Document> {
 
-        private Iterator<BSONObject> iterator;
-        private BSONObject fieldSelector;
+        private Iterator<Document> iterator;
+        private Document fieldSelector;
         private String idField;
 
-        public ProjectingIterator(Iterator<BSONObject> iterator, BSONObject fieldSelector, String idField) {
+        public ProjectingIterator(Iterator<Document> iterator, Document fieldSelector, String idField) {
             this.iterator = iterator;
             this.fieldSelector = fieldSelector;
             this.idField = idField;
@@ -773,9 +772,9 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
 
         @Override
-        public BSONObject next() {
-            BSONObject document = this.iterator.next();
-            BSONObject projectedDocument = projectDocument(document, fieldSelector, idField);
+        public Document next() {
+            Document document = this.iterator.next();
+            Document projectedDocument = projectDocument(document, fieldSelector, idField);
             return projectedDocument;
         }
 
@@ -786,53 +785,53 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
     }
 
-    private static class ProjectingIterable implements Iterable<BSONObject> {
+    private static class ProjectingIterable implements Iterable<Document> {
 
-        private Iterable<BSONObject> iterable;
-        private BSONObject fieldSelector;
+        private Iterable<Document> iterable;
+        private Document fieldSelector;
         private String idField;
 
-        public ProjectingIterable(Iterable<BSONObject> iterable, BSONObject fieldSelector, String idField) {
+        public ProjectingIterable(Iterable<Document> iterable, Document fieldSelector, String idField) {
             this.iterable = iterable;
             this.fieldSelector = fieldSelector;
             this.idField = idField;
         }
 
         @Override
-        public Iterator<BSONObject> iterator() {
+        public Iterator<Document> iterator() {
             return new ProjectingIterator(iterable.iterator(), fieldSelector, idField);
         }
     }
 
     @Override
-    public synchronized BSONObject handleDistinct(BSONObject query) throws MongoServerException {
+    public synchronized Document handleDistinct(Document query) throws MongoServerException {
         String key = query.get("key").toString();
-        BSONObject q = (BSONObject) query.get("query");
+        Document q = (Document) query.get("query");
         TreeSet<Object> values = new TreeSet<>(new ValueComparator());
 
-        for (BSONObject document : queryDocuments(q, null, 0, 0)) {
-            if (document.containsField(key)) {
+        for (Document document : queryDocuments(q, null, 0, 0)) {
+            if (document.containsKey(key)) {
                 values.add(document.get(key));
             }
         }
 
-        BSONObject response = new BasicBSONObject("values", new ArrayList<>(values));
+        Document response = new Document("values", new ArrayList<>(values));
         Utils.markOkay(response);
         return response;
     }
 
     @Override
-    public synchronized int insertDocuments(List<BSONObject> documents) throws MongoServerException {
-        for (BSONObject document : documents) {
+    public synchronized int insertDocuments(List<Document> documents) throws MongoServerException {
+        for (Document document : documents) {
             addDocument(document);
         }
         return documents.size();
     }
 
     @Override
-    public synchronized int deleteDocuments(BSONObject selector, int limit) throws MongoServerException {
+    public synchronized int deleteDocuments(Document selector, int limit) throws MongoServerException {
         int n = 0;
-        for (BSONObject document : handleQuery(selector, 0, limit)) {
+        for (Document document : handleQuery(selector, 0, limit)) {
             if (limit > 0 && n >= limit) {
                 throw new MongoServerException("internal error: too many elements (" + n + " >= " + limit + ")");
             }
@@ -843,7 +842,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public synchronized BSONObject updateDocuments(BSONObject selector, BSONObject updateQuery, boolean isMulti,
+    public synchronized Document updateDocuments(Document selector, Document updateQuery, boolean isMulti,
             boolean isUpsert) throws MongoServerException {
 
         if (isMulti) {
@@ -856,9 +855,9 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
         int nMatched = 0;
         int nModified = 0;
-        for (BSONObject document : queryDocuments(selector, null, 0, 0)) {
+        for (Document document : queryDocuments(selector, null, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
-            BSONObject oldDocument = updateDocument(document, updateQuery, matchPos);
+            Document oldDocument = updateDocument(document, updateQuery, matchPos);
             if (!Utils.nullAwareEquals(oldDocument, document)) {
                 nModified++;
             }
@@ -869,12 +868,12 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             }
         }
 
-        BSONObject result = new BasicBSONObject();
+        Document result = new Document();
 
         // insert?
         if (nModified == 0 && isUpsert) {
-            BSONObject newDocument = handleUpsert(updateQuery, selector);
-            if (!selector.containsField(idField)) {
+            Document newDocument = handleUpsert(updateQuery, selector);
+            if (!selector.containsKey(idField)) {
                 result.put("upserted", newDocument.get(idField));
             }
         }
@@ -884,14 +883,14 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         return result;
     }
 
-    private BSONObject updateDocument(BSONObject document, BSONObject updateQuery, Integer matchPos)
+    private Document updateDocument(Document document, Document updateQuery, Integer matchPos)
             throws MongoServerException {
         synchronized (document) {
             // copy document
-            BSONObject oldDocument = new BasicBSONObject();
+            Document oldDocument = new Document();
             cloneInto(oldDocument, document);
 
-            BSONObject newDocument = calculateUpdateDocument(document, updateQuery, matchPos, false);
+            Document newDocument = calculateUpdateDocument(document, updateQuery, matchPos, false);
 
             if (!newDocument.equals(oldDocument)) {
                 for (Index<KEY> index : indexes) {
@@ -909,7 +908,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 Set<String> fields = new HashSet<>(document.keySet());
                 fields.removeAll(newDocument.keySet());
                 for (String key : fields) {
-                    document.removeField(key);
+                    document.remove(key);
                 }
 
                 // update the fields
@@ -925,16 +924,16 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private void cloneInto(BSONObject targetDocument, BSONObject sourceDocument) {
+    private void cloneInto(Document targetDocument, Document sourceDocument) {
         for (String key : sourceDocument.keySet()) {
             targetDocument.put(key, cloneValue(sourceDocument.get(key)));
         }
     }
 
     private Object cloneValue(Object value) {
-        if (value instanceof BSONObject) {
-            BSONObject newValue = new BasicBSONObject();
-            cloneInto(newValue, (BSONObject) value);
+        if (value instanceof Document) {
+            Document newValue = new Document();
+            cloneInto(newValue, (Document) value);
             return newValue;
         } else if (value instanceof List<?>) {
             @SuppressWarnings("unchecked")
@@ -949,10 +948,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         }
     }
 
-    private BSONObject handleUpsert(BSONObject updateQuery, BSONObject selector) throws MongoServerException {
-        BSONObject document = convertSelectorToDocument(selector);
+    private Document handleUpsert(Document updateQuery, Document selector) throws MongoServerException {
+        Document document = convertSelectorToDocument(selector);
 
-        BSONObject newDocument = calculateUpdateDocument(document, updateQuery, null, true);
+        Document newDocument = calculateUpdateDocument(document, updateQuery, null, true);
         if (newDocument.get(idField) == null) {
             newDocument.put(idField, deriveDocumentId(selector));
         }
@@ -963,8 +962,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     /**
      * convert selector used in an upsert statement into a document
      */
-    BSONObject convertSelectorToDocument(BSONObject selector) throws MongoServerException {
-        BSONObject document = new BasicBSONObject();
+    Document convertSelectorToDocument(Document selector) throws MongoServerException {
+        Document document = new Document();
         for (String key : selector.keySet()) {
             if (key.startsWith("$")) {
                 continue;
@@ -984,7 +983,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public int count(BSONObject query, int skip, int limit) throws MongoServerException {
+    public int count(Document query, int skip, int limit) throws MongoServerException {
         if (query.keySet().isEmpty()) {
             int count = count();
             if (skip > 0) {
@@ -1007,10 +1006,10 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public BSONObject getStats() {
+    public Document getStats() {
         long dataSize = getDataSize();
 
-        BSONObject response = new BasicBSONObject("ns", getFullName());
+        Document response = new Document("ns", getFullName());
         response.put("count", Integer.valueOf(count()));
         response.put("size", Long.valueOf(dataSize));
 
@@ -1022,7 +1021,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         response.put("storageSize", Integer.valueOf(0));
         response.put("numExtents", Integer.valueOf(0));
         response.put("nindexes", Integer.valueOf(indexes.size()));
-        BSONObject indexSizes = new BasicBSONObject();
+        Document indexSizes = new Document();
         for (Index<KEY> index : indexes) {
             indexSizes.put(index.getName(), Long.valueOf(index.getDataSize()));
         }
@@ -1033,7 +1032,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public synchronized void removeDocument(BSONObject document) throws MongoServerException {
+    public synchronized void removeDocument(Document document) throws MongoServerException {
         KEY key = null;
 
         if (!indexes.isEmpty()) {
@@ -1054,8 +1053,8 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     }
 
     @Override
-    public BSONObject validate() {
-        BSONObject response = new BasicBSONObject("ns", getFullName());
+    public Document validate() {
+        Document response = new Document("ns", getFullName());
         response.put("extentCount", Integer.valueOf(0));
         response.put("datasize", Long.valueOf(getDataSize()));
         response.put("nrecords", Integer.valueOf(getRecordCount()));
@@ -1064,7 +1063,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         response.put("deletedSize", Integer.valueOf(0));
 
         response.put("nIndexes", Integer.valueOf(indexes.size()));
-        BSONObject keysPerIndex = new BasicBSONObject();
+        Document keysPerIndex = new Document();
         for (Index<KEY> index : indexes) {
             keysPerIndex.put(index.getName(), Long.valueOf(index.getCount()));
         }
@@ -1084,7 +1083,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
 
     protected abstract void removeDocumentWithKey(KEY key);
 
-    protected abstract KEY findDocument(BSONObject document);
+    protected abstract KEY findDocument(Document document);
 
     protected abstract int getRecordCount();
 

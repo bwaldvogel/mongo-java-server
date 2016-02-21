@@ -6,7 +6,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.bson.BSONObject;
+import org.bson.BsonRegularExpression;
+import org.bson.Document;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DefaultDBEncoder;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -45,7 +48,7 @@ public class Utils {
         }
     }
 
-    public static Object getSubdocumentValue(BSONObject document, String key) {
+    public static Object getSubdocumentValue(Document document, String key) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -54,8 +57,8 @@ public class Utils {
                 throw new IllegalArgumentException();
             }
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof BSONObject) {
-                return getSubdocumentValue((BSONObject) subObject, subKey);
+            if (subObject instanceof Document) {
+                return getSubdocumentValue((Document) subObject, subKey);
             } else {
                 return null;
             }
@@ -117,8 +120,11 @@ public class Utils {
         }
     }
 
-    public static long calculateSize(BSONObject document) {
-        return new DefaultDBEncoder().encode(document).length;
+    public static long calculateSize(Document document) {
+        // TODO make more efficient
+        BSONObject dbObject = new BasicDBObject();
+        dbObject.putAll(document);
+        return new DefaultDBEncoder().encode(dbObject).length;
     }
 
     @SuppressWarnings("unchecked")
@@ -131,11 +137,11 @@ public class Utils {
             return false;
         }
 
-        if (!(value instanceof BSONObject)) {
+        if (!(value instanceof Document)) {
             return false;
         }
 
-        BSONObject doc = (BSONObject) value;
+        Document doc = (Document) value;
         for (String key : doc.keySet()) {
             if (key.startsWith("$")) {
                 return true;
@@ -168,8 +174,8 @@ public class Utils {
             } else {
                 throw new IllegalArgumentException("illegal field: " + field);
             }
-        } else if (document instanceof BSONObject) {
-            return ((BSONObject) document).get(field);
+        } else if (document instanceof Document) {
+            return ((Document) document).get(field);
         }
 
         throw new IllegalArgumentException("illegal document: " + document);
@@ -181,7 +187,7 @@ public class Utils {
             String mainKey = key.substring(0, dotPos);
             String subKey = getSubkey(key, dotPos, new AtomicReference<Integer>());
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof BSONObject || subObject instanceof List<?>) {
+            if (subObject instanceof Document || subObject instanceof List<?>) {
                 return hasSubdocumentValue(subObject, subKey);
             } else {
                 return false;
@@ -223,15 +229,52 @@ public class Utils {
             } else {
                 throw new IllegalArgumentException("illegal field: " + field);
             }
-        } else if (document instanceof BSONObject) {
-            return ((BSONObject) document).containsField(field);
+        } else if (document instanceof Document) {
+            return ((Document) document).containsKey(field);
         }
 
         throw new IllegalArgumentException("illegal document: " + document);
     }
 
-    public static void markOkay(BSONObject result) {
+    public static void markOkay(Document result) {
         result.put("ok", Integer.valueOf(1));
+    }
+
+    public static Pattern convertToPattern(Object pattern) {
+        if (pattern instanceof BsonRegularExpression) {
+            return createPattern((BsonRegularExpression) pattern);
+        } else if (pattern instanceof Document) {
+            return createPattern((Document) pattern);
+        } else if (pattern instanceof Pattern) {
+            return (Pattern) pattern;
+        } else {
+            throw new IllegalArgumentException("Not a pattern: " + pattern);
+        }
+    }
+
+    public static boolean isRegexQuery(Object object) {
+        if (object instanceof Document) {
+            return ((Document) object).containsKey("$regex");
+        } else if (object instanceof BsonRegularExpression) {
+            return true;
+        } else if (object instanceof Pattern) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static Pattern createPattern(BsonRegularExpression pattern) {
+        return createPattern(pattern.getPattern(), pattern.getOptions());
+    }
+
+    private static Pattern createPattern(Document queryObject) {
+        String options = "";
+        if (queryObject.containsKey("$options")) {
+            options = queryObject.get("$options").toString();
+        }
+
+        return createPattern(queryObject.get("$regex").toString(), options);
     }
 
     public static Pattern createPattern(String regex, String options) {
@@ -275,13 +318,13 @@ public class Utils {
             }
             list.set(pos, obj);
         } else {
-            ((BSONObject) document).put(key, obj);
+            ((Document) document).put(key, obj);
         }
     }
 
     public static Object removeListSafe(Object document, String key) {
-        if (document instanceof BSONObject) {
-            return ((BSONObject) document).removeField(key);
+        if (document instanceof Document) {
+            return ((Document) document).remove(key);
         } else if (document instanceof List<?>) {
             int pos = Integer.parseInt(key);
             @SuppressWarnings("unchecked")

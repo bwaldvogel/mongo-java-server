@@ -7,40 +7,39 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.junit.Test;
 
 public class DocumentComparatorTest {
 
     @Test
     public void testCompareSingleKey() {
-        DocumentComparator comparator = new DocumentComparator(new BasicBSONObject("a", 1));
+        DocumentComparator comparator = new DocumentComparator(new Document("a", 1));
 
-        List<BSONObject> list = new ArrayList<BSONObject>();
-        list.add(new BasicBSONObject("a", 10));
-        list.add(new BasicBSONObject("a", 15));
-        list.add(new BasicBSONObject("a", 5));
-        list.add(new BasicBSONObject("b", 1));
+        List<Document> list = new ArrayList<>();
+        list.add(new Document("a", 10));
+        list.add(new Document("a", 15));
+        list.add(new Document("a", 5));
+        list.add(new Document("b", 1));
 
         Collections.sort(list, comparator);
-        assertThat(list).containsExactly(new BasicBSONObject("b", 1), //
-                new BasicBSONObject("a", 5), //
-                new BasicBSONObject("a", 10), //
-                new BasicBSONObject("a", 15));
+        assertThat(list).containsExactly(new Document("b", 1), //
+                new Document("a", 5), //
+                new Document("a", 10), //
+                new Document("a", 15));
     }
 
     @Test
     public void testCompareMultiKey() {
-        DocumentComparator comparator = new DocumentComparator(new BasicBSONObject("a", 1).append("b", -1));
+        DocumentComparator comparator = new DocumentComparator(new Document("a", 1).append("b", -1));
 
-        List<BSONObject> list = new ArrayList<BSONObject>();
-        list.add(new BasicBSONObject("a", 15).append("b", 3));
-        list.add(new BasicBSONObject("a", 15).append("b", 2));
-        list.add(new BasicBSONObject("a", 5));
-        list.add(new BasicBSONObject("b", 1));
-        list.add(new BasicBSONObject("b", 2));
-        list.add(new BasicBSONObject("b", 3));
+        List<Document> list = new ArrayList<>();
+        list.add(new Document("a", 15).append("b", 3));
+        list.add(new Document("a", 15).append("b", 2));
+        list.add(new Document("a", 5));
+        list.add(new Document("b", 1));
+        list.add(new Document("b", 2));
+        list.add(new Document("b", 3));
 
         Random rnd = new Random(4711);
 
@@ -48,22 +47,22 @@ public class DocumentComparatorTest {
             Collections.shuffle(list, rnd);
 
             Collections.sort(list, comparator);
-            assertThat(list).containsExactly(new BasicBSONObject("b", 3), //
-                    new BasicBSONObject("b", 2), //
-                    new BasicBSONObject("b", 1), //
-                    new BasicBSONObject("a", 5), //
-                    new BasicBSONObject("a", 15).append("b", 3), //
-                    new BasicBSONObject("a", 15).append("b", 2));
+            assertThat(list).containsExactly(new Document("b", 3), //
+                    new Document("b", 2), //
+                    new Document("b", 1), //
+                    new Document("a", 5), //
+                    new Document("a", 15).append("b", 3), //
+                    new Document("a", 15).append("b", 2));
         }
     }
 
     @Test
     public void testCompareCompoundKey() throws Exception {
-        DocumentComparator comparator = new DocumentComparator(new BasicBSONObject("a.b", 1).append("c", -1));
+        DocumentComparator comparator = new DocumentComparator(new Document("a.b", 1).append("c", -1));
 
-        BSONObject a = new BasicBSONObject("a", new BasicBSONObject("b", 10));
-        BSONObject b = new BasicBSONObject("a", new BasicBSONObject("b", 15));
-        BSONObject c = new BasicBSONObject("a", new BasicBSONObject("b", 15)).append("x", 70);
+        Document a = new Document("a", new Document("b", 10));
+        Document b = new Document("a", new Document("b", 15));
+        Document c = new Document("a", new Document("b", 15)).append("x", 70);
 
         assertThat(comparator.compare(a, b)).isLessThan(0);
         assertThat(comparator.compare(b, a)).isGreaterThan(0);

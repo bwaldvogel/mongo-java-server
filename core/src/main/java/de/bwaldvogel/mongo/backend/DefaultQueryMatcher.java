@@ -8,8 +8,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -20,7 +19,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     private Integer lastPosition;
 
     @Override
-    public boolean matches(BSONObject document, BSONObject query) throws MongoServerException {
+    public boolean matches(Document document, Document query) throws MongoServerException {
         for (String key : query.keySet()) {
             if (!checkMatch(query.get(key), key, document)) {
                 return false;
@@ -31,7 +30,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @Override
-    public synchronized Integer matchPosition(BSONObject document, BSONObject query) throws MongoServerException {
+    public synchronized Integer matchPosition(Document document, Document query) throws MongoServerException {
         lastPosition = null;
         for (String key : query.keySet()) {
             if (!checkMatch(query.get(key), key, document)) {
@@ -88,10 +87,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
 
             // handle $all
-            if (queryValue instanceof BSONObject && ((BSONObject) queryValue).keySet().contains("$all")) {
+            if (queryValue instanceof Document && ((Document) queryValue).keySet().contains("$all")) {
                 // clone first
-                queryValue = new BasicBSONObject(((BSONObject) queryValue).toMap());
-                Object allQuery = ((BSONObject) queryValue).removeField("$all");
+                queryValue = cloneDocument((Document) queryValue);
+                Object allQuery = ((Document) queryValue).remove("$all");
                 if (!checkMatchesAllDocuments(allQuery, keys, document)) {
                     return false;
                 }
@@ -106,30 +105,30 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return checkMatch(queryValue, subKeys, subObject);
         }
 
-        if (!(document instanceof BSONObject)) {
+        if (!(document instanceof Document)) {
             return false;
         }
 
-        Object value = ((BSONObject) document).get(firstKey);
-        boolean valueExists = ((BSONObject) document).containsField(firstKey);
+        Object value = ((Document) document).get(firstKey);
+        boolean valueExists = ((Document) document).containsKey(firstKey);
 
         if (value instanceof Collection<?>) {
-            if (queryValue instanceof BSONObject) {
-                Set<String> keySet = ((BSONObject) queryValue).keySet();
+            if (queryValue instanceof Document) {
+                Set<String> keySet = ((Document) queryValue).keySet();
 
                 // clone first
-                BSONObject queryValueClone = new BasicBSONObject(((BSONObject) queryValue).toMap());
+                Document queryValueClone = cloneDocument((Document) queryValue);
 
                 for (String queryOperator : keySet) {
 
-                    Object subQuery = queryValueClone.removeField(queryOperator);
+                    Object subQuery = queryValueClone.remove(queryOperator);
 
                     if (queryOperator.equals(QueryOperator.ALL.getValue())) {
                         if (!checkMatchesAllValues(subQuery, value)) {
                             return false;
                         }
                     } else if (queryOperator.equals(QueryOperator.IN.getValue())) {
-                        final BasicBSONObject inQuery = new BasicBSONObject(queryOperator, subQuery);
+                        Document inQuery = new Document(queryOperator, subQuery);
                         if (!checkMatchesAnyValue(inQuery, value)) {
                             return false;
                         }
@@ -158,6 +157,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return checkMatchesValue(queryValue, value, valueExists);
     }
 
+    private static Document cloneDocument(Document document) {
+        return new Document(document);
+    }
+
     private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) throws MongoServerException {
         if (!(queryValue instanceof List<?>)) {
             throw new MongoServerError(14816, filter + " expression must be a nonempty array");
@@ -170,7 +173,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         for (Object subqueryValue : list) {
-            if (!(subqueryValue instanceof BSONObject)) {
+            if (!(subqueryValue instanceof Document)) {
                 throw new MongoServerError(14817, filter + " elements must be objects");
             }
         }
@@ -178,14 +181,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
         switch (filter) {
             case AND:
                 for (Object subqueryValue : list) {
-                    if (!matches((BSONObject) document, (BSONObject) subqueryValue)) {
+                    if (!matches((Document) document, (Document) subqueryValue)) {
                         return false;
                     }
                 }
                 return true;
             case OR:
                 for (Object subqueryValue : list) {
-                    if (matches((BSONObject) document, (BSONObject) subqueryValue)) {
+                    if (matches((Document) document, (Document) subqueryValue)) {
                         return true;
                     }
                 }
@@ -230,13 +233,19 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) throws MongoServerException {
-        if (queryValue instanceof BSONObject) {
-            BSONObject queryObject = (BSONObject) queryValue;
 
-            if (isRegexQuery(queryObject)) {
-                Pattern pattern = convertToPattern(queryObject);
-                return pattern.matcher(value.toString()).find();
+        if (Utils.isRegexQuery(queryValue)) {
+            if (value == null) {
+                return false;
+            } else {
+                Pattern pattern = Utils.convertToPattern(queryValue);
+                Matcher matcher = pattern.matcher(value.toString());
+                return matcher.find();
             }
+        }
+
+        if (queryValue instanceof Document) {
+            Document queryObject = (Document) queryValue;
 
             if (queryObject.keySet().equals(Constants.REFERENCE_KEYS)) {
                 for (String key : queryObject.keySet()) {
@@ -265,26 +274,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
         }
 
-        if (value != null && queryValue instanceof Pattern) {
-            Pattern pattern = (Pattern) queryValue;
-            Matcher matcher = pattern.matcher(value.toString());
-            return matcher.find();
-        }
-
         return Utils.nullAwareEquals(value, queryValue);
-    }
-
-    private boolean isRegexQuery(BSONObject queryObject) {
-        return queryObject.containsField("$regex");
-    }
-
-    private Pattern convertToPattern(BSONObject queryObject) {
-        String options = "";
-        if (queryObject.containsField("$options")) {
-            options = queryObject.get("$options").toString();
-        }
-
-        return Utils.createPattern(queryObject.get("$regex").toString(), options);
     }
 
     @SuppressWarnings("unchecked")

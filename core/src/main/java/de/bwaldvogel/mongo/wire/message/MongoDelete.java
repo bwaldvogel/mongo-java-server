@@ -1,22 +1,22 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import io.netty.channel.Channel;
 
 public class MongoDelete extends ClientRequest {
 
-    private BSONObject selector;
+    private Document selector;
     private boolean singleRemove;
 
-    public MongoDelete(Channel channel, MessageHeader header, String fullCollectionName, BSONObject selector,
+    public MongoDelete(Channel channel, MessageHeader header, String fullCollectionName, Document selector,
             boolean singleRemove) {
         super(channel, header, fullCollectionName);
         this.selector = selector;
         this.singleRemove = singleRemove;
     }
 
-    public BSONObject getSelector() {
+    public Document getSelector() {
         return selector;
     }
 

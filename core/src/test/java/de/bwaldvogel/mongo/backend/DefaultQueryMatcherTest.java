@@ -8,14 +8,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
-import org.bson.BSONObject;
-import org.bson.BasicBSONObject;
+import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
-import com.mongodb.util.JSON;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
@@ -23,12 +18,12 @@ public class DefaultQueryMatcherTest {
 
     private QueryMatcher matcher;
 
-    private BasicDBObject json(String string) {
+    private Document json(String string) {
         string = string.trim();
         if (!string.startsWith("{")) {
             string = "{" + string + "}";
         }
-        return (BasicDBObject) JSON.parse(string);
+        return Document.parse(string);
     }
 
     @Before
@@ -38,7 +33,7 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesSimple() throws Exception {
-        BSONObject document = json("{}");
+        Document document = json("{}");
         assertThat(matcher.matches(document, json("{}"))).isTrue();
         assertThat(matcher.matches(document, json("foo: 'bar'"))).isFalse();
         document.put("foo", "bar");
@@ -47,31 +42,31 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesPattern() throws Exception {
-        BSONObject document = new BasicDBObject("name", "john");
-        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("jo.*")))).isTrue();
+        Document document = new Document("name", "john");
+        assertThat(matcher.matches(document, new Document("name", Pattern.compile("jo.*")))).isTrue();
         assertThat(
                 matcher.matches(document,
-                        new BasicBSONObject("name", Pattern.compile("Jo.*", Pattern.CASE_INSENSITIVE)))).isTrue();
-        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("marta")))).isFalse();
-        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile("John")))).isFalse();
+                        new Document("name", Pattern.compile("Jo.*", Pattern.CASE_INSENSITIVE)))).isTrue();
+        assertThat(matcher.matches(document, new Document("name", Pattern.compile("marta")))).isFalse();
+        assertThat(matcher.matches(document, new Document("name", Pattern.compile("John")))).isFalse();
 
         String name = "\u0442\u0435\u0441\u0442";
         assertThat(name).hasSize(4);
         document.put("name", name);
-        assertThat(matcher.matches(document, new BasicBSONObject("name", Pattern.compile(name)))).isTrue();
+        assertThat(matcher.matches(document, new Document("name", Pattern.compile(name)))).isTrue();
 
-        assertThat(matcher.matches(document, new BasicBSONObject("name", new BasicBSONObject("$regex", name))))
+        assertThat(matcher.matches(document, new Document("name", new Document("$regex", name))))
                 .isTrue();
 
         document.put("name", name.toLowerCase());
         assertThat(name.toLowerCase()).isNotEqualTo(name.toUpperCase());
         assertThat(
                 matcher.matches(document,
-                        new BasicBSONObject("name", new BasicBSONObject("$regex", name.toUpperCase())))).isFalse();
+                        new Document("name", new Document("$regex", name.toUpperCase())))).isFalse();
         assertThat(
                 matcher.matches(
                         document,
-                        new BasicBSONObject("name", new BasicBSONObject("$regex", name.toUpperCase()).append(
+                        new Document("name", new Document("$regex", name.toUpperCase()).append(
                                 "$options", "i")))).isTrue();
     }
 
@@ -93,8 +88,8 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("a: 1"), json("a: {$gt: 0}"))).isTrue();
         assertThat(matcher.matches(json("a: 1"), json("a: {$gt: 1}"))).isFalse();
         assertThat(matcher.matches(json("a: 1"), json("a: {$gte: 1}"))).isTrue();
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$gt: 1}"))).isFalse();
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$gte: 1}"))).isFalse();
+        assertThat(matcher.matches(new Document("a", "x"), json("a: {$gt: 1}"))).isFalse();
+        assertThat(matcher.matches(new Document("a", "x"), json("a: {$gte: 1}"))).isFalse();
     }
 
     @Test
@@ -104,13 +99,13 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("a: 1"), json("a: {$lt: 2}"))).isTrue();
         assertThat(matcher.matches(json("a: 1"), json("a: {$lt: 1}"))).isFalse();
         assertThat(matcher.matches(json("a: 1"), json("a: {$lte: 1}"))).isTrue();
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$lt: 1}"))).isFalse();
-        assertThat(matcher.matches(new BasicDBObject("a", "x"), json("a: {$lte: 1}"))).isFalse();
+        assertThat(matcher.matches(new Document("a", "x"), json("a: {$lt: 1}"))).isFalse();
+        assertThat(matcher.matches(new Document("a", "x"), json("a: {$lte: 1}"))).isFalse();
     }
 
     @Test
     public void testMatchesValueList() throws Exception {
-        BSONObject document = json("a: [1,2,3]");
+        Document document = json("a: [1,2,3]");
         assertThat(matcher.matches(document, json("{}"))).isTrue();
         assertThat(matcher.matches(document, json("a: 1"))).isTrue();
         assertThat(matcher.matches(document, json("a: 2"))).isTrue();
@@ -120,7 +115,7 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesDocumentList() throws Exception {
-        BSONObject document = json("_id:1, c: [{a:1, b:2}, {a:3, b:4}]");
+        Document document = json("_id:1, c: [{a:1, b:2}, {a:3, b:4}]");
 
         assertThat(matcher.matches(document, json("{}"))).isTrue();
         assertThat(matcher.matches(document, json("c: 1"))).isFalse();
@@ -134,7 +129,7 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesSubquery() throws Exception {
-        BSONObject document = json("c: {a:1}");
+        Document document = json("c: {a:1}");
         assertThat(matcher.matches(document, json("{}"))).isTrue();
         assertThat(matcher.matches(document, json("c: 1"))).isFalse();
         assertThat(matcher.matches(document, json("'c.a': 1"))).isTrue();
@@ -149,7 +144,7 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesSubqueryList() throws Exception {
-        BSONObject document = json("c: {a: [1,2,3] }");
+        Document document = json("c: {a: [1,2,3] }");
         assertThat(matcher.matches(document, json("{}"))).isTrue();
 
         assertThat(matcher.matches(document, json("c: 1"))).isFalse();
@@ -160,13 +155,13 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, json("'c.a.x': 1"))).isFalse();
 
         document = json("{'array': [{'123a':{'name': 'old'}}]}");
-        BSONObject query = json("{'array.123a.name': 'old'}");
+        Document query = json("{'array.123a.name': 'old'}");
         assertThat(matcher.matches(document, query)).isTrue();
     }
 
     @Test
     public void testMatchesSubqueryListPosition() throws Exception {
-        BSONObject document = json("c: {a: [1,2,3] }");
+        Document document = json("c: {a: [1,2,3] }");
         assertThat(matcher.matches(document, json("{}"))).isTrue();
         assertThat(matcher.matches(document, json("c: 1"))).isFalse();
         assertThat(matcher.matches(document, json("'c.a.0': 1"))).isTrue();
@@ -185,8 +180,8 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testInvalidOperator() throws Exception {
-        BSONObject document = json("{}");
-        BSONObject query = json("field: {$someInvalidOperator: 123}");
+        Document document = json("{}");
+        Document query = json("field: {$someInvalidOperator: 123}");
         try {
             matcher.matches(document, query);
             fail("MongoServerError expected");
@@ -198,8 +193,8 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesExists() throws Exception {
-        BSONObject document = json("{}");
-        BSONObject query = json("qty: { $exists: true, $nin: [ 5, 15 ] }");
+        Document document = json("{}");
+        Document query = json("qty: { $exists: true, $nin: [ 5, 15 ] }");
 
         assertThat(matcher.matches(document, query)).isFalse();
 
@@ -212,9 +207,9 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesNotEqual() throws Exception {
-        BSONObject document = json("{}");
+        Document document = json("{}");
 
-        BSONObject query = json("qty: {$ne: 17}");
+        Document query = json("qty: {$ne: 17}");
 
         assertThat(matcher.matches(document, query)).isTrue();
 
@@ -228,13 +223,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqual() throws Exception {
-        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
-        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
-        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
-        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
-        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+        Document document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        Document document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        Document document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        Document document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        Document document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
 
-        BSONObject query = json("qty: { $eq: 20 }");
+        Document query = json("qty: { $eq: 20 }");
 
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isTrue();
@@ -246,13 +241,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqualEmbeddedDocument() throws Exception {
-        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
-        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
-        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
-        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
-        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+        Document document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        Document document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        Document document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        Document document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        Document document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
 
-        BSONObject query = json("\"item.name\": { $eq: \"ab\" }");
+        Document query = json("\"item.name\": { $eq: \"ab\" }");
 
         assertThat(matcher.matches(document1, query)).isTrue();
         assertThat(matcher.matches(document2, query)).isFalse();
@@ -264,13 +259,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqualOneArrayValue() throws Exception {
-        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
-        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
-        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
-        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
-        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+        Document document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        Document document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        Document document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        Document document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        Document document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
 
-        BSONObject query = json("tags: { $eq: \"B\" }");
+        Document query = json("tags: { $eq: \"B\" }");
 
         assertThat(matcher.matches(document1, query)).isTrue();
         assertThat(matcher.matches(document2, query)).isTrue();
@@ -282,13 +277,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqualTwoArrayValues() throws Exception {
-        BSONObject document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
-        BSONObject document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
-        BSONObject document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
-        BSONObject document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
-        BSONObject document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
+        Document document1 = json("_id: 1, item: { name: \"ab\", code: \"123\" }, qty: 15, tags: [ \"A\", \"B\", \"C\" ]");
+        Document document2 = json("_id: 2, item: { name: \"cd\", code: \"123\" }, qty: 20, tags: [ \"B\" ]");
+        Document document3 = json("_id: 3, item: { name: \"ij\", code: \"456\" }, qty: 25, tags: [ \"A\", \"B\" ]");
+        Document document4 = json("_id: 4, item: { name: \"xy\", code: \"456\" }, qty: 30, tags: [ \"B\", \"A\" ]");
+        Document document5 = json("_id: 5, item: { name: \"mn\", code: \"000\" }, qty: 20, tags: [ [ \"A\", \"B\" ], \"C\" ]");
 
-        BSONObject query = json("tags: { $eq: [ \"A\", \"B\" ] }");
+        Document query = json("tags: { $eq: [ \"A\", \"B\" ] }");
 
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isFalse();
@@ -301,7 +296,7 @@ public class DefaultQueryMatcherTest {
     public void testMatchesNot() throws Exception {
 
         // db.inventory.find( { } )
-        BSONObject query = json("price: { $not: { $gt: 1.99 } }");
+        Document query = json("price: { $not: { $gt: 1.99 } }");
 
         /*
          * This query will select all documents in the inventory collection
@@ -315,7 +310,7 @@ public class DefaultQueryMatcherTest {
          * value is less than or equal to 1.99.
          */
 
-        BSONObject document = json("{}");
+        Document document = json("{}");
         assertThat(matcher.matches(document, query)).isTrue();
 
         document.put("price", 1.99);
@@ -336,7 +331,7 @@ public class DefaultQueryMatcherTest {
 
         query = json("price: {$not: {$exists: true}}");
         assertThat(matcher.matches(document, query)).isFalse();
-        document.removeField("price");
+        document.remove("price");
         assertThat(matcher.matches(document, query)).isTrue();
     }
 
@@ -345,14 +340,14 @@ public class DefaultQueryMatcherTest {
      */
     @Test
     public void testMatchesNotIn() throws Exception {
-        BSONObject query1 = json("{ \"map.key2\" : { \"$nin\" : [\"value 2.2\"] }}");
-        BSONObject query2 = json("{ \"map.key2\" : { \"$not\" : {\"$in\" : [\"value 2.2\"] }}}");
-        BSONObject query3 = json("{ \"map.key2\" : { \"$not\" : {\"$nin\" : [\"value 2.2\"] }}}");
-        BSONObject query4 = json("{ \"map.key2\" : { \"$not\" : {\"$not\" : {\"$in\" : [\"value 2.2\"] }}}}");
+        Document query1 = json("{ \"map.key2\" : { \"$nin\" : [\"value 2.2\"] }}");
+        Document query2 = json("{ \"map.key2\" : { \"$not\" : {\"$in\" : [\"value 2.2\"] }}}");
+        Document query3 = json("{ \"map.key2\" : { \"$not\" : {\"$nin\" : [\"value 2.2\"] }}}");
+        Document query4 = json("{ \"map.key2\" : { \"$not\" : {\"$not\" : {\"$in\" : [\"value 2.2\"] }}}}");
 
-        BSONObject document1 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 1.1\" ], \"key2\" : [ \"value 2.1\" ] } }");
-        BSONObject document2 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 1.2\" ], \"key2\" : [ \"value 2.2\" ] } }");
-        BSONObject document3 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 2.1\" ], \"key2\" : [ \"value 2.1\" ] } }");
+        Document document1 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 1.1\" ], \"key2\" : [ \"value 2.1\" ] } }");
+        Document document2 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 1.2\" ], \"key2\" : [ \"value 2.2\" ] } }");
+        Document document3 = json("{ \"code\" : \"c1\", \"map\" : { \"key1\" : [ \"value 2.1\" ], \"key2\" : [ \"value 2.1\" ] } }");
 
         assertThat(matcher.matches(document1, query1)).isTrue();
         assertThat(matcher.matches(document2, query1)).isFalse();
@@ -375,9 +370,9 @@ public class DefaultQueryMatcherTest {
     public void testMatchesNotPattern() throws Exception {
 
         // { item: { $not: /^p.*/ } }
-        BSONObject query = new BasicBSONObject("item", new BasicBSONObject("$not", Pattern.compile("^p.*")));
+        Document query = new Document("item", new Document("$not", Pattern.compile("^p.*")));
 
-        BSONObject document = json("{}");
+        Document document = json("{}");
         assertThat(matcher.matches(document, query)).isTrue();
         document.put("item", "p");
         assertThat(matcher.matches(document, query)).isFalse();
@@ -390,7 +385,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesAnd() throws Exception {
 
-        BSONObject query = json("$and: [ { price: 1.99 }, { qty: { $lt: 20 } }, { sale: true } ]");
+        Document query = json("$and: [ { price: 1.99 }, { qty: { $lt: 20 } }, { sale: true } ]");
 
         /*
          * This query will select all documents in the inventory collection
@@ -400,7 +395,7 @@ public class DefaultQueryMatcherTest {
          * sale field value is equal to true.
          */
 
-        BSONObject document = json("{}");
+        Document document = json("{}");
         assertThat(matcher.matches(document, query)).isFalse();
 
         document.put("price", 1.99);
@@ -417,9 +412,9 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesOr() throws Exception {
 
-        BSONObject query = json("$or: [ { price: 1.99 }, { qty: { $lt: 20 } } ]");
+        Document query = json("$or: [ { price: 1.99 }, { qty: { $lt: 20 } } ]");
 
-        BSONObject document = json("{}");
+        Document document = json("{}");
         assertThat(matcher.matches(document, query)).isFalse();
 
         document.put("price", 1.99);
@@ -435,9 +430,9 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesNor() throws Exception {
 
-        BSONObject query = json("$nor: [ { price: 1.99 }, { qty: { $lt: 20 } } ]");
+        Document query = json("$nor: [ { price: 1.99 }, { qty: { $lt: 20 } } ]");
 
-        BSONObject document = json("{}");
+        Document document = json("{}");
         assertThat(matcher.matches(document, query)).isTrue();
 
         document.put("price", 1.99);
@@ -454,11 +449,11 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesIllegalQueryAndOrNor() throws Exception {
 
-        BSONObject document = json("{}");
+        Document document = json("{}");
 
         for (String op : new String[] { "$and", "$or", "$nor" }) {
 
-            BSONObject query = new BasicBSONObject(op, null);
+            Document query = new Document(op, null);
             assertNonEmptyArrayException(document, op, query);
 
             query.put(op, 2);
@@ -478,7 +473,7 @@ public class DefaultQueryMatcherTest {
         }
     }
 
-    private void assertNonEmptyArrayException(BSONObject document, String op, BSONObject query) throws Exception {
+    private void assertNonEmptyArrayException(Document document, String op, Document query) throws Exception {
         try {
             matcher.matches(document, query);
             fail("MongoServerError expected");
@@ -490,10 +485,10 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesMod() throws Exception {
-        BSONObject document = json("{}");
+        Document document = json("{}");
 
-        BSONObject modOp = json("$mod: [4, 0]");
-        BSONObject query = new BasicDBObject("x", modOp);
+        Document modOp = json("$mod: [4, 0]");
+        Document query = new Document("x", modOp);
         assertThat(matcher.matches(document, query)).isFalse();
 
         for (int m = 0; m < 4; m++) {
@@ -508,7 +503,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesSize() throws Exception {
 
-        BSONObject query = json("a: {$size: 1}");
+        Document query = json("a: {$size: 1}");
 
         assertThat(matcher.matches(json("{}"), query)).isFalse();
         assertThat(matcher.matches(json("a : \"x\""), query)).isFalse();
@@ -521,57 +516,57 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesAll() throws Exception {
 
-        BSONObject document = json("{a: {x: []}}");
+        Document document = json("{a: {x: []}}");
 
         assertThat(matcher.matches(document, json("x:{$all:[1]}"))).isFalse();
 
-        assertThat(matcher.matches(document, json("a.x: {$all: []}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [1]}"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.x': {$all: []}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1]}"))).isFalse();
 
         document = json("{a: {x: [1,2,3]}}");
         assertThat(matcher.matches(document, json("a: {$all: [1]}"))).isFalse();
-        assertThat(matcher.matches(document, json("a.x: {$all: []}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [1]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.y: {$all: [1]}"))).isFalse();
-        assertThat(matcher.matches(document, json("a.x: {$all: [2]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [3]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [1,2,3]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [2,3]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [1,3]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [1,4]}"))).isFalse();
-        assertThat(matcher.matches(document, json("a.x: {$all: [4]}"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.x': {$all: []}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.y': {$all: [1]}"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1,2,3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [2,3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1,3]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1,4]}"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [4]}"))).isFalse();
 
         // with regular expresssion
         document = json("a: {x: ['john', 'jo', 'maria']}");
-        assertThat(matcher.matches(document, json("a.x: {$all: []}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [{$regex: '^jo.*'}]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all: [{$regex: '^foo'}]}"))).isFalse();
-        assertThat(matcher.matches(document, json("a.x: {$all: ['maria', {$regex: '^jo.*'}]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: []}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [{$regex: '^jo.*'}]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [{$regex: '^foo'}]}"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.x': {$all: ['maria', {$regex: '^jo.*'}]}"))).isTrue();
     }
 
     @Test
     public void testMatchesAllSubdocument() throws Exception {
         // with subdocuments
-        DBObject document = json("a: [{x: 1} , {x: 2}]");
-        assertThat(matcher.matches(document, json("a.x: {$all : []}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all : [1]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all : [2]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all : [1, 2]}"))).isTrue();
-        assertThat(matcher.matches(document, json("a.x: {$all : [2, 3]}"))).isFalse();
-        assertThat(matcher.matches(document, json("a.x: {$all : [3]}"))).isFalse();
+        Document document = json("a: [{x: 1} , {x: 2}]");
+        assertThat(matcher.matches(document, json("'a.x': {$all : []}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all : [1]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all : [2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all : [1, 2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all : [2, 3]}"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.x': {$all : [3]}"))).isFalse();
     }
 
     @Test
     public void testMatchesAllAndIn() throws Exception {
-        DBObject document = json("a: {x: [1, 3]}");
-        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [2]}"))).isFalse();
-        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [3]}"))).isTrue();
+        Document document = json("a: {x: [1, 3]}");
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1,3], $in: [2]}"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1,3], $in: [3]}"))).isTrue();
 
         document = json("a: {x: [1, 2, 3]}");
-        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1,3], $in: [2]}"))).isTrue();
 
         document = json("a: [{x:1}, {x:2}, {x:3}]");
-        assertThat(matcher.matches(document, json("a.x: {$all: [1,3], $in: [2]}"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.x': {$all: [1,3], $in: [2]}"))).isTrue();
     }
 
 }

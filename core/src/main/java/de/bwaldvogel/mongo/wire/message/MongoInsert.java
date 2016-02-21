@@ -4,15 +4,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.bson.BSONObject;
+import org.bson.Document;
 
 import io.netty.channel.Channel;
 
 public class MongoInsert extends ClientRequest {
 
-    private final List<BSONObject> documents;
+    private final List<Document> documents;
 
-    public MongoInsert(Channel channel, MessageHeader header, String fullCollectionName, List<BSONObject> documents) {
+    public MongoInsert(Channel channel, MessageHeader header, String fullCollectionName, List<Document> documents) {
         super(channel, header, fullCollectionName);
         this.documents = new ArrayList<>(documents);
     }
@@ -28,7 +28,7 @@ public class MongoInsert extends ClientRequest {
         return sb.toString();
     }
 
-    public List<BSONObject> getDocuments() {
+    public List<Document> getDocuments() {
         return Collections.unmodifiableList(documents);
     }
 

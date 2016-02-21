@@ -4,9 +4,12 @@ import java.nio.ByteOrder;
 import java.util.List;
 
 import org.bson.BSON;
-import org.bson.BSONObject;
+import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 import io.netty.buffer.ByteBuf;
@@ -31,11 +34,14 @@ public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
         out.writeInt(reply.getFlags());
         out.writeLong(reply.getCursorId());
         out.writeInt(reply.getStartingFrom());
-        final List<BSONObject> documents = reply.getDocuments();
+        final List<Document> documents = reply.getDocuments();
         out.writeInt(documents.size());
 
-        for (final BSONObject bsonObject : documents) {
-            out.writeBytes(BSON.encode(bsonObject));
+        for (Document document : documents) {
+            // TODO: make more efficient
+            DBObject dbObject = new BasicDBObject();
+            dbObject.putAll(document);
+            out.writeBytes(BSON.encode(dbObject));
         }
 
         log.debug("wrote reply: {}", reply);
