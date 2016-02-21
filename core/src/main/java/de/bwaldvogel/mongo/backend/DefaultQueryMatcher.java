@@ -6,8 +6,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -233,11 +233,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) throws MongoServerException {
 
-        if (Utils.isRegexQuery(queryValue)) {
+        if (BsonRegularExpression.isRegularExpression(queryValue)) {
             if (value == null) {
                 return false;
             } else {
-                Pattern pattern = Utils.convertToPattern(queryValue);
+                BsonRegularExpression pattern = BsonRegularExpression.convertToRegularExpression(queryValue);
                 Matcher matcher = pattern.matcher(value.toString());
                 return matcher.find();
             }
@@ -322,8 +322,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
         case IN:
             Collection<?> queriedObjects = (Collection<?>) expressionValue;
             for (Object o : queriedObjects) {
-                if (o instanceof Pattern && value instanceof String) {
-                    Pattern pattern = (Pattern) o;
+                if (o instanceof BsonRegularExpression && value instanceof String) {
+                    BsonRegularExpression pattern = (BsonRegularExpression) o;
                     if (pattern.matcher((String) value).find()) {
                         return true;
                     }

@@ -21,8 +21,6 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
-import java.util.regex.Pattern;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -50,16 +48,15 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesPattern() throws Exception {
         Document document = map("name", "john");
-        assertThat(matcher.matches(document, map("name", Pattern.compile("jo.*")))).isTrue();
-        assertThat(matcher.matches(document,
-            map("name", Pattern.compile("Jo.*", Pattern.CASE_INSENSITIVE)))).isTrue();
-        assertThat(matcher.matches(document, map("name", Pattern.compile("marta")))).isFalse();
-        assertThat(matcher.matches(document, map("name", Pattern.compile("John")))).isFalse();
+        assertThat(matcher.matches(document, map("name", regex("jo.*")))).isTrue();
+        assertThat(matcher.matches(document, map("name", regex("Jo.*", "i")))).isTrue();
+        assertThat(matcher.matches(document, map("name", regex("marta")))).isFalse();
+        assertThat(matcher.matches(document, map("name", regex("John")))).isFalse();
 
         String name = "\u0442\u0435\u0441\u0442";
         assertThat(name).hasSize(4);
         document.put("name", name);
-        assertThat(matcher.matches(document, map("name", Pattern.compile(name)))).isTrue();
+        assertThat(matcher.matches(document, map("name", regex(name)))).isTrue();
 
         assertThat(matcher.matches(document, map("name", regex(name)))).isTrue();
 

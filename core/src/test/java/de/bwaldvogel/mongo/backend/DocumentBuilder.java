@@ -19,6 +19,7 @@ import static de.bwaldvogel.mongo.backend.QueryOperator.SIZE;
 import java.util.Arrays;
 import java.util.List;
 
+import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class DocumentBuilder {
@@ -36,11 +37,11 @@ public class DocumentBuilder {
     }
 
     public static Document regex(String pattern) {
-        return map(QueryOperator.REGEX, pattern);
+        return new BsonRegularExpression(pattern).toDocument();
     }
 
     public static Document regex(String pattern, String options) {
-        return regex(pattern).append("$options", options);
+        return new BsonRegularExpression(pattern, options).toDocument();
     }
 
     public static Document mod(int a, int b) {
@@ -122,6 +123,5 @@ public class DocumentBuilder {
     private static Document mapOfList(QueryOperator operator, Object... values) {
         return map(operator.getValue(), list(values));
     }
-
 
 }

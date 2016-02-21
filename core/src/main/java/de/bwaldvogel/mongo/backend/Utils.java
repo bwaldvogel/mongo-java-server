@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 
-import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -238,74 +236,6 @@ public class Utils {
 
     public static void markOkay(Document result) {
         result.put("ok", Integer.valueOf(1));
-    }
-
-    public static Pattern convertToPattern(Object pattern) {
-        if (pattern instanceof BsonRegularExpression) {
-            return createPattern((BsonRegularExpression) pattern);
-        } else if (pattern instanceof Document) {
-            return createPattern((Document) pattern);
-        } else if (pattern instanceof Pattern) {
-            return (Pattern) pattern;
-        } else {
-            throw new IllegalArgumentException("Not a pattern: " + pattern);
-        }
-    }
-
-    public static boolean isRegexQuery(Object object) {
-        if (object instanceof Document) {
-            return ((Document) object).containsKey(QueryOperator.REGEX.getValue());
-        } else if (object instanceof BsonRegularExpression) {
-            return true;
-        } else if (object instanceof Pattern) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public static Pattern createPattern(BsonRegularExpression pattern) {
-        return createPattern(pattern.getPattern(), pattern.getOptions());
-    }
-
-    private static Pattern createPattern(Document queryObject) {
-        String options = "";
-        if (queryObject.containsKey("$options")) {
-            options = queryObject.get("$options").toString();
-        }
-
-        return createPattern(queryObject.get(QueryOperator.REGEX.getValue()).toString(), options);
-    }
-
-    public static Pattern createPattern(String regex, String options) {
-        int flags = 0;
-        for (char flag : options.toCharArray()) {
-            switch (flag) {
-            case 'i':
-                flags |= Pattern.CASE_INSENSITIVE;
-                break;
-            case 'm':
-                flags |= Pattern.MULTILINE;
-                break;
-            case 'x':
-                flags |= Pattern.COMMENTS;
-                break;
-            case 's':
-                flags |= Pattern.DOTALL;
-                break;
-            case 'u':
-                flags |= Pattern.UNICODE_CASE;
-                break;
-            default:
-                throw new IllegalArgumentException("unknown pattern flag: '" + flag + "'");
-            }
-
-        }
-
-        // always enable unicode aware case matching
-        flags |= Pattern.UNICODE_CASE;
-
-        return Pattern.compile(regex, flags);
     }
 
     public static void setListSafe(Object document, String key, Object obj) {

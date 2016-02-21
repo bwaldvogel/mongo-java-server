@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
@@ -112,11 +112,11 @@ public abstract class AbstractUniqueIndex<KEY> extends Index<KEY> {
                     return getPositionsForExpression(keyObj, expression);
                 }
             }
-        } else if (keyValue instanceof Pattern) {
+        } else if (keyValue instanceof BsonRegularExpression) {
             List<KEY> positions = new ArrayList<>();
             for (Entry<Object, KEY> entry : getIterable()) {
                 Object obj = entry.getKey();
-                Matcher matcher = ((Pattern) keyValue).matcher(obj.toString());
+                Matcher matcher = ((BsonRegularExpression) keyValue).matcher(obj.toString());
                 if (matcher.find()) {
                     positions.add(entry.getValue());
                 }

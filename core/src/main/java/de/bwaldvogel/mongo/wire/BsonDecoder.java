@@ -6,9 +6,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
-import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
@@ -102,10 +101,10 @@ class BsonDecoder {
         return value;
     }
 
-    private Pattern decodePattern(ByteBuf buffer) throws IOException {
+    private BsonRegularExpression decodePattern(ByteBuf buffer) throws IOException {
         String regex = decodeCString(buffer);
         String options = decodeCString(buffer);
-        return Utils.createPattern(regex, options);
+        return new BsonRegularExpression(regex, options);
     }
 
     private List<Object> decodeArray(ByteBuf buffer) throws IOException {
