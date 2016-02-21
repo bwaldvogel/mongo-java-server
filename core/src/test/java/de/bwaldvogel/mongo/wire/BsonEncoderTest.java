@@ -3,13 +3,12 @@ package de.bwaldvogel.mongo.wire;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.UUID;
 
-import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -39,14 +38,14 @@ public class BsonEncoderTest {
         document.put("key3", Arrays.asList(1L, 2L));
         document.put("key4", true);
         document.put("key5", UUID.randomUUID());
-        document.put("key6", new ObjectId(new Date()));
+        document.put("key6", new ObjectId());
 
         ByteBuf buffer = Unpooled.buffer();
         try {
             new BsonEncoder().encodeDocument(document, buffer);
 
             Document decodedDocument = new BsonDecoder().decodeBson(buffer);
-            assertThat(decodedDocument.toJson()).isEqualTo(document.toJson());
+            assertThat(decodedDocument).isEqualTo(document);
         } finally {
             buffer.release();
         }

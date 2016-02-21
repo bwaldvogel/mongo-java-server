@@ -3,10 +3,10 @@ package de.bwaldvogel.mongo.wire;
 import java.nio.ByteOrder;
 import java.util.List;
 
-import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;

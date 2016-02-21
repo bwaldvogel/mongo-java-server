@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.Comparator;
 
-import org.bson.Document;
+import de.bwaldvogel.mongo.bson.Document;
 
 public class DocumentComparator implements Comparator<Document> {
 

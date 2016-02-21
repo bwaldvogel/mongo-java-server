@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.wire.message;
 
-import org.bson.Document;
-
+import de.bwaldvogel.mongo.bson.Document;
 import io.netty.channel.Channel;
 
 public class MongoUpdate extends ClientRequest {

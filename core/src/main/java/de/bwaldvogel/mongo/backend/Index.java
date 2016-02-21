@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
-import org.bson.Document;
-
+import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 

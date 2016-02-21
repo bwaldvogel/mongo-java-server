@@ -6,13 +6,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import org.bson.BsonRegularExpression;
-import org.bson.Document;
-import org.bson.types.BSONTimestamp;
-import org.bson.types.MaxKey;
-import org.bson.types.MinKey;
-import org.bson.types.ObjectId;
-
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
+import de.bwaldvogel.mongo.bson.BsonRegularExpression;
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.MaxKey;
+import de.bwaldvogel.mongo.bson.MinKey;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 
 public class BsonEncoder {
@@ -113,9 +112,8 @@ public class BsonEncoder {
                 buffer.writeInt(((Integer) value).intValue());
                 break;
             case BsonConstants.TYPE_TIMESTAMP:
-                BSONTimestamp timestamp = (BSONTimestamp) value;
-                buffer.writeInt(timestamp.getTime());
-                buffer.writeInt(timestamp.getInc());
+                BsonTimestamp timestamp = (BsonTimestamp) value;
+                buffer.writeLong(timestamp.getTimestamp());
                 break;
             case BsonConstants.TYPE_INT64:
                 buffer.writeLong(((Long) value).longValue());
@@ -157,7 +155,7 @@ public class BsonEncoder {
             return BsonConstants.TYPE_ARRAY;
         } else if (value instanceof Date) {
             return BsonConstants.TYPE_UTC_DATETIME;
-        } else if (value instanceof BSONTimestamp) {
+        } else if (value instanceof BsonTimestamp) {
             return BsonConstants.TYPE_TIMESTAMP;
         } else if (value instanceof BsonRegularExpression) {
             return BsonConstants.TYPE_REGEX;

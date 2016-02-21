@@ -782,8 +782,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             collection.replaceOne(json("_id: 1"), json("_id:2, a:4"));
             fail("MongoException expected");
         } catch (MongoException e) {
-            assertThat(e.getMessage())
-                    .contains("cannot change _id of a document old: { \\\"_id\\\" : 1 } new: { \\\"_id\\\" : 2 }");
+            assertThat(e.getMessage()).contains("cannot change _id of a document old: 1, new: 2");
         }
 
         // test with $set

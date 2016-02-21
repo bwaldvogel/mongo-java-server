@@ -3,8 +3,7 @@ package de.bwaldvogel.mongo;
 import java.util.Collection;
 import java.util.List;
 
-import org.bson.Document;
-
+import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;

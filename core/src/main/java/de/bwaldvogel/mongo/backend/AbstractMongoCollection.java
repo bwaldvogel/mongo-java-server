@@ -15,11 +15,10 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.bson.Document;
-import org.bson.types.BSONTimestamp;
-import org.bson.types.ObjectId;
-
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -398,8 +397,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 if (useDate) {
                     newValue = new Date();
                 } else {
-                    int time = (int) (System.currentTimeMillis() / 1000);
-                    newValue = new BSONTimestamp(time, 1);
+                    newValue = new BsonTimestamp(System.currentTimeMillis());
                 }
 
                 changeSubdocumentValue(document, key, newValue, matchPos);
@@ -517,9 +515,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
         Object newId = newDocument.get(idField);
 
         if (newId != null && !Utils.nullAwareEquals(oldId, newId)) {
-            oldId = new Document(idField, oldId).toJson();
-            newId = new Document(idField, newId).toJson();
-            throw new MongoServerError(13596, "cannot change _id of a document old: " + oldId + " new: " + newId);
+            throw new MongoServerError(13596, "cannot change _id of a document old: " + oldId + ", new: " + newId);
         }
 
         if (newId == null && oldId != null) {

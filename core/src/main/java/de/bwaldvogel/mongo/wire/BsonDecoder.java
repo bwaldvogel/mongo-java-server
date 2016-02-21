@@ -8,13 +8,12 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import org.bson.Document;
-import org.bson.types.BSONTimestamp;
-import org.bson.types.MaxKey;
-import org.bson.types.MinKey;
-import org.bson.types.ObjectId;
-
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.MaxKey;
+import de.bwaldvogel.mongo.bson.MinKey;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 
 class BsonDecoder {
@@ -83,16 +82,16 @@ class BsonDecoder {
                 value = Integer.valueOf(buffer.readInt());
                 break;
             case BsonConstants.TYPE_TIMESTAMP:
-                value = new BSONTimestamp(buffer.readInt(), buffer.readInt());
+                value = new BsonTimestamp(buffer.readLong());
                 break;
             case BsonConstants.TYPE_INT64:
                 value = Long.valueOf(buffer.readLong());
                 break;
             case BsonConstants.TYPE_MAX_KEY:
-                value = new MaxKey();
+                value = MaxKey.getInstance();
                 break;
             case BsonConstants.TYPE_MIN_KEY:
-                value = new MinKey();
+                value = MinKey.getInstance();
                 break;
             case BsonConstants.TYPE_JAVASCRIPT_CODE:
             case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:

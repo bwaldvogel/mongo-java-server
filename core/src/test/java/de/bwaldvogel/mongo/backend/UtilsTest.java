@@ -5,8 +5,9 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.util.Arrays;
 import java.util.Date;
 
-import org.bson.Document;
 import org.junit.Test;
+
+import de.bwaldvogel.mongo.bson.Document;
 
 public class UtilsTest {
 

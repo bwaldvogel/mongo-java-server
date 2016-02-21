@@ -1,12 +1,16 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Date;
 
-import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
+
+import de.bwaldvogel.mongo.bson.ObjectId;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 public class ValueComparatorTest {
 
@@ -24,11 +28,28 @@ public class ValueComparatorTest {
 
     @Test
     public void testCompareObjectIds() {
-        assertThat(comparator.compare(new ObjectId(new Date(123000), 0), new ObjectId(new Date(123000), 0))).isZero();
-        assertThat(comparator.compare(new ObjectId(new Date(123000), 0), new ObjectId(new Date(223000), 0))).isLessThan(0);
-        assertThat(comparator.compare(new ObjectId(new Date(123000), 0), new ObjectId(new Date(124000), 0))).isLessThan(0);
-        assertThat(comparator.compare(new ObjectId(new Date(323000), 0), new ObjectId(new Date(223000), 0))).isGreaterThan(0);
-        assertThat(comparator.compare(new ObjectId(new Date(125000), 0), new ObjectId(new Date(124000), 0))).isGreaterThan(0);
+        assertThat(comparator.compare(objectId(123000), objectId(123000))).isZero();
+        assertThat(comparator.compare(objectId(123000), objectId(223000))).isLessThan(0);
+        assertThat(comparator.compare(objectId(123000), objectId(124000))).isLessThan(0);
+        assertThat(comparator.compare(objectId(323000), objectId(223000))).isGreaterThan(0);
+        assertThat(comparator.compare(objectId(125000), objectId(124000))).isGreaterThan(0);
+    }
+
+    private ObjectId objectId(long value) {
+        return new ObjectId(convert(value));
+    }
+
+    private static byte[] convert(long value) {
+        ByteBuf buffer = Unpooled.buffer(LENGTH_OBJECTID);
+        try {
+            buffer.writeLong(value);
+            buffer.writeInt(0);
+            byte[] data = new byte[LENGTH_OBJECTID];
+            System.arraycopy(buffer.array(), 0, data, 0, data.length);
+            return data;
+        } finally {
+            buffer.release();
+        }
     }
 
     @Test

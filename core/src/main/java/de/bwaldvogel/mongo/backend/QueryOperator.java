@@ -18,6 +18,7 @@ enum QueryOperator {
     MOD("$mod"), //
     SIZE("$size"), //
     ALL("$all"), //
+    REGEX("$regex"), //
     ;
 
     private String value;

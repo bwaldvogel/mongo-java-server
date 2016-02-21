@@ -4,11 +4,11 @@ import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.Collections;
 
-import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class AbstractMongoCollectionTest {

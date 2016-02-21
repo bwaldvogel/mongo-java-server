@@ -7,8 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.bson.Document;
 import org.junit.Test;
+
+import de.bwaldvogel.mongo.bson.Document;
 
 public class DocumentComparatorTest {
 

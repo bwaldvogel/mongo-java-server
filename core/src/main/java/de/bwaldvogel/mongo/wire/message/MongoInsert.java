@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.bson.Document;
-
+import de.bwaldvogel.mongo.bson.Document;
 import io.netty.channel.Channel;
 
 public class MongoInsert extends ClientRequest {

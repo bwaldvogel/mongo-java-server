@@ -6,9 +6,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.bson.BsonRegularExpression;
-import org.bson.Document;
-
+import de.bwaldvogel.mongo.bson.BsonRegularExpression;
+import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.BsonEncoder;
@@ -260,7 +259,7 @@ public class Utils {
 
     public static boolean isRegexQuery(Object object) {
         if (object instanceof Document) {
-            return ((Document) object).containsKey("$regex");
+            return ((Document) object).containsKey(QueryOperator.REGEX.getValue());
         } else if (object instanceof BsonRegularExpression) {
             return true;
         } else if (object instanceof Pattern) {
@@ -280,7 +279,7 @@ public class Utils {
             options = queryObject.get("$options").toString();
         }
 
-        return createPattern(queryObject.get("$regex").toString(), options);
+        return createPattern(queryObject.get(QueryOperator.REGEX.getValue()).toString(), options);
     }
 
     public static Pattern createPattern(String regex, String options) {

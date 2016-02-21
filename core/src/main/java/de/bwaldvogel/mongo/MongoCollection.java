@@ -2,9 +2,8 @@ package de.bwaldvogel.mongo;
 
 import java.util.List;
 
-import org.bson.Document;
-
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public interface MongoCollection<KEY> {

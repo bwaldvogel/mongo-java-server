@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.backend.h2;
 
 import java.io.IOException;
 
-import org.bson.Document;
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
@@ -12,6 +11,7 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class H2Database extends AbstractMongoDatabase<Object> {

@@ -3,8 +3,7 @@ package de.bwaldvogel.mongo.wire.message;
 import java.util.Collections;
 import java.util.List;
 
-import org.bson.Document;
-
+import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.ReplyFlag;
 
 public class MongoReply {

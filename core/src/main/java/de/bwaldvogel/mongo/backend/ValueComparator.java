@@ -6,8 +6,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.bson.Document;
-import org.bson.types.ObjectId;
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 
 public class ValueComparator implements Comparator<Object> {
 

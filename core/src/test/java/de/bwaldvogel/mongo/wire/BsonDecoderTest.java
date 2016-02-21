@@ -5,11 +5,11 @@ import static org.fest.assertions.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.Document;
-import org.bson.types.MaxKey;
-import org.bson.types.MinKey;
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.MaxKey;
+import de.bwaldvogel.mongo.bson.MinKey;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -32,8 +32,8 @@ public class BsonDecoderTest {
     @Test
     public void testEncodeDecodeRoundtrip() throws Exception {
         List<Document> objects = new ArrayList<>();
-        objects.add(new Document("key", new MaxKey()).append("foo", "bar"));
-        objects.add(new Document("key", new MinKey()).append("test", new MaxKey()));
+        objects.add(new Document("key", MaxKey.getInstance()).append("foo", "bar"));
+        objects.add(new Document("key", MinKey.getInstance()).append("test", MaxKey.getInstance()));
 
         for (Document document : objects) {
             ByteBuf buffer = Unpooled.buffer();
