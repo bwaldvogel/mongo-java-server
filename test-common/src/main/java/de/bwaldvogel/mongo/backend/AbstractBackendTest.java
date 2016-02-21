@@ -858,7 +858,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     @Test(expected = MongoException.class)
     public void testInsertDuplicateWithConcernThrows() {
         collection.insertOne(json("_id: 1"));
-        collection.withWriteConcern(WriteConcern.SAFE).insertOne(json("_id: 1"));
+        collection.withWriteConcern(WriteConcern.ACKNOWLEDGED).insertOne(json("_id: 1"));
     }
 
     @Test
