@@ -79,35 +79,29 @@ public abstract class MongoServerTest {
     @Test(timeout = 10000)
     public void testShutdownAndRestart() throws Exception {
         MongoServer server = new MongoServer(createBackend());
-        InetSocketAddress serverAddress = server.bind();
-        {
-            final MongoClient client = new MongoClient(new ServerAddress(serverAddress));
-
-            // request something to open a connection
-            pingServer(client);
-
-            server.shutdownNow();
-
-            try {
+        try {
+            InetSocketAddress serverAddress = server.bind();
+            try (MongoClient client = new MongoClient(new ServerAddress(serverAddress))) {
+                // request something to open a connection
                 pingServer(client);
-                fail("MongoException expected");
-            } catch (MongoException e) {
-                // okay
+
+                server.shutdownNow();
+
+                try {
+                    pingServer(client);
+                    fail("MongoException expected");
+                } catch (MongoException e) {
+                    // okay
+                }
+
+                // restart
+                server.bind(serverAddress);
+
+                pingServer(client);
             }
-
-            server.bind(serverAddress);
-
-            client.close();
+        } finally {
+            server.shutdownNow();
         }
-        {
-            // Explicitly reconnect the client.
-            // Fails otherwise with mongo-java-driver 2.12.0 unless we would use
-            // a Thread.sleep(100) or so.
-            final MongoClient client = new MongoClient(new ServerAddress(serverAddress));
-            pingServer(client);
-            client.close();
-        }
-        server.shutdownNow();
     }
 
     private void pingServer(MongoClient client) {
