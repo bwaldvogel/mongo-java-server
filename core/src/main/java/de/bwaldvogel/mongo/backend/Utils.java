@@ -132,11 +132,6 @@ public class Utils {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static List<Object> asList(Object value) {
-        return (List<Object>) value;
-    }
-
     public static boolean containsQueryExpression(Object value) {
         if (value == null) {
             return false;

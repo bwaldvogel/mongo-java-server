@@ -30,6 +30,11 @@ public class Document implements Map<String, Object>, Bson {
         return this;
     }
 
+    public Document appendAll(Map<String, Object> map) {
+        putAll(map);
+        return this;
+    }
+
     @Override
     public boolean containsValue(Object value) {
         return documentAsMap.containsValue(value);

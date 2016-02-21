@@ -248,7 +248,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 if (value == null) {
                     return;
                 } else if (value instanceof List<?>) {
-                    list = Utils.asList(value);
+                    list = asList(value);
                 } else {
                     throw new MongoServerError(10142, "Cannot apply " + modifier + " modifier to non-array");
                 }
@@ -282,7 +282,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
                 if (value == null) {
                     return;
                 } else if (value instanceof List<?>) {
-                    list = Utils.asList(value);
+                    list = asList(value);
                 } else {
                     throw new MongoServerError(10143, "Cannot apply " + modifier + " modifier to non-array");
                 }
@@ -464,7 +464,7 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
             if (value == null) {
                 list = new ArrayList<>();
             } else if (value instanceof List<?>) {
-                list = Utils.asList(value);
+                list = asList(value);
             } else {
                 throw new MongoServerError(10141, "Cannot apply " + updateOperator + " modifier to non-array");
             }
@@ -1084,5 +1084,11 @@ public abstract class AbstractMongoCollection<KEY> implements MongoCollection<KE
     protected abstract int getRecordCount();
 
     protected abstract int getDeletedCount();
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> asList(Object value) {
+        return (List<Object>) value;
+    }
+
 
 }

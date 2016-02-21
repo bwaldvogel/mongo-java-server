@@ -16,7 +16,7 @@ enum QueryFilter {
         this.value = value;
     }
 
-    private static Map<String, QueryFilter> MAP = new HashMap<>();
+    private static final Map<String, QueryFilter> MAP = new HashMap<>();
 
     static {
         for (QueryFilter filter : QueryFilter.values()) {

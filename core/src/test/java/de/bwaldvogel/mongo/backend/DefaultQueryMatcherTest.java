@@ -1,6 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.allOf;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.eq;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.exists;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.gt;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.gte;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.in;
@@ -8,14 +10,17 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.list;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.lt;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.lte;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.map;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.mod;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.ne;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.nor;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.not;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.notIn;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.or;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.regex;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import org.junit.Before;
@@ -198,7 +203,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesExists() throws Exception {
         Document document = map();
-        Document query = map("qty", map("$exists", true).append("$nin", list(5, 15)));
+        Document query = map("qty", exists().appendAll(notIn(5, 15)));
 
         assertThat(matcher.matches(document, query)).isFalse();
 
@@ -213,7 +218,7 @@ public class DefaultQueryMatcherTest {
     public void testMatchesNotEqual() throws Exception {
         Document document = map();
 
-        Document query = map("qty", map("$ne", 17));
+        Document query = map("qty", ne(17));
 
         assertThat(matcher.matches(document, query)).isTrue();
 
@@ -233,7 +238,7 @@ public class DefaultQueryMatcherTest {
         Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
         Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
 
-        Document query = map("qty", map("$eq", 20));
+        Document query = map("qty", eq(20));
 
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isTrue();
@@ -251,7 +256,7 @@ public class DefaultQueryMatcherTest {
         Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
         Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
 
-        Document query = map("item.name", map("$eq", "ab"));
+        Document query = map("item.name", eq("ab"));
 
         assertThat(matcher.matches(document1, query)).isTrue();
         assertThat(matcher.matches(document2, query)).isFalse();
@@ -269,7 +274,7 @@ public class DefaultQueryMatcherTest {
         Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
         Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
 
-        Document query = map("tags", map("$eq", "B"));
+        Document query = map("tags", eq("B"));
 
         assertThat(matcher.matches(document1, query)).isTrue();
         assertThat(matcher.matches(document2, query)).isTrue();
@@ -287,7 +292,7 @@ public class DefaultQueryMatcherTest {
         Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
         Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
 
-        Document query = map("tags", map("$eq", list("A", "B")));
+        Document query = map("tags", eq(list("A", "B")));
 
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isFalse();
@@ -300,7 +305,7 @@ public class DefaultQueryMatcherTest {
     public void testMatchesNot() throws Exception {
 
         // db.inventory.find( { } )
-        Document query = map("price", map("$not", gt(1.99)));
+        Document query = map("price", not(gt(1.99)));
 
         /*
          * This query will select all documents in the inventory collection
@@ -324,7 +329,7 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isFalse();
 
         // !(x >= 5 && x <= 7)
-        query = map("price", map("$not", gte(5).append("$lte", 7)));
+        query = map("price", not(gte(5).appendAll(lte(7))));
         assertThat(matcher.matches(document, query)).isTrue();
         document.put("price", 5);
         assertThat(matcher.matches(document, query)).isFalse();
@@ -333,7 +338,7 @@ public class DefaultQueryMatcherTest {
         document.put("price", null);
         assertThat(matcher.matches(document, query)).isTrue();
 
-        query = map("price", map("$not", map("$exists", true)));
+        query = map("price", not(exists()));
         assertThat(matcher.matches(document, query)).isFalse();
         document.remove("price");
         assertThat(matcher.matches(document, query)).isTrue();
@@ -345,9 +350,9 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesNotIn() throws Exception {
         Document query1 = map("map.key2", notIn("value 2.2"));
-        Document query2 = map("map.key2", map("$not", in("value 2.2")));
-        Document query3 = map("map.key2", map("$not", notIn("$nin", "value 2.2")));
-        Document query4 = map("map.key2", map("$not", map("$not", in("value 2.2"))));
+        Document query2 = map("map.key2", not(in("value 2.2")));
+        Document query3 = map("map.key2", not(notIn("value 2.2")));
+        Document query4 = map("map.key2", not(not(in("value 2.2"))));
 
         Document document1 = map("code", "c1").append("map", map("key1", "value 1.1").append("key2", list("value 2.1")));
         Document document2 = map("code", "c1").append("map", map("key1", "value 1.2").append("key2", list("value 2.2")));
@@ -374,7 +379,7 @@ public class DefaultQueryMatcherTest {
     public void testMatchesNotPattern() throws Exception {
 
         // { item: { $not: /^p.*/ } }
-        Document query = map("item", map("$not", Pattern.compile("^p.*")));
+        Document query = map("item", not(regex("^p.*")));
 
         Document document = map();
         assertThat(matcher.matches(document, query)).isTrue();
@@ -453,22 +458,13 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesIllegalQueryAndOrNor() throws Exception {
 
-        Document document = map();
+        for (QueryFilter op : new QueryFilter[] { QueryFilter.AND, QueryFilter.OR, QueryFilter.NOR }) {
+            assertNonEmptyArrayException(op, map(op.getValue(), null));
+            assertNonEmptyArrayException(op, map(op.getValue(), 2));
+            assertNonEmptyArrayException(op, map(op.getValue(), 2));
 
-        for (String op : new String[] { "$and", "$or", "$nor" }) {
-
-            Document query = map(op, null);
-            assertNonEmptyArrayException(document, op, query);
-
-            query.put(op, 2);
-            assertNonEmptyArrayException(document, op, query);
-
-            query.put(op, new ArrayList<>());
-            assertNonEmptyArrayException(document, op, query);
-
-            query.put(op, list("a"));
             try {
-                matcher.matches(document, query);
+                matcher.matches(map(), map(op, "a"));
                 fail("MongoServerError expected");
             } catch (MongoServerError e) {
                 assertThat(e.getCode()).isEqualTo(14817);
@@ -477,13 +473,14 @@ public class DefaultQueryMatcherTest {
         }
     }
 
-    private void assertNonEmptyArrayException(Document document, String op, Document query) throws Exception {
+    private void assertNonEmptyArrayException(QueryFilter op, Document query) throws Exception {
+        Document emptyDocument = map();
         try {
-            matcher.matches(document, query);
+            matcher.matches(emptyDocument, query);
             fail("MongoServerError expected");
         } catch (MongoServerError e) {
             assertThat(e.getCode()).isEqualTo(14816);
-            assertThat(e.getMessage()).isEqualTo(op + " expression must be a nonempty array");
+            assertThat(e.getMessage()).isEqualTo(op.getValue() + " expression must be a nonempty array");
         }
     }
 
@@ -491,12 +488,11 @@ public class DefaultQueryMatcherTest {
     public void testMatchesMod() throws Exception {
         Document document = map();
 
-        Document modOp = map("$mod", list(4, 0));
-        Document query = map("x", modOp);
+        Document query = map("x", mod(4, 0));
         assertThat(matcher.matches(document, query)).isFalse();
 
         for (int m = 0; m < 4; m++) {
-            modOp.put("$mod", list(4, m));
+            query = map("x", mod(4, m));
             for (int i = 0; i < 20; i++) {
                 document.put("x", i);
                 assertThat(matcher.matches(document, query)).isEqualTo((i % 4) == m);
@@ -507,7 +503,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesSize() throws Exception {
 
-        Document query = map("a", map("$size", 1));
+        Document query = map("a", size(1));
 
         assertThat(matcher.matches(map(), query)).isFalse();
         assertThat(matcher.matches(map("a", "x"), query)).isFalse();
@@ -563,14 +559,14 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesAllAndIn() throws Exception {
         Document document = map("a", map("x", list(1, 3)));
-        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).append("$in", list(2))))).isFalse();
-        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).append("$in", list(3))))).isTrue();
+        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(2))))).isFalse();
+        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(3))))).isTrue();
 
         document = map("a", map("x", list(1, 2, 3)));
-        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).append("$in", list(2))))).isTrue();
+        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(2))))).isTrue();
 
         document = map("a", list(map("x", 1), map("x", 2), map("x", 3)));
-        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).append("$in", list(2))))).isTrue();
+        assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(2))))).isTrue();
     }
 
 }

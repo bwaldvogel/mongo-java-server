@@ -42,7 +42,7 @@ enum UpdateOperator {
         return value;
     }
 
-    private static Map<String, UpdateOperator> MAP = new HashMap<>();
+    private static final Map<String, UpdateOperator> MAP = new HashMap<>();
 
     static {
         for (UpdateOperator operator : UpdateOperator.values()) {

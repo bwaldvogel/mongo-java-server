@@ -31,7 +31,7 @@ enum QueryOperator {
         return value;
     }
 
-    private static Map<String, QueryOperator> MAP = new HashMap<>();
+    private static final Map<String, QueryOperator> MAP = new HashMap<>();
 
     static {
         for (QueryOperator operator : QueryOperator.values()) {
