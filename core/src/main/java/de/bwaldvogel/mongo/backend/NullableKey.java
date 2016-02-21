@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.backend.h2;
+package de.bwaldvogel.mongo.backend;
 
 import java.io.Serializable;
 

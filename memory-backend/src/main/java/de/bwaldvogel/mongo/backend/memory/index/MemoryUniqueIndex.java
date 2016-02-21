@@ -1,14 +1,15 @@
 package de.bwaldvogel.mongo.backend.memory.index;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import de.bwaldvogel.mongo.backend.AbstractUniqueIndex;
+import de.bwaldvogel.mongo.backend.NullableKey;
 
 public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
 
-    private Map<Object, Integer> index = new HashMap<>();
+    private Map<Object, Integer> index = new ConcurrentHashMap<>();
 
     public MemoryUniqueIndex(String key, boolean ascending) {
         super(key, ascending);
@@ -26,23 +27,23 @@ public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
 
     @Override
     protected Integer removeDocument(Object key) {
-        return index.remove(key);
+        return index.remove(NullableKey.of(key));
     }
 
     @Override
     protected boolean containsKey(Object key) {
-        return index.containsKey(key);
+        return index.containsKey(NullableKey.of(key));
     }
 
     @Override
     protected boolean putKeyPosition(Object key, Integer position) {
-        Integer oldValue = index.put(key, position);
+        Integer oldValue = index.put(NullableKey.of(key), position);
         return oldValue == null;
     }
 
     @Override
     protected Integer getPosition(Object key) {
-        return index.get(key);
+        return index.get(NullableKey.of(key));
     }
 
     @Override

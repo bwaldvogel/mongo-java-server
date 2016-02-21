@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 import org.h2.mvstore.MVMap;
 
 import de.bwaldvogel.mongo.backend.AbstractUniqueIndex;
+import de.bwaldvogel.mongo.backend.NullableKey;
 
 public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
