@@ -566,7 +566,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         Document query = json("_id: 1");
         Document update = json("$min: {a: 1, 'b.c': 2, d : 'd'}");
         Document result = collection.findOneAndUpdate(query, update,
-                new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
 
         assertThat(result).isEqualTo(json("_id: 1, a: 1, b: {c: 1}, d : 'd'"));
     }
@@ -579,7 +579,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         Document query = json("_id: 1");
         Document update = json("$inc: {a: 1, 'b.c': 1}");
         Document result = collection.findOneAndUpdate(query, update,
-                new FindOneAndUpdateOptions().returnDocument(ReturnDocument.BEFORE));
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.BEFORE));
 
         assertThat(result).isEqualTo(json("_id: 1, a: 1, b: {c: 1}"));
         assertThat(collection.find(query).first()).isEqualTo(json("_id: 1, a: 2, b: {c: 2}"));
@@ -593,19 +593,19 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         Document order = json("a:1");
         Document result = collection.findOneAndUpdate(json("{}"), json("$inc: {a: 1}"),
-                new FindOneAndUpdateOptions().sort(order).returnDocument(ReturnDocument.AFTER));
+            new FindOneAndUpdateOptions().sort(order).returnDocument(ReturnDocument.AFTER));
         assertThat(result).isEqualTo(json("_id: 2, a: 11"));
 
         order = json("a: -1");
         result = collection.findOneAndUpdate(json("{}"), json("$inc: {a: 1}"),
-                new FindOneAndUpdateOptions().sort(order).returnDocument(ReturnDocument.AFTER));
+            new FindOneAndUpdateOptions().sort(order).returnDocument(ReturnDocument.AFTER));
         assertThat(result).isEqualTo(json("_id: 3, a: 21"));
     }
 
     @Test
     public void testFindOneAndUpdateUpsert() {
         Document result = collection.findOneAndUpdate(json("_id: 1"), json("$inc: {a:1}"),
-                new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
+            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
         assertThat(result).isEqualTo(json("_id: 1, a: 1"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
@@ -614,7 +614,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     @Test
     public void testFindOneAndUpdateUpsertReturnBefore() {
         Document result = collection.findOneAndUpdate(json("_id: 1"), json("$inc: {a:1}"),
-                new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
+            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
 
         assertThat(result).isEqualTo(json("{}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
@@ -683,13 +683,13 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(json("_id: 'jo'"));
 
         assertThat(toArray(collection.find(new Document("_id", Pattern.compile("mart")))))
-                .containsOnly(json("_id: 'marta'"));
+            .containsOnly(json("_id: 'marta'"));
 
         assertThat(toArray(collection.find(new Document("foo", Pattern.compile("ba")))))
-                .containsOnly(json("_id: 'john', foo: 'bar'"), json("_id: 'jon', foo: 'ba'"));
+            .containsOnly(json("_id: 'john', foo: 'bar'"), json("_id: 'jon', foo: 'ba'"));
 
         assertThat(toArray(collection.find(new Document("foo", Pattern.compile("ba$")))))
-                .containsOnly(json("_id: 'jon', foo: 'ba'"));
+            .containsOnly(json("_id: 'jon', foo: 'ba'"));
     }
 
     @Test
@@ -710,7 +710,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(json("_id: 4"));
 
         assertThat(toArray(collection.find().sort(json("_id: 1")).limit(2).skip(2))).containsExactly(json("_id: 3"),
-                json("_id: 4"));
+            json("_id: 4"));
     }
 
     @Test
@@ -721,7 +721,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(json("_id: 4"));
 
         assertThat(toArray(collection.find().sort(json("_id: -1")).limit(2).skip(2))).containsExactly(json("_id: 2"),
-                json("_id: 1"));
+            json("_id: 1"));
     }
 
     @Test
@@ -1203,10 +1203,12 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             assertThat(e.getMessage().toLowerCase()).contains("invalid ns");
         }
 
+        String veryLongString = "verylongstring";
+        for (int i = 0; i < 5; i++) {
+            veryLongString += veryLongString;
+        }
         try {
-            getCollection(
-                    "verylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstringverylongstring")
-                            .insertOne(json("{}"));
+            getCollection(veryLongString).insertOne(json("{}"));
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getMessage()).contains("name too long");
@@ -1232,6 +1234,13 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     @Test
     public void testPing() throws Exception {
         Document response = runCommand("ping");
+        assertThat(response.getInteger("ok")).isEqualTo(1);
+    }
+
+    @Test
+    public void testPingTrue() throws Exception {
+        Document command = new Document("ping", Boolean.TRUE);
+        Document response = runCommand(command);
         assertThat(response.getInteger("ok")).isEqualTo(1);
     }
 
@@ -1263,8 +1272,13 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(json("a:4, _id:4"));
 
         List<Document> objs = toArray(collection.find().sort(json("a: -1")));
-        assertThat(objs).containsExactly(json("a:4, _id:4"), json("a:3, _id:3"), json("a:2, _id:2"), json("a:1, _id:1"),
-                json("_id: 5"));
+        assertThat(objs).containsExactly(
+            json("a:4, _id:4"),
+            json("a:3, _id:3"),
+            json("a:2, _id:2"),
+            json("a:1, _id:1"),
+            json("_id: 5")
+        );
     }
 
     @Test
@@ -1273,8 +1287,11 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.insertOne(json("_id: 2, a: { b:2 }"));
         collection.insertOne(json("_id: 3, a: { b:3 }"));
         List<Document> results = toArray(collection.find().sort(json("'a.b': -1")));
-        assertThat(results).containsExactly(json("_id: 3, a: { b:3 }"), json("_id: 2, a: { b:2 }"),
-                json("_id: 1, a: { b:1 }"));
+        assertThat(results).containsExactly(
+            json("_id: 3, a: { b:3 }"),
+            json("_id: 2, a: { b:2 }"),
+            json("_id: 1, a: { b:1 }")
+        );
     }
 
     @Test
@@ -1315,8 +1332,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(16650);
-            assertThat(e.getMessage()).contains(
-                    "Cannot apply the positional operator without a corresponding query field containing an array.");
+            assertThat(e.getMessage()).contains("Cannot apply the positional operator without a corresponding query field containing an array.");
         }
     }
 
@@ -1328,8 +1344,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
             fail("MongoException expected");
         } catch (MongoException e) {
             assertThat(e.getCode()).isEqualTo(16650);
-            assertThat(e.getMessage()).contains(
-                    "Cannot apply the positional operator without a corresponding query field containing an array.");
+            assertThat(e.getMessage()).contains("Cannot apply the positional operator without a corresponding query field containing an array.");
         }
     }
 
@@ -1470,12 +1485,12 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         collection.updateOne(idObj, json("$addToSet: {field1: 'value', field2: 'value2'}"));
 
         assertThat(collection.find(idObj).first())
-                .isEqualTo(json("_id: 1, field: 'value', field1: ['value'], field2: ['value2']"));
+            .isEqualTo(json("_id: 1, field: 'value', field1: ['value'], field2: ['value2']"));
 
         // addToSet duplicate
         collection.updateOne(idObj, json("$addToSet: {field1: 'value'}"));
         assertThat(collection.find(idObj).first())
-                .isEqualTo(json("_id: 1, field: 'value', field1: ['value'], field2: ['value2']"));
+            .isEqualTo(json("_id: 1, field: 'value', field1: ['value'], field2: ['value2']"));
     }
 
     @Test
@@ -1757,24 +1772,24 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
 
         Document object = new Document("_id", 1).append("desc", "crafts")
-                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
-                .append("dateExpired", df.parse("2013-10-01T16:38:16"));
+            .append("dateEntered", df.parse("2013-10-01T05:00:00"))
+            .append("dateExpired", df.parse("2013-10-01T16:38:16"));
 
         collection.insertOne(object);
 
         collection.updateOne(json("_id: 1"),
-                new Document("$max", new Document("dateExpired", df.parse("2013-09-30T00:00:00"))));
-        assertThat(collection.find(json("_id: 1")).first()) //
-                .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                        .append("dateEntered", df.parse("2013-10-01T05:00:00")) //
-                        .append("dateExpired", df.parse("2013-10-01T16:38:16")));
+            new Document("$max", new Document("dateExpired", df.parse("2013-09-30T00:00:00"))));
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, desc: 'crafts'")
+                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
+                .append("dateExpired", df.parse("2013-10-01T16:38:16")));
 
         collection.updateOne(json("_id: 1"),
-                new Document("$max", new Document("dateExpired", df.parse("2014-01-07T00:00:00"))));
-        assertThat(collection.find(json("_id: 1")).first()) //
-                .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                        .append("dateEntered", df.parse("2013-10-01T05:00:00")) //
-                        .append("dateExpired", df.parse("2014-01-07T00:00:00")));
+            new Document("$max", new Document("dateExpired", df.parse("2014-01-07T00:00:00"))));
+        assertThat(collection.find(json("_id: 1")).first()).isEqualTo(
+            json("_id: 1, desc: 'crafts'")
+                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
+                .append("dateExpired", df.parse("2014-01-07T00:00:00")));
     }
 
     // see http://docs.mongodb.org/manual/reference/operator/update/min
@@ -1797,24 +1812,24 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
 
         Document object = new Document("_id", 1).append("desc", "crafts")
-                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
-                .append("dateExpired", df.parse("2013-10-01T16:38:16"));
+            .append("dateEntered", df.parse("2013-10-01T05:00:00"))
+            .append("dateExpired", df.parse("2013-10-01T16:38:16"));
 
         collection.insertOne(object);
 
         collection.updateOne(json("_id: 1"),
-                new Document("$min", new Document("dateEntered", df.parse("2013-09-25T00:00:00"))));
+            new Document("$min", new Document("dateEntered", df.parse("2013-09-25T00:00:00"))));
         assertThat(collection.find(json("_id: 1")).first()) //
-                .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                        .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
-                        .append("dateExpired", df.parse("2013-10-01T16:38:16")));
+            .isEqualTo(json("_id: 1, desc: 'crafts'") //
+                .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
+                .append("dateExpired", df.parse("2013-10-01T16:38:16")));
 
         collection.updateOne(json("_id: 1"),
-                new Document("$min", new Document("dateEntered", df.parse("2014-01-07T00:00:00"))));
+            new Document("$min", new Document("dateEntered", df.parse("2014-01-07T00:00:00"))));
         assertThat(collection.find(json("_id: 1")).first()) //
-                .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                        .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
-                        .append("dateExpired", df.parse("2013-10-01T16:38:16")));
+            .isEqualTo(json("_id: 1, desc: 'crafts'") //
+                .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
+                .append("dateExpired", df.parse("2013-10-01T16:38:16")));
     }
 
     @Test
@@ -2243,7 +2258,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         } catch (MongoCommandException e) {
             assertThat(e.getCode()).isEqualTo(2);
             assertThat(e.getErrorMessage())
-                    .startsWith("The '$type' string field is required to be 'date' or 'timestamp'");
+                .startsWith("The '$type' string field is required to be 'date' or 'timestamp'");
         }
 
         assertThat(collection.find(object).first()).isEqualTo(object);
@@ -2256,15 +2271,15 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         collection.updateOne(object, json("$currentDate: {'x.lastModified': true}"));
         assertThat(((Document) collection.find(object).first().get("x")).get("lastModified"))
-                .isInstanceOf(Date.class);
+            .isInstanceOf(Date.class);
 
         collection.updateOne(object, json("$currentDate: {'x.lastModified': {$type: 'date'}}"));
         assertThat(((Document) collection.find(object).first().get("x")).get("lastModified"))
-                .isInstanceOf(Date.class);
+            .isInstanceOf(Date.class);
 
         collection.updateOne(object, json("$currentDate: {'x.lastModified': {$type: 'timestamp'}}"));
         assertThat(((Document) collection.find(object).first().get("x")).get("lastModified"))
-                .isInstanceOf(BsonTimestamp.class);
+            .isInstanceOf(BsonTimestamp.class);
     }
 
     @Test
@@ -2351,7 +2366,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         }
         List<String> collectionNames = toArray(db.listCollectionNames());
         assertThat(collectionNames).containsOnly("system.indexes", collection.getNamespace().getCollectionName(),
-                "other-collection-name");
+            "other-collection-name");
 
         assertThat(collection.count()).isEqualTo(3);
         assertThat(getCollection("other-collection-name").count()).isEqualTo(1);
@@ -2367,7 +2382,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
         otherCollection.insertOne(json("_id: 1"));
 
         collection.renameCollection(new MongoNamespace(db.getName(), "other-collection-name"),
-                new RenameCollectionOptions().dropTarget(true));
+            new RenameCollectionOptions().dropTarget(true));
 
         List<String> collectionNames = toArray(db.listCollectionNames());
         assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
@@ -2389,9 +2404,9 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
         List<Document> indexInfo = toArray(collection.listIndexes());
         assertThat(indexInfo).containsOnly( //
-                json("name:'_id_', ns:'testdb.testcoll', key:{_id:1}"), //
-                json("name:'_id_', ns:'testdb.other', key:{_id:1}"), //
-                json("name:'bla_1', ns:'testdb.testcoll', key:{bla:1}"));
+            json("name:'_id_', ns:'testdb.testcoll', key:{_id:1}"), //
+            json("name:'_id_', ns:'testdb.other', key:{_id:1}"), //
+            json("name:'bla_1', ns:'testdb.testcoll', key:{bla:1}"));
     }
 
     @Test
@@ -2678,7 +2693,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     private void removeInBulk(boolean ordered) {
         DeleteManyModel<Document> deleteOp = new DeleteManyModel<>(json("field: 'y'"));
         BulkWriteResult result = collection.bulkWrite(Collections.singletonList(deleteOp),
-                new BulkWriteOptions().ordered(ordered));
+            new BulkWriteOptions().ordered(ordered));
 
         assertThat(result.getDeletedCount()).isEqualTo(3);
         assertThat(collection.count()).isZero();
