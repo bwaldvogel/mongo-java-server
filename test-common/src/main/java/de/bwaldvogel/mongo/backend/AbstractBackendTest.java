@@ -1230,6 +1230,12 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     }
 
     @Test
+    public void testPing() throws Exception {
+        Document response = command("ping");
+        assertThat(response.getInteger("ok")).isEqualTo(1);
+    }
+
+    @Test
     public void testReplSetGetStatus() throws Exception {
         try {
             command("replSetGetStatus");

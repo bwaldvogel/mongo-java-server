@@ -146,6 +146,10 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             String command = query.getQuery().keySet().iterator().next();
             if (command.equals("serverStatus")) {
                 return getServerStatus();
+            } else if (command.equals("ping")) {
+                Document response = new Document();
+                Utils.markOkay(response);
+                return response;
             } else {
                 return mongoBackend.handleCommand(channel, query.getDatabaseName(), command, query.getQuery());
             }

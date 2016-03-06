@@ -105,7 +105,7 @@ public abstract class MongoServerTest {
     }
 
     private void pingServer(MongoClient client) {
-        client.getDatabase("admin").runCommand(new Document("serverStatus", 1));
+        client.getDatabase("admin").runCommand(new Document("ping", 1));
     }
 
 }
