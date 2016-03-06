@@ -19,7 +19,7 @@ public abstract class MongoServerTest {
     protected abstract MongoBackend createBackend() throws Exception;
 
     @Test(timeout = 10000)
-    public void testStopListenting() throws Exception {
+    public void testStopListening() throws Exception {
         MongoServer server = new MongoServer(createBackend());
         MongoClient client = null;
         try {
