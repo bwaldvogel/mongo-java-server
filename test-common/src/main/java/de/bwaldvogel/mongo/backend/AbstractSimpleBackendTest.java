@@ -31,8 +31,12 @@ public abstract class AbstractSimpleBackendTest {
     protected com.mongodb.async.client.MongoCollection<Document> asyncCollection;
     private com.mongodb.async.client.MongoDatabase asyncDb;
 
-    protected Document command(String command) {
-        return getAdminDb().runCommand(new Document(command, Integer.valueOf(1)));
+    protected Document runCommand(String commandName) {
+        return runCommand(new Document(commandName, Integer.valueOf(1)));
+    }
+
+    protected Document runCommand(Document command) {
+        return getAdminDb().runCommand(command);
     }
 
     protected MongoCollection<Document> getCollection(String collectionName) {

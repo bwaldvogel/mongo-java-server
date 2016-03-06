@@ -1216,7 +1216,7 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
     @Test
     public void testServerStatus() throws Exception {
         Date before = new Date();
-        Document serverStatus = command("serverStatus");
+        Document serverStatus = runCommand("serverStatus");
         assertThat(serverStatus.getInteger("ok")).isEqualTo(1);
         assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);
@@ -1231,14 +1231,14 @@ public abstract class AbstractBackendTest extends AbstractSimpleBackendTest {
 
     @Test
     public void testPing() throws Exception {
-        Document response = command("ping");
+        Document response = runCommand("ping");
         assertThat(response.getInteger("ok")).isEqualTo(1);
     }
 
     @Test
     public void testReplSetGetStatus() throws Exception {
         try {
-            command("replSetGetStatus");
+            runCommand("replSetGetStatus");
             fail("MongoCommandException expected");
         } catch (MongoCommandException e) {
             assertThat(e.getErrorMessage()).contains("not running with --replSet");
