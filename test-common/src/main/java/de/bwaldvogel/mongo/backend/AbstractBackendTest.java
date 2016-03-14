@@ -2544,9 +2544,9 @@ public abstract class AbstractBackendTest {
     @Test
     public void testPullWithInNumbers() {
 
-        collection.insertOne(json("_id: 1, values: [1, 2, 2.5, 3.0]"));
+        collection.insertOne(json("_id: 1, values: [1, 2, 2.5, 3.0, 4]"));
 
-        collection.updateOne(json("_id: 1"), pullByFilter(in("values", Arrays.asList(2.0, 3))));
+        collection.updateOne(json("_id: 1"), pullByFilter(in("values", Arrays.asList(2.0, 3, 4L))));
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, values: [1, 2.5]"));
     }
