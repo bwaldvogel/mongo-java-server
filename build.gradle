@@ -14,12 +14,12 @@ allprojects {
         nettyVersion = '4.0.34.Final'
         mongoJavaDriverVersion = '3.2.2'
         h2Version = '1.4.191'
-        springVersion = '4.2.5.RELEASE'
+        springVersion = '4.2.6.RELEASE'
         springDataMongoDbVersion = '1.9.1.RELEASE'
         slf4jVersion = '1.7.21'
         junitVersion = '4.12'
         festAssertVersion = '1.4'
-        powerMockVersion = '1.6.4'
+        powerMockVersion = '1.6.5'
         powerMockClassExtensionVersion = '3.2'
         logbackVersion = '1.1.7'
     }
@@ -120,7 +120,7 @@ allprojects {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.12'
+    gradleVersion = '2.13'
 }
 
 dependencies {
