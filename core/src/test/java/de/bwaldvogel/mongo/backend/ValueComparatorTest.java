@@ -78,4 +78,13 @@ public class ValueComparatorTest {
         assertThat(comparator.compare(new Date(), null)).isGreaterThan(0);
     }
 
+    @Test
+    public void testCompareByteArrayValues() {
+        assertThat(comparator.compare(new byte[]{1}, new byte[]{1})).isEqualTo(0);
+        assertThat(comparator.compare(new byte[]{1}, new byte[]{1,2})).isLessThan(0);
+        assertThat(comparator.compare(new byte[]{0x00}, new byte[]{(byte)0xFF})).isLessThan(0);
+        assertThat(comparator.compare(null, new byte[]{1})).isLessThan(0);
+        assertThat(comparator.compare(new byte[]{1}, null)).isGreaterThan(0);
+    }
+
 }
