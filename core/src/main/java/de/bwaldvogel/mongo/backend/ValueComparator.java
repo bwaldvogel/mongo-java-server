@@ -1,9 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
@@ -70,6 +67,24 @@ public class ValueComparator implements Comparator<Object> {
             return (!b1 && b2) ? -1 : (b1 && !b2) ? +1 : 0;
         }
 
+        // lexicographic byte comparison 0x00 < 0xFF
+        if (clazz.isArray()) {
+            Class<?> componentType = clazz.getComponentType();
+            if (byte.class.isAssignableFrom(componentType)) {
+                byte[] bytes1 = (byte[]) value1;
+                byte[] bytes2 = (byte[]) value2;
+                if (bytes1.length != bytes2.length) {
+                    return Integer.compare(bytes1.length, bytes2.length);
+                } else {
+                    for (int i = 0; i < bytes1.length; i++) {
+                        int compare = compareUnsigned(bytes1[i], bytes2[i]);
+                        if (compare != 0) return compare;
+                    }
+                    return 0;
+                }
+            }
+        }
+
         if (Document.class.isAssignableFrom(clazz)) {
             for (String key : ((Document) value1).keySet()) {
                 int cmp = compare(((Document) value1).get(key), ((Document) value2).get(key));
@@ -82,6 +97,10 @@ public class ValueComparator implements Comparator<Object> {
 
         throw new UnsupportedOperationException("can't compare " + clazz);
 
+    }
+
+    private int compareUnsigned(byte b1, byte b2) {
+        return Integer.compare(b1 + Integer.MIN_VALUE, b2 + Integer.MIN_VALUE);
     }
 
     private int getTypeOrder(Object obj) {
