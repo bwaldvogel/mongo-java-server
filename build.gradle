@@ -57,7 +57,7 @@ buildscript {
 
     dependencies {
         classpath 'org.gradle.api.plugins:gradle-nexus-plugin:0.7.1'
-        classpath 'org.standardout:gradle-versioneye-plugin:1.2.0'
+        classpath 'org.standardout:gradle-versioneye-plugin:1.4.0'
     }
 }
 
