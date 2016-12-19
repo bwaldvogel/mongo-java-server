@@ -38,7 +38,7 @@ class BsonDecoder {
             Object value = decodeValue(type, buffer);
             object.put(name, value);
         }
-        throw new IOException("illegal BSON object");
+        throw new IOException("illegal BSON object. Terminating byte not found. totalObjectLength = " + totalObjectLength);
     }
 
     private Object decodeValue(byte type, ByteBuf buffer) throws IOException {
