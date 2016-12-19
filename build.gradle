@@ -39,13 +39,9 @@ allprojects {
         testRuntime group: 'org.slf4j', name: 'jcl-over-slf4j', version: slf4jVersion
     }
 
-	task copyEclipseSettings(type: Copy) {
-		from rootProject.file('eclipse/settings')
-		into project.file('.settings')
-		include 'org.eclipse.*.prefs'
-	}
-
-	tasks["eclipse"].dependsOn copyEclipseSettings
+    test {
+        systemProperties['io.netty.leakDetectionLevel'] = 'advanced'
+    }
 
 }
 
