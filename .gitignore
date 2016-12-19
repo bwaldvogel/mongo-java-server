@@ -10,5 +10,6 @@ build/
 
 *.class
 bin/
+classes/
 
 *.iml
