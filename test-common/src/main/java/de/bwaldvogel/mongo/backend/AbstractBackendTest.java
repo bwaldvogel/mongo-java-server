@@ -1273,13 +1273,6 @@ public abstract class AbstractBackendTest {
             assertThat(e.getMessage()).contains("cannot insert into reserved $ collection");
         }
 
-        try {
-            getCollection("").insertOne(json("{}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage().toLowerCase()).contains("invalid ns");
-        }
-
         String veryLongString = "verylongstring";
         for (int i = 0; i < 5; i++) {
             veryLongString += veryLongString;
