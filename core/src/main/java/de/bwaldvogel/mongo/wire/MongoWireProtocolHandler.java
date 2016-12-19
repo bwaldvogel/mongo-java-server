@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.wire;
 
 import java.io.IOException;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,14 +51,14 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     @Override
     protected ClientRequest decode(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
 
-        ByteBuf in = buf.order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuf in = buf;
 
         if (in.readableBytes() < 4) {
             return null;
         }
 
         in.markReaderIndex();
-        int totalLength = in.readInt();
+        int totalLength = in.readIntLE();
 
         if (totalLength > MAX_MESSAGE_SIZE_BYTES) {
             throw new IOException("message too large: " + totalLength + " bytes");
@@ -75,11 +74,11 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new IllegalStateException();
         }
 
-        final int requestID = in.readInt();
-        final int responseTo = in.readInt();
+        final int requestID = in.readIntLE();
+        final int responseTo = in.readIntLE();
         final MessageHeader header = new MessageHeader(requestID, responseTo);
 
-        int opCodeId = in.readInt();
+        int opCodeId = in.readIntLE();
         final OpCode opCode = OpCode.getById(opCodeId);
         if (opCode == null) {
             throw new IOException("opCode " + opCodeId + " not supported");
@@ -118,7 +117,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
         final String fullCollectionName = bsonDecoder.decodeCString(buffer);
 
-        final int flags = buffer.readInt();
+        final int flags = buffer.readIntLE();
         boolean singleRemove = false;
         if (flags == 0) {
             // ignore
@@ -139,7 +138,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
         final String fullCollectionName = bsonDecoder.decodeCString(buffer);
 
-        final int flags = buffer.readInt();
+        final int flags = buffer.readIntLE();
         boolean upsert = UpdateFlag.UPSERT.isSet(flags);
         boolean multi = UpdateFlag.MULTI_UPDATE.isSet(flags);
 
@@ -151,7 +150,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
     private ClientRequest handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
-        final int flags = buffer.readInt();
+        final int flags = buffer.readIntLE();
         if (flags != 0) {
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
         }
@@ -172,11 +171,11 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
     private ClientRequest handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
 
-        int flags = buffer.readInt();
+        int flags = buffer.readIntLE();
 
         final String fullCollectionName = bsonDecoder.decodeCString(buffer);
-        final int numberToSkip = buffer.readInt();
-        final int numberToReturn = buffer.readInt();
+        final int numberToSkip = buffer.readIntLE();
+        final int numberToReturn = buffer.readIntLE();
 
         Document query = bsonDecoder.decodeBson(buffer);
         Document returnFieldSelector = null;

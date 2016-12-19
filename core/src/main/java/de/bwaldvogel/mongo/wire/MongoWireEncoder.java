@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.wire;
 
-import java.nio.ByteOrder;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -21,28 +20,26 @@ public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
     @Override
     protected void encode(ChannelHandlerContext ctx, MongoReply reply, ByteBuf buf) throws Exception {
 
-        ByteBuf out = buf.order(ByteOrder.LITTLE_ENDIAN);
+        buf.writeIntLE(0); // write length later
 
-        out.writeInt(0); // write length later
+        buf.writeIntLE(reply.getHeader().getRequestID());
+        buf.writeIntLE(reply.getHeader().getResponseTo());
+        buf.writeIntLE(OpCode.OP_REPLY.getId());
 
-        out.writeInt(reply.getHeader().getRequestID());
-        out.writeInt(reply.getHeader().getResponseTo());
-        out.writeInt(OpCode.OP_REPLY.getId());
-
-        out.writeInt(reply.getFlags());
-        out.writeLong(reply.getCursorId());
-        out.writeInt(reply.getStartingFrom());
+        buf.writeIntLE(reply.getFlags());
+        buf.writeLongLE(reply.getCursorId());
+        buf.writeIntLE(reply.getStartingFrom());
         final List<Document> documents = reply.getDocuments();
-        out.writeInt(documents.size());
+        buf.writeIntLE(documents.size());
 
         for (Document document : documents) {
-            bsonEncoder.encodeDocument(document, out);
+            bsonEncoder.encodeDocument(document, buf);
         }
 
         log.debug("wrote reply: {}", reply);
 
         // now set the length
-        final int writerIndex = out.writerIndex();
-        out.setInt(0, writerIndex);
+        final int writerIndex = buf.writerIndex();
+        buf.setIntLE(0, writerIndex);
     }
 }

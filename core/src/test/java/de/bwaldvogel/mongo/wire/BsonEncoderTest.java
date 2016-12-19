@@ -23,7 +23,7 @@ public class BsonEncoderTest {
             new BsonEncoder().encodeDocument(document, buffer);
             assertThat(buffer.writerIndex()).isEqualTo(5);
             assertThat(buffer.readerIndex()).isEqualTo(0);
-            assertThat(buffer.readInt()).isEqualTo(5);
+            assertThat(buffer.readIntLE()).isEqualTo(5);
             assertThat(buffer.readByte()).isEqualTo(BsonConstants.TERMINATING_BYTE);
         } finally {
             buffer.release();

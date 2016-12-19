@@ -18,7 +18,7 @@ public class BsonEncoder {
 
     public void encodeDocument(Document document, ByteBuf out) throws IOException {
         int indexBefore = out.writerIndex();
-        out.writeInt(0); // total number of bytes will be written later
+        out.writeIntLE(0); // total number of bytes will be written later
 
         for (String key : document.keySet()) {
             encodeValue(key, document.get(key), out);
@@ -27,7 +27,7 @@ public class BsonEncoder {
         out.writeByte(BsonConstants.TERMINATING_BYTE);
         int indexAfter = out.writerIndex();
         out.writerIndex(indexBefore);
-        out.writeInt(indexAfter - indexBefore);
+        out.writeIntLE(indexAfter - indexBefore);
         out.writerIndex(indexAfter);
     }
 
@@ -39,7 +39,7 @@ public class BsonEncoder {
 
     private void encodeString(String data, ByteBuf buffer) throws IOException {
         byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
-        buffer.writeInt(bytes.length + 1);
+        buffer.writeIntLE(bytes.length + 1);
         buffer.writeBytes(bytes);
         buffer.writeByte(BsonConstants.STRING_TERMINATION);
     }
@@ -54,7 +54,7 @@ public class BsonEncoder {
     private void encodeValue(byte type, Object value, ByteBuf buffer) throws IOException {
         switch (type) {
             case BsonConstants.TYPE_DOUBLE:
-                buffer.writeDouble(((Double) value).doubleValue());
+                buffer.writeLongLE(Double.doubleToRawLongBits(((Double) value).doubleValue()));
                 break;
             case BsonConstants.TYPE_UTF8_STRING:
                 encodeString(value.toString(), buffer);
@@ -73,15 +73,15 @@ public class BsonEncoder {
             case BsonConstants.TYPE_DATA:
                 if (value instanceof byte[]) {
                     byte[] data = (byte[]) value;
-                    buffer.writeInt(data.length);
+                    buffer.writeIntLE(data.length);
                     buffer.writeByte(BsonConstants.BINARY_SUBTYPE_GENERIC);
                     buffer.writeBytes(data);
                 } else if (value instanceof UUID) {
-                    buffer.writeInt(BsonConstants.LENGTH_UUID);
+                    buffer.writeIntLE(BsonConstants.LENGTH_UUID);
                     buffer.writeByte(BsonConstants.BINARY_SUBTYPE_OLD_UUID);
                     UUID uuid = (UUID) value;
-                    buffer.writeLong(uuid.getMostSignificantBits());
-                    buffer.writeLong(uuid.getLeastSignificantBits());
+                    buffer.writeLongLE(uuid.getMostSignificantBits());
+                    buffer.writeLongLE(uuid.getLeastSignificantBits());
                 } else {
                     throw new IllegalArgumentException("Unknown data: " + value.getClass());
                 }
@@ -101,7 +101,7 @@ public class BsonEncoder {
                 }
                 break;
             case BsonConstants.TYPE_UTC_DATETIME:
-                buffer.writeLong(((Date) value).getTime());
+                buffer.writeLongLE(((Date) value).getTime());
                 break;
             case BsonConstants.TYPE_REGEX:
                 BsonRegularExpression pattern = (BsonRegularExpression) value;
@@ -109,14 +109,14 @@ public class BsonEncoder {
                 encodeCString(pattern.getOptions(), buffer);
                 break;
             case BsonConstants.TYPE_INT32:
-                buffer.writeInt(((Integer) value).intValue());
+                buffer.writeIntLE(((Integer) value).intValue());
                 break;
             case BsonConstants.TYPE_TIMESTAMP:
                 BsonTimestamp timestamp = (BsonTimestamp) value;
-                buffer.writeLong(timestamp.getTimestamp());
+                buffer.writeLongLE(timestamp.getTimestamp());
                 break;
             case BsonConstants.TYPE_INT64:
-                buffer.writeLong(((Long) value).longValue());
+                buffer.writeLongLE(((Long) value).longValue());
                 break;
             case BsonConstants.TYPE_MAX_KEY:
             case BsonConstants.TYPE_MIN_KEY:

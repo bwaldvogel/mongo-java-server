@@ -18,7 +18,7 @@ import io.netty.buffer.ByteBuf;
 class BsonDecoder {
 
     public Document decodeBson(ByteBuf buffer) throws IOException {
-        final int totalObjectLength = buffer.readInt();
+        final int totalObjectLength = buffer.readIntLE();
         final int length = totalObjectLength - 4;
         if (buffer.readableBytes() < length) {
             throw new IOException("Too few bytes to read: " + buffer.readableBytes() + ". Expected: " + length);
@@ -45,7 +45,7 @@ class BsonDecoder {
         Object value;
         switch (type) {
             case BsonConstants.TYPE_DOUBLE:
-                value = Double.valueOf(buffer.readDouble());
+                value = Double.valueOf(Double.longBitsToDouble(buffer.readLongLE()));
                 break;
             case BsonConstants.TYPE_UTF8_STRING:
                 value = decodeString(buffer);
@@ -69,7 +69,7 @@ class BsonDecoder {
                 value = decodeBoolean(buffer);
                 break;
             case BsonConstants.TYPE_UTC_DATETIME:
-                value = new Date(buffer.readLong());
+                value = new Date(buffer.readLongLE());
                 break;
             case BsonConstants.TYPE_NULL:
                 value = null;
@@ -78,13 +78,13 @@ class BsonDecoder {
                 value = decodePattern(buffer);
                 break;
             case BsonConstants.TYPE_INT32:
-                value = Integer.valueOf(buffer.readInt());
+                value = Integer.valueOf(buffer.readIntLE());
                 break;
             case BsonConstants.TYPE_TIMESTAMP:
-                value = new BsonTimestamp(buffer.readLong());
+                value = new BsonTimestamp(buffer.readLongLE());
                 break;
             case BsonConstants.TYPE_INT64:
-                value = Long.valueOf(buffer.readLong());
+                value = Long.valueOf(buffer.readLongLE());
                 break;
             case BsonConstants.TYPE_MAX_KEY:
                 value = MaxKey.getInstance();
@@ -123,7 +123,7 @@ class BsonDecoder {
     }
 
     private String decodeString(ByteBuf buffer) throws IOException {
-        int length = buffer.readInt();
+        int length = buffer.readIntLE();
         byte[] data = new byte[length - 1];
         buffer.readBytes(data);
         String s = new String(data, "UTF-8");
@@ -146,7 +146,7 @@ class BsonDecoder {
     }
 
     private Object decodeBinary(ByteBuf buffer) throws IOException {
-        int length = buffer.readInt();
+        int length = buffer.readIntLE();
         int subtype = buffer.readByte();
         switch (subtype) {
             case BsonConstants.BINARY_SUBTYPE_GENERIC:
@@ -160,7 +160,7 @@ class BsonDecoder {
                 if (length != BsonConstants.LENGTH_UUID) {
                     throw new IOException();
                 }
-                return new UUID(buffer.readLong(), buffer.readLong());
+                return new UUID(buffer.readLongLE(), buffer.readLongLE());
             }
             default:
                 throw new IOException();
