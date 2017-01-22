@@ -83,7 +83,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract long getDataSize();
 
-    protected abstract P addDocumentInternal(Document document);
+    protected abstract P addDocumentInternal(Document document) throws MongoServerException;
 
     @Override
     public synchronized void addDocument(Document document) throws MongoServerException {
@@ -1002,7 +1002,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public Document getStats() {
+    public Document getStats() throws MongoServerException {
         long dataSize = getDataSize();
 
         Document response = new Document("ns", getFullName());

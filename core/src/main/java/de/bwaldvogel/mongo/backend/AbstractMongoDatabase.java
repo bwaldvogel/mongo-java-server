@@ -335,7 +335,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private int countIndexes() {
+    private int countIndexes() throws MongoServerException {
         final MongoCollection<P> indexesCollection;
         synchronized (indexes) {
             indexesCollection = indexes.get();
@@ -768,7 +768,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collection;
     }
 
-    protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, String idField);
+    protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, String idField) throws MongoServerException;
 
     @Override
     public void drop() throws MongoServerException {

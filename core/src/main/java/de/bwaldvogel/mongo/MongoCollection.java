@@ -40,11 +40,11 @@ public interface MongoCollection<P> {
 
     int count(Document query, int skip, int limit) throws MongoServerException;
 
-    int count();
+    int count() throws MongoServerException;
 
     int getNumIndexes();
 
-    void drop();
+    void drop() throws MongoServerException;
 
     void renameTo(String newDatabaseName, String newCollectionName);
 
