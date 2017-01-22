@@ -239,7 +239,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Integer findDocument(Document document) {
+    protected Integer findDocumentPosition(Document document) {
         int position = documents.indexOf(document);
         if (position < 0) {
             return null;
@@ -271,6 +271,11 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     @Override
     public void drop() {
         log.debug("dropping {}", this);
+    }
+
+    @Override
+    protected void handleUpdate(Document document) {
+        // noop
     }
 
 }

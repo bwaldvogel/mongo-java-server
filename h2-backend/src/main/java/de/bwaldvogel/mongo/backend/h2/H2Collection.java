@@ -91,7 +91,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected Object findDocument(Document document) {
+    protected Object findDocumentPosition(Document document) {
         for (Entry<Object, Document> entry : dataMap.entrySet()) {
             if (entry.getValue().equals(document)) {
                 return entry.getKey();
@@ -180,6 +180,11 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         log.debug("dropping {}", this);
         MVStore mvStore = dataMap.getStore();
         mvStore.removeMap(dataMap);
+    }
+
+    @Override
+    protected void handleUpdate(Document document) {
+        // noop
     }
 
 }

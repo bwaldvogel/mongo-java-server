@@ -2,3 +2,13 @@ language: java
 jdk:
       - oraclejdk8
       - oraclejdk7
+
+services:
+      - postgresql
+
+before_script:
+      - psql -c $'create role "mongo-java-server-test" login password \'mongo-java-server-test\';' -U postgres
+      - psql -c 'create database "mongo-java-server-test" with owner = "mongo-java-server-test";' -U postgres
+
+addons:
+      postgresql: "9.5"

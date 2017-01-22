@@ -5,9 +5,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -79,9 +79,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract Document getDocument(P position);
 
-    protected abstract void updateDataSize(long sizeDelta);
+    protected abstract void updateDataSize(long sizeDelta) throws MongoServerException;
 
-    protected abstract long getDataSize();
+    protected abstract long getDataSize() throws MongoServerException;
 
     protected abstract P addDocumentInternal(Document document) throws MongoServerException;
 
@@ -901,7 +901,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 updateDataSize(newSize - oldSize);
 
                 // only keep fields that are also in the updated document
-                Set<String> fields = new HashSet<>(document.keySet());
+                Set<String> fields = new LinkedHashSet<>(document.keySet());
                 fields.removeAll(newDocument.keySet());
                 for (String key : fields) {
                     document.remove(key);
@@ -915,10 +915,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     }
                     document.put(key, newDocument.get(key));
                 }
+                handleUpdate(document);
             }
             return oldDocument;
         }
     }
+
+    protected abstract void handleUpdate(Document document) throws MongoServerException;
 
     private void cloneInto(Document targetDocument, Document sourceDocument) {
         for (String key : sourceDocument.keySet()) {
@@ -1036,7 +1039,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 position = index.remove(document);
             }
         } else {
-            position = findDocument(document);
+            position = findDocumentPosition(document);
         }
         if (position == null) {
             // not found
@@ -1049,7 +1052,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public Document validate() {
+    public Document validate() throws MongoServerException {
         Document response = new Document("ns", getFullName());
         response.put("extentCount", Integer.valueOf(0));
         response.put("datasize", Long.valueOf(getDataSize()));
@@ -1072,14 +1075,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public void renameTo(String newDatabaseName, String newCollectionName) {
+    public void renameTo(String newDatabaseName, String newCollectionName) throws MongoServerException {
         this.databaseName = newDatabaseName;
         this.collectionName = newCollectionName;
     }
 
-    protected abstract void removeDocument(P position);
+    protected abstract void removeDocument(P position) throws MongoServerException;
 
-    protected abstract P findDocument(Document document);
+    protected abstract P findDocumentPosition(Document document) throws MongoServerException;
 
     protected abstract int getRecordCount();
 

@@ -46,6 +46,6 @@ public interface MongoCollection<P> {
 
     void drop() throws MongoServerException;
 
-    void renameTo(String newDatabaseName, String newCollectionName);
+    void renameTo(String newDatabaseName, String newCollectionName) throws MongoServerException;
 
 }

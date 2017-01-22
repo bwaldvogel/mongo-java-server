@@ -40,7 +40,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Object findDocument(Document document) {
+        protected Object findDocumentPosition(Document document) {
             throw new UnsupportedOperationException();
         }
 
@@ -79,6 +79,10 @@ public class AbstractMongoCollectionTest {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        protected void handleUpdate(Document document) {
+            // noop
+        }
     }
 
     private TestCollection collection;

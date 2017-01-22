@@ -1,0 +1,9 @@
+dependencies {
+    compile project(':mongo-java-server-core')
+
+    compile 'org.postgresql:postgresql:9.4.1212'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.8.6'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.6'
+
+    testCompile project(':mongo-java-server-test-common')
+}

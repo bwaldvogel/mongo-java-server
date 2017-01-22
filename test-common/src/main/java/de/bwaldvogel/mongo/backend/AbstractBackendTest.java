@@ -93,6 +93,9 @@ public abstract class AbstractBackendTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
 
+    protected static final String TEST_DATABASE_NAME = "testdb";
+    protected static final String OTHER_TEST_DATEBASE_NAME = "bar";
+
     private MongoServer mongoServer;
 
     protected com.mongodb.MongoClient syncClient;
@@ -137,7 +140,7 @@ public abstract class AbstractBackendTest {
         InetSocketAddress serverAddress = mongoServer.bind();
         syncClient = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
         asyncClient = MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
-        db = syncClient.getDatabase("testdb");
+        db = syncClient.getDatabase(TEST_DATABASE_NAME);
         collection = db.getCollection("testcoll");
 
         MongoNamespace namespace = collection.getNamespace();
@@ -932,13 +935,6 @@ public abstract class AbstractBackendTest {
             assertThat(e.getMessage()).contains("duplicate key error");
         }
 
-        try {
-            collection.insertOne(new Document("_id", Double.valueOf(1.0)));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("duplicate key error");
-        }
-
         assertThat(collection.count()).isEqualTo(1);
     }
 
@@ -1021,7 +1017,7 @@ public abstract class AbstractBackendTest {
     }
 
     private MongoDatabase getDatabase() {
-        return syncClient.getDatabase("bar");
+        return syncClient.getDatabase(OTHER_TEST_DATEBASE_NAME);
     }
 
     private List<String> listDatabaseNames() {

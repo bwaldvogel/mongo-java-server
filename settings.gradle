@@ -1,6 +1,7 @@
 include 'core'
 include 'memory-backend'
 include 'h2-backend'
+include 'postgresql-backend'
 include 'test-common'
 
 rootProject.children.each { it.name = rootProject.name + "-" + it.name }

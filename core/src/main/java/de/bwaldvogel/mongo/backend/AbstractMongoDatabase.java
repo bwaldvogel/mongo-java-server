@@ -65,7 +65,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 log.debug("opened collection '{}'", collectionName);
             }
 
-            MongoCollection<P> indexCollection = collections.get(INDEXES_COLLECTION_NAME);
+            MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
             indexes.set(indexCollection);
             for (Document indexDescription : indexCollection.handleQuery(new Document(), 0, 0, null)) {
                 openOrCreateIndex(indexDescription);
@@ -619,7 +619,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private MongoCollection<P> getOrCreateIndexesCollection() throws MongoServerException {
-        synchronized(indexes) {
+        synchronized (indexes) {
             if (indexes.get() == null) {
                 MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
                 addNamespace(indexCollection);
@@ -663,7 +663,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending);
+    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) throws MongoServerException;
 
     private Document insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) throws MongoServerException {
         clearLastStatus(channel);

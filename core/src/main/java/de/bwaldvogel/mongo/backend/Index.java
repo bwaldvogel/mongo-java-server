@@ -31,7 +31,7 @@ public abstract class Index<P> {
 
     public abstract void add(Document document, P position) throws MongoServerException;
 
-    public abstract P remove(Document document);
+    public abstract P remove(Document document) throws MongoServerException;
 
     public abstract boolean canHandle(Document query);
 
