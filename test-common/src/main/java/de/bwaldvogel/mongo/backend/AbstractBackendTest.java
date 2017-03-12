@@ -96,18 +96,18 @@ public abstract class AbstractBackendTest {
     private MongoServer mongoServer;
 
     protected com.mongodb.MongoClient syncClient;
-    protected com.mongodb.async.client.MongoClient asyncClient;
+    private com.mongodb.async.client.MongoClient asyncClient;
 
     protected MongoDatabase db;
     protected MongoCollection<Document> collection;
 
-    protected com.mongodb.async.client.MongoCollection<Document> asyncCollection;
+    private com.mongodb.async.client.MongoCollection<Document> asyncCollection;
 
-    protected Document runCommand(String commandName) {
+    private Document runCommand(String commandName) {
         return runCommand(new Document(commandName, Integer.valueOf(1)));
     }
 
-    protected Document runCommand(Document command) {
+    private Document runCommand(Document command) {
         return getAdminDb().runCommand(command);
     }
 
