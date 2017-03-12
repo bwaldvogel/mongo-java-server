@@ -18,7 +18,7 @@ allprojects {
         springDataMongoDbVersion = '1.10.1.RELEASE'
         slf4jVersion = '1.7.24'
         junitVersion = '4.12'
-        assertjVersion = '3.6.2'
+        assertjVersion = '2.6.0'
         powerMockVersion = '1.6.6'
         powerMockClassExtensionVersion = '3.2'
         logbackVersion = '1.2.1'
