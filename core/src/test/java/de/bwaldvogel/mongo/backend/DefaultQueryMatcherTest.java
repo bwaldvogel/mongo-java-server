@@ -18,7 +18,7 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.notIn;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.or;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.regex;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
 import org.junit.Before;

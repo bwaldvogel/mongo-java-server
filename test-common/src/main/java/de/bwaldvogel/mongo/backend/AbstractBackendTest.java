@@ -16,10 +16,10 @@ import static com.mongodb.client.model.Updates.set;
 import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
-import static org.fest.assertions.Assertions.assertThat;
-import static org.fest.assertions.Fail.fail;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.net.InetSocketAddress;
 import java.text.DateFormat;
@@ -165,7 +165,7 @@ public abstract class AbstractBackendTest {
     @Test
     public void testCreateCollection() throws Exception {
         String newCollectionName = "some-collection";
-        assertThat(toArray(db.listCollectionNames())).excludes(newCollectionName);
+        assertThat(toArray(db.listCollectionNames())).doesNotContain(newCollectionName);
         db.createCollection(newCollectionName, new CreateCollectionOptions());
         assertThat(toArray(db.listCollectionNames()).contains(newCollectionName));
     }
@@ -478,7 +478,7 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("{}"));
         assertThat(toArray(db.listCollectionNames())).contains(collection.getNamespace().getCollectionName());
         collection.drop();
-        assertThat(toArray(db.listCollectionNames())).excludes(collection.getNamespace().getCollectionName());
+        assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName());
     }
 
     @Test
@@ -486,7 +486,7 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("{}"));
         collection.drop();
         assertThat(collection.count()).isZero();
-        assertThat(toArray(db.listCollectionNames())).excludes(collection.getNamespace().getCollectionName());
+        assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName());
     }
 
     @Test
@@ -503,9 +503,9 @@ public abstract class AbstractBackendTest {
         collection2.insertOne(json("{}"));
 
         syncClient.dropDatabase(db.getName());
-        assertThat(listDatabaseNames()).excludes(db.getName());
+        assertThat(listDatabaseNames()).doesNotContain(db.getName());
         assertThat(collection.count()).isZero();
-        assertThat(toArray(db.listCollectionNames())).excludes(collection.getNamespace().getCollectionName(),
+        assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName(),
                 collection2.getNamespace().getCollectionName());
     }
 

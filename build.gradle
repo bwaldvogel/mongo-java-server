@@ -18,7 +18,7 @@ allprojects {
         springDataMongoDbVersion = '1.10.1.RELEASE'
         slf4jVersion = '1.7.24'
         junitVersion = '4.12'
-        festAssertVersion = '1.4'
+        assertjVersion = '3.6.2'
         powerMockVersion = '1.6.6'
         powerMockClassExtensionVersion = '3.2'
         logbackVersion = '1.2.1'
@@ -32,7 +32,7 @@ allprojects {
         compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
 
         testCompile group: 'junit', name: 'junit', version: junitVersion
-        testCompile group: 'org.easytesting', name: 'fest-assert', version: festAssertVersion
+        testCompile group: 'org.assertj', name: 'assertj-core', version: assertjVersion
         testCompile group: 'org.powermock', name: 'powermock-api-easymock', version: powerMockVersion
         testCompile group: 'org.easymock', name: 'easymockclassextension', version: powerMockClassExtensionVersion
         testRuntime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion

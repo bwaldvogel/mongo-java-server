@@ -10,7 +10,7 @@ dependencies {
     compile "org.springframework.data:spring-data-mongodb:${springDataMongoDbVersion}"
 
     compile group: 'junit', name: 'junit', version: junitVersion
-    compile group: 'org.easytesting', name: 'fest-assert', version: festAssertVersion
+    compile group: 'org.assertj', name: 'assertj-core', version: assertjVersion
     compile group: 'org.powermock', name: 'powermock-api-easymock', version: powerMockVersion
     compile group: 'org.easymock', name: 'easymockclassextension', version: powerMockClassExtensionVersion
     runtime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
