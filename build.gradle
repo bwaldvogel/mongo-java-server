@@ -11,9 +11,9 @@ allprojects {
     compileJava.options.encoding = 'UTF-8'
 
     ext {
-        nettyVersion = '4.1.8.Final'
+        nettyVersion = '4.1.9.Final'
         mongoJavaDriverVersion = '3.4.2'
-        h2Version = '1.4.193'
+        h2Version = '1.4.194'
         springVersion = '4.3.7.RELEASE'
         springDataMongoDbVersion = '1.10.1.RELEASE'
         slf4jVersion = '1.7.24'
