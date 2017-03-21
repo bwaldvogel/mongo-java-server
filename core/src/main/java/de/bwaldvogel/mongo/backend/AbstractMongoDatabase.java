@@ -633,8 +633,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (!namespace.startsWith(databaseName)) {
             throw new IllegalArgumentException();
         }
-        final String collectionName = namespace.substring(databaseName.length() + 1);
-        return collectionName;
+        return namespace.substring(databaseName.length() + 1);
     }
 
     private void openOrCreateIndex(Document indexDescription) throws MongoServerException {
