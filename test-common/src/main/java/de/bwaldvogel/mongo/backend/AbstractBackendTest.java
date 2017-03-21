@@ -865,7 +865,7 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("_id: 2"));
 
         List<Document> docs = toArray(collection.find(json("_id: {$in: [3,2,1]}")));
-        assertThat(docs).containsExactly(json("_id: 1"), json("_id: 2"), json("_id: 3"));
+        assertThat(docs).containsExactlyInAnyOrder(json("_id: 1"), json("_id: 2"), json("_id: 3"));
     }
 
     @Test
