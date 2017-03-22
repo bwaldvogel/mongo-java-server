@@ -39,7 +39,7 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
     @Override
     protected Object getPosition(Object key) {
-        return mvMap.get(key);
+        return mvMap.get(NullableKey.of(key));
     }
 
     @Override

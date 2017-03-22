@@ -849,6 +849,12 @@ public abstract class AbstractBackendTest {
         } catch (MongoWriteException e) {
             assertThat(e.getMessage()).contains("duplicate key error");
         }
+
+        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.find(json("_id: null")).first()).isEqualTo(json("{_id: null, name: 'test'}"));
+
+        collection.deleteOne(json("_id: null"));
+        assertThat(collection.count()).isZero();
     }
 
     @Test
