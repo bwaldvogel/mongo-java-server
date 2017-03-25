@@ -1,3 +1,3 @@
 #!/bin/zsh
 
-./gradlew clean build uploadArchives
+./gradlew --no-daemon clean build uploadArchives
