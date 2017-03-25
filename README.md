@@ -92,6 +92,37 @@ public class Application {
 }
 ```
 
+## PostgreSQL backend ##
+
+The PostgreSQL backend connects the server to a database in a running
+PostgreSQL 9.5+ instance. Each MongoDB database is mapped to a schema in
+Postgres and each MongoDB collection is stored as a table.
+
+```xml
+<dependency>
+    <groupId>de.bwaldvogel</groupId>
+    <artifactId>mongo-java-server-postgresql-backend</artifactId>
+    <version>1.7.0</version>
+</dependency>
+```
+
+### Example ###
+
+```java
+public class Application {
+
+    public static void main(String[] args) throws Exception {
+        DataSource dataSource = new org.postgresql.jdbc3.Jdbc3PoolingDataSource();
+        dataSource.setDatabaseName(…);
+        dataSource.setUser(…);
+        dataSource.setPassword(…);
+        MongoServer server = new MongoServer(new PostgresqlBackend(dataSource));
+        server.bind("localhost", 27017);
+    }
+
+}
+```
+
 ## Ideas for other backends ##
 
 ### Faulty backend ###
