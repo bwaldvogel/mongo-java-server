@@ -1,7 +1,7 @@
 dependencies {
     compile project(':mongo-java-server-core')
 
-    compile group: 'com.h2database', name: 'h2', version: h2Version
+    compile group: 'com.h2database', name: 'h2', version: '1.+'
 
     testCompile project(':mongo-java-server-test-common')
 }

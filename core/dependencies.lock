@@ -1,0 +1,432 @@
+{
+    "compile": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "compileClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "default": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "runtime": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "runtimeClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "testCompile": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        }
+    },
+    "testCompileClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        }
+    },
+    "testRuntime": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        }
+    },
+    "testRuntimeClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "io.netty:netty-transport": {
+            "locked": "4.1.9.Final",
+            "requested": "4.+"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        }
+    }
+}

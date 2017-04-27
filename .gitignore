@@ -1,3 +1,8 @@
+.okbuck/
+.watchmanconfig
+buckw
+out/
+
 .*.swp
 .idea/
 .classpath
