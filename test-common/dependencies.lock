@@ -1,0 +1,1082 @@
+{
+    "compile": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "compileClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "default": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "runtime": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "runtimeClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "testCompile": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "testCompileClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "testRuntime": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    },
+    "testRuntimeClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "locked": "3.4.2",
+            "requested": "3.+"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "locked": "1.10.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework:spring-beans": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-context": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-core": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        },
+        "org.springframework:spring-test": {
+            "locked": "4.3.8.RELEASE",
+            "requested": "4.+"
+        }
+    }
+}

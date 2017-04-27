@@ -1,4 +1,5 @@
 dependencies {
     compile project(':mongo-java-server-core')
+
     testCompile project(':mongo-java-server-test-common')
 }

@@ -1,17 +1,23 @@
 dependencies {
     compile project(':mongo-java-server-core')
-    compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
-    compile group: 'org.mongodb', name: 'mongodb-driver-async', version: mongoJavaDriverVersion
+    compile group: 'org.mongodb', name: 'mongo-java-driver', version: '3.+'
+    compile group: 'org.mongodb', name: 'mongodb-driver-async', version: '3.+'
 
-    compile "org.springframework:spring-core:${springVersion}"
-    compile "org.springframework:spring-beans:${springVersion}"
-    compile "org.springframework:spring-context:${springVersion}"
-    compile "org.springframework:spring-test:${springVersion}"
-    compile "org.springframework.data:spring-data-mongodb:${springDataMongoDbVersion}"
+    compile group: 'org.springframework', name: 'spring-core', version: '4.+'
+    compile group: 'org.springframework', name: 'spring-beans', version: '4.+'
+    compile group: 'org.springframework', name: 'spring-context', version: '4.+'
+    compile group: 'org.springframework', name: 'spring-test', version: '4.+'
+    compile group: 'org.springframework.data', name: 'spring-data-mongodb', version: '1.+'
 
-    compile group: 'junit', name: 'junit', version: junitVersion
-    compile group: 'org.assertj', name: 'assertj-core', version: assertjVersion
-    compile group: 'org.powermock', name: 'powermock-api-easymock', version: powerMockVersion
-    compile group: 'org.easymock', name: 'easymockclassextension', version: powerMockClassExtensionVersion
-    runtime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+    // Testing
+    compile group: 'junit', name: 'junit', version: '4.+'
+    compile group: 'org.assertj', name: 'assertj-core', version: '2.+'
+    compile group: 'org.powermock', name: 'powermock-api-easymock', version: '1.6.+'
+    compile group: 'org.easymock', name: 'easymockclassextension', version: '3.+'
+    compile group: 'com.github.stefanbirkner', name: 'system-rules', version: '1.+'
+    compile group: 'nl.jqno.equalsverifier', name: 'equalsverifier', version: '1.+'
+    compile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.3'
+    compile group: 'org.quicktheories', name: 'quicktheories', version: '0.+'
+    compile group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '1.+'
+    compile group: 'com.github.javafaker', name: 'javafaker', version: '0.+'
 }

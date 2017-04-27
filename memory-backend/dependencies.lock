@@ -1,0 +1,962 @@
+{
+    "compile": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "compileClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "default": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "runtime": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "runtimeClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        }
+    },
+    "testCompile": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "project": true
+        },
+        "de.bwaldvogel:mongo-java-server-test-common": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.10.3.RELEASE"
+        },
+        "org.springframework:spring-beans": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-context": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        }
+    },
+    "testCompileClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "project": true
+        },
+        "de.bwaldvogel:mongo-java-server-test-common": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.10.3.RELEASE"
+        },
+        "org.springframework:spring-beans": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-context": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        }
+    },
+    "testRuntime": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "project": true
+        },
+        "de.bwaldvogel:mongo-java-server-test-common": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.10.3.RELEASE"
+        },
+        "org.springframework:spring-beans": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-context": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        }
+    },
+    "testRuntimeClasspath": {
+        "ch.qos.logback:logback-classic": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "ch.qos.logback:logback-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.2.3",
+            "requested": "1.+"
+        },
+        "com.github.javafaker:javafaker": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.13",
+            "requested": "0.+"
+        },
+        "com.github.stefanbirkner:system-rules": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.16.1",
+            "requested": "1.+"
+        },
+        "de.bwaldvogel:mongo-java-server-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "project": true
+        },
+        "de.bwaldvogel:mongo-java-server-test-common": {
+            "project": true
+        },
+        "io.dropwizard.metrics:metrics-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2.2",
+            "requested": "3.+"
+        },
+        "io.netty:netty-codec": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "io.netty:netty-transport": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core"
+            ],
+            "locked": "4.1.9.Final"
+        },
+        "junit:junit": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.12",
+            "requested": "4.+"
+        },
+        "nl.jqno.equalsverifier:equalsverifier": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.7.8",
+            "requested": "1.+"
+        },
+        "org.assertj:assertj-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "2.6.0",
+            "requested": "2.+"
+        },
+        "org.easymock:easymockclassextension": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.2",
+            "requested": "3.+"
+        },
+        "org.hamcrest:hamcrest-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.3",
+            "requested": "1.3"
+        },
+        "org.mongodb:mongo-java-driver": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.mongodb:mongodb-driver-async": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "3.4.2"
+        },
+        "org.powermock:powermock-api-easymock": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.6.6",
+            "requested": "1.6.+"
+        },
+        "org.quicktheories:quicktheories": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "0.14",
+            "requested": "0.+"
+        },
+        "org.slf4j:jcl-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.slf4j:log4j-over-slf4j": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-core",
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.8.0-alpha1",
+            "requested": "1.+"
+        },
+        "org.springframework.boot:spring-boot-starter-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.5.3.RELEASE",
+            "requested": "1.+"
+        },
+        "org.springframework.data:spring-data-mongodb": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "1.10.3.RELEASE"
+        },
+        "org.springframework:spring-beans": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-context": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-core": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        },
+        "org.springframework:spring-test": {
+            "firstLevelTransitive": [
+                "de.bwaldvogel:mongo-java-server-test-common"
+            ],
+            "locked": "4.3.8.RELEASE"
+        }
+    }
+}

@@ -1,4 +1,4 @@
 dependencies {
-    compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
-    compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
+    compile group: 'io.netty', name: 'netty-transport', version: '4.+'
+    compile group: 'io.netty', name: 'netty-codec', version: '4.+'
 }
