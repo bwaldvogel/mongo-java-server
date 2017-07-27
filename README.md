@@ -22,8 +22,8 @@ Add the following Maven dependency to your project:
 ## In-Memory backend ##
 
 The in-memory backend is the default, such that mongo-java-server can be used
-as stub in unit tests. It does not support all features of the original
-MongoDB, and probably never will.
+as stub in unit tests. It supports the basic CRUD operations.
+However, not all features are implemented, such as full-text search or map/reduce.
 
 ### Example ###
 
