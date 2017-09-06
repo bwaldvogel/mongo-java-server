@@ -3,8 +3,6 @@ language: java
 matrix:
   include:
     - os: linux
-      jdk: openjdk7
-    - os: linux
       dist: precise
       jdk: oraclejdk7
     - os: linux
@@ -13,6 +11,7 @@ matrix:
       dist: trusty
       jdk: openjdk8
     - os: osx
+      jdk: openjdk8
 
 services:
       - postgresql
