@@ -6,7 +6,7 @@ allprojects {
 
     group = 'de.bwaldvogel'
 
-    sourceCompatibility = 1.7
+    sourceCompatibility = 1.8
 
     compileJava.options.encoding = 'UTF-8'
 
