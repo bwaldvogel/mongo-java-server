@@ -111,9 +111,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("delete")) {
             return commandDelete(channel, command, query);
         } else if (command.equalsIgnoreCase("create")) {
-            return commandCreate(channel, command, query);
+            return commandCreate(command, query);
         } else if (command.equalsIgnoreCase("createIndexes")) {
-            return commandCreateIndexes(channel, command, query);
+            return commandCreateIndexes(query);
         } else if (command.equalsIgnoreCase("count")) {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("distinct")) {
@@ -242,7 +242,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         List<Document> updates = (List<Document>) query.get("updates");
         int nMatched = 0;
         int nModified = 0;
-        int nUpserted = 0;
         Collection<Document> upserts = new ArrayList<>();
         for (Document updateObj : updates) {
             Document selector = (Document) updateObj.get("q");
@@ -292,7 +291,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandCreate(Channel channel, String command, Document query) throws MongoServerException {
+    private Document commandCreate(String command, Document query) throws MongoServerException {
         String collectionName = query.get(command).toString();
         boolean isCapped = Utils.isTrue(query.get("capped"));
         if (isCapped) {
@@ -316,8 +315,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandCreateIndexes(Channel channel, String command, Document query) throws MongoServerException {
-
+    private Document commandCreateIndexes(Document query) throws MongoServerException {
         int indexesBefore = countIndexes();
 
         @SuppressWarnings("unchecked")
@@ -665,7 +663,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) throws MongoServerException;
 
-    private Document insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) throws MongoServerException {
+    private void insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) throws MongoServerException {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -676,7 +674,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             assert n == documents.size();
             final Document result = new Document("n", Integer.valueOf(n));
             putLastResult(channel, result);
-            return result;
         } catch (MongoServerError e) {
             putLastError(channel, e);
             throw e;
@@ -779,11 +776,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @Override
     public void dropCollection(String collectionName) throws MongoServerException {
-        deregisterCollection(collectionName);
+        unregisterCollection(collectionName);
     }
 
     @Override
-    public MongoCollection<P> deregisterCollection(String collectionName) throws MongoServerException {
+    public MongoCollection<P> unregisterCollection(String collectionName) throws MongoServerException {
         MongoCollection<P> removedCollection = collections.remove(collectionName);
         namespaces.deleteDocuments(new Document("name", removedCollection.getFullName()), 1);
         return removedCollection;
@@ -792,7 +789,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     @Override
     public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
             throws MongoServerException {
-        oldDatabase.deregisterCollection(collection.getCollectionName());
+        oldDatabase.unregisterCollection(collection.getCollectionName());
         collection.renameTo(getDatabaseName(), newCollectionName);
         // TODO resolve cast
         @SuppressWarnings("unchecked")

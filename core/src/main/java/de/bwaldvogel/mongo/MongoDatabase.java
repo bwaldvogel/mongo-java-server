@@ -35,6 +35,6 @@ public interface MongoDatabase {
     void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
             throws MongoServerException;
 
-    MongoCollection<?> deregisterCollection(String collectionName) throws MongoServerException;
+    MongoCollection<?> unregisterCollection(String collectionName) throws MongoServerException;
 
 }

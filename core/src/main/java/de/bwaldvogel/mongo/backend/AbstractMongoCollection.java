@@ -719,8 +719,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     public synchronized Iterable<Document> handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
             Document fieldSelector) throws MongoServerException {
 
-        Document query;
-        Document orderBy = null;
+        final Document query;
+        final Document orderBy;
 
         if (numberToReturn < 0) {
             // actually: request to close cursor automatically
@@ -735,6 +735,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             orderBy = (Document) queryObject.get("$orderby");
         } else {
             query = queryObject;
+            orderBy = null;
         }
 
         if (count() == 0) {
@@ -756,7 +757,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         private Document fieldSelector;
         private String idField;
 
-        public ProjectingIterator(Iterator<Document> iterator, Document fieldSelector, String idField) {
+        ProjectingIterator(Iterator<Document> iterator, Document fieldSelector, String idField) {
             this.iterator = iterator;
             this.fieldSelector = fieldSelector;
             this.idField = idField;
@@ -770,8 +771,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         @Override
         public Document next() {
             Document document = this.iterator.next();
-            Document projectedDocument = projectDocument(document, fieldSelector, idField);
-            return projectedDocument;
+            return projectDocument(document, fieldSelector, idField);
         }
 
         @Override
@@ -787,7 +787,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         private Document fieldSelector;
         private String idField;
 
-        public ProjectingIterable(Iterable<Document> iterable, Document fieldSelector, String idField) {
+        ProjectingIterable(Iterable<Document> iterable, Document fieldSelector, String idField) {
             this.iterable = iterable;
             this.fieldSelector = fieldSelector;
             this.idField = idField;
@@ -911,7 +911,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 for (String key : newDocument.keySet()) {
                     if (key.contains(".")) {
                         throw new MongoServerException(
-                                "illegal field name. must not happen as it must be catched by the driver");
+                                "illegal field name. must not happen as it must be caught by the driver");
                     }
                     document.put(key, newDocument.get(key));
                 }
