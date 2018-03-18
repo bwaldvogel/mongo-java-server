@@ -727,10 +727,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else {
             error.put("err", ex.getMessage());
         }
-        // TODO: https://github.com/netty/netty/issues/1810
-        // also note:
-        // http://stackoverflow.com/questions/17690094/channel-id-has-been-removed-in-netty4-0-final-version-how-can-i-solve
-        error.put("connectionId", Integer.valueOf(channel.hashCode()));
+        error.put("connectionId", channel.id().asShortText());
         putLastResult(channel, error);
     }
 
