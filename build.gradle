@@ -42,6 +42,7 @@ allprojects {
     }
 
     test {
+        maxHeapSize = "256m"
         systemProperties['io.netty.leakDetectionLevel'] = 'advanced'
     }
 
