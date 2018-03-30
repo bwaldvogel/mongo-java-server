@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
@@ -14,6 +17,8 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class DefaultQueryMatcher implements QueryMatcher {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultQueryMatcher.class);
 
     private ValueComparator comparator = new ValueComparator();
     private Integer lastPosition;
@@ -66,6 +71,12 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         String firstKey = keys.get(0);
+
+        if (firstKey.equals("$comment")) {
+            log.debug("query comment: '{}'", queryValue);
+            return true;
+        }
+
         List<String> subKeys = Collections.emptyList();
         if (keys.size() > 1) {
             subKeys = keys.subList(1, keys.size());

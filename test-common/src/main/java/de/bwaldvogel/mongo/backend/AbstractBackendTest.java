@@ -2778,6 +2778,18 @@ public abstract class AbstractBackendTest {
         }
     }
 
+    @Test
+    public void testQueryWithComment() throws Exception {
+        collection.insertOne(json("_id: 1, x: 2"));
+        collection.insertOne(json("_id: 2, x: 3"));
+        collection.insertOne(json("_id: 3, x: 4"));
+
+        List<Document> documents = toArray(collection.find(json("x: { $mod: [ 2, 0 ] }, $comment: \"Find even values.\"")));
+        assertThat(documents).hasSize(2);
+        assertThat(documents.get(0).get("_id")).isEqualTo(1);
+        assertThat(documents.get(1).get("_id")).isEqualTo(3);
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {
