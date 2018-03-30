@@ -19,6 +19,7 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -379,8 +380,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     } else if (type.equals("date")) {
                         useDate = true;
                     } else {
-                        throw new MongoServerError(2,
-                                "The '$type' string field is required to be 'date' or 'timestamp': " + change);
+                        throw new BadValueException("The '$type' string field is required to be 'date' or 'timestamp': " + change);
                     }
                 } else {
                     final String type;
@@ -389,7 +389,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     } else {
                         type = "NULL";
                     }
-                    throw new MongoServerError(2, type + " is not a valid type for $currentDate." + //
+                    throw new BadValueException(type + " is not a valid type for $currentDate." + //
                             " Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'})");
                 }
 
@@ -410,7 +410,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 assertNotKeyField(key);
                 Object toField = change.get(key);
                 if (!(toField instanceof String)) {
-                    throw new MongoServerError(2, "The 'to' field for $rename must be a string: " + toField);
+                    throw new BadValueException("The 'to' field for $rename must be a string: " + toField);
                 }
                 String newKey = (String) toField;
                 assertNotKeyField(newKey);
