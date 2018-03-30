@@ -70,6 +70,12 @@ public class Document implements Map<String, Object>, Bson {
         return documentAsMap.put(key, value);
     }
 
+    public void putIfNotNull(String key, Object value) {
+        if (value != null) {
+            put(key, value);
+        }
+    }
+
     @Override
     public void putAll(Map<? extends String, ?> m) {
         documentAsMap.putAll(m);

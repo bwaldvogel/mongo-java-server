@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.allOf;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.and;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.elemMatch;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.eq;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.exists;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.gt;
@@ -565,6 +566,41 @@ public class DefaultQueryMatcherTest {
 
         document = map("a", list(map("x", 1), map("x", 2), map("x", 3)));
         assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(2))))).isTrue();
+    }
+
+    @Test
+    public void testMatchesElement() throws Exception {
+        Document document1 = map("results", list(82, 85, 88));
+        assertThat(matcher.matches(document1, map("results", elemMatch(gte(80))))).isTrue();
+        assertThat(matcher.matches(document1, map("results", elemMatch(gte(80).appendAll(lt(85)))))).isTrue();
+        assertThat(matcher.matches(document1, map("results", elemMatch(gte(90).appendAll(lt(85)))))).isFalse();
+        assertThat(matcher.matches(document1, map("results", elemMatch(gte(70).appendAll(lt(80)))))).isFalse();
+
+        Document document2 = map("_id", 2).appendAll(map("results", list(75, 88, 89)));
+        assertThat(matcher.matches(document2, map("results", elemMatch(gte(80).appendAll(lt(85)))))).isFalse();
+    }
+
+    @Test
+    public void testMatchesElementInEmbeddedDocuments() throws Exception {
+        Document document1 = map("_id", 1).append("results", list(map("product", "abc").append("score", 10), map("product", "xyz").append("score", 5)));
+        Document document2 = map("_id", 2).append("results", list(map("product", "abc").append("score", 9), map("product", "xyz").append("score", 7)));
+        Document document3 = map("_id", 3).append("results", list(map("product", "abc").append("score", 7), map("product", "xyz").append("score", 8)));
+
+        Document query = map("results", elemMatch(map("product", "xyz").append("score", gte(8))));
+        assertThat(matcher.matches(document1, query)).isFalse();
+        assertThat(matcher.matches(document2, query)).isFalse();
+        assertThat(matcher.matches(document3, query)).isTrue();
+
+        Document hasProductXyzElement = map("results", elemMatch(map("product", "xyz")));
+        assertThat(matcher.matches(document1, hasProductXyzElement)).isTrue();
+        assertThat(matcher.matches(document2, hasProductXyzElement)).isTrue();
+        assertThat(matcher.matches(document3, hasProductXyzElement)).isTrue();
+    }
+
+    @Test
+    public void testEmptyMatchesElementQuery() throws Exception {
+        Document document = map("_id", 1).append("results", list(map("product", "xyz").append("score", 5)));
+        assertThat(matcher.matches(document, map("results", elemMatch(map())))).isTrue();
     }
 
 }

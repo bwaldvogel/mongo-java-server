@@ -92,6 +92,10 @@ public class DocumentBuilder {
         return mapOfList(QueryOperator.ALL, values);
     }
 
+    public static Document elemMatch(Document document) {
+        return map(QueryOperator.ELEM_MATCH.getValue(), document);
+    }
+
     public static Document in(Object... values) {
         return mapOfList(IN, values);
     }

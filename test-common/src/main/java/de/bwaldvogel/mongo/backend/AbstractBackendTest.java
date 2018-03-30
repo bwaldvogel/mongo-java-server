@@ -2747,6 +2747,37 @@ public abstract class AbstractBackendTest {
         assertThat(documents.get(1).get("_id")).isEqualTo(new ObjectId("5234cc8a687ea597eabee676"));
     }
 
+    @Test
+    public void testMatchesElementQuery() throws Exception {
+        collection.insertOne(json("_id: 1, results: [ 82, 85, 88 ]"));
+        collection.insertOne(json("_id: 2, results: [ 75, 88, 89 ]"));
+
+        List<Document> results = toArray(collection.find(json("results: { $elemMatch: { $gte: 80, $lt: 85 } }")));
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0)).isEqualTo(json("\"_id\" : 1, \"results\" : [ 82, 85, 88 ]"));
+    }
+
+    @Test
+    public void testIllegalElementMatchQuery() throws Exception {
+        collection.insertOne(json("_id: 1, results: [ 82, 85, 88 ]"));
+
+        try {
+            collection.find(json("results: { $elemMatch: [ 85 ] }")).first();
+            fail("MongoQueryException expected");
+        } catch (MongoQueryException e) {
+            assertThat(e.getErrorCode()).isEqualTo(2);
+            assertThat(e.getErrorMessage()).isEqualTo("$elemMatch needs an Object");
+        }
+
+        try {
+            collection.find(json("results: { $elemMatch: 1 }")).first();
+            fail("MongoQueryException expected");
+        } catch (MongoQueryException e) {
+            assertThat(e.getErrorCode()).isEqualTo(2);
+            assertThat(e.getErrorMessage()).isEqualTo("$elemMatch needs an Object");
+        }
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {

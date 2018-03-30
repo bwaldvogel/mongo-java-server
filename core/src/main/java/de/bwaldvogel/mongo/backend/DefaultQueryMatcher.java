@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -124,6 +125,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
                     if (queryOperator.equals(QueryOperator.ALL.getValue())) {
                         if (!checkMatchesAllValues(subQuery, value)) {
+                            return false;
+                        }
+                    } else if (queryOperator.equals(QueryOperator.ELEM_MATCH.getValue())) {
+                        if (!checkMatchesElemValues(subQuery, value)) {
                             return false;
                         }
                     } else if (queryOperator.equals(QueryOperator.IN.getValue())) {
@@ -291,6 +296,20 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
         }
         return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private boolean checkMatchesElemValues(Object queryValue, Object values) throws MongoServerException {
+        if (!(queryValue instanceof Document)) {
+            throw new BadValueException(QueryOperator.ELEM_MATCH.getValue() + " needs an Object");
+        }
+        Collection<Object> list = (Collection<Object>) values;
+        for (Object value : list) {
+            if (checkMatchesValue(queryValue, value, true)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")

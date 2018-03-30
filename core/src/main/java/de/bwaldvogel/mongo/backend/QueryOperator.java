@@ -18,6 +18,7 @@ enum QueryOperator {
     MOD("$mod"), //
     SIZE("$size"), //
     ALL("$all"), //
+    ELEM_MATCH("$elemMatch"), //
     ;
 
     private String value;
