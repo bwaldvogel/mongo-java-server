@@ -23,7 +23,6 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -31,12 +30,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class DefaultQueryMatcherTest {
 
-    private QueryMatcher matcher;
-
-    @Before
-    public void setUp() {
-        matcher = new DefaultQueryMatcher();
-    }
+    private QueryMatcher matcher = new DefaultQueryMatcher();
 
     @Test
     public void testMatchesSimple() throws Exception {
