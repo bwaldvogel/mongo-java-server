@@ -14,11 +14,11 @@ allprojects {
     ext {
         nettyVersion = '4.1.22.Final'
         mongoJavaDriverVersion = '3.6.3'
-        h2Version = '1.4.196'
+        h2Version = '1.4.197'
         springVersion = '5.0.4.RELEASE'
         springDataMongoDbVersion = '2.0.5.RELEASE'
         slf4jVersion = '1.7.25'
-        jacksonVersion = '2.9.2'
+        jacksonVersion = '2.9.5'
         junitVersion = '4.12'
         assertjVersion = '2.6.0'
         powerMockVersion = '1.7.3'
