@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.allOf;
+import static de.bwaldvogel.mongo.backend.DocumentBuilder.and;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.eq;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.exists;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.gt;
@@ -391,7 +392,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesAnd() throws Exception {
 
-        Document query = DocumentBuilder.and(map("price", 1.99), map("qty", lt(20)).append("sale", true));
+        Document query = and(map("price", 1.99), map("qty", lt(20)).append("sale", true));
 
         /*
          * This query will select all documents in the inventory collection
