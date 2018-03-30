@@ -2704,6 +2704,49 @@ public abstract class AbstractBackendTest {
         assertThat(count).isEqualTo(numDocuments);
     }
 
+    @Test
+    public void testAllQuery() throws Exception {
+        // see https://docs.mongodb.com/manual/reference/operator/query/all/
+        collection.insertOne(new Document("_id", new ObjectId("5234cc89687ea597eabee675"))
+            .append("code", "xyz")
+            .append("tags", Arrays.asList("school", "book", "bag", "headphone", "appliance"))
+            .append("qty", Arrays.asList(
+                new Document().append("size", "S").append("num", 10).append("color", "blue"),
+                new Document().append("size", "M").append("num", 45).append("color", "blue"),
+                new Document().append("size", "L").append("num", 100).append("color", "green")
+            )));
+
+        collection.insertOne(new Document("_id", new ObjectId("5234cc8a687ea597eabee676"))
+            .append("code", "abc")
+            .append("tags", Arrays.asList("appliance", "school", "book"))
+            .append("qty", Arrays.asList(
+                new Document().append("size", "6").append("num", 100).append("color", "green"),
+                new Document().append("size", "6").append("num", 50).append("color", "blue"),
+                new Document().append("size", "8").append("num", 100).append("color", "brown")
+            )));
+
+        collection.insertOne(new Document("_id", new ObjectId("5234ccb7687ea597eabee677"))
+            .append("code", "efg")
+            .append("tags", Arrays.asList("school", "book"))
+            .append("qty", Arrays.asList(
+                new Document().append("size", "S").append("num", 10).append("color", "blue"),
+                new Document().append("size", "M").append("num", 100).append("color", "blue"),
+                new Document().append("size", "L").append("num", 100).append("color", "green")
+            )));
+
+        collection.insertOne(new Document("_id", new ObjectId("52350353b2eff1353b349de9"))
+            .append("code", "ijk")
+            .append("tags", Arrays.asList("electronics", "school"))
+            .append("qty", Collections.singletonList(
+                new Document().append("size", "M").append("num", 100).append("color", "green")
+            )));
+
+        List<Document> documents = toArray(collection.find(json("{ tags: { $all: [ \"appliance\", \"school\", \"book\" ] } }")));
+        assertThat(documents).hasSize(2);
+        assertThat(documents.get(0).get("_id")).isEqualTo(new ObjectId("5234cc89687ea597eabee675"));
+        assertThat(documents.get(1).get("_id")).isEqualTo(new ObjectId("5234cc8a687ea597eabee676"));
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {
