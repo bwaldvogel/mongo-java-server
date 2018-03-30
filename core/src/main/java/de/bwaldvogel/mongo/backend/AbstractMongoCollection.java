@@ -67,7 +67,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     throw new IllegalArgumentException("Illegal sort value: " + sortValue);
                 }
             } else {
-                Collections.sort(documents, new DocumentComparator(orderBy));
+                documents.sort(new DocumentComparator(orderBy));
             }
         }
     }

@@ -12,7 +12,7 @@ public class MongoExceptionHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        log.error("exception for client {}", ctx.channel().hashCode(), cause);
+        log.error("exception for client {}", ctx.channel().id(), cause);
         ctx.channel().close();
     }
 }

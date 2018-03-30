@@ -23,7 +23,7 @@ public class DocumentComparatorTest {
         list.add(new Document("a", 5));
         list.add(new Document("b", 1));
 
-        Collections.sort(list, comparator);
+        list.sort(comparator);
         assertThat(list).containsExactly(new Document("b", 1), //
                 new Document("a", 5), //
                 new Document("a", 10), //
@@ -47,7 +47,7 @@ public class DocumentComparatorTest {
         for (int i = 0; i < 10; i++) {
             Collections.shuffle(list, rnd);
 
-            Collections.sort(list, comparator);
+            list.sort(comparator);
             assertThat(list).containsExactly(new Document("b", 3), //
                     new Document("b", 2), //
                     new Document("b", 1), //

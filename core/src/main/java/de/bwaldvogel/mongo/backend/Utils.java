@@ -106,7 +106,7 @@ public class Utils {
         if (a == b) {
             return true;
         } else if (a == null || b == null) {
-            return (a == b);
+            return false;
         } else if (a instanceof byte[] && b instanceof byte[]) {
             byte[] bytesA = (byte[]) a;
             byte[] bytesB = (byte[]) b;

@@ -19,7 +19,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;
@@ -32,7 +32,7 @@ import de.bwaldvogel.mongo.entity.Person;
 import de.bwaldvogel.mongo.repository.AccountRepository;
 import de.bwaldvogel.mongo.repository.PersonRepository;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@RunWith(SpringRunner.class)
 @ContextConfiguration(classes = AbstractBackendSpringDataTest.TestConfig.class)
 public abstract class AbstractBackendSpringDataTest {
 

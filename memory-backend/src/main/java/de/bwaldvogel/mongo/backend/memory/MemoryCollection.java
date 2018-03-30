@@ -103,7 +103,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             if (orderBy.keySet().iterator().next().equals("$natural")) {
                 // already sorted
             } else {
-                Collections.sort(matchedDocuments, new DocumentComparator(orderBy));
+                matchedDocuments.sort(new DocumentComparator(orderBy));
             }
         }
 

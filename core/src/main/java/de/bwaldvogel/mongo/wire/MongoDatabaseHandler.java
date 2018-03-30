@@ -135,8 +135,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
     }
 
-    protected Document handleCommand(Channel channel, MongoQuery query)
-            throws MongoServerException {
+    private Document handleCommand(Channel channel, MongoQuery query) throws MongoServerException {
         String collectionName = query.getCollectionName();
         if (collectionName.equals("$cmd.sys.inprog")) {
             Collection<Document> currentOperations = mongoBackend.getCurrentOperations(query);
@@ -145,14 +144,15 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
         if (collectionName.equals("$cmd")) {
             String command = query.getQuery().keySet().iterator().next();
-            if (command.equals("serverStatus")) {
-                return getServerStatus();
-            } else if (command.equals("ping")) {
-                Document response = new Document();
-                Utils.markOkay(response);
-                return response;
-            } else {
-                return mongoBackend.handleCommand(channel, query.getDatabaseName(), command, query.getQuery());
+            switch (command) {
+                case "serverStatus":
+                    return getServerStatus();
+                case "ping":
+                    Document response = new Document();
+                    Utils.markOkay(response);
+                    return response;
+                default:
+                    return mongoBackend.handleCommand(channel, query.getDatabaseName(), command, query.getQuery());
             }
         }
 

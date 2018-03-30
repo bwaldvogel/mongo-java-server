@@ -146,7 +146,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
                     Collections.reverse(matchedDocuments);
                 }
             } else {
-                Collections.sort(matchedDocuments, new DocumentComparator(orderBy));
+                matchedDocuments.sort(new DocumentComparator(orderBy));
             }
         }
 
