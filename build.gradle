@@ -21,8 +21,6 @@ allprojects {
         jacksonVersion = '2.9.7'
         junitVersion = '4.12'
         assertjVersion = '3.11.1'
-        powerMockVersion = '1.7.3'
-        powerMockClassExtensionVersion = '3.2'
         logbackVersion = '1.2.3'
     }
 
@@ -35,8 +33,6 @@ allprojects {
 
         testCompile group: 'junit', name: 'junit', version: junitVersion
         testCompile group: 'org.assertj', name: 'assertj-core', version: assertjVersion
-        testCompile group: 'org.powermock', name: 'powermock-api-easymock', version: powerMockVersion
-        testCompile group: 'org.easymock', name: 'easymockclassextension', version: powerMockClassExtensionVersion
         testRuntime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
         testRuntime group: 'org.slf4j', name: 'jcl-over-slf4j', version: slf4jVersion
     }
