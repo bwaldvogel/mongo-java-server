@@ -472,6 +472,7 @@ public abstract class AbstractBackendTest {
         collection.insertOne(new Document("n", 1));
         collection.insertOne(new Document("n", 1));
         assertThat(toArray(collection.distinct("n", Integer.class))).containsExactly(1, 2, 3);
+        assertThat(toArray(collection.distinct("n", json("n: {$gt: 1}"), Integer.class))).containsExactly(2, 3);
         assertThat(collection.distinct("foobar", String.class)).isEmpty();
         assertThat(collection.distinct("_id", ObjectId.class)).hasSize((int) collection.count());
     }
