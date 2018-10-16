@@ -2105,8 +2105,22 @@ public abstract class AbstractBackendTest {
     public void testUpsertWithConditional() {
         Document query = json("_id: 1, b: {$gt: 5}");
         Document update = json("$inc: {a: 1}");
-        collection.updateOne(query, update, new UpdateOptions().upsert(true));
+        UpdateResult updateResult = collection.updateOne(query, update, new UpdateOptions().upsert(true));
+        assertThat(updateResult.getModifiedCount()).isZero();
+        assertThat(updateResult.getMatchedCount()).isZero();
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/29
+    @Test
+    public void testUpsertWithoutChange() {
+        collection.insertOne(json("_id: 1, a: 2, b: 3"));
+        Document query = json("_id: 1");
+        Document update = json("$set: {a: 2}");
+        UpdateResult updateResult = collection.updateOne(query, update, new UpdateOptions().upsert(true));
+        assertThat(updateResult.getModifiedCount()).isZero();
+        assertThat(updateResult.getMatchedCount()).isOne();
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 2, b: 3"));
     }
 
     @Test
@@ -2121,7 +2135,9 @@ public abstract class AbstractBackendTest {
         Document update = json("$push: {n: {_id: 2 ,u : 3}}, $inc: {c: 4}");
         Document expected = json("_id: 1, n: [{_id: 2 ,u : 3}], c: 4");
 
-        collection.updateOne(query, update, new UpdateOptions().upsert(true));
+        UpdateResult updateResult = collection.updateOne(query, update, new UpdateOptions().upsert(true));
+        assertThat(updateResult.getModifiedCount()).isZero();
+        assertThat(updateResult.getMatchedCount()).isZero();
 
         // the ID generation actually differs from official MongoDB which just
         // create a random object id

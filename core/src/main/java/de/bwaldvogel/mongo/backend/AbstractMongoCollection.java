@@ -870,7 +870,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document result = new Document();
 
         // insert?
-        if (nModified == 0 && isUpsert) {
+        if (nMatched == 0 && isUpsert) {
             Document newDocument = handleUpsert(updateQuery, selector);
             if (!selector.containsKey(idField)) {
                 result.put("upserted", newDocument.get(idField));
