@@ -802,10 +802,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     @Override
     public synchronized Document handleDistinct(Document query) throws MongoServerException {
         String key = query.get("key").toString();
-        Document q = (Document) query.get("query");
+        Document filter = (Document) query.get("query");
+        if (filter == null) {
+            filter = new Document();
+        }
         Set<Object> values = new TreeSet<>(new ValueComparator());
 
-        for (Document document : queryDocuments(q, null, 0, 0)) {
+        for (Document document : queryDocuments(filter, null, 0, 0)) {
             if (document.containsKey(key)) {
                 values.add(document.get(key));
             }
