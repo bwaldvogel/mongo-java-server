@@ -4,6 +4,8 @@ jdk:
     - oraclejdk8
     - openjdk8
     - oraclejdk9
+    - openjdk10
+    - openjdk11
 
 services:
       - postgresql
