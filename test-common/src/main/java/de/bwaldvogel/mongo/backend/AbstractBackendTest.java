@@ -77,6 +77,7 @@ import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.RenameCollectionOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateManyModel;
 import com.mongodb.client.model.UpdateOneModel;
@@ -274,7 +275,7 @@ public abstract class AbstractBackendTest {
                 json("_id: {n:'a', t: 11}"));
 
         for (Document dbo : toUpsert) {
-            collection.replaceOne(dbo, new Document(dbo).append("foo", "bar"), new UpdateOptions().upsert(true));
+            collection.replaceOne(dbo, new Document(dbo).append("foo", "bar"), new ReplaceOptions().upsert(true));
         }
         List<Document> results = toArray(collection.find(query));
         assertThat(results).containsOnly(
