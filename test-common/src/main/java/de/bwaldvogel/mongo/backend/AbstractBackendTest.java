@@ -94,7 +94,7 @@ public abstract class AbstractBackendTest {
     private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
 
     protected static final String TEST_DATABASE_NAME = "testdb";
-    protected static final String OTHER_TEST_DATEBASE_NAME = "bar";
+    protected static final String OTHER_TEST_DATABASE_NAME = "bar";
 
     private MongoServer mongoServer;
 
@@ -1018,7 +1018,7 @@ public abstract class AbstractBackendTest {
     }
 
     private MongoDatabase getDatabase() {
-        return syncClient.getDatabase(OTHER_TEST_DATEBASE_NAME);
+        return syncClient.getDatabase(OTHER_TEST_DATABASE_NAME);
     }
 
     private List<String> listDatabaseNames() {

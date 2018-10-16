@@ -33,7 +33,7 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     @Override
     protected MongoBackend createBackend() throws Exception {
         PostgresqlBackend backend = new PostgresqlBackend(dataSource);
-        for (String db : Arrays.asList(TEST_DATABASE_NAME, OTHER_TEST_DATEBASE_NAME)) {
+        for (String db : Arrays.asList(TEST_DATABASE_NAME, OTHER_TEST_DATABASE_NAME)) {
             MongoDatabase mongoDatabase = backend.openOrCreateDatabase(db);
             mongoDatabase.drop();
         }
