@@ -73,6 +73,7 @@ import com.mongodb.client.model.BulkWriteOptions;
 import com.mongodb.client.model.CountOptions;
 import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.DeleteManyModel;
+import com.mongodb.client.model.EstimatedDocumentCountOptions;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.InsertOneModel;
@@ -298,16 +299,34 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testCountCommand() {
         assertThat(collection.count()).isZero();
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testCountCommandWithQuery() {
         collection.insertOne(json("n:1"));
         collection.insertOne(json("n:2"));
         collection.insertOne(json("n:2"));
         assertThat(collection.count(json("n:2"))).isEqualTo(2);
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testCountCommandWithSkipAndLimit() {
+        collection.insertOne(json("x: 1"));
+        collection.insertOne(json("x: 1"));
+        collection.insertOne(json("x: 2"));
+        collection.insertOne(json("x: 1"));
+        collection.insertOne(json("x: 2"));
+        collection.insertOne(json("x: 1"));
+
+        assertThat(collection.count(json("x: 1"), new CountOptions().skip(4).limit(2))).isEqualTo(0);
+        assertThat(collection.count(json("x: 1"), new CountOptions().limit(3))).isEqualTo(3);
+        assertThat(collection.count(json("x: 1"), new CountOptions().limit(10))).isEqualTo(4);
+        assertThat(collection.count(json("x: 1"), new CountOptions().skip(1))).isEqualTo(3);
     }
 
     @Test
@@ -321,6 +340,16 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("n:2"));
         collection.insertOne(json("n:2"));
         assertThat(collection.countDocuments(json("n:2"))).isEqualTo(2);
+    }
+
+    @Test
+    public void testEstimatedDocumentCount() throws Exception {
+        assertThat(collection.estimatedDocumentCount()).isEqualTo(0);
+        collection.insertOne(json("n:1"));
+        collection.insertOne(json("n:2"));
+        collection.insertOne(json("n:2"));
+        assertThat(collection.estimatedDocumentCount()).isEqualTo(3);
+        assertThat(collection.estimatedDocumentCount(new EstimatedDocumentCountOptions().maxTime(1, TimeUnit.SECONDS))).isEqualTo(3);
     }
 
     @Test
