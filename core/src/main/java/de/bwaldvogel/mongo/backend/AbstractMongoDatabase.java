@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -116,6 +117,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             return commandCreateIndexes(query);
         } else if (command.equalsIgnoreCase("count")) {
             return commandCount(command, query);
+        } else if (command.equalsIgnoreCase("aggregate")) {
+            return commandAggregate(command, query);
         } else if (command.equalsIgnoreCase("distinct")) {
             MongoCollection<P> collection = resolveCollection(command, query, true);
             return collection.handleDistinct(query);
@@ -490,6 +493,56 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             int skip = getOptionalNumber(query, "skip", 0);
             response.put("n", Integer.valueOf(collection.count(queryObject, skip, limit)));
         }
+        Utils.markOkay(response);
+        return response;
+    }
+
+    private Document commandAggregate(String command, Document query) throws MongoServerException {
+        String collectionName = query.get(command).toString();
+        Document cursor = (Document) query.get("cursor");
+        if (!cursor.isEmpty()) {
+            throw new MongoServerException("Non-empty cursor is not yet implemented");
+        }
+
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
+        Document response = new Document();
+        Document cursorInResponse = new Document();
+        response.put("cursor", cursorInResponse);
+
+        Aggregation aggregation = new Aggregation(collection);
+
+        @SuppressWarnings("unchecked")
+        List<Document> pipeline = (List<Document>) query.get("pipeline");
+        for (Document stage : pipeline) {
+            if (stage.size() != 1) {
+                throw new MongoServerException("Unsupported pipeline stage: " + stage);
+            }
+            String stageOperation = stage.keySet().iterator().next();
+            switch (stageOperation) {
+                case "$match":
+                    Document matchQuery = (Document) stage.get(stageOperation);
+                    aggregation.match(matchQuery);
+                    break;
+                case "$skip":
+                    Number numSkip = (Number) stage.get(stageOperation);
+                    aggregation.skip(numSkip);
+                    break;
+                case "$limit":
+                    Number numLimit = (Number) stage.get(stageOperation);
+                    aggregation.limit(numLimit);
+                    break;
+                case "$group":
+                    Document groupDetails = (Document) stage.get(stageOperation);
+                    aggregation.group(groupDetails);
+                    break;
+                default:
+                    throw new MongoServerException("Unhandled stage operation: " + stageOperation);
+            }
+        }
+
+        cursorInResponse.put("firstBatch", aggregation.getResult());
+        cursorInResponse.put("id", 0L);
+        cursorInResponse.put("ns", getDatabaseName() + "." + collectionName);
         Utils.markOkay(response);
         return response;
     }

@@ -303,11 +303,24 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
-    public void testCountWithQueryCommand() {
+    public void testCountCommandWithQuery() {
         collection.insertOne(json("n:1"));
         collection.insertOne(json("n:2"));
         collection.insertOne(json("n:2"));
         assertThat(collection.count(json("n:2"))).isEqualTo(2);
+    }
+
+    @Test
+    public void testCountDocuments() throws Exception {
+        assertThat(collection.countDocuments()).isZero();
+    }
+
+    @Test
+    public void testCountDocumentsWithQuery() {
+        collection.insertOne(json("n:1"));
+        collection.insertOne(json("n:2"));
+        collection.insertOne(json("n:2"));
+        assertThat(collection.countDocuments(json("n:2"))).isEqualTo(2);
     }
 
     @Test
@@ -427,9 +440,9 @@ public abstract class AbstractBackendTest {
     @Test
     public void testDeleteDecrementsCount() {
         collection.insertOne(json("key: 'value'"));
-        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(1);
         collection.deleteOne(json("{}"));
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
     }
 
     @Test
@@ -475,7 +488,7 @@ public abstract class AbstractBackendTest {
         assertThat(toArray(collection.distinct("n", Integer.class))).containsExactly(1, 2, 3);
         assertThat(toArray(collection.distinct("n", json("n: {$gt: 1}"), Integer.class))).containsExactly(2, 3);
         assertThat(collection.distinct("foobar", String.class)).isEmpty();
-        assertThat(collection.distinct("_id", ObjectId.class)).hasSize((int) collection.count());
+        assertThat(collection.distinct("_id", ObjectId.class)).hasSize((int) collection.countDocuments());
     }
 
     @Test
@@ -490,7 +503,7 @@ public abstract class AbstractBackendTest {
     public void testDropCollectionAlsoDropsFromDB() throws Exception {
         collection.insertOne(json("{}"));
         collection.drop();
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
         assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName());
     }
 
@@ -498,7 +511,7 @@ public abstract class AbstractBackendTest {
     public void testDropDatabaseAlsoDropsCollectionData() throws Exception {
         collection.insertOne(json("{}"));
         db.drop();
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
     }
 
     @Test
@@ -509,7 +522,7 @@ public abstract class AbstractBackendTest {
 
         syncClient.dropDatabase(db.getName());
         assertThat(listDatabaseNames()).doesNotContain(db.getName());
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
         assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName(),
                 collection2.getNamespace().getCollectionName());
     }
@@ -604,7 +617,7 @@ public abstract class AbstractBackendTest {
         Document result = collection.findOneAndUpdate(json("_id: 2"), new Document("$inc", json("a: 1")));
 
         assertThat(result).isNull();
-        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(1);
     }
 
     @Test
@@ -613,7 +626,7 @@ public abstract class AbstractBackendTest {
         Document result = collection.findOneAndDelete(json("_id: 1"));
 
         assertThat(result).isEqualTo(json("_id: 1, a: 1"));
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
     }
 
     // https://github.com/foursquare/fongo/issues/32
@@ -707,7 +720,7 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("_id: 1, a: [1]"));
         Document result = collection.findOneAndDelete(json("_id: 1"));
         assertThat(result).isEqualTo(json("_id: 1, a: [1]"));
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
     }
 
     @Test
@@ -855,11 +868,11 @@ public abstract class AbstractBackendTest {
             assertThat(e.getMessage()).contains("duplicate key error");
         }
 
-        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(1);
         assertThat(collection.find(json("_id: null")).first()).isEqualTo(json("{_id: null, name: 'test'}"));
 
         collection.deleteOne(json("_id: null"));
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
     }
 
     @Test
@@ -906,13 +919,13 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testInsert() throws Exception {
-        assertThat(collection.count()).isEqualTo(0);
+        assertThat(collection.countDocuments()).isEqualTo(0);
 
         for (int i = 0; i < 3; i++) {
             collection.insertOne(new Document("_id", Integer.valueOf(i)));
         }
 
-        assertThat(collection.count()).isEqualTo(3);
+        assertThat(collection.countDocuments()).isEqualTo(3);
 
         collection.insertOne(json("foo: [1,2,3]"));
 
@@ -925,10 +938,10 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testInsertDuplicate() throws Exception {
-        assertThat(collection.count()).isEqualTo(0);
+        assertThat(collection.countDocuments()).isEqualTo(0);
 
         collection.insertOne(json("_id: 1"));
-        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(1);
 
         try {
             collection.insertOne(json("_id: 1"));
@@ -937,7 +950,7 @@ public abstract class AbstractBackendTest {
             assertThat(e.getMessage()).contains("duplicate key error");
         }
 
-        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(1);
     }
 
     @Test(expected = MongoException.class)
@@ -954,14 +967,14 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testInsertIncrementsCount() {
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
         collection.insertOne(json("key: 'value'"));
-        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(1);
     }
 
     @Test
     public void testInsertQuery() throws Exception {
-        assertThat(collection.count()).isEqualTo(0);
+        assertThat(collection.countDocuments()).isEqualTo(0);
 
         Document insertedObject = json("_id: 1");
         insertedObject.put("foo", "bar");
@@ -978,16 +991,16 @@ public abstract class AbstractBackendTest {
     public void testInsertRemove() throws Exception {
         for (int i = 0; i < 10; i++) {
             collection.insertOne(json("_id: 1"));
-            assertThat(collection.count()).isEqualTo(1);
+            assertThat(collection.countDocuments()).isEqualTo(1);
             collection.deleteOne(json("_id: 1"));
-            assertThat(collection.count()).isZero();
+            assertThat(collection.countDocuments()).isZero();
 
             collection.insertOne(new Document("_id", i));
             collection.deleteOne(new Document("_id", i));
         }
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
         collection.deleteOne(json("'doesnt exist': 1"));
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
     }
 
     @Test
@@ -1040,7 +1053,7 @@ public abstract class AbstractBackendTest {
     public void testQuery() throws Exception {
         Document obj = collection.find(json("_id: 1")).first();
         assertThat(obj).isNull();
-        assertThat(collection.count()).isEqualTo(0);
+        assertThat(collection.countDocuments()).isEqualTo(0);
     }
 
     @Test
@@ -1051,7 +1064,7 @@ public abstract class AbstractBackendTest {
             collection.insertOne(obj);
             inserted.add(obj);
         }
-        assertThat(collection.count()).isEqualTo(10);
+        assertThat(collection.countDocuments()).isEqualTo(10);
 
         assertThat(toArray(collection.find().sort(json("_id: 1")))).isEqualTo(inserted);
     }
@@ -1061,12 +1074,12 @@ public abstract class AbstractBackendTest {
         for (int i = 0; i < 100; i++) {
             collection.insertOne(json("{}"));
         }
-        assertThat(collection.count()).isEqualTo(100);
+        assertThat(collection.countDocuments()).isEqualTo(100);
 
         Document obj = json("_id: 1");
-        assertThat(collection.count(obj)).isEqualTo(0);
+        assertThat(collection.countDocuments(obj)).isEqualTo(0);
         collection.insertOne(obj);
-        assertThat(collection.count(obj)).isEqualTo(1);
+        assertThat(collection.countDocuments(obj)).isEqualTo(1);
     }
 
     @Test
@@ -1074,9 +1087,9 @@ public abstract class AbstractBackendTest {
         for (int i = 0; i < 5; i++) {
             collection.insertOne(json("{}"));
         }
-        assertThat(collection.count(json("{}"), new CountOptions().limit(1))).isEqualTo(1);
-        assertThat(collection.count(json("{}"), new CountOptions().limit(-1))).isEqualTo(5);
-        assertThat(collection.count(json("{}"))).isEqualTo(5);
+        assertThat(collection.countDocuments(json("{}"), new CountOptions().limit(1))).isEqualTo(1);
+        assertThat(collection.countDocuments(json("{}"), new CountOptions().limit(-1))).isEqualTo(5);
+        assertThat(collection.countDocuments(json("{}"))).isEqualTo(5);
     }
 
     @Test
@@ -1084,9 +1097,9 @@ public abstract class AbstractBackendTest {
         for (int i = 0; i < 5; i++) {
             collection.insertOne(json("a:1"));
         }
-        assertThat(collection.count(json("a:1"), new CountOptions().limit(1))).isEqualTo(1);
-        assertThat(collection.count(json("a:1"), new CountOptions().limit(-1))).isEqualTo(5);
-        assertThat(collection.count(json("a:1"))).isEqualTo(5);
+        assertThat(collection.countDocuments(json("a:1"), new CountOptions().limit(1))).isEqualTo(1);
+        assertThat(collection.countDocuments(json("a:1"), new CountOptions().limit(-1))).isEqualTo(5);
+        assertThat(collection.countDocuments(json("a:1"))).isEqualTo(5);
     }
 
     @Test
@@ -1098,28 +1111,28 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testQuerySkipLimitEmptyQuery() throws Exception {
-        assertThat(collection.count(json("{}"), new CountOptions().skip(3))).isEqualTo(0);
+        assertThat(collection.countDocuments(json("{}"), new CountOptions().skip(3))).isEqualTo(0);
 
         for (int i = 0; i < 10; i++) {
             collection.insertOne(json("{}"));
         }
 
-        assertThat(collection.count(json("{}"), new CountOptions().skip(3))).isEqualTo(7);
-        assertThat(collection.count(json("{}"), new CountOptions().skip(15))).isEqualTo(0);
-        assertThat(collection.count(json("{}"), new CountOptions().skip(3).limit(5))).isEqualTo(5);
+        assertThat(collection.countDocuments(json("{}"), new CountOptions().skip(3))).isEqualTo(7);
+        assertThat(collection.countDocuments(json("{}"), new CountOptions().skip(15))).isEqualTo(0);
+        assertThat(collection.countDocuments(json("{}"), new CountOptions().skip(3).limit(5))).isEqualTo(5);
     }
 
     @Test
     public void testQuerySkipLimitSimpleQuery() throws Exception {
-        assertThat(collection.count(json("a:1"), new CountOptions().skip(3))).isEqualTo(0);
+        assertThat(collection.countDocuments(json("a:1"), new CountOptions().skip(3))).isEqualTo(0);
 
         for (int i = 0; i < 10; i++) {
             collection.insertOne(json("a:1"));
         }
 
-        assertThat(collection.count(json("a:1"), new CountOptions().skip(3))).isEqualTo(7);
-        assertThat(collection.count(json("a:1"), new CountOptions().skip(3).limit(5))).isEqualTo(5);
-        assertThat(collection.count(json("a:1"), new CountOptions().skip(15).limit(5))).isEqualTo(0);
+        assertThat(collection.countDocuments(json("a:1"), new CountOptions().skip(3))).isEqualTo(7);
+        assertThat(collection.countDocuments(json("a:1"), new CountOptions().skip(3).limit(5))).isEqualTo(5);
+        assertThat(collection.countDocuments(json("a:1"), new CountOptions().skip(15).limit(5))).isEqualTo(0);
     }
 
     @Test
@@ -1195,8 +1208,8 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json(" _id : [ { x : 1 } , { x : 2  } ]"));
         collection.insertOne(json(" _id : [ { x : 2 } , { x : 3  } ]"));
 
-        assertThat(collection.count(json("'_id.x':{$all:[1,2]}"))).isEqualTo(1);
-        assertThat(collection.count(json("'_id.x':{$all:[2,3]}"))).isEqualTo(1);
+        assertThat(collection.countDocuments(json("'_id.x':{$all:[1,2]}"))).isEqualTo(1);
+        assertThat(collection.countDocuments(json("'_id.x':{$all:[2,3]}"))).isEqualTo(1);
     }
 
     @Test
@@ -1242,10 +1255,10 @@ public abstract class AbstractBackendTest {
         collection.deleteOne(json("_id: 2"));
 
         assertThat(collection.find(json("_id: 2")).first()).isNull();
-        assertThat(collection.count()).isEqualTo(3);
+        assertThat(collection.countDocuments()).isEqualTo(3);
 
         collection.deleteMany(json("_id: {$gte: 3}"));
-        assertThat(collection.count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(1);
         assertThat(collection.find().first()).isEqualTo(json("_id: 1"));
     }
 
@@ -1969,12 +1982,12 @@ public abstract class AbstractBackendTest {
 
         assertThat(result.getModifiedCount()).isEqualTo(1);
 
-        assertThat(collection.count(new Document("b", 2))).isEqualTo(1);
+        assertThat(collection.countDocuments(new Document("b", 2))).isEqualTo(1);
 
         result = collection.updateMany(json("a: 1"), json("$set: {b: 3}"));
         assertThat(result.getModifiedCount()).isEqualTo(2);
-        assertThat(collection.count(new Document("b", 2))).isEqualTo(0);
-        assertThat(collection.count(new Document("b", 3))).isEqualTo(2);
+        assertThat(collection.countDocuments(new Document("b", 2))).isEqualTo(0);
+        assertThat(collection.countDocuments(new Document("b", 3))).isEqualTo(2);
     }
 
     @Test
@@ -2436,7 +2449,7 @@ public abstract class AbstractBackendTest {
         Collection<String> collectionNames = toArray(db.listCollectionNames());
         assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
 
-        assertThat(getCollection("other-collection-name").count()).isEqualTo(3);
+        assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(3);
     }
 
     @Test
@@ -2458,8 +2471,8 @@ public abstract class AbstractBackendTest {
         assertThat(collectionNames).containsOnly("system.indexes", collection.getNamespace().getCollectionName(),
             "other-collection-name");
 
-        assertThat(collection.count()).isEqualTo(3);
-        assertThat(getCollection("other-collection-name").count()).isEqualTo(1);
+        assertThat(collection.countDocuments()).isEqualTo(3);
+        assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(1);
     }
 
     @Test
@@ -2477,7 +2490,7 @@ public abstract class AbstractBackendTest {
         List<String> collectionNames = toArray(db.listCollectionNames());
         assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
 
-        assertThat(getCollection("other-collection-name").count()).isEqualTo(3);
+        assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(3);
     }
 
     @Test
@@ -2718,7 +2731,7 @@ public abstract class AbstractBackendTest {
             assertThat(document.getBoolean("updated")).describedAs(document.toJson()).isTrue();
         }
 
-        long count = collection.count();
+        long count = collection.countDocuments();
         assertThat(count).isEqualTo(numDocuments);
     }
 
@@ -2844,10 +2857,10 @@ public abstract class AbstractBackendTest {
         assertThat(result.getModifiedCount()).isEqualTo(3);
         assertThat(result.getMatchedCount()).isEqualTo(3);
 
-        long totalDocuments = collection.count();
+        long totalDocuments = collection.countDocuments();
         assertThat(totalDocuments).isEqualTo(3);
 
-        long documentsWithY = collection.count(json("field: 'y'"));
+        long documentsWithY = collection.countDocuments(json("field: 'y'"));
         assertThat(documentsWithY).isEqualTo(3);
     }
 
@@ -2872,6 +2885,6 @@ public abstract class AbstractBackendTest {
             new BulkWriteOptions().ordered(ordered));
 
         assertThat(result.getDeletedCount()).isEqualTo(3);
-        assertThat(collection.count()).isZero();
+        assertThat(collection.countDocuments()).isZero();
     }
 }
