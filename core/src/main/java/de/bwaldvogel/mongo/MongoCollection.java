@@ -20,6 +20,18 @@ public interface MongoCollection<P> {
 
     void removeDocument(Document document) throws MongoServerException;
 
+    default Iterable<Document> queryAll() throws MongoServerException {
+        return handleQuery(new Document());
+    }
+
+    default Iterable<Document> handleQuery(Document query) throws MongoServerException {
+        return handleQuery(query, 0, 0);
+    }
+
+    default Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn) throws MongoServerException {
+        return handleQuery(query, numberToSkip, numberToReturn, null);
+    }
+
     Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn,
             Document returnFieldSelector) throws MongoServerException;
 

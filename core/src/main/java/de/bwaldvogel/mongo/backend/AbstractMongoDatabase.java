@@ -56,7 +56,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         this.collections.put(namespaces.getCollectionName(), namespaces);
 
         if (this.namespaces.count() > 0) {
-            for (Document namespace : namespaces.handleQuery(new Document(), 0, 0, null)) {
+            for (Document namespace : namespaces.queryAll()) {
                 String name = namespace.get("name").toString();
                 log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
@@ -67,7 +67,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
             MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
             indexes.set(indexCollection);
-            for (Document indexDescription : indexCollection.handleQuery(new Document(), 0, 0, null)) {
+            for (Document indexDescription : indexCollection.queryAll()) {
                 openOrCreateIndex(indexDescription);
             }
         }
@@ -151,7 +151,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         cursor.put("ns", getDatabaseName() + ".$cmd.listCollections");
 
         List<Document> firstBatch = new ArrayList<>();
-        for (Document collection : namespaces.handleQuery(new Document(), 0, 0, null)) {
+        for (Document collection : namespaces.queryAll()) {
             Document collectionDescription = new Document();
             Document collectionOptions = new Document();
             String namespace = (String) collection.get("name");
@@ -177,7 +177,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         cursor.put("ns", getDatabaseName() + ".$cmd.listIndexes");
 
         List<Document> firstBatch = new ArrayList<>();
-        for (Document description : indexes.handleQuery(new Document(), 0, 0, null)) {
+        for (Document description : indexes.queryAll()) {
             firstBatch.add(description);
         }
 

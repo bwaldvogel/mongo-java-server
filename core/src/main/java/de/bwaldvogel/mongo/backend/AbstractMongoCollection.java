@@ -710,11 +710,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private synchronized Iterable<Document> handleQuery(Document queryObject, int numberToSkip, int numberToReturn)
-            throws MongoServerException {
-        return handleQuery(queryObject, numberToSkip, numberToReturn, null);
-    }
-
     @Override
     public synchronized Iterable<Document> handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
             Document fieldSelector) throws MongoServerException {
