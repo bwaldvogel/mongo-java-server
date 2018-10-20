@@ -815,8 +815,8 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("_id: 3"));
         collection.insertOne(json("_id: 4"));
 
-        assertThat(toArray(collection.find().sort(json("_id: 1")).limit(2).skip(2))).containsExactly(json("_id: 3"),
-            json("_id: 4"));
+        assertThat(toArray(collection.find().sort(json("_id: 1")).limit(2).skip(2)))
+            .containsExactly(json("_id: 3"), json("_id: 4"));
     }
 
     @Test
@@ -826,8 +826,8 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("_id: 3"));
         collection.insertOne(json("_id: 4"));
 
-        assertThat(toArray(collection.find().sort(json("_id: -1")).limit(2).skip(2))).containsExactly(json("_id: 2"),
-            json("_id: 1"));
+        assertThat(toArray(collection.find().sort(json("_id: -1")).limit(2).skip(2)))
+            .containsExactly(json("_id: 2"), json("_id: 1"));
     }
 
     @Test
@@ -841,7 +841,8 @@ public abstract class AbstractBackendTest {
         collection.deleteOne(json("_id: 1"));
         collection.deleteOne(json("_id: 3"));
 
-        assertThat(toArray(collection.find().sort(json("_id: 1")).limit(2).skip(2))).containsExactly(json("_id: 5"));
+        assertThat(toArray(collection.find().sort(json("_id: 1")).limit(2).skip(2)))
+            .containsExactly(json("_id: 5"));
     }
 
     @Test
