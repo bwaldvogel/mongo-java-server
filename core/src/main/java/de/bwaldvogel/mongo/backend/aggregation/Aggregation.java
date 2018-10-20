@@ -20,6 +20,16 @@ public class Aggregation {
         this.collection = collection;
     }
 
+    private Iterable<Document> getDocuments() throws MongoServerException {
+        if (documents != null) {
+            return documents;
+        } else if (collection == null) {
+            return Collections.emptyList();
+        } else {
+            return collection.queryAll();
+        }
+    }
+
     public void match(Document query) throws MongoServerException {
         if (documents != null) {
             throw new MongoServerException("Not yet implemented");
@@ -33,10 +43,9 @@ public class Aggregation {
     }
 
     public void skip(Number skip) throws MongoServerException {
-        assertIntermediateResultExists();
         int numSkip = skip.intValue();
-        if (documents instanceof List) {
-            List<Document> documents = (List<Document>) this.documents;
+        if (getDocuments() instanceof List) {
+            List<Document> documents = (List<Document>) getDocuments();
             numSkip = Math.min(documents.size(), numSkip);
             this.documents = documents.subList(numSkip, documents.size());
         } else {
@@ -44,14 +53,7 @@ public class Aggregation {
         }
     }
 
-    private void assertIntermediateResultExists() throws MongoServerException {
-        if (documents == null) {
-            throw new MongoServerException("Not yet implemented");
-        }
-    }
-
     public void limit(Number limit) throws MongoServerException {
-        assertIntermediateResultExists();
         int numLimit = limit.intValue();
         if (documents instanceof List) {
             List<Document> documents = (List<Document>) this.documents;
@@ -63,7 +65,6 @@ public class Aggregation {
     }
 
     public void group(Document groupQuery) throws MongoServerException {
-        assertIntermediateResultExists();
         Document groupResult = new Document();
         String id = (String) groupQuery.get(ID_FIELD);
         groupResult.put(ID_FIELD, id);
@@ -76,7 +77,7 @@ public class Aggregation {
             accumulator.initialize(groupResult);
         }
 
-        for (Document document : documents) {
+        for (Document document : getDocuments()) {
             for (Accumulator accumulator : accumulators) {
                 accumulator.aggregate(groupResult, document);
             }
@@ -108,7 +109,7 @@ public class Aggregation {
         return accumulators;
     }
 
-    public Iterable<Document> getResult() {
-        return documents;
+    public Iterable<Document> getResult() throws MongoServerException {
+        return getDocuments();
     }
 }

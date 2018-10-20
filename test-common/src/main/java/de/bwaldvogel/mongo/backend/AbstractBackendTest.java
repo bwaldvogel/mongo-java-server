@@ -324,6 +324,17 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    public void testAggregateWithEmptyPipeline() throws Exception {
+        assertThat(toArray(collection.aggregate(Collections.emptyList()))).isEmpty();
+
+        collection.insertOne(json("_id:1"));
+        collection.insertOne(json("_id:2"));
+
+        assertThat(toArray(collection.aggregate(Collections.emptyList())))
+            .containsExactly(json("_id:1"), json("_id:2"));
+    }
+
+    @Test
     public void testCreateIndexes() {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));
