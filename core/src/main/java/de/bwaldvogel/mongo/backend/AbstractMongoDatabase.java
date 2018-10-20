@@ -117,8 +117,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("count")) {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("distinct")) {
-            String collectionName = query.get(command).toString();
-            MongoCollection<P> collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(command, query, true);
             return collection.handleDistinct(query);
         } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query);
@@ -127,12 +126,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("dbstats")) {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
-            String collectionName = query.get(command).toString();
-            MongoCollection<P> collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(command, query, true);
             return collection.getStats();
         } else if (command.equalsIgnoreCase("validate")) {
-            String collectionName = query.get(command).toString();
-            MongoCollection<P> collection = resolveCollection(collectionName, true);
+            MongoCollection<P> collection = resolveCollection(command, query, true);
             return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {
             String collectionName = query.get(command).toString();
@@ -482,17 +479,16 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandCount(String command, Document query) throws MongoServerException {
-        String collection = query.get(command).toString();
+        MongoCollection<P> collection = resolveCollection(command, query, false);
         Document response = new Document();
-        MongoCollection<P> coll = collections.get(collection);
-        if (coll == null) {
+        if (collection == null) {
             response.put("missing", Boolean.TRUE);
             response.put("n", Integer.valueOf(0));
         } else {
             Document queryObject = (Document) query.get("query");
             int limit = getOptionalNumber(query, "limit", -1);
             int skip = getOptionalNumber(query, "skip", 0);
-            response.put("n", Integer.valueOf(coll.count(queryObject, skip, limit)));
+            response.put("n", Integer.valueOf(collection.count(queryObject, skip, limit)));
         }
         Utils.markOkay(response);
         return response;
@@ -548,6 +544,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 log.error("failed to insert {}", insert, e);
             }
         }
+    }
+
+    private MongoCollection<P> resolveCollection(String command, Document query, boolean throwIfNotFound) throws MongoServerException {
+        String collectionName = query.get(command).toString();
+        return resolveCollection(collectionName, throwIfNotFound);
     }
 
     @Override
