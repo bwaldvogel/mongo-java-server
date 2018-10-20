@@ -2,7 +2,7 @@ allprojects {
     apply plugin: 'java'
     apply plugin: 'eclipse'
 
-    version = '1.8.0'
+    version = '1.9.0'
 
     group = 'de.bwaldvogel'
 
