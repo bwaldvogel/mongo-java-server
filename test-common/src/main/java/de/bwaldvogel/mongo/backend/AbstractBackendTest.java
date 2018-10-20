@@ -171,7 +171,7 @@ public abstract class AbstractBackendTest {
         String newCollectionName = "some-collection";
         assertThat(toArray(db.listCollectionNames())).doesNotContain(newCollectionName);
         db.createCollection(newCollectionName, new CreateCollectionOptions());
-        assertThat(toArray(db.listCollectionNames()).contains(newCollectionName));
+        assertThat(toArray(db.listCollectionNames())).contains(newCollectionName);
     }
 
     @Test
