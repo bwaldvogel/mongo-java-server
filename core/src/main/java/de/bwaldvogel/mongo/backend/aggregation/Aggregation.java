@@ -1,8 +1,9 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import de.bwaldvogel.mongo.MongoCollection;
@@ -72,36 +73,37 @@ public class Aggregation {
     }
 
     public void group(Document groupQuery) throws MongoServerException {
-        Document groupResult = new Document();
         if (!groupQuery.containsKey(ID_FIELD)) {
             throw new MongoServerError(15955, "a group specification must include an _id");
         }
         String id = (String) groupQuery.get(ID_FIELD);
-        groupResult.put(ID_FIELD, id);
         if (id != null) {
             throw new MongoServerException("Not yet implemented");
         }
 
-        List<Accumulator> accumulators = parseAccumulators(groupQuery);
-        for (Accumulator accumulator : accumulators) {
-            accumulator.initialize(groupResult);
-        }
+        Map<String, Accumulator> accumulators = parseAccumulators(groupQuery);
 
         Iterable<Document> documents = getDocuments();
         if (documents == null) {
             return;
         }
         for (Document document : documents) {
-            for (Accumulator accumulator : accumulators) {
-                accumulator.aggregate(groupResult, document);
+            for (Accumulator accumulator : accumulators.values()) {
+                accumulator.aggregate(document);
             }
+        }
+
+        Document groupResult = new Document();
+        groupResult.put(ID_FIELD, id);
+        for (Entry<String, Accumulator> entry : accumulators.entrySet()) {
+            groupResult.put(entry.getKey(), entry.getValue().getResult());
         }
 
         this.documents = Collections.singletonList(groupResult);
     }
 
-    private List<Accumulator> parseAccumulators(Document groupStage) throws MongoServerException {
-        List<Accumulator> accumulators = new ArrayList<>();
+    private Map<String, Accumulator> parseAccumulators(Document groupStage) throws MongoServerException {
+        Map<String, Accumulator> accumulators = new LinkedHashMap<>();
         for (Entry<String, ?> accumulatorEntry : groupStage.entrySet()) {
             if (accumulatorEntry.getKey().equals(ID_FIELD)) {
                 continue;
@@ -115,11 +117,11 @@ public class Aggregation {
             String groupOperator = aggregation.getKey();
             Object expression = aggregation.getValue();
             if (groupOperator.equals("$sum")) {
-                accumulators.add(new SumAccumulator(field, expression));
+                accumulators.put(field, new SumAccumulator(expression));
             } else if (groupOperator.equals("$min")) {
-                accumulators.add(new MinAccumulator(field, expression));
+                accumulators.put(field, new MinAccumulator(expression));
             } else if (groupOperator.equals("$max")) {
-                accumulators.add(new MaxAccumulator(field, expression));
+                accumulators.put(field, new MaxAccumulator(expression));
             } else {
                 throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }

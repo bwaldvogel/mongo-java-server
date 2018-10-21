@@ -373,7 +373,7 @@ public abstract class AbstractBackendTest {
         query.putAll(json("n: {$sum: 'abc'}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", 2));
+            .containsExactly(new Document("_id", null).append("n", 0));
 
         query.putAll(json("n: {$sum: 2}"));
 
@@ -405,30 +405,36 @@ public abstract class AbstractBackendTest {
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
         collection.insertOne(json("_id:1, a:30, b: {value: 20}"));
-        collection.insertOne(json("_id:2, a:15, b: {value: 10}"));
+        collection.insertOne(json("_id:2, a:15, b: {value: 10.5}"));
+        collection.insertOne(json("_id:3, b: {value: 1}"));
+        collection.insertOne(json("_id:4, a: {value: 5}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(new Document("_id", null)
-                .append("n", 2)
+                .append("n", 4)
                 .append("sumOfA", 45)
-                .append("sumOfB", 30));
+                .append("sumOfB", 31.5));
     }
 
     @Test
     public void testAggregateWithGroupByMinAndMax() throws Exception {
         Document query = new Document("_id", null);
-        query.putAll(json("minOfA: {$min: '$a'}, maxOfB: {$max: '$b.value'}"));
+        query.putAll(json("minA: {$min: '$a'}, maxB: {$max: '$b.value'}, maxC: {$max: '$c'}, minC: {$min: '$c'}"));
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id:1, a:30, b: {value: 20}"));
-        collection.insertOne(json("_id:2, a:15, b: {value: 10}"));
+        collection.insertOne(json("_id:1, a:30, b: {value: 20}, c: 1.0"));
+        collection.insertOne(json("_id:2, a:15, b: {value: 10}, c: 2"));
+        collection.insertOne(json("_id:3, c: 'zzz'"));
+        collection.insertOne(json("_id:4, c: 'aaa'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(new Document("_id", null)
-                .append("minOfA", 15)
-                .append("maxOfB", 20));
+                .append("minA", 15)
+                .append("maxB", 20)
+                .append("minC", 1.0)
+                .append("maxC", "zzz"));
     }
 
     @Test

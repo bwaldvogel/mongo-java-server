@@ -1,33 +1,11 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
-class MaxAccumulator extends AbstractNumberAccumulator {
+import de.bwaldvogel.mongo.backend.ValueComparator;
 
-    MaxAccumulator(String field, Object expression) {
-        super(field, expression);
-    }
+class MaxAccumulator extends ComparingAccumulator {
 
-    @Override
-    protected int calculate(Integer aggregatedValue, int value) {
-        if (aggregatedValue == null) {
-            return value;
-        }
-        return Math.max(aggregatedValue, value);
-    }
-
-    @Override
-    protected long calculate(Long aggregatedValue, long value) {
-        if (aggregatedValue == null) {
-            return value;
-        }
-        return Math.max(aggregatedValue, value);
-    }
-
-    @Override
-    protected double calculate(Double aggregatedValue, double value) {
-        if (aggregatedValue == null) {
-            return value;
-        }
-        return Math.max(aggregatedValue, value);
+    MaxAccumulator(Object expression) {
+        super(expression, new ValueComparator().reversed());
     }
 
 }
