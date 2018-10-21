@@ -348,6 +348,15 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    public void testAggregateWithMissingIdInGroupSpecification() throws Exception {
+        List<Document> pipeline = Collections.singletonList(new Document("$group", json("n: {$sum: 1}")));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(pipeline)))
+            .withMessageContaining("Command failed with error 15955 (Location15955): 'a group specification must include an _id'");
+    }
+
+    @Test
     public void testCreateIndexes() {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));

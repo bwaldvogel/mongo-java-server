@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class Aggregation {
@@ -66,6 +67,9 @@ public class Aggregation {
 
     public void group(Document groupQuery) throws MongoServerException {
         Document groupResult = new Document();
+        if (!groupQuery.containsKey(ID_FIELD)) {
+            throw new MongoServerError(15955, "Location15955", "a group specification must include an _id");
+        }
         String id = (String) groupQuery.get(ID_FIELD);
         groupResult.put(ID_FIELD, id);
         if (id != null) {
