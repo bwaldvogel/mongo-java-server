@@ -24,10 +24,11 @@ public class Aggregation {
     private Iterable<Document> getDocuments() throws MongoServerException {
         if (documents != null) {
             return documents;
-        } else if (collection == null) {
-            return Collections.emptyList();
-        } else {
+        }
+        if (collection != null) {
             return collection.queryAll();
+        } else {
+            return null;
         }
     }
 
@@ -35,20 +36,21 @@ public class Aggregation {
         if (documents != null) {
             throw new MongoServerException("Not yet implemented");
         }
-
-        if (collection == null) {
-            documents = Collections.emptyList();
-        } else {
+        if (collection != null) {
             documents = collection.handleQuery(query);
         }
     }
 
     public void skip(Number skip) throws MongoServerException {
         int numSkip = skip.intValue();
-        if (getDocuments() instanceof List) {
-            List<Document> documents = (List<Document>) getDocuments();
-            numSkip = Math.min(documents.size(), numSkip);
-            this.documents = documents.subList(numSkip, documents.size());
+        Iterable<Document> documents = getDocuments();
+        if (documents == null) {
+            return;
+        }
+        if (documents instanceof List) {
+            List<Document> documentList = (List<Document>) documents;
+            numSkip = Math.min(documentList.size(), numSkip);
+            this.documents = documentList.subList(numSkip, documentList.size());
         } else {
             throw new MongoServerException("Not yet implemented");
         }
@@ -56,10 +58,14 @@ public class Aggregation {
 
     public void limit(Number limit) throws MongoServerException {
         int numLimit = limit.intValue();
+        Iterable<Document> documents = getDocuments();
+        if (documents == null) {
+            return;
+        }
         if (documents instanceof List) {
-            List<Document> documents = (List<Document>) this.documents;
-            numLimit = Math.min(documents.size(), numLimit);
-            this.documents = documents.subList(0, numLimit);
+            List<Document> documentList = (List<Document>) documents;
+            numLimit = Math.min(documentList.size(), numLimit);
+            this.documents = documentList.subList(0, numLimit);
         } else {
             throw new MongoServerException("Not yet implemented");
         }
@@ -81,13 +87,17 @@ public class Aggregation {
             accumulator.initialize(groupResult);
         }
 
-        for (Document document : getDocuments()) {
+        Iterable<Document> documents = getDocuments();
+        if (documents == null) {
+            return;
+        }
+        for (Document document : documents) {
             for (Accumulator accumulator : accumulators) {
                 accumulator.aggregate(groupResult, document);
             }
         }
 
-        documents = Collections.singletonList(groupResult);
+        this.documents = Collections.singletonList(groupResult);
     }
 
     private List<Accumulator> parseAccumulators(Document groupStage) throws MongoServerException {
@@ -113,6 +123,10 @@ public class Aggregation {
     }
 
     public Iterable<Document> getResult() throws MongoServerException {
-        return getDocuments();
+        Iterable<Document> documents = getDocuments();
+        if (documents == null) {
+            return Collections.emptyList();
+        }
+        return documents;
     }
 }

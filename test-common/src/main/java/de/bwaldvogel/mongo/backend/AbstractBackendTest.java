@@ -362,8 +362,7 @@ public abstract class AbstractBackendTest {
         query.putAll(json("n: {$sum: 1}"));
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
-        assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", 0));
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
         collection.insertOne(json("_id:1"));
         collection.insertOne(json("_id:2"));
