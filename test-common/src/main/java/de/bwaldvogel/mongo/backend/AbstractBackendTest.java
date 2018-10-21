@@ -17,9 +17,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.net.InetSocketAddress;
 import java.text.DateFormat;
@@ -178,25 +176,18 @@ public abstract class AbstractBackendTest {
     @Test
     public void testCreateCollectionAlreadyExists() throws Exception {
         db.createCollection("some-collection", new CreateCollectionOptions());
-        try {
-            db.createCollection("some-collection", new CreateCollectionOptions());
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getCode()).isEqualTo(48);
-            assertThat(e.getMessage()).contains("collection already exists");
-        }
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions()))
+            .withMessageContaining("Command failed with error 48: 'collection already exists'");
     }
 
     @Test
     public void testUnsupportedModifier() throws Exception {
         collection.insertOne(json("{}"));
-        try {
-            collection.updateOne(json("{}"), json("$foo: {}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10147);
-            assertThat(e.getMessage()).contains("Invalid modifier specified: $foo");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("{}"), json("$foo: {}")))
+            .withMessageContaining("Command failed with error 10147: 'Invalid modifier specified: $foo'");
     }
 
     @Test
@@ -224,13 +215,9 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testCollectionStats() throws Exception {
-        try {
-            getCollStats();
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getCode()).isEqualTo(26);
-            assertThat(e.getMessage()).contains("No such collection");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(this::getCollStats)
+            .withMessageContaining("Command failed with error 26: 'No such collection");
 
         collection.insertOne(json("{}"));
         collection.insertOne(json("abc: 'foo'"));
@@ -257,12 +244,9 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testGetLogWhichDoesNotExist() throws Exception {
-        try {
-            getAdminDb().runCommand(json("getLog: 'illegal'"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("no RamLog");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> getAdminDb().runCommand(json("getLog: 'illegal'")))
+            .withMessageContaining("Command failed with error -1: 'no RamLog named: illegal'");
     }
 
     @Test
@@ -487,34 +471,23 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testDeleteInSystemNamespace() throws Exception {
-        try {
-            getCollection("system.foobar").deleteOne(json("{}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(12050);
-            assertThat(e.getMessage()).contains("cannot delete from system namespace");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> getCollection("system.foobar").deleteOne(json("{}")))
+            .withMessageContaining("Command failed with error 12050: 'cannot delete from system namespace'");
 
-        try {
-            getCollection("system.namespaces").deleteOne(json("{}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(12050);
-            assertThat(e.getMessage()).contains("cannot delete from system namespace");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> getCollection("system.namespaces").deleteOne(json("{}")))
+            .withMessageContaining("Command failed with error 12050: 'cannot delete from system namespace'");
     }
 
     @Test
     public void testUpdateInSystemNamespace() throws Exception {
         for (String collectionName : Arrays.asList("system.foobar", "system.namespaces")) {
             MongoCollection<Document> collection = getCollection(collectionName);
-            try {
-                collection.updateMany(eq("some", "value"), set("field", "value"));
-                fail("MongoException expected");
-            } catch (MongoException e) {
-                assertThat(e.getCode()).isEqualTo(10156);
-                assertThat(e.getMessage()).contains("cannot update system collection");
-            }
+
+            assertThatExceptionOfType(MongoCommandException.class)
+                .isThrownBy(() -> collection.updateMany(eq("some", "value"), set("field", "value")))
+                .withMessageContaining("Command failed with error 10156: 'cannot update system collection'");
         }
     }
 
@@ -587,12 +560,10 @@ public abstract class AbstractBackendTest {
     @Test
     public void testFindAndModifyCommandEmpty() throws Exception {
         Document cmd = new Document("findandmodify", collection.getNamespace().getCollectionName());
-        try {
-            db.runCommand(cmd);
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("need remove or update");
-        }
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(cmd))
+            .withMessageContaining("Command failed with error -1: 'need remove or update'");
     }
 
     @Test
@@ -605,13 +576,9 @@ public abstract class AbstractBackendTest {
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1"));
 
-        try {
-            db.runCommand(cmd);
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getCode()).isEqualTo(10148);
-            assertThat(e.getMessage()).contains("Mod on _id not allowed");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(cmd))
+            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
     }
 
     @Test
@@ -633,13 +600,9 @@ public abstract class AbstractBackendTest {
     public void testFindOneAndUpdateError() throws Exception {
         collection.insertOne(json("_id: 1, a: 1"));
 
-        try {
-            collection.findOneAndUpdate(json("_id: 1"), json("$inc: {_id: 1}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10148);
-            assertThat(e.getMessage()).contains("Mod on _id not allowed");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$inc: {_id: 1}")))
+            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
     }
 
     @Test
@@ -902,12 +865,9 @@ public abstract class AbstractBackendTest {
         assertThat(result).isNotNull();
         assertThat(result.getObjectId(Constants.ID_FIELD)).isNull();
 
-        try {
-            collection.insertOne(json("_id: null"));
-            fail("MongoWriteException expected");
-        } catch (MongoWriteException e) {
-            assertThat(e.getMessage()).contains("duplicate key error");
-        }
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("_id: null")))
+            .withMessage("duplicate key error index: _id_  dup key: null");
 
         assertThat(collection.countDocuments()).isEqualTo(1);
         assertThat(collection.find(json("_id: null")).first()).isEqualTo(json("{_id: null, name: 'test'}"));
@@ -931,31 +891,22 @@ public abstract class AbstractBackendTest {
     public void testIdNotAllowedToBeUpdated() {
         collection.insertOne(json("_id: 1"));
 
-        try {
-            collection.replaceOne(json("_id: 1"), json("_id:2, a:4"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("cannot change _id of a document old: 1, new: 2");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.replaceOne(json("_id: 1"), json("_id:2, a:4")))
+            .withMessageContaining("Command failed with error 13596: 'cannot change _id of a document old: 1, new: 2'");
 
         // test with $set
 
-        try {
-            collection.updateOne(json("_id: 1"), new Document("$set", json("_id: 2")));
-            fail("should throw exception");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("Mod on _id not allowed");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), new Document("$set", json("_id: 2"))))
+            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
     }
 
     @Test
     public void testIllegalCommand() throws Exception {
-        try {
-            db.runCommand(json("foo: 1"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("no such cmd: foo");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(json("foo: 1")))
+            .withMessageContaining("Command failed with error 59: 'no such cmd: foo'");
     }
 
     @Test
@@ -984,12 +935,9 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("_id: 1"));
         assertThat(collection.countDocuments()).isEqualTo(1);
 
-        try {
-            collection.insertOne(json("_id: 1"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("duplicate key error");
-        }
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
+            .withMessageContaining("duplicate key error index: _id_  dup key: 1");
 
         assertThat(collection.countDocuments()).isEqualTo(1);
     }
@@ -1046,21 +994,13 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testInsertInSystemNamespace() throws Exception {
-        try {
-            getCollection("system.foobar").insertOne(json("{}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(16459);
-            assertThat(e.getMessage()).contains("attempt to insert in system namespace");
-        }
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> getCollection("system.foobar").insertOne(json("{}")))
+            .withMessage("attempt to insert in system namespace");
 
-        try {
-            getCollection("system.namespaces").insertOne(json("{}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(16459);
-            assertThat(e.getMessage()).contains("attempt to insert in system namespace");
-        }
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() ->  getCollection("system.namespaces").insertOne(json("{}")))
+            .withMessage("attempt to insert in system namespace");
     }
 
     @Test
@@ -1324,23 +1264,22 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testReservedCollectionNames() throws Exception {
-        try {
-            getCollection("foo$bar").insertOne(json("{}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("cannot insert into reserved $ collection");
-        }
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> getCollection("foo$bar").insertOne(json("{}")))
+            .withMessage("cannot insert into reserved $ collection");
 
-        String veryLongString = "verylongstring";
-        for (int i = 0; i < 5; i++) {
-            veryLongString += veryLongString;
+        String veryLongString = repeat("verylongstring", 5);
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> getCollection(veryLongString).insertOne(json("{}")))
+            .withMessage("ns name too long, max size is 128");
+    }
+
+    private static String repeat(String str, int num) {
+        String repeated = str;
+        for (int i = 0; i < num; i++) {
+            repeated += repeated;
         }
-        try {
-            getCollection(veryLongString).insertOne(json("{}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("name too long");
-        }
+        return repeated;
     }
 
     @Test
@@ -1374,12 +1313,9 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testReplSetGetStatus() throws Exception {
-        try {
-            runCommand("replSetGetStatus");
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getErrorMessage()).contains("not running with --replSet");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand("replSetGetStatus"))
+            .withMessageContaining("Command failed with error -1: 'not running with --replSet'");
     }
 
     @Test
@@ -1455,25 +1391,17 @@ public abstract class AbstractBackendTest {
     @Test
     public void testUpdateEmptyPositional() throws Exception {
         collection.insertOne(json("{}"));
-        try {
-            collection.updateOne(json("{}"), json("$set:{'a.$.b': 1}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(16650);
-            assertThat(e.getMessage()).contains("Cannot apply the positional operator without a corresponding query field containing an array.");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("{}"), json("$set:{'a.$.b': 1}")))
+            .withMessageContaining("Command failed with error 16650: 'Cannot apply the positional operator without a corresponding query field containing an array.'");
     }
 
     @Test
     public void testUpdateMultiplePositional() throws Exception {
         collection.insertOne(json("{a: {b: {c: 1}}}"));
-        try {
-            collection.updateOne(json("{'a.b.c':1}"), json("$set:{'a.$.b.$.c': 1}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(16650);
-            assertThat(e.getMessage()).contains("Cannot apply the positional operator without a corresponding query field containing an array.");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("{'a.b.c':1}"), json("$set:{'a.$.b.$.c': 1}")))
+            .withMessageContaining("Command failed with error 16650: 'Cannot apply the positional operator without a corresponding query field containing an array.'");
     }
 
     @Test
@@ -1485,43 +1413,28 @@ public abstract class AbstractBackendTest {
 
         collection.updateOne(json("{x:1}"), json("$set: {y:1}")); // ok
 
-        try {
-            collection.updateOne(json("{x:1}"), json("$set: {$z:1}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(15896);
-            assertThat(e.getMessage()).contains("Modified field name may not start with $");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("{x:1}"), json("$set: {$z:1}")))
+            .withMessageContaining("Command failed with error 15896: 'Modified field name may not start with $'");
 
         // unset ok to remove bad fields
         collection.updateOne(json("{x:1}"), json("$unset: {$z:1}"));
 
-        try {
-            collection.updateOne(json("{x:1}"), json("$inc: {$z:1}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(15896);
-            assertThat(e.getMessage()).contains("Modified field name may not start with $");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("{x:1}"), json("$inc: {$z:1}")))
+            .withMessageContaining("Command failed with error 15896: 'Modified field name may not start with $'");
 
-        try {
-            collection.updateOne(json("{x:1}"), json("$pushAll: {$z:[1,2,3]}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(15896);
-            assertThat(e.getMessage()).contains("Modified field name may not start with $");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("{x:1}"), json("$pushAll: {$z:[1,2,3]}")))
+            .withMessageContaining("Command failed with error 15896: 'Modified field name may not start with $'");
 
     }
 
     @Test
     public void testUpdateSubdocument() throws Exception {
-        try {
-            collection.updateOne(json("{}"), json("'a.b.c': 123"));
-            fail("IllegalArgumentException expected");
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage()).contains("Invalid BSON field name a.b.c");
-        }
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> collection.updateOne(json("{}"), json("'a.b.c': 123")))
+            .withMessage("Invalid BSON field name a.b.c");
     }
 
     @Test
@@ -1552,13 +1465,9 @@ public abstract class AbstractBackendTest {
 
         // push to non-array
         collection.updateOne(idObj, json("$set: {field: 'value'}"));
-        try {
-            collection.updateOne(idObj, json("$push: {field: 'value'}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10141);
-            assertThat(e.getMessage()).contains("Cannot apply $push modifier to non-array");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(idObj, json("$push: {field: 'value'}")))
+            .withMessageContaining("Command failed with error 10141: 'Cannot apply $push modifier to non-array'");
 
         // push with multiple fields
 
@@ -1579,13 +1488,9 @@ public abstract class AbstractBackendTest {
     public void testUpdatePushAll() throws Exception {
         Document idObj = json("_id: 1");
         collection.insertOne(idObj);
-        try {
-            collection.updateOne(idObj, json("$pushAll: {field: 'value'}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10153);
-            assertThat(e.getMessage()).contains("Modifier $pushAll allowed for arrays only");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(idObj, json("$pushAll: {field: 'value'}")))
+            .withMessageContaining("Command failed with error 10153: 'Modifier $pushAll allowed for arrays only'");
 
         collection.updateOne(idObj, json("$pushAll: {field: ['value', 'value2']}"));
         assertThat(collection.find(idObj).first()).isEqualTo(json("_id: 1, field: ['value', 'value2']"));
@@ -1600,13 +1505,9 @@ public abstract class AbstractBackendTest {
 
         // addToSet to non-array
         collection.updateOne(idObj, json("$set: {field: 'value'}"));
-        try {
-            collection.updateOne(idObj, json("$addToSet: {field: 'value'}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10141);
-            assertThat(e.getMessage()).contains("Cannot apply $addToSet modifier to non-array");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(idObj, json("$addToSet: {field: 'value'}")))
+            .withMessageContaining("Command failed with error 10141: 'Cannot apply $addToSet modifier to non-array'");
 
         // addToSet with multiple fields
 
@@ -1665,13 +1566,10 @@ public abstract class AbstractBackendTest {
 
         // pull from non-array
         collection.updateOne(obj, set("field", "value"));
-        try {
-            collection.updateOne(obj, pull("field", "value"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10142);
-            assertThat(e.getMessage()).contains("Cannot apply $pull modifier to non-array");
-        }
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(obj, pull("field", "value")))
+            .withMessageContaining("Command failed with error 10142: 'Cannot apply $pull modifier to non-array'");
 
         // pull standard
         collection.updateOne(obj, json("$set: {field: ['value1', 'value2', 'value1']}"));
@@ -1726,13 +1624,9 @@ public abstract class AbstractBackendTest {
         Document obj = json("_id: 1");
         collection.insertOne(obj);
         collection.updateOne(obj, json("$set: {field: 'value'}"));
-        try {
-            collection.updateOne(obj, json("$pullAll: {field: 'value'}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10142);
-            assertThat(e.getMessage()).contains("Cannot apply $pullAll modifier to non-array");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(obj, json("$pullAll: {field: 'value'}")))
+            .withMessageContaining("Command failed with error 10142: 'Cannot apply $pullAll modifier to non-array'");
 
         collection.updateOne(obj, json("$set: {field1: ['value1', 'value2', 'value1', 'value3', 'value4', 'value3']}"));
 
@@ -1740,13 +1634,9 @@ public abstract class AbstractBackendTest {
 
         assertThat(collection.find(obj).first().get("field1")).isEqualTo(Arrays.asList("value2", "value4"));
 
-        try {
-            collection.updateOne(obj, json("$pullAll: {field1: 'bar'}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10153);
-            assertThat(e.getMessage()).contains("Modifier $pullAll allowed for arrays only");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(obj, json("$pullAll: {field1: 'bar'}")))
+            .withMessageContaining("Command failed with error 10153: 'Modifier $pullAll allowed for arrays only'");
 
     }
 
@@ -1986,13 +1876,9 @@ public abstract class AbstractBackendTest {
     public void testUpdateUnset() throws Exception {
         Document obj = json("_id: 1, a: 1, b: null, c: 'value'");
         collection.insertOne(obj);
-        try {
-            collection.updateOne(obj, json("$unset: {_id: ''}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getCode()).isEqualTo(10148);
-            assertThat(e.getMessage()).contains("Mod on _id not allowed");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(obj, json("$unset: {_id: ''}")))
+            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
 
         collection.updateOne(obj, json("$unset: {a:'', b:''}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, c: 'value'"));
@@ -2035,19 +1921,13 @@ public abstract class AbstractBackendTest {
     public void testUpdateIllegalInt() throws Exception {
         collection.insertOne(json("_id: 1, a: {x:1}"));
 
-        try {
-            collection.updateOne(json("_id: 1"), json("$inc: {a: 1}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("cannot increment value");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$inc: {a: 1}")))
+            .withMessageContaining("Command failed with error -1: 'cannot increment value");
 
-        try {
-            collection.updateOne(json("_id: 1"), json("$inc: {'a.x': 'b'}"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("cannot increment with non-numeric value");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$inc: {'a.x': 'b'}")))
+            .withMessageContaining("Command failed with error -1: 'cannot increment with non-numeric value");
     }
 
     @Test
@@ -2218,26 +2098,17 @@ public abstract class AbstractBackendTest {
 
         collection.insertOne(object);
 
-        try {
-            collection.updateOne(object, json("$mul: {_id: 2}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("_id");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(object, json("$mul: {_id: 2}")))
+            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
 
-        try {
-            collection.updateOne(object, json("$mul: {foo: 2}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("cannot multiply value 'x'");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(object, json("$mul: {foo: 2}")))
+            .withMessageContaining("Command failed with error -1: 'cannot multiply value 'x''");
 
-        try {
-            collection.updateOne(object, json("$mul: {bar: 'x'}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("cannot multiply with non-numeric value");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(object, json("$mul: {bar: 'x'}")))
+            .withMessageContaining("Command failed with error -1: 'cannot multiply with non-numeric value: {bar=x}'");
     }
 
     @Test
@@ -2283,12 +2154,9 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("uniqueKeyField: 'abc2', afield: 'avalue'"));
         collection.insertOne(json("uniqueKeyField: 'abc3', afield: 'avalue'"));
 
-        try {
-            collection.insertOne(json("uniqueKeyField: 'abc2', afield: 'avalue'"));
-            fail("MongoWriteException expected");
-        } catch (MongoWriteException e) {
-            assertThat(e.getMessage()).contains("duplicate key error");
-        }
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("uniqueKeyField: 'abc2', afield: 'avalue'")))
+            .withMessage("duplicate key error index: uniqueKeyField_1  dup key: abc2");
     }
 
     @Test
@@ -2306,12 +2174,9 @@ public abstract class AbstractBackendTest {
         collection.insertOne(json("action: { actionId: 2 }"));
         collection.insertOne(json("action: { actionId: 3 }"));
 
-        try {
-            collection.insertOne(json("action: { actionId: 1 }"));
-            fail("MongoWriteException expected");
-        } catch (MongoWriteException e) {
-            assertThat(e.getMessage()).contains("duplicate key error");
-        }
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("action: { actionId: 1 }")))
+            .withMessageContaining("duplicate key error index: action.actionId_1  dup key: 1");
     }
 
     @Test
@@ -2324,18 +2189,15 @@ public abstract class AbstractBackendTest {
 
     @Test
     public void testCompoundUniqueIndicesNotSupportedAndThrowsException() {
-        try {
-            collection.createIndex(new Document("a", 1).append("b", 1), new IndexOptions().unique(true));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            // expected
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.createIndex(new Document("a", 1).append("b", 1), new IndexOptions().unique(true)))
+            .withMessageContaining("Command failed with error -1: 'Compound unique indices are not yet implemented'");
     }
 
     @Test
     public void testCursorOptionNoTimeout() throws Exception {
         try (MongoCursor<Document> cursor = collection.find().noCursorTimeout(true).iterator()) {
-            assertFalse(cursor.hasNext());
+            assertThat(cursor.hasNext()).isFalse();
         }
     }
 
@@ -2372,38 +2234,21 @@ public abstract class AbstractBackendTest {
 
         collection.insertOne(object);
 
-        try {
-            collection.updateOne(object, json("$currentDate: {lastModified: null}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getCode()).isEqualTo(2);
-            assertThat(e.getErrorMessage()).startsWith("NULL").contains("is not a valid type");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: null}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'NULL is not a valid type for $currentDate");
 
-        try {
-            collection.updateOne(object, json("$currentDate: {lastModified: 123.456}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getCode()).isEqualTo(2);
-            assertThat(e.getErrorMessage()).startsWith("Double").contains("is not a valid type");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: 123.456}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Double is not a valid type for $currentDate");
 
-        try {
-            collection.updateOne(object, json("$currentDate: {lastModified: 'foo'}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getCode()).isEqualTo(2);
-            assertThat(e.getErrorMessage()).startsWith("String").contains("is not a valid type");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: 'foo'}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'String is not a valid type for $currentDate");
 
-        try {
-            collection.updateOne(object, json("$currentDate: {lastModified: {$type: 'foo'}}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getCode()).isEqualTo(2);
-            assertThat(e.getErrorMessage())
-                .startsWith("The '$type' string field is required to be 'date' or 'timestamp'");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: {$type: 'foo'}}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'The '$type' string field is required to be 'date' or 'timestamp'");
 
         assertThat(collection.find(object).first()).isEqualTo(object);
     }
@@ -2443,40 +2288,25 @@ public abstract class AbstractBackendTest {
         Document object = json("_id: 1, foo: 'x', bar: 'y'");
         collection.insertOne(object);
 
-        try {
-            collection.updateOne(json("_id: 1"), json("$rename: {foo: 12345}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("The 'to' field for $rename must be a string");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {foo: 12345}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'The 'to' field for $rename must be a string");
 
-        try {
-            collection.updateOne(json("_id: 1"), json("$rename: {'_id': 'id'}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("Mod on _id not allowed");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {'_id': 'id'}")))
+            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed");
 
-        try {
-            collection.updateOne(json("_id: 1"), json("$rename: {foo: '_id'}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("Mod on _id not allowed");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {foo: '_id'}")))
+            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed");
 
-        try {
-            collection.updateOne(json("_id: 1"), json("$rename: {foo: 'bar', 'bar': 'bar2'}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("Cannot update 'bar' and 'bar' at the same time");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {foo: 'bar', 'bar': 'bar2'}")))
+            .withMessageContaining("Command failed with error 16837: 'Cannot update 'bar' and 'bar' at the same time");
 
-        try {
-            collection.updateOne(json("_id: 1"), json("$rename: {bar: 'foo', bar2: 'foo'}"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getMessage()).contains("Cannot update 'foo' and 'foo' at the same time");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {bar: 'foo', bar2: 'foo'}")))
+            .withMessageContaining("Command failed with error 16837: 'Cannot update 'foo' and 'foo' at the same time");
     }
 
     @Test
@@ -2502,12 +2332,10 @@ public abstract class AbstractBackendTest {
         MongoCollection<Document> otherCollection = db.getCollection("other-collection-name");
         otherCollection.insertOne(json("_id: 1"));
 
-        try {
-            collection.renameCollection(new MongoNamespace(db.getName(), "other-collection-name"));
-            fail("MongoCommandException expected");
-        } catch (MongoCommandException e) {
-            assertThat(e.getErrorMessage()).isEqualTo("target namespace already exists");
-        }
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.renameCollection(new MongoNamespace(db.getName(), "other-collection-name")))
+            .withMessageContaining("Command failed with error -1: 'target namespace already exists'");
+
         List<String> collectionNames = toArray(db.listCollectionNames());
         assertThat(collectionNames).containsOnly("system.indexes", collection.getNamespace().getCollectionName(),
             "other-collection-name");
@@ -2686,21 +2514,26 @@ public abstract class AbstractBackendTest {
         collection.insertOne(new Document("_id", 2).append("ref", new DBRef(collectionName, 1)));
         collection.insertOne(new Document("_id", 3).append("ref", new DBRef(collectionName, 2)));
 
-        try {
-            collection.find(json("ref: {$ref: 'coll'}")).first();
-            fail("MongoQueryException expected");
-        } catch (MongoQueryException e) {
-            assertThat(e.getCode()).isEqualTo(10068);
-            assertThat(e.getMessage()).contains("invalid operator: $ref");
-        }
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("ref: {$ref: 'coll'}")).first())
+            .withMessageContaining("Query failed with error code 10068 and error message 'invalid operator: $ref'");
     }
 
     @Test
     public void testAndOrNorWithEmptyArray() throws Exception {
         collection.insertOne(json("{}"));
-        assertMongoQueryException(and());
-        assertMongoQueryException(nor());
-        assertMongoQueryException(or());
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(and()).first())
+            .withMessageContaining("Query failed with error code 14816 and error message '$and expression must be a nonempty array'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(nor()).first())
+            .withMessageContaining("Query failed with error code 14816 and error message '$nor expression must be a nonempty array'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(or()).first())
+            .withMessageContaining("Query failed with error code 14816 and error message '$or expression must be a nonempty array'");
     }
 
     @Test
@@ -2757,7 +2590,7 @@ public abstract class AbstractBackendTest {
         }
 
         boolean success = latch.await(30, TimeUnit.SECONDS);
-        assertTrue(success);
+        assertThat(success).isTrue();
 
         if (!errors.isEmpty()) {
             throw errors.poll();
@@ -2833,21 +2666,13 @@ public abstract class AbstractBackendTest {
     public void testIllegalElementMatchQuery() throws Exception {
         collection.insertOne(json("_id: 1, results: [ 82, 85, 88 ]"));
 
-        try {
-            collection.find(json("results: { $elemMatch: [ 85 ] }")).first();
-            fail("MongoQueryException expected");
-        } catch (MongoQueryException e) {
-            assertThat(e.getErrorCode()).isEqualTo(2);
-            assertThat(e.getErrorMessage()).isEqualTo("$elemMatch needs an Object");
-        }
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("results: { $elemMatch: [ 85 ] }")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '$elemMatch needs an Object'");
 
-        try {
-            collection.find(json("results: { $elemMatch: 1 }")).first();
-            fail("MongoQueryException expected");
-        } catch (MongoQueryException e) {
-            assertThat(e.getErrorCode()).isEqualTo(2);
-            assertThat(e.getErrorMessage()).isEqualTo("$elemMatch needs an Object");
-        }
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("results: { $elemMatch: 1 }")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '$elemMatch needs an Object'");
     }
 
     @Test
@@ -2871,16 +2696,6 @@ public abstract class AbstractBackendTest {
 
         Document persistentDocument = collection.find(new Document("_id", id)).first();
         assertThat(persistentDocument.keySet()).hasSize(numKeyValues + 1);
-    }
-
-    private void assertMongoQueryException(Bson filter) {
-        try {
-            collection.find(filter).first();
-            fail("MongoQueryException expected");
-        } catch (MongoQueryException e) {
-            assertThat(e.getCode()).isEqualTo(14816);
-            assertThat(e.getMessage()).contains("nonempty array");
-        }
     }
 
     private void insertUpdateInBulk(boolean ordered) {
