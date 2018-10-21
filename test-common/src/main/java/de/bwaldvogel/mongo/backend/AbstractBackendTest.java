@@ -415,6 +415,40 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    public void testAggregateWithGroupByMinAndMax() throws Exception {
+        Document query = new Document("_id", null);
+        query.putAll(json("minOfA: {$min: '$a'}, maxOfB: {$max: '$b.value'}"));
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id:1, a:30, b: {value: 20}"));
+        collection.insertOne(json("_id:2, a:15, b: {value: 10}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null)
+                .append("minOfA", 15)
+                .append("maxOfB", 20));
+    }
+
+    @Test
+    public void testAggregateWithGroupByNonExistingMinAndMax() throws Exception {
+        Document query = new Document("_id", null);
+        query.putAll(json("minOfA: {$min: '$doesNotExist'}, maxOfB: {$max: '$doesNotExist'}"));
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id:1, a:30, b: {value: 20}"));
+        collection.insertOne(json("_id:2, a:15, b: {value: 10}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null)
+                .append("minOfA", null)
+                .append("maxOfB", null));
+    }
+
+    @Test
     public void testAggregateWithUnknownGroupOperator() throws Exception {
         Document query = new Document("_id", null);
         query.putAll(json("n: {$foo: 1}"));

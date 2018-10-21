@@ -1,24 +1,19 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
-import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
-class SumAccumulator implements Accumulator {
-
-    private final String field;
-    private final Object expression;
+class SumAccumulator extends AbstractNumberAccumulator {
 
     SumAccumulator(String field, Object expression) {
-        this.field = field;
-        this.expression = expression;
+        super(field, expression);
     }
 
     @Override
-    public void initialize(Document result) {
-        result.put(field, getDefault());
+    protected void initialize(Document result, String field, Object expression) {
+        result.put(field, getInitialValue(expression));
     }
 
-    private Object getDefault() {
+    private Object getInitialValue(Object expression) {
         if (expression instanceof Integer) {
             return 0;
         } else if (expression instanceof Long) {
@@ -31,29 +26,35 @@ class SumAccumulator implements Accumulator {
     }
 
     @Override
-    public void aggregate(Document result, Document document) {
-        Object count = result.get(field);
-        result.put(field, add(count, document));
-    }
-
-    private Object add(Object count, Document document) {
-        return add(count, document, expression);
-    }
-
-    private static Object add(Object count, Document document, Object value) {
-        if (value instanceof Integer) {
-            return ((Number) count).intValue() + ((Integer) value).intValue();
-        } else if (value instanceof Long) {
-            return ((Number) count).longValue() + ((Long) value).longValue();
-        } else if (value instanceof Double) {
-            return ((Number) count).doubleValue() + ((Double) value).doubleValue();
-        } else if (value instanceof String) {
-            if (((String) value).startsWith("$")) {
-                String substring = ((String) value).substring(1);
-                Object subdocumentValue = Utils.getSubdocumentValue(document, substring);
-                return add(count, document, subdocumentValue);
-            }
+    protected int calculate(Integer aggregatedValue, int value) {
+        if (aggregatedValue == null) {
+            return value;
         }
-        return ((Number) count).intValue() + 1;
+        return aggregatedValue + value;
+    }
+
+    @Override
+    protected long calculate(Long aggregatedValue, long value) {
+        if (aggregatedValue == null) {
+            return value;
+        }
+        return aggregatedValue + value;
+    }
+
+    @Override
+    protected double calculate(Double aggregatedValue, double value) {
+        if (aggregatedValue == null) {
+            return value;
+        }
+        return aggregatedValue + value;
+    }
+
+    @Override
+    protected Number calculateDefault(Number aggregatedValue) {
+        if (aggregatedValue != null) {
+            return aggregatedValue.intValue() + 1;
+        } else {
+            return null;
+        }
     }
 }

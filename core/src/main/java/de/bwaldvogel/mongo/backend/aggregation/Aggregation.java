@@ -113,8 +113,13 @@ public class Aggregation {
             }
             Entry<String, Object> aggregation = entryValue.entrySet().iterator().next();
             String groupOperator = aggregation.getKey();
+            Object expression = aggregation.getValue();
             if (groupOperator.equals("$sum")) {
-                accumulators.add(new SumAccumulator(field, aggregation.getValue()));
+                accumulators.add(new SumAccumulator(field, expression));
+            } else if (groupOperator.equals("$min")) {
+                accumulators.add(new MinAccumulator(field, expression));
+            } else if (groupOperator.equals("$max")) {
+                accumulators.add(new MaxAccumulator(field, expression));
             } else {
                 throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }
