@@ -16,60 +16,31 @@ public class Aggregation {
     private static final String ID_FIELD = "_id";
 
     private final MongoCollection<?> collection;
-    private Iterable<Document> documents = null;
+
+    private Document query = new Document();
+    private int skip = 0;
+    private int limit = 0;
+
+    private List<Document> result;
 
     public Aggregation(MongoCollection<?> collection) {
         this.collection = collection;
     }
 
-    private Iterable<Document> getDocuments() throws MongoServerException {
-        if (documents != null) {
-            return documents;
-        }
-        if (collection != null) {
-            return collection.queryAll();
-        } else {
-            return null;
-        }
+    public void match(Document query) {
+        this.query = query;
     }
 
-    public void match(Document query) throws MongoServerException {
-        if (documents != null) {
-            throw new MongoServerException("Not yet implemented");
-        }
-        if (collection != null) {
-            documents = collection.handleQuery(query);
-        }
+    public void skip(Number skip) {
+        this.skip = skip.intValue();
     }
 
-    public void skip(Number skip) throws MongoServerException {
-        int numSkip = skip.intValue();
-        Iterable<Document> documents = getDocuments();
-        if (documents == null) {
-            return;
-        }
-        if (documents instanceof List) {
-            List<Document> documentList = (List<Document>) documents;
-            numSkip = Math.min(documentList.size(), numSkip);
-            this.documents = documentList.subList(numSkip, documentList.size());
-        } else {
-            throw new MongoServerException("Not yet implemented");
-        }
+    public void limit(Number limit) {
+        this.limit = limit.intValue();
     }
 
-    public void limit(Number limit) throws MongoServerException {
-        int numLimit = limit.intValue();
-        Iterable<Document> documents = getDocuments();
-        if (documents == null) {
-            return;
-        }
-        if (documents instanceof List) {
-            List<Document> documentList = (List<Document>) documents;
-            numLimit = Math.min(documentList.size(), numLimit);
-            this.documents = documentList.subList(0, numLimit);
-        } else {
-            throw new MongoServerException("Not yet implemented");
-        }
+    private Iterable<Document> queryDocuments() throws MongoServerException {
+        return collection.handleQuery(query, skip, limit);
     }
 
     public void group(Document groupQuery) throws MongoServerException {
@@ -83,11 +54,10 @@ public class Aggregation {
 
         Map<String, Accumulator> accumulators = parseAccumulators(groupQuery);
 
-        Iterable<Document> documents = getDocuments();
-        if (documents == null) {
+        if (collection == null) {
             return;
         }
-        for (Document document : documents) {
+        for (Document document : queryDocuments()) {
             for (Accumulator accumulator : accumulators.values()) {
                 accumulator.aggregate(document);
             }
@@ -99,7 +69,7 @@ public class Aggregation {
             groupResult.put(entry.getKey(), entry.getValue().getResult());
         }
 
-        this.documents = Collections.singletonList(groupResult);
+        this.result = Collections.singletonList(groupResult);
     }
 
     private Map<String, Accumulator> parseAccumulators(Document groupStage) throws MongoServerException {
@@ -130,10 +100,13 @@ public class Aggregation {
     }
 
     public Iterable<Document> getResult() throws MongoServerException {
-        Iterable<Document> documents = getDocuments();
-        if (documents == null) {
-            return Collections.emptyList();
+        if (result == null) {
+            if (collection != null) {
+                return queryDocuments();
+            } else {
+                return Collections.emptyList();
+            }
         }
-        return documents;
+        return result;
     }
 }
