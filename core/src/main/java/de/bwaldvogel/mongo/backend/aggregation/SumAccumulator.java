@@ -1,19 +1,16 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
 class SumAccumulator implements Accumulator {
 
     private final String field;
-    private final Number value;
+    private final Object expression;
 
-    SumAccumulator(String field, Object value) {
+    SumAccumulator(String field, Object expression) {
         this.field = field;
-        if (value instanceof Number) {
-            this.value = (Number) value;
-        } else {
-            this.value = 1;
-        }
+        this.expression = expression;
     }
 
     @Override
@@ -21,33 +18,42 @@ class SumAccumulator implements Accumulator {
         result.put(field, getDefault());
     }
 
-    private Number getDefault() {
-        if (value instanceof Integer) {
+    private Object getDefault() {
+        if (expression instanceof Integer) {
             return 0;
-        } else if (value instanceof Long) {
+        } else if (expression instanceof Long) {
             return 0L;
-        } else if (value instanceof Double) {
+        } else if (expression instanceof Double) {
             return 0.0;
         } else {
-            throw new IllegalArgumentException("Unknown value type: " + value);
+            return 0;
         }
     }
 
     @Override
     public void aggregate(Document result, Document document) {
-        Number count = (Number) result.get(field);
-        result.put(field, add(count));
+        Object count = result.get(field);
+        result.put(field, add(count, document));
     }
 
-    private Number add(Number count) {
+    private Object add(Object count, Document document) {
+        return add(count, document, expression);
+    }
+
+    private static Object add(Object count, Document document, Object value) {
         if (value instanceof Integer) {
-            return count.intValue() + value.intValue();
+            return ((Number) count).intValue() + ((Integer) value).intValue();
         } else if (value instanceof Long) {
-            return count.longValue() + value.longValue();
+            return ((Number) count).longValue() + ((Long) value).longValue();
         } else if (value instanceof Double) {
-            return count.doubleValue() + value.doubleValue();
-        } else {
-            throw new IllegalArgumentException("Unknown value type: " + value);
+            return ((Number) count).doubleValue() + ((Double) value).doubleValue();
+        } else if (value instanceof String) {
+            if (((String) value).startsWith("$")) {
+                String substring = ((String) value).substring(1);
+                Object subdocumentValue = Utils.getSubdocumentValue(document, substring);
+                return add(count, document, subdocumentValue);
+            }
         }
+        return ((Number) count).intValue() + 1;
     }
 }

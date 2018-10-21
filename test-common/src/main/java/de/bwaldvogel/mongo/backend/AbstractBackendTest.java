@@ -397,6 +397,24 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    public void testAggregateWithComplexGroupBySumPipeline() throws Exception {
+        Document query = new Document("_id", null);
+        query.putAll(json("n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}"));
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id:1, a:30, b: {value: 20}"));
+        collection.insertOne(json("_id:2, a:15, b: {value: 10}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null)
+                .append("n", 2)
+                .append("sumOfA", 45)
+                .append("sumOfB", 30));
+    }
+
+    @Test
     public void testAggregateWithUnknownGroupOperator() throws Exception {
         Document query = new Document("_id", null);
         query.putAll(json("n: {$foo: 1}"));
