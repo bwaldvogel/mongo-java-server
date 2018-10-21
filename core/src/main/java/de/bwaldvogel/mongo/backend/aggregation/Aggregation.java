@@ -68,7 +68,7 @@ public class Aggregation {
     public void group(Document groupQuery) throws MongoServerException {
         Document groupResult = new Document();
         if (!groupQuery.containsKey(ID_FIELD)) {
-            throw new MongoServerError(15955, "Location15955", "a group specification must include an _id");
+            throw new MongoServerError(15955, "a group specification must include an _id");
         }
         String id = (String) groupQuery.get(ID_FIELD);
         groupResult.put(ID_FIELD, id);
@@ -92,18 +92,21 @@ public class Aggregation {
 
     private List<Accumulator> parseAccumulators(Document groupStage) throws MongoServerException {
         List<Accumulator> accumulators = new ArrayList<>();
-        for (Entry<String, ?> aggregationEntry : groupStage.entrySet()) {
-            if (aggregationEntry.getKey().equals(ID_FIELD)) {
+        for (Entry<String, ?> accumulatorEntry : groupStage.entrySet()) {
+            if (accumulatorEntry.getKey().equals(ID_FIELD)) {
                 continue;
             }
-            String key = aggregationEntry.getKey();
-            Document entryValue = (Document) aggregationEntry.getValue();
+            String field = accumulatorEntry.getKey();
+            Document entryValue = (Document) accumulatorEntry.getValue();
             if (entryValue.size() != 1) {
-                throw new MongoServerException("Not yet implemented");
+                throw new MongoServerError(40238, "The field '" + field + "' must specify one accumulator");
             }
             Entry<String, Object> aggregation = entryValue.entrySet().iterator().next();
-            if (aggregation.getKey().equals("$sum")) {
-                accumulators.add(new SumAccumulator(key, aggregation.getValue()));
+            String groupOperator = aggregation.getKey();
+            if (groupOperator.equals("$sum")) {
+                accumulators.add(new SumAccumulator(field, aggregation.getValue()));
+            } else {
+                throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }
         }
         return accumulators;

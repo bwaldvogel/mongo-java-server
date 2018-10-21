@@ -353,7 +353,7 @@ public abstract class AbstractBackendTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> toArray(collection.aggregate(pipeline)))
-            .withMessageContaining("Command failed with error 15955 (Location15955): 'a group specification must include an _id'");
+            .withMessageContaining("Command failed with error 15955: 'a group specification must include an _id'");
     }
 
     @Test
@@ -395,6 +395,28 @@ public abstract class AbstractBackendTest {
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(new Document("_id", null).append("n", -5.0));
+    }
+
+    @Test
+    public void testAggregateWithUnknownGroupOperator() throws Exception {
+        Document query = new Document("_id", null);
+        query.putAll(json("n: {$foo: 1}"));
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 15952: 'unknown group operator '$foo''");
+    }
+
+    @Test
+    public void testAggregateWithTooManyGroupOperators() throws Exception {
+        Document query = new Document("_id", null);
+        query.putAll(json("n: {$sum: 1, $max: 1}"));
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 40238: 'The field 'n' must specify one accumulator'");
     }
 
     @Test

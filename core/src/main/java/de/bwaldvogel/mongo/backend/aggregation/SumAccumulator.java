@@ -4,11 +4,11 @@ import de.bwaldvogel.mongo.bson.Document;
 
 class SumAccumulator implements Accumulator {
 
-    private final String key;
+    private final String field;
     private final Number value;
 
-    SumAccumulator(String key, Object value) {
-        this.key = key;
+    SumAccumulator(String field, Object value) {
+        this.field = field;
         if (value instanceof Number) {
             this.value = (Number) value;
         } else {
@@ -18,7 +18,7 @@ class SumAccumulator implements Accumulator {
 
     @Override
     public void initialize(Document result) {
-        result.put(key, getDefault());
+        result.put(field, getDefault());
     }
 
     private Number getDefault() {
@@ -35,8 +35,8 @@ class SumAccumulator implements Accumulator {
 
     @Override
     public void aggregate(Document result, Document document) {
-        Number count = (Number) result.get(key);
-        result.put(key, add(count));
+        Number count = (Number) result.get(field);
+        result.put(field, add(count));
     }
 
     private Number add(Number count) {
