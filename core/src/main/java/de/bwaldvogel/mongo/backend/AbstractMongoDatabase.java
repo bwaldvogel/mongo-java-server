@@ -485,7 +485,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         MongoCollection<P> collection = resolveCollection(command, query, false);
         Document response = new Document();
         if (collection == null) {
-            response.put("missing", Boolean.TRUE);
             response.put("n", Integer.valueOf(0));
         } else {
             Document queryObject = (Document) query.get("query");
