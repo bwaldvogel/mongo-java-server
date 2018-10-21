@@ -357,6 +357,47 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    public void testAggregateWithGroupBySumPipeline() throws Exception {
+        Document query = new Document("_id", null);
+        query.putAll(json("n: {$sum: 1}"));
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("n", 0));
+
+        collection.insertOne(json("_id:1"));
+        collection.insertOne(json("_id:2"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("n", 2));
+
+        query.putAll(json("n: {$sum: 'abc'}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("n", 2));
+
+        query.putAll(json("n: {$sum: 2}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("n", 4));
+
+        query.putAll(json("n: {$sum: 1.75}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("n", 3.5));
+
+        query.putAll(new Document("n", new Document("$sum", 10000000000L)));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("n", 20000000000L));
+
+        query.putAll(new Document("n", new Document("$sum", -2.5F)));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("n", -5.0));
+    }
+
+    @Test
     public void testCreateIndexes() {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));

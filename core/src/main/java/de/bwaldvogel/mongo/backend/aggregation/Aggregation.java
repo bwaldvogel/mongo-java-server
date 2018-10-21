@@ -103,11 +103,7 @@ public class Aggregation {
             }
             Entry<String, Object> aggregation = entryValue.entrySet().iterator().next();
             if (aggregation.getKey().equals("$sum")) {
-                if (aggregation.getValue().equals(1)) {
-                    accumulators.add(new SimpleSumAccumulation(key));
-                } else {
-                    throw new MongoServerException("Not yet implemented");
-                }
+                accumulators.add(new SumAccumulator(key, aggregation.getValue()));
             }
         }
         return accumulators;
