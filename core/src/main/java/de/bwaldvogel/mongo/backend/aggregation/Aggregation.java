@@ -92,6 +92,8 @@ public class Aggregation {
                 accumulators.put(field, new MinAccumulator(expression));
             } else if (groupOperator.equals("$max")) {
                 accumulators.put(field, new MaxAccumulator(expression));
+            } else if (groupOperator.equals("$avg")) {
+                accumulators.put(field, new AvgAccumulator(expression));
             } else {
                 throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }

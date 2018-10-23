@@ -397,6 +397,26 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    public void testAggregateWithGroupByAvg() throws Exception {
+        Document query = new Document("_id", null);
+        query.putAll(json("avg: {$avg: 1}"));
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id:1, a: 6.0, b: 'zzz'"));
+        collection.insertOne(json("_id:2, a: 3.0, b: 'aaa'"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("avg", 1.0));
+
+        query.putAll(json("avg: {$avg: '$a'}, avgB: {$avg: '$b'}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(new Document("_id", null).append("avg", 4.5).append("avgB", null));
+    }
+
+    @Test
     public void testAggregateWithComplexGroupBySumPipeline() throws Exception {
         Document query = new Document("_id", null);
         query.putAll(json("n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}"));
