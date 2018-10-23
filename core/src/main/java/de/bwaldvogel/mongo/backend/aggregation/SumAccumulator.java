@@ -1,8 +1,10 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import de.bwaldvogel.mongo.backend.Utils;
+
 class SumAccumulator extends Accumulator {
 
-    private Number sum;
+    private Number sum = 0;
 
     SumAccumulator(Object expression) {
         super(expression);
@@ -11,29 +13,12 @@ class SumAccumulator extends Accumulator {
     @Override
     public void aggregate(Object value) {
         if (value instanceof Number) {
-            Number numberValue = (Number) value;
-            if (sum == null) {
-                sum = numberValue;
-            } else {
-                if (sum instanceof Double || value instanceof Double) {
-                    sum = sum.doubleValue() + ((Number) value).doubleValue();
-                } else if (sum instanceof Integer && value instanceof Integer) {
-                    sum = sum.intValue() + ((Integer) value).intValue();
-                } else if (value instanceof Long) {
-                    sum = sum.longValue() + ((Long) value).longValue();
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-            }
+            sum = Utils.addNumbers(sum, (Number) value);
         }
     }
 
     @Override
     public Object getResult() {
-        if (sum != null) {
-            return sum;
-        } else {
-            return 0;
-        }
+        return sum;
     }
 }
