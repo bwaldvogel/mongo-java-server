@@ -6,8 +6,8 @@ class SumAccumulator extends Accumulator {
 
     private Number sum = 0;
 
-    SumAccumulator(Object expression) {
-        super(expression);
+    SumAccumulator(String field, Object expression) {
+        super(field, expression);
     }
 
     @Override

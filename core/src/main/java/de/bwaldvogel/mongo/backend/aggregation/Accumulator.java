@@ -1,23 +1,21 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
-import de.bwaldvogel.mongo.backend.Utils;
-import de.bwaldvogel.mongo.bson.Document;
-
 abstract class Accumulator {
 
+    private final String field;
     private final Object expression;
 
-    Accumulator(Object expression) {
+    Accumulator(String field, Object expression) {
+        this.field = field;
         this.expression = expression;
     }
 
-    void aggregate(Document document) {
-        if (expression instanceof String && ((String) expression).startsWith("$")) {
-            String value = ((String) expression).substring(1);
-            aggregate(Utils.getSubdocumentValue(document, value));
-        } else {
-            aggregate(expression);
-        }
+    public String getField() {
+        return field;
+    }
+
+    public Object getExpression() {
+        return expression;
     }
 
     abstract void aggregate(Object value);

@@ -4,8 +4,8 @@ import de.bwaldvogel.mongo.backend.ValueComparator;
 
 class MinAccumulator extends ComparingAccumulator {
 
-    MinAccumulator(Object expression) {
-        super(expression, new ValueComparator());
+    MinAccumulator(String field, Object expression) {
+        super(field, expression, new ValueComparator());
     }
 
 }

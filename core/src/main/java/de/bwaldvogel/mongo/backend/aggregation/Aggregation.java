@@ -1,12 +1,17 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -47,33 +52,54 @@ public class Aggregation {
         if (!groupQuery.containsKey(ID_FIELD)) {
             throw new MongoServerError(15955, "a group specification must include an _id");
         }
-        String id = (String) groupQuery.get(ID_FIELD);
-        if (id != null) {
-            throw new MongoServerException("Not yet implemented");
-        }
+        String idExpression = (String) groupQuery.get(ID_FIELD);
 
-        Map<String, Accumulator> accumulators = parseAccumulators(groupQuery);
+        Map<String, Supplier<Accumulator>> accumulatorSuppliers = parseAccumulators(groupQuery);
 
         if (collection == null) {
             return;
         }
+
+        Map<Object, Collection<Accumulator>> accumulatorsPerKey = new LinkedHashMap<>();
         for (Document document : queryDocuments()) {
-            for (Accumulator accumulator : accumulators.values()) {
-                accumulator.aggregate(document);
+            Object key = getValueForExpression(idExpression, document);
+
+            Collection<Accumulator> accumulators = accumulatorsPerKey.computeIfAbsent(key, k -> accumulatorSuppliers.values()
+                .stream()
+                .map(Supplier::get)
+                .collect(Collectors.toList()));
+
+            for (Accumulator accumulator : accumulators) {
+                Object expression = accumulator.getExpression();
+                accumulator.aggregate(getValueForExpression(expression, document));
             }
         }
 
-        Document groupResult = new Document();
-        groupResult.put(ID_FIELD, id);
-        for (Entry<String, Accumulator> entry : accumulators.entrySet()) {
-            groupResult.put(entry.getKey(), entry.getValue().getResult());
-        }
+        result = new ArrayList<>();
 
-        this.result = Collections.singletonList(groupResult);
+        for (Entry<Object, Collection<Accumulator>> entry : accumulatorsPerKey.entrySet()) {
+            Document groupResult = new Document();
+            groupResult.put(ID_FIELD, entry.getKey());
+
+            for (Accumulator accumulator : entry.getValue()) {
+                groupResult.put(accumulator.getField(), accumulator.getResult());
+            }
+
+            result.add(groupResult);
+        }
     }
 
-    private Map<String, Accumulator> parseAccumulators(Document groupStage) throws MongoServerException {
-        Map<String, Accumulator> accumulators = new LinkedHashMap<>();
+    private static Object getValueForExpression(Object expression, Document document) {
+        if (expression instanceof String && ((String) expression).startsWith("$")) {
+            String value = ((String) expression).substring(1);
+            return Utils.getSubdocumentValue(document, value);
+        } else {
+            return expression;
+        }
+    }
+
+    private Map<String, Supplier<Accumulator>> parseAccumulators(Document groupStage) throws MongoServerException {
+        Map<String, Supplier<Accumulator>> accumulators = new LinkedHashMap<>();
         for (Entry<String, ?> accumulatorEntry : groupStage.entrySet()) {
             if (accumulatorEntry.getKey().equals(ID_FIELD)) {
                 continue;
@@ -87,13 +113,13 @@ public class Aggregation {
             String groupOperator = aggregation.getKey();
             Object expression = aggregation.getValue();
             if (groupOperator.equals("$sum")) {
-                accumulators.put(field, new SumAccumulator(expression));
+                accumulators.put(field, () -> new SumAccumulator(field, expression));
             } else if (groupOperator.equals("$min")) {
-                accumulators.put(field, new MinAccumulator(expression));
+                accumulators.put(field, () -> new MinAccumulator(field, expression));
             } else if (groupOperator.equals("$max")) {
-                accumulators.put(field, new MaxAccumulator(expression));
+                accumulators.put(field, () -> new MaxAccumulator(field, expression));
             } else if (groupOperator.equals("$avg")) {
-                accumulators.put(field, new AvgAccumulator(expression));
+                accumulators.put(field, () -> new AvgAccumulator(field, expression));
             } else {
                 throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }

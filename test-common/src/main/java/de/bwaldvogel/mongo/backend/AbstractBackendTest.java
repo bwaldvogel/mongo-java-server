@@ -417,6 +417,28 @@ public abstract class AbstractBackendTest {
     }
 
     @Test
+    public void testAggregateWithGroupByKey() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$group: {_id: '$a', count: {$sum: 1}, avg: {$avg: '$b'}}"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id:1, a: 1"));
+        collection.insertOne(json("_id:2, a: 1"));
+        collection.insertOne(json("_id:3, a: 2, b: 3"));
+        collection.insertOne(json("_id:4, a: 2, b: 4"));
+        collection.insertOne(json("_id:5, a: 5, b: 10"));
+        collection.insertOne(json("_id:6, a: 7, c: 'a'"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("{_id: 1, count: 2}").append("avg", null),
+                json("{_id: 2, count: 2, avg: 3.5}"),
+                json("{_id: 5, count: 1, avg: 10.0}"),
+                json("{_id: 7, count: 1}").append("avg", null)
+            );
+    }
+
+    @Test
     public void testAggregateWithComplexGroupBySumPipeline() throws Exception {
         Document query = new Document("_id", null);
         query.putAll(json("n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}"));

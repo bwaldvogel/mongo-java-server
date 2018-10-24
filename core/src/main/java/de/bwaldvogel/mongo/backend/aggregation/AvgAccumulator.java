@@ -7,8 +7,8 @@ class AvgAccumulator extends Accumulator {
     private Number sum = 0;
     private int count;
 
-    AvgAccumulator(Object expression) {
-        super(expression);
+    AvgAccumulator(String field, Object expression) {
+        super(field, expression);
     }
 
     @Override

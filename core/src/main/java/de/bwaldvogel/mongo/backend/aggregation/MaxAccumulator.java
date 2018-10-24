@@ -4,8 +4,8 @@ import de.bwaldvogel.mongo.backend.ValueComparator;
 
 class MaxAccumulator extends ComparingAccumulator {
 
-    MaxAccumulator(Object expression) {
-        super(expression, new ValueComparator().reversed());
+    MaxAccumulator(String field, Object expression) {
+        super(field, expression, new ValueComparator().reversed());
     }
 
 }

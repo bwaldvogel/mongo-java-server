@@ -7,8 +7,8 @@ class ComparingAccumulator extends Accumulator {
     private final Comparator<Object> comparator;
     private Object result;
 
-    ComparingAccumulator(Object expression, Comparator<Object> comparator) {
-        super(expression);
+    ComparingAccumulator(String field, Object expression, Comparator<Object> comparator) {
+        super(field, expression);
         this.comparator = comparator;
     }
 
