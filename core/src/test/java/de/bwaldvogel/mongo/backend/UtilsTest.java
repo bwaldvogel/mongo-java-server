@@ -18,8 +18,8 @@ public class UtilsTest {
         assertThat(Utils.addNumbers(0.9, 0.1)).isEqualTo(Double.valueOf(1.0));
         assertThat(Utils.addNumbers(4.3f, 7.1f)).isEqualTo(Float.valueOf(11.4f));
         assertThat(Utils.addNumbers((short) 4, (short) 7)).isEqualTo(Short.valueOf((short) 11));
-        assertThat(Utils.addNumbers(4l, 7.3)).isEqualTo(Double.valueOf(11.3));
-        assertThat(Utils.addNumbers(100000000000000l, 100000000000000l)).isEqualTo(Long.valueOf(200000000000000l));
+        assertThat(Utils.addNumbers(4L, 7.3)).isEqualTo(Double.valueOf(11.3));
+        assertThat(Utils.addNumbers(100000000000000L, 100000000000000L)).isEqualTo(200000000000000L);
     }
 
     @Test

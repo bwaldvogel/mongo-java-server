@@ -36,7 +36,7 @@ import de.bwaldvogel.mongo.repository.PersonRepository;
 @ContextConfiguration(classes = AbstractBackendSpringDataTest.TestConfig.class)
 public abstract class AbstractBackendSpringDataTest {
 
-    public static final String DATABASE_NAME = "testdb";
+    private static final String DATABASE_NAME = "testdb";
 
     @EnableMongoRepositories("de.bwaldvogel.mongo.repository")
     static class TestConfig {

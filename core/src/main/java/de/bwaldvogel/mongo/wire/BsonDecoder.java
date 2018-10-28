@@ -126,12 +126,12 @@ class BsonDecoder {
         int length = buffer.readIntLE();
         byte[] data = new byte[length - 1];
         buffer.readBytes(data);
-        String s = new String(data, "UTF-8");
+        String value = new String(data, StandardCharsets.UTF_8);
         byte trail = buffer.readByte();
         if (trail != BsonConstants.STRING_TERMINATION) {
             throw new IOException();
         }
-        return s;
+        return value;
     }
 
     // default visibility for unit test

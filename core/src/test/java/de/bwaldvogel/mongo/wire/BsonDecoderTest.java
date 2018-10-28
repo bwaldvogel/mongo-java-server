@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.wire;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class BsonDecoderTest {
     @Test
     public void testDecodeStringUnicode() throws Exception {
         String string = "\u0442\u0435\u0441\u0442";
-        byte[] bytes = string.getBytes("UTF-8");
+        byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
         ByteBuf buffer = Unpooled.buffer();
         try {
             buffer.writeBytes(bytes);
