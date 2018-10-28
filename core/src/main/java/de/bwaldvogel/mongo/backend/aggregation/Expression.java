@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend.aggregation;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
@@ -16,32 +16,36 @@ class Expression {
             String value = ((String) expression).substring(1);
             return Utils.getSubdocumentValue(document, value);
         } else if (expression instanceof Document) {
-            Document result = new Document();
-            for (Map.Entry<String, Object> entry : ((Document) expression).entrySet()) {
-                String expressionKey = entry.getKey();
-                Object expressionValue = entry.getValue();
-                if (expressionKey.startsWith("$")) {
-                    if (((Document) expression).keySet().size() > 1) {
-                        throw new MongoServerError(15983, "An object representing an expression must have exactly one field: " + expression);
-                    }
-                    switch (expressionKey) {
-                        case "$abs":
-                            return evaluateAbsValue(expressionValue, document);
-                        case "$sum":
-                            return evaluateSumValue(expressionValue, document);
-                        case "$subtract":
-                            return evaluateSubtractValue(expressionValue, document);
-                        default:
-                            throw new MongoServerError(168, "InvalidPipelineOperator", "Unrecognized expression '" + expressionKey + "'");
-                    }
-                } else {
-                    result.put(expressionKey, evaluate(expressionValue, document));
-                }
-            }
-            return result;
+            return evaluateDocumentExpression((Document) expression, document);
         } else {
             return expression;
         }
+    }
+
+    private static Object evaluateDocumentExpression(Document expression, Document document) throws MongoServerException {
+        Document result = new Document();
+        for (Entry<String, Object> entry : expression.entrySet()) {
+            String expressionKey = entry.getKey();
+            Object expressionValue = entry.getValue();
+            if (expressionKey.startsWith("$")) {
+                if (expression.keySet().size() > 1) {
+                    throw new MongoServerError(15983, "An object representing an expression must have exactly one field: " + expression);
+                }
+                switch (expressionKey) {
+                    case "$abs":
+                        return evaluateAbsValue(expressionValue, document);
+                    case "$sum":
+                        return evaluateSumValue(expressionValue, document);
+                    case "$subtract":
+                        return evaluateSubtractValue(expressionValue, document);
+                    default:
+                        throw new MongoServerError(168, "InvalidPipelineOperator", "Unrecognized expression '" + expressionKey + "'");
+                }
+            } else {
+                result.put(expressionKey, evaluate(expressionValue, document));
+            }
+        }
+        return result;
     }
 
     private static Number evaluateAbsValue(Object expressionValue, Document document) throws MongoServerException {
