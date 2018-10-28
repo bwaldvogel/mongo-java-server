@@ -190,10 +190,50 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
-                json("{_id: 1, count: 2}").append("avg", null),
-                json("{_id: 2, count: 2, avg: 3.5}"),
-                json("{_id: 5, count: 1, avg: 10.0}"),
-                json("{_id: 7, count: 1}").append("avg", null)
+                json("_id: 1, count: 2").append("avg", null),
+                json("_id: 2, count: 2, avg: 3.5"),
+                json("_id: 5, count: 1, avg: 10.0"),
+                json("_id: 7, count: 1").append("avg", null)
+            );
+    }
+
+    @Test
+    public void testAggregateWithSimpleExpressions() throws Exception {
+        Document query = json("$group: {_id: {$abs: '$value'}, count: {$sum: 1}}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, value: 1"));
+        collection.insertOne(json("_id: 2, value: -1"));
+        collection.insertOne(json("_id: 3, value: 2"));
+        collection.insertOne(json("_id: 4, value: 2"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, count: 2"),
+                json("_id: 2, count: 2")
+            );
+    }
+
+    @Test
+    public void testAggregateWithMultipleExpressionsInKey() throws Exception {
+        Document query = json("$group: {_id: {abs: {$abs: '$value'}, sum: {$subtract: ['$end', '$start']}}, count: {$sum: 1}}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, value: 1, start: 5, end: 8"));
+        collection.insertOne(json("_id: 2, value: -1, start: 4, end: 4"));
+        collection.insertOne(json("_id: 3, value: 2, start: 9, end: 7"));
+        collection.insertOne(json("_id: 4, value: 2, start: 6, end: 7"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: {abs: 1, sum: 3}, count: 1"),
+                json("_id: {abs: 1, sum: 0}, count: 1"),
+                json("_id: {abs: 2, sum: -2}, count: 1"),
+                json("_id: {abs: 2, sum: 1}, count: 1")
             );
     }
 

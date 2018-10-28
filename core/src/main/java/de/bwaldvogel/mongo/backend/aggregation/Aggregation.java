@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.MongoCollection;
-import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -52,7 +51,7 @@ public class Aggregation {
         if (!groupQuery.containsKey(ID_FIELD)) {
             throw new MongoServerError(15955, "a group specification must include an _id");
         }
-        String idExpression = (String) groupQuery.get(ID_FIELD);
+        Object idExpression = groupQuery.get(ID_FIELD);
 
         Map<String, Supplier<Accumulator>> accumulatorSuppliers = parseAccumulators(groupQuery);
 
@@ -62,7 +61,7 @@ public class Aggregation {
 
         Map<Object, Collection<Accumulator>> accumulatorsPerKey = new LinkedHashMap<>();
         for (Document document : queryDocuments()) {
-            Object key = getValueForExpression(idExpression, document);
+            Object key = Expression.evaluate(idExpression, document);
 
             Collection<Accumulator> accumulators = accumulatorsPerKey.computeIfAbsent(key, k -> accumulatorSuppliers.values()
                 .stream()
@@ -71,7 +70,7 @@ public class Aggregation {
 
             for (Accumulator accumulator : accumulators) {
                 Object expression = accumulator.getExpression();
-                accumulator.aggregate(getValueForExpression(expression, document));
+                accumulator.aggregate(Expression.evaluate(expression, document));
             }
         }
 
@@ -86,15 +85,6 @@ public class Aggregation {
             }
 
             result.add(groupResult);
-        }
-    }
-
-    private static Object getValueForExpression(Object expression, Document document) {
-        if (expression instanceof String && ((String) expression).startsWith("$")) {
-            String value = ((String) expression).substring(1);
-            return Utils.getSubdocumentValue(document, value);
-        } else {
-            return expression;
         }
     }
 
