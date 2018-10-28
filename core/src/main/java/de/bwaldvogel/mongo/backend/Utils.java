@@ -26,7 +26,7 @@ public class Utils {
         } else if (a instanceof Short || b instanceof Short) {
             return Short.valueOf((short) (a.shortValue() + b.shortValue()));
         } else {
-            throw new UnsupportedOperationException("can not add " + a + " and " + b);
+            throw new UnsupportedOperationException("cannot add " + a + " and " + b);
         }
     }
 
@@ -42,7 +42,7 @@ public class Utils {
         } else if (a instanceof Short || b instanceof Short) {
             return Short.valueOf((short) (a.shortValue() - b.shortValue()));
         } else {
-            throw new UnsupportedOperationException("can not add " + a + " and " + b);
+            throw new UnsupportedOperationException("cannot subtract " + a + " and " + b);
         }
     }
 
