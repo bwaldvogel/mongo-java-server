@@ -274,4 +274,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsExactly(json("_id: 1, set: [ ]"));
     }
 
+    @Test
+    public void testAggregateWithProjection() throws Exception {
+        Document query = json("$project: {_id: 1, value: '$x', n: '$foo.bar', other: null}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, x: 10, foo: 'abc'"));
+        collection.insertOne(json("_id: 2, x: 20"));
+        collection.insertOne(json("_id: 3, x: 30, foo: {bar: 7.3}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, value: 10, other: null"),
+                json("_id: 2, value: 20, other: null"),
+                json("_id: 3, value: 30, n: 7.3, other: null")
+            );
+    }
+
 }

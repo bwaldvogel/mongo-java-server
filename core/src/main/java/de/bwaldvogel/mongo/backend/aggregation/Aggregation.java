@@ -7,10 +7,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Spliterator;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
@@ -21,6 +25,7 @@ public class Aggregation {
     private final MongoCollection<?> collection;
 
     private Document query = new Document();
+    private Document projection;
     private int skip = 0;
     private int limit = 0;
 
@@ -42,8 +47,34 @@ public class Aggregation {
         this.limit = limit.intValue();
     }
 
-    private Iterable<Document> queryDocuments() {
-        return collection.handleQuery(query, skip, limit);
+    private Stream<Document> queryDocuments() {
+        Spliterator<Document> documents = collection.handleQuery(query, skip, limit).spliterator();
+        return StreamSupport.stream(documents, false)
+            .map(this::projectDocument);
+    }
+
+    private Document projectDocument(Document input) {
+        if (projection == null) {
+            return input;
+        }
+        Document result = new Document();
+        for (Entry<String, Object> entry : projection.entrySet()) {
+            String field = entry.getKey();
+            Object projection = entry.getValue();
+            if (projection instanceof Number || projection instanceof Boolean) {
+                if (Utils.isTrue(projection)) {
+                    result.put(field, input.get(field));
+                }
+            } else if (projection == null) {
+                result.put(field, null);
+            } else {
+                Object projectedValue = Expression.evaluate(projection, input);
+                if (projectedValue != null) {
+                    result.put(field, projectedValue);
+                }
+            }
+        }
+        return result;
     }
 
     public void group(Document groupQuery) {
@@ -59,7 +90,7 @@ public class Aggregation {
         }
 
         Map<Object, Collection<Accumulator>> accumulatorsPerKey = new LinkedHashMap<>();
-        for (Document document : queryDocuments()) {
+        queryDocuments().forEach(document -> {
             Object key = Expression.evaluate(idExpression, document);
 
             Collection<Accumulator> accumulators = accumulatorsPerKey.computeIfAbsent(key, k -> accumulatorSuppliers.values()
@@ -71,7 +102,7 @@ public class Aggregation {
                 Object expression = accumulator.getExpression();
                 accumulator.aggregate(Expression.evaluate(expression, document));
             }
-        }
+        });
 
         result = new ArrayList<>();
 
@@ -118,14 +149,18 @@ public class Aggregation {
         return accumulators;
     }
 
-    public Iterable<Document> getResult() {
+    public List<Document> getResult() {
         if (result == null) {
             if (collection != null) {
-                return queryDocuments();
+                return queryDocuments().collect(Collectors.toList());
             } else {
                 return Collections.emptyList();
             }
         }
         return result;
+    }
+
+    public void project(Document projection) {
+        this.projection = projection;
     }
 }
