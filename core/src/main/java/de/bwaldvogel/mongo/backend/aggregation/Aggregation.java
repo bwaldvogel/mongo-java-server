@@ -110,6 +110,8 @@ public class Aggregation {
                 accumulators.put(field, () -> new MaxAccumulator(field, expression));
             } else if (groupOperator.equals("$avg")) {
                 accumulators.put(field, () -> new AvgAccumulator(field, expression));
+            } else if (groupOperator.equals("$addToSet")) {
+                accumulators.put(field, () -> new AddToSetAccumulator(field, expression));
             } else {
                 throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }

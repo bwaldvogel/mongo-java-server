@@ -5,6 +5,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 
@@ -235,6 +236,42 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 json("_id: {abs: 2, sum: -2}, count: 1"),
                 json("_id: {abs: 2, sum: 1}, count: 1")
             );
+    }
+
+    @Test
+    public void testAggregateWithAddToSet() throws Exception {
+        Document query = json("$group: {_id: { day: { $dayOfYear: '$date'}, year: { $year: '$date' } }, itemsSold: { $addToSet: '$item' }}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", Instant.parse("2014-01-01T08:00:00Z")));
+        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", Instant.parse("2014-02-03T09:00:00Z")));
+        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", Instant.parse("2014-02-03T09:05:00Z")));
+        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", Instant.parse("2014-02-15T08:00:00Z")));
+        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", Instant.parse("2014-02-15T09:12:00Z")));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: { day:  1, year: 2014 }, itemsSold: [ 'abc' ]"),
+                json("_id: { day: 34, year: 2014 }, itemsSold: [ 'jkl', 'xyz' ]"),
+                json("_id: { day: 46, year: 2014 }, itemsSold: [ 'abc', 'xyz' ]")
+            );
+    }
+
+    @Test
+    public void testAggregateWithEmptyAddToSet() throws Exception {
+        Document query = json("$group: {_id: 1, set: { $addToSet: '$foo' }}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("_id: 1, set: [ ]"));
     }
 
 }
