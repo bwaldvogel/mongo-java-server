@@ -1,6 +1,10 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -38,6 +42,10 @@ class Expression {
                         return evaluateSumValue(expressionValue, document);
                     case "$subtract":
                         return evaluateSubtractValue(expressionValue, document);
+                    case "$year":
+                        return evaluateYearValue(expressionValue, document);
+                    case "$dayOfYear":
+                        return evaluateDayOfYearValue(expressionValue, document);
                     default:
                         throw new MongoServerError(168, "InvalidPipelineOperator", "Unrecognized expression '" + expressionKey + "'");
                 }
@@ -87,12 +95,12 @@ class Expression {
         if (!(value instanceof Collection)) {
             throw new MongoServerError(16020, "Expression $subtract takes exactly 2 arguments. 1 were passed in.");
         }
-        Collection values = (Collection) value;
+        Collection<?> values = (Collection<?>) value;
         if (values.size() != 2) {
             throw new MongoServerError(16020, "Expression $subtract takes exactly 2 arguments. " + values.size() + " were passed in.");
         }
 
-        Iterator iterator = values.iterator();
+        Iterator<?> iterator = values.iterator();
         Object one = evaluate(iterator.next(), document);
         Object other = evaluate(iterator.next(), document);
 
@@ -102,5 +110,34 @@ class Expression {
         }
 
         return Utils.subtractNumbers((Number) one, (Number) other);
+    }
+
+    private static Integer evaluateYearValue(Object expressionValue, Document document) throws MongoServerException {
+        Object value = evaluate(expressionValue, document);
+        if (value == null) {
+            return null;
+        }
+
+        ZonedDateTime zonedDateTime = getZonedDateTime(value);
+        return zonedDateTime.toLocalDate().getYear();
+    }
+
+    private static Integer evaluateDayOfYearValue(Object expressionValue, Document document) throws MongoServerException {
+        Object value = evaluate(expressionValue, document);
+        if (value == null) {
+            return null;
+        }
+
+        ZonedDateTime zonedDateTime = getZonedDateTime(value);
+        return zonedDateTime.toLocalDate().getDayOfYear();
+    }
+
+    private static ZonedDateTime getZonedDateTime(Object value) throws MongoServerError {
+        if (!(value instanceof Date)) {
+            throw new MongoServerError(16006, "can't convert from " + value.getClass() + " to Date");
+        }
+
+        Instant instant = ((Date) value).toInstant();
+        return ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
     }
 }

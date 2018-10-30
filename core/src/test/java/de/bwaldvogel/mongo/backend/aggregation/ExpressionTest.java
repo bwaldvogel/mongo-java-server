@@ -3,8 +3,10 @@ package de.bwaldvogel.mongo.backend.aggregation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 
 import org.junit.Test;
 
@@ -49,6 +51,19 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateYear() throws Exception {
+        assertThat(Expression.evaluate(new Document("$year", "$a"), new Document())).isNull();
+        assertThat(Expression.evaluate(new Document("$year", "$a"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(2018);
+    }
+
+    @Test
+    public void testEvaluateDayOfYear() throws Exception {
+        assertThat(Expression.evaluate(new Document("$dayOfYear", "$a"), new Document())).isNull();
+        assertThat(Expression.evaluate(new Document("$dayOfYear", "$a"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
+        assertThat(Expression.evaluate(new Document("$dayOfYear", "$a"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(34);
+    }
+
+    @Test
     public void testEvaluateIllegalExpression() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(new Document("$foo", "$a"), new Document()))
@@ -77,6 +92,18 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(new Document("$subtract", Arrays.asList("a", "b")), new Document()))
             .withMessage("cant $subtract a java.lang.String from a java.lang.String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(new Document("$year", "$a"), new Document("a", "abc")))
+            .withMessage("can't convert from class java.lang.String to Date");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(new Document("$dayOfYear", "$a"), new Document("a", "abc")))
+            .withMessage("can't convert from class java.lang.String to Date");
+    }
+
+    private static Date toDate(String instant) {
+        return Date.from(Instant.parse(instant));
     }
 
 }
