@@ -24,7 +24,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     private Integer lastPosition;
 
     @Override
-    public boolean matches(Document document, Document query) throws MongoServerException {
+    public boolean matches(Document document, Document query) {
         for (String key : query.keySet()) {
             if (!checkMatch(query.get(key), key, document)) {
                 return false;
@@ -35,7 +35,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @Override
-    public synchronized Integer matchPosition(Document document, Document query) throws MongoServerException {
+    public synchronized Integer matchPosition(Document document, Document query) {
         lastPosition = null;
         for (String key : query.keySet()) {
             if (!checkMatch(query.get(key), key, document)) {
@@ -46,7 +46,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return lastPosition;
     }
 
-    private List<String> splitKey(String key) throws MongoServerException {
+    private List<String> splitKey(String key) {
         List<String> keys = Arrays.asList(key.split("\\."));
         for (String subKey : keys) {
             if (subKey.isEmpty()) {
@@ -56,11 +56,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return keys;
     }
 
-    private boolean checkMatch(Object queryValue, String key, Object document) throws MongoServerException {
+    private boolean checkMatch(Object queryValue, String key, Object document) {
         return checkMatch(queryValue, splitKey(key), document);
     }
 
-    private boolean checkMatch(Object queryValue, List<String> keys, Object document) throws MongoServerException {
+    private boolean checkMatch(Object queryValue, List<String> keys, Object document) {
 
         if (keys.isEmpty()) {
             throw new MongoServerException("illegal keys: " + keys);
@@ -176,7 +176,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return new Document(document);
     }
 
-    private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) throws MongoServerException {
+    private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) {
         if (!(queryValue instanceof List<?>)) {
             throw new MongoServerError(14816, filter + " expression must be a nonempty array");
         }
@@ -217,7 +217,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     @SuppressWarnings("unchecked")
     private boolean checkMatchesAllDocuments(Object queryValue, List<String> keys, Object document)
-            throws MongoServerException {
+            {
         for (Object query : (Collection<Object>) queryValue) {
             if (!checkMatchesAnyDocument(query, keys, document)) {
                 return false;
@@ -228,7 +228,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     @SuppressWarnings("unchecked")
     private boolean checkMatchesAnyDocument(Object queryValue, List<String> keys, Object document)
-            throws MongoServerException {
+            {
         int i = 0;
         for (Object object : (Collection<Object>) document) {
             if (checkMatch(queryValue, keys, object)) {
@@ -243,11 +243,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @Override
-    public boolean matchesValue(Object queryValue, Object value) throws MongoServerException {
+    public boolean matchesValue(Object queryValue, Object value) {
         return checkMatchesValue(queryValue, value, true);
     }
 
-    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) throws MongoServerException {
+    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) {
 
         if (BsonRegularExpression.isRegularExpression(queryValue)) {
             if (value == null) {
@@ -293,7 +293,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAllValues(Object queryValue, Object values) throws MongoServerException {
+    private boolean checkMatchesAllValues(Object queryValue, Object values) {
 
         if (!(queryValue instanceof Collection)) {
             return false;
@@ -310,7 +310,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesElemValues(Object queryValue, Object values) throws MongoServerException {
+    private boolean checkMatchesElemValues(Object queryValue, Object values) {
         if (!(queryValue instanceof Document)) {
             throw new BadValueException(QueryOperator.ELEM_MATCH.getValue() + " needs an Object");
         }
@@ -324,7 +324,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAnyValue(Object queryValue, Object values) throws MongoServerException {
+    private boolean checkMatchesAnyValue(Object queryValue, Object values) {
         int i = 0;
         for (Object value : (Collection<Object>) values) {
             if (checkMatchesValue(queryValue, value, true)) {
@@ -339,7 +339,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkExpressionMatch(Object value, boolean valueExists, Object expressionValue, String operator)
-            throws MongoServerException {
+            {
 
         final QueryOperator queryOperator;
         try {

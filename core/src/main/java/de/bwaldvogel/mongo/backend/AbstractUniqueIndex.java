@@ -12,7 +12,6 @@ import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
-import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
@@ -37,7 +36,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public synchronized void checkAdd(Document document) throws MongoServerError {
+    public synchronized void checkAdd(Document document) {
         if (!Utils.hasSubdocumentValue(document, key)) {
             return;
         }
@@ -49,7 +48,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public synchronized void add(Document document, P position) throws MongoServerError {
+    public synchronized void add(Document document, P position) {
         checkAdd(document);
         if (!Utils.hasSubdocumentValue(document, this.key)) {
             return;
@@ -62,7 +61,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public void checkUpdate(Document oldDocument, Document newDocument) throws MongoServerError {
+    public void checkUpdate(Document oldDocument, Document newDocument) {
         if (nullAwareEqualsKeys(oldDocument, newDocument)) {
             return;
         }

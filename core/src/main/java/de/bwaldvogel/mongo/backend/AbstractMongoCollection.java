@@ -37,12 +37,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         this.idField = idField;
     }
 
-    protected boolean documentMatchesQuery(Document document, Document query) throws MongoServerException {
+    protected boolean documentMatchesQuery(Document document, Document query) {
         return matcher.matches(document, query);
     }
 
     private Iterable<Document> queryDocuments(Document query, Document orderBy, int numberToSkip,
-                                                int numberToReturn) throws MongoServerException {
+                                                int numberToReturn) {
         synchronized (indexes) {
             for (Index<P> index : indexes) {
                 if (index.canHandle(query)) {
@@ -73,21 +73,21 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                           int numberToReturn) throws MongoServerException;
+                                                           int numberToReturn);
 
     protected abstract Iterable<Document> matchDocuments(Document query, Iterable<P> positions, Document orderBy,
-                                                         int numberToSkip, int numberToReturn) throws MongoServerException;
+                                                         int numberToSkip, int numberToReturn);
 
     protected abstract Document getDocument(P position);
 
-    protected abstract void updateDataSize(long sizeDelta) throws MongoServerException;
+    protected abstract void updateDataSize(long sizeDelta);
 
-    protected abstract long getDataSize() throws MongoServerException;
+    protected abstract long getDataSize();
 
-    protected abstract P addDocumentInternal(Document document) throws MongoServerException;
+    protected abstract P addDocumentInternal(Document document);
 
     @Override
-    public synchronized void addDocument(Document document) throws MongoServerException {
+    public synchronized void addDocument(Document document) {
 
         for (Index<P> index : indexes) {
             index.checkAdd(document);
@@ -127,19 +127,19 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         indexes.add(index);
     }
 
-    private void assertNotKeyField(String key) throws MongoServerError {
+    private void assertNotKeyField(String key) {
         if (key.equals(idField)) {
             throw new MongoServerError(10148, "Mod on " + idField + " not allowed");
         }
     }
 
     private void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos)
-            throws MongoServerException {
+            {
         changeSubdocumentValue(document, key, newValue, new AtomicReference<>(matchPos));
     }
 
     private void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos)
-            throws MongoServerException {
+            {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -158,12 +158,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private Object removeSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
+    private Object removeSubdocumentValue(Object document, String key, Integer matchPos) {
         return removeSubdocumentValue(document, key, new AtomicReference<>(matchPos));
     }
 
     private Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
-            throws MongoServerException {
+            {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -179,12 +179,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private Object getSubdocumentValue(Object document, String key, Integer matchPos) throws MongoServerException {
+    private Object getSubdocumentValue(Object document, String key, Integer matchPos) {
         return getSubdocumentValue(document, key, new AtomicReference<>(matchPos));
     }
 
     private Object getSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
-            throws MongoServerException {
+            {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -201,7 +201,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     private void modifyField(Document document, String modifier, Document change, Integer matchPos,
-            boolean isUpsert) throws MongoServerException {
+            boolean isUpsert) {
 
         UpdateOperator op = getUpdateOperator(modifier, change);
 
@@ -437,7 +437,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private UpdateOperator getUpdateOperator(String modifier, Document change) throws MongoServerError {
+    private UpdateOperator getUpdateOperator(String modifier, Document change) {
         final UpdateOperator op;
         try {
             op = UpdateOperator.fromValue(modifier);
@@ -456,7 +456,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     private void updatePushAllAddToSet(Document document, UpdateOperator updateOperator, Document change,
-            Integer matchPos) throws MongoServerException {
+            Integer matchPos) {
         // http://docs.mongodb.org/manual/reference/operator/push/
         for (String key : change.keySet()) {
             Object value = getSubdocumentValue(document, key, matchPos);
@@ -505,7 +505,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private void applyUpdate(Document oldDocument, Document newDocument) throws MongoServerException {
+    private void applyUpdate(Document oldDocument, Document newDocument) {
 
         if (newDocument.equals(oldDocument)) {
             return;
@@ -553,7 +553,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     private Document calculateUpdateDocument(Document oldDocument, Document update, Integer matchPos,
-            boolean isUpsert) throws MongoServerException {
+            boolean isUpsert) {
 
         int numStartsWithDollar = 0;
         for (String key : update.keySet()) {
@@ -579,7 +579,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized Document findAndModify(Document query) throws MongoServerException {
+    public synchronized Document findAndModify(Document query) {
 
         boolean returnNew = Utils.isTrue(query.get("new"));
 
@@ -712,7 +712,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized Iterable<Document> handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
-            Document fieldSelector) throws MongoServerException {
+            Document fieldSelector) {
 
         final Document query;
         final Document orderBy;
@@ -795,7 +795,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized Document handleDistinct(Document query) throws MongoServerException {
+    public synchronized Document handleDistinct(Document query) {
         String key = query.get("key").toString();
         Document filter = (Document) query.get("query");
         if (filter == null) {
@@ -815,7 +815,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized int insertDocuments(List<Document> documents) throws MongoServerException {
+    public synchronized int insertDocuments(List<Document> documents) {
         for (Document document : documents) {
             addDocument(document);
         }
@@ -823,7 +823,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized int deleteDocuments(Document selector, int limit) throws MongoServerException {
+    public synchronized int deleteDocuments(Document selector, int limit) {
         int n = 0;
         for (Document document : handleQuery(selector, 0, limit)) {
             if (limit > 0 && n >= limit) {
@@ -837,7 +837,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized Document updateDocuments(Document selector, Document updateQuery, boolean isMulti,
-            boolean isUpsert) throws MongoServerException {
+            boolean isUpsert) {
 
         if (isMulti) {
             for (String key : updateQuery.keySet()) {
@@ -878,7 +878,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     private Document updateDocument(Document document, Document updateQuery, Integer matchPos)
-            throws MongoServerException {
+            {
         synchronized (document) {
             // copy document
             Document oldDocument = new Document();
@@ -919,7 +919,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    protected abstract void handleUpdate(Document document) throws MongoServerException;
+    protected abstract void handleUpdate(Document document);
 
     private void cloneInto(Document targetDocument, Document sourceDocument) {
         for (String key : sourceDocument.keySet()) {
@@ -945,7 +945,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private Document handleUpsert(Document updateQuery, Document selector) throws MongoServerException {
+    private Document handleUpsert(Document updateQuery, Document selector) {
         Document document = convertSelectorToDocument(selector);
 
         Document newDocument = calculateUpdateDocument(document, updateQuery, null, true);
@@ -959,7 +959,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     /**
      * convert selector used in an upsert statement into a document
      */
-    Document convertSelectorToDocument(Document selector) throws MongoServerException {
+    Document convertSelectorToDocument(Document selector) {
         Document document = new Document();
         for (String key : selector.keySet()) {
             if (key.startsWith("$")) {
@@ -980,7 +980,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public int count(Document query, int skip, int limit) throws MongoServerException {
+    public int count(Document query, int skip, int limit) {
         if (query.keySet().isEmpty()) {
             int count = count();
             if (skip > 0) {
@@ -1003,7 +1003,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public Document getStats() throws MongoServerException {
+    public Document getStats() {
         long dataSize = getDataSize();
 
         Document response = new Document("ns", getFullName());
@@ -1029,7 +1029,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized void removeDocument(Document document) throws MongoServerException {
+    public synchronized void removeDocument(Document document) {
         P position = null;
 
         if (!indexes.isEmpty()) {
@@ -1050,7 +1050,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public Document validate() throws MongoServerException {
+    public Document validate() {
         Document response = new Document("ns", getFullName());
         response.put("extentCount", Integer.valueOf(0));
         response.put("datasize", Long.valueOf(getDataSize()));
@@ -1073,14 +1073,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public void renameTo(String newDatabaseName, String newCollectionName) throws MongoServerException {
+    public void renameTo(String newDatabaseName, String newCollectionName) {
         this.databaseName = newDatabaseName;
         this.collectionName = newCollectionName;
     }
 
-    protected abstract void removeDocument(P position) throws MongoServerException;
+    protected abstract void removeDocument(P position);
 
-    protected abstract P findDocumentPosition(Document document) throws MongoServerException;
+    protected abstract P findDocumentPosition(Document document);
 
     protected abstract int getRecordCount();
 

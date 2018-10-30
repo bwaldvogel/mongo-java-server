@@ -135,7 +135,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
     }
 
-    private Document handleCommand(Channel channel, MongoQuery query) throws MongoServerException {
+    private Document handleCommand(Channel channel, MongoQuery query) {
         String collectionName = query.getCollectionName();
         if (collectionName.equals("$cmd.sys.inprog")) {
             Collection<Document> currentOperations = mongoBackend.getCurrentOperations(query);
@@ -159,7 +159,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         throw new MongoServerException("unknown collection: " + collectionName);
     }
 
-    private Document getServerStatus() throws MongoServerException {
+    private Document getServerStatus() {
         Document serverStatus = new Document();
         try {
             serverStatus.put("host", InetAddress.getLocalHost().getHostName());

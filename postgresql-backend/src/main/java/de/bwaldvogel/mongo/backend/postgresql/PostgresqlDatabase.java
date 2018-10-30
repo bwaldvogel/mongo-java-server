@@ -14,14 +14,14 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
 
     private final PostgresqlBackend backend;
 
-    public PostgresqlDatabase(String databaseName, PostgresqlBackend backend) throws MongoServerException {
+    public PostgresqlDatabase(String databaseName, PostgresqlBackend backend) {
         super(databaseName, backend);
         this.backend = backend;
         initializeNamespacesAndIndexes();
     }
 
     @Override
-    public void drop() throws MongoServerException {
+    public void drop() {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("DROP SCHEMA " + getSchemaName() + " CASCADE")
         ) {
@@ -46,12 +46,12 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     }
 
     @Override
-    protected Index<Long> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) throws MongoServerException {
+    protected Index<Long> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) {
         return new PostgresUniqueIndex(backend, databaseName, collectionName, key, ascending);
     }
 
     @Override
-    public void dropCollection(String collectionName) throws MongoServerException {
+    public void dropCollection(String collectionName) {
         String fullCollectionName = PostgresqlCollection.getQualifiedTablename(getDatabaseName(), collectionName);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("DROP TABLE " + fullCollectionName + "")) {
@@ -63,7 +63,7 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     }
 
     @Override
-    protected MongoCollection<Long> openOrCreateCollection(String collectionName, String idField) throws MongoServerException {
+    protected MongoCollection<Long> openOrCreateCollection(String collectionName, String idField) {
         String tablename = PostgresqlCollection.getTablename(collectionName);
         String fullCollectionName = PostgresqlCollection.getQualifiedTablename(getDatabaseName(), collectionName);
         String createTableSql = "CREATE TABLE IF NOT EXISTS " + fullCollectionName + "" +

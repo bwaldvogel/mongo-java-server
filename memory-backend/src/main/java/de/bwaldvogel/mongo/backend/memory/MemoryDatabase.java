@@ -3,11 +3,10 @@ package de.bwaldvogel.mongo.backend.memory;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
 
-    public MemoryDatabase(MongoBackend backend, String databaseName) throws MongoServerException {
+    public MemoryDatabase(MongoBackend backend, String databaseName) {
         super(databaseName, backend);
         initializeNamespacesAndIndexes();
     }

@@ -12,7 +12,6 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class H2Database extends AbstractMongoDatabase<Object> {
 
@@ -21,7 +20,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
 
     private MVStore mvStore;
 
-    public H2Database(String databaseName, MongoBackend backend, MVStore mvStore) throws MongoServerException {
+    public H2Database(String databaseName, MongoBackend backend, MVStore mvStore) {
         super(databaseName, backend);
         this.mvStore = mvStore;
         initializeNamespacesAndIndexes();
@@ -61,7 +60,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     @Override
-    public void dropCollection(String collectionName) throws MongoServerException {
+    public void dropCollection(String collectionName) {
         super.dropCollection(collectionName);
         String fullCollectionName = getDatabaseName() + "." + collectionName;
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
@@ -72,7 +71,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
 
     @Override
     public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
-            throws MongoServerException {
+            {
         super.moveCollection(oldDatabase, collection, newCollectionName);
         String fullCollectionName = collection.getFullName();
         String newFullName = collection.getDatabaseName() + "." + newCollectionName;

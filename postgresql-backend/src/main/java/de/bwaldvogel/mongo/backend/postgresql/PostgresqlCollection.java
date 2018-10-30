@@ -23,7 +23,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    public int count() throws MongoServerException {
+    public int count() {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM " + getQualifiedTablename())
         ) {
@@ -43,7 +43,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    public void drop() throws MongoServerException {
+    public void drop() {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("DROP TABLE " + getQualifiedTablename())
         ) {
@@ -54,7 +54,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         Collection<Document> matchedDocuments = new ArrayList<>();
 
         int numMatched = 0;
@@ -127,7 +127,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Long> positions, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Iterable<Long> positions, Document orderBy, int numberToSkip, int numberToReturn) {
         throw new UnsupportedOperationException("not yet implemented");
     }
 
@@ -137,7 +137,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected void updateDataSize(long sizeDelta) throws MongoServerException {
+    protected void updateDataSize(long sizeDelta) {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("UPDATE " + getDatabaseName() + "._meta" +
                  " SET datasize = datasize + ? WHERE collection_name = ?")
@@ -151,7 +151,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected long getDataSize() throws MongoServerException {
+    protected long getDataSize() {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("SELECT datasize FROM " + getDatabaseName() + "._meta" +
                  " WHERE collection_name = ?")
@@ -177,7 +177,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected Long addDocumentInternal(Document document) throws MongoServerException {
+    protected Long addDocumentInternal(Document document) {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("INSERT INTO " + getQualifiedTablename() +
                  " (data) VALUES (?::json)" +
@@ -209,7 +209,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected void removeDocument(Long position) throws MongoServerException {
+    protected void removeDocument(Long position) {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("DELETE FROM " + getQualifiedTablename() + " WHERE id = ?")) {
             stmt.setLong(1, position);
@@ -220,7 +220,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected Long findDocumentPosition(Document document) throws MongoServerException {
+    protected Long findDocumentPosition(Document document) {
         if (document.containsKey(idField)) {
             String sql = "SELECT id FROM " + getQualifiedTablename() + " WHERE " + PostgresqlUtils.toDataKey(idField) + " = ?";
             try (Connection connection = backend.getConnection();
@@ -255,7 +255,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected void handleUpdate(Document document) throws MongoServerException {
+    protected void handleUpdate(Document document) {
         String sql = "UPDATE " + getQualifiedTablename() + " SET data = ?::json WHERE " + PostgresqlUtils.toDataKey(idField) + " = ?";
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -269,7 +269,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    public void renameTo(String newDatabaseName, String newCollectionName) throws MongoServerException {
+    public void renameTo(String newDatabaseName, String newCollectionName) {
         String oldTablename = PostgresqlCollection.getTablename(getCollectionName());
         String newTablename = PostgresqlCollection.getTablename(newCollectionName);
         try (Connection connection = backend.getConnection();

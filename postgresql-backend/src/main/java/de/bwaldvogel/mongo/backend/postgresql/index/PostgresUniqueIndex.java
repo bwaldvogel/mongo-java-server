@@ -21,7 +21,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     private final PostgresqlBackend backend;
     private final String fullCollectionName;
 
-    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, String key, boolean ascending) throws MongoServerException {
+    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, String key, boolean ascending) {
         super(key, ascending);
         this.backend = backend;
         fullCollectionName = PostgresqlCollection.getQualifiedTablename(databaseName, collectionName);
@@ -36,7 +36,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    public void checkAdd(Document document) throws MongoServerException {
+    public void checkAdd(Document document) {
         Object keyValue = Utils.getSubdocumentValue(document, key);
         String sql = createSelectStatement(keyValue);
         try (Connection connection = backend.getConnection();
@@ -55,11 +55,11 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    public void add(Document document, Long position) throws MongoServerException {
+    public void add(Document document, Long position) {
     }
 
     @Override
-    public Long remove(Document document) throws MongoServerException {
+    public Long remove(Document document) {
         Object keyValue = Utils.getSubdocumentValue(document, key);
         String sql = createSelectStatement(keyValue);
         try (Connection connection = backend.getConnection();
@@ -107,7 +107,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    public void checkUpdate(Document oldDocument, Document newDocument) throws MongoServerException {
+    public void checkUpdate(Document oldDocument, Document newDocument) {
     }
 
     @Override

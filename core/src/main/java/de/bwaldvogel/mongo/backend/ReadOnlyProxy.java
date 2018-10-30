@@ -54,7 +54,7 @@ public class ReadOnlyProxy implements MongoBackend {
 
     @Override
     public Document handleCommand(Channel channel, String database, String command, Document query)
-            throws MongoServerException {
+            {
         if (allowedCommands.contains(command.toLowerCase())) {
             return backend.handleCommand(channel, database, command, query);
         }
@@ -67,7 +67,7 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException {
+    public Iterable<Document> handleQuery(MongoQuery query) {
         return backend.handleQuery(query);
     }
 
@@ -77,22 +77,22 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public void handleInsert(MongoInsert insert) throws MongoServerException {
+    public void handleInsert(MongoInsert insert) {
         throw new ReadOnlyException("insert not allowed");
     }
 
     @Override
-    public void handleDelete(MongoDelete delete) throws MongoServerException {
+    public void handleDelete(MongoDelete delete) {
         throw new ReadOnlyException("delete not allowed");
     }
 
     @Override
-    public void handleUpdate(MongoUpdate update) throws MongoServerException {
+    public void handleUpdate(MongoUpdate update) {
         throw new ReadOnlyException("update not allowed");
     }
 
     @Override
-    public void dropDatabase(String database) throws MongoServerException {
+    public void dropDatabase(String database) {
         throw new ReadOnlyException("dropping of databases is not allowed");
     }
 

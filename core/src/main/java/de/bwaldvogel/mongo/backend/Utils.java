@@ -134,7 +134,7 @@ public class Utils {
         }
     }
 
-    public static long calculateSize(Document document) throws MongoServerException {
+    public static long calculateSize(Document document) {
         ByteBuf buffer = Unpooled.buffer();
         try {
             new BsonEncoder().encodeDocument(document, buffer);
@@ -195,7 +195,7 @@ public class Utils {
         throw new IllegalArgumentException("illegal document: " + document);
     }
 
-    public static boolean hasSubdocumentValue(Object document, String key) throws MongoServerError {
+    public static boolean hasSubdocumentValue(Object document, String key) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -211,7 +211,7 @@ public class Utils {
         }
     }
 
-    public static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) throws MongoServerError {
+    public static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) {
         String subKey = key.substring(dotPos + 1);
 
         if (subKey.matches("\\$(\\..+)?")) {

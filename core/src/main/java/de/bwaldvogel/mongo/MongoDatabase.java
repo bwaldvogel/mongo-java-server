@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo;
 
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -14,27 +13,27 @@ public interface MongoDatabase {
 
     void handleClose(Channel channel);
 
-    Document handleCommand(Channel channel, String command, Document query) throws MongoServerException;
+    Document handleCommand(Channel channel, String command, Document query);
 
-    Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException;
+    Iterable<Document> handleQuery(MongoQuery query);
 
-    void handleInsert(MongoInsert insert) throws MongoServerException;
+    void handleInsert(MongoInsert insert);
 
-    void handleDelete(MongoDelete delete) throws MongoServerException;
+    void handleDelete(MongoDelete delete);
 
-    void handleUpdate(MongoUpdate update) throws MongoServerException;
+    void handleUpdate(MongoUpdate update);
 
     boolean isEmpty();
 
-    MongoCollection<?> resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException;
+    MongoCollection<?> resolveCollection(String collectionName, boolean throwIfNotFound);
 
-    void drop() throws MongoServerException;
+    void drop();
 
-    void dropCollection(String collectionName) throws MongoServerException;
+    void dropCollection(String collectionName);
 
     void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
-            throws MongoServerException;
+           ;
 
-    MongoCollection<?> unregisterCollection(String collectionName) throws MongoServerException;
+    MongoCollection<?> unregisterCollection(String collectionName);
 
 }

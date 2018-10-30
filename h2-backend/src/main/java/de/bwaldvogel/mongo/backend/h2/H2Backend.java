@@ -55,7 +55,7 @@ public class H2Backend extends AbstractMongoBackend {
     }
 
     @Override
-    protected MongoDatabase openOrCreateDatabase(String databaseName) throws MongoServerException {
+    protected MongoDatabase openOrCreateDatabase(String databaseName) {
         return new H2Database(databaseName, this, mvStore);
     }
 

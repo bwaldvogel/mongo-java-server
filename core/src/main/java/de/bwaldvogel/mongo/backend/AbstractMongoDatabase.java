@@ -52,7 +52,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         this.backend = backend;
     }
 
-    protected void initializeNamespacesAndIndexes() throws MongoServerException {
+    protected void initializeNamespacesAndIndexes() {
         this.namespaces = openOrCreateCollection(NAMESPACES_COLLECTION_NAME, "name");
         this.collections.put(namespaces.getCollectionName(), namespaces);
 
@@ -84,7 +84,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    private Document commandDropDatabase() throws MongoServerException {
+    private Document commandDropDatabase() {
         backend.dropDatabase(getDatabaseName());
         Document response = new Document("dropped", getDatabaseName());
         Utils.markOkay(response);
@@ -92,7 +92,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public Document handleCommand(Channel channel, String command, Document query) throws MongoServerException {
+    public Document handleCommand(Channel channel, String command, Document query) {
 
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
@@ -148,7 +148,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         throw new NoSuchCommandException(command);
     }
 
-    private Document listCollections() throws MongoServerException {
+    private Document listCollections() {
         Document cursor = new Document();
         cursor.put("id", Long.valueOf(0));
         cursor.put("ns", getDatabaseName() + ".$cmd.listCollections");
@@ -172,7 +172,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document listIndexes() throws MongoServerException {
+    private Document listIndexes() {
         MongoCollection<P> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
 
         Document cursor = new Document();
@@ -192,7 +192,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private synchronized MongoCollection<P> resolveOrCreateCollection(final String collectionName) throws MongoServerException {
+    private synchronized MongoCollection<P> resolveOrCreateCollection(final String collectionName) {
         final MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             return collection;
@@ -201,7 +201,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document commandInsert(Channel channel, String command, Document query) throws MongoServerException {
+    private Document commandInsert(Channel channel, String command, Document query) {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -234,7 +234,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return result;
     }
 
-    private Document commandUpdate(Channel channel, String command, Document query) throws MongoServerException {
+    private Document commandUpdate(Channel channel, String command, Document query) {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -271,7 +271,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandDelete(Channel channel, String command, Document query) throws MongoServerException {
+    private Document commandDelete(Channel channel, String command, Document query) {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -292,7 +292,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandCreate(String command, Document query) throws MongoServerException {
+    private Document commandCreate(String command, Document query) {
         String collectionName = query.get(command).toString();
         boolean isCapped = Utils.isTrue(query.get("capped"));
         if (isCapped) {
@@ -316,7 +316,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandCreateIndexes(Document query) throws MongoServerException {
+    private Document commandCreateIndexes(Document query) {
         int indexesBefore = countIndexes();
 
         @SuppressWarnings("unchecked")
@@ -334,7 +334,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private int countIndexes() throws MongoServerException {
+    private int countIndexes() {
         final MongoCollection<P> indexesCollection;
         synchronized (indexes) {
             indexesCollection = indexes.get();
@@ -346,7 +346,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document commandDatabaseStats() throws MongoServerException {
+    private Document commandDatabaseStats() {
         Document response = new Document("db", getDatabaseName());
         response.put("collections", Integer.valueOf(namespaces.count()));
 
@@ -388,7 +388,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     protected abstract long getStorageSize();
 
-    private Document commandDrop(Document query) throws MongoServerException {
+    private Document commandDrop(Document query) {
         String collectionName = query.get("drop").toString();
         MongoCollection<P> collection = collections.remove(collectionName);
 
@@ -404,7 +404,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     }
 
-    private Document commandGetLastError(Channel channel, String command, Document query) throws MongoServerException {
+    private Document commandGetLastError(Channel channel, String command, Document query) {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
         if (!cmd.equals(command)) {
@@ -481,7 +481,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return result;
     }
 
-    private Document commandCount(String command, Document query) throws MongoServerException {
+    private Document commandCount(String command, Document query) {
         MongoCollection<P> collection = resolveCollection(command, query, false);
         Document response = new Document();
         if (collection == null) {
@@ -496,7 +496,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandAggregate(String command, Document query) throws MongoServerException {
+    private Document commandAggregate(String command, Document query) {
         String collectionName = query.get(command).toString();
         Document cursor = (Document) query.get("cursor");
         if (!cursor.isEmpty()) {
@@ -552,7 +552,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException {
+    public Iterable<Document> handleQuery(MongoQuery query) {
         clearLastStatus(query.getChannel());
         String collectionName = query.getCollectionName();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
@@ -580,7 +580,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public void handleInsert(MongoInsert insert) throws MongoServerException {
+    public void handleInsert(MongoInsert insert) {
         Channel channel = insert.getChannel();
         String collectionName = insert.getCollectionName();
         final List<Document> documents = insert.getDocuments();
@@ -598,13 +598,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private MongoCollection<P> resolveCollection(String command, Document query, boolean throwIfNotFound) throws MongoServerException {
+    private MongoCollection<P> resolveCollection(String command, Document query, boolean throwIfNotFound) {
         String collectionName = query.get(command).toString();
         return resolveCollection(collectionName, throwIfNotFound);
     }
 
     @Override
-    public synchronized MongoCollection<P> resolveCollection(String collectionName, boolean throwIfNotFound) throws MongoServerException {
+    public synchronized MongoCollection<P> resolveCollection(String collectionName, boolean throwIfNotFound) {
         checkCollectionName(collectionName);
         MongoCollection<P> collection = collections.get(collectionName);
         if (collection == null && throwIfNotFound) {
@@ -613,7 +613,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collection;
     }
 
-    private void checkCollectionName(String collectionName) throws MongoServerException {
+    private void checkCollectionName(String collectionName) {
 
         if (collectionName.length() > Constants.MAX_NS_LENGTH) {
             throw new MongoServerError(10080, "ns name too long, max size is " + Constants.MAX_NS_LENGTH);
@@ -629,13 +629,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collections.isEmpty();
     }
 
-    private void addNamespace(MongoCollection<P> collection) throws MongoServerException {
+    private void addNamespace(MongoCollection<P> collection) {
         collections.put(collection.getCollectionName(), collection);
         namespaces.addDocument(new Document("name", collection.getFullName()));
     }
 
     @Override
-    public void handleDelete(MongoDelete delete) throws MongoServerException {
+    public void handleDelete(MongoDelete delete) {
         Channel channel = delete.getChannel();
         final String collectionName = delete.getCollectionName();
         final Document selector = delete.getSelector();
@@ -649,7 +649,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public void handleUpdate(MongoUpdate updateCommand) throws MongoServerException {
+    public void handleUpdate(MongoUpdate updateCommand) {
         final Channel channel = updateCommand.getChannel();
         final String collectionName = updateCommand.getCollectionName();
         final Document selector = updateCommand.getSelector();
@@ -665,12 +665,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private void addIndex(Document indexDescription) throws MongoServerException {
+    private void addIndex(Document indexDescription) {
         openOrCreateIndex(indexDescription);
         getOrCreateIndexesCollection().addDocument(indexDescription);
     }
 
-    private MongoCollection<P> getOrCreateIndexesCollection() throws MongoServerException {
+    private MongoCollection<P> getOrCreateIndexesCollection() {
         synchronized (indexes) {
             if (indexes.get() == null) {
                 MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
@@ -688,7 +688,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return namespace.substring(databaseName.length() + 1);
     }
 
-    private void openOrCreateIndex(Document indexDescription) throws MongoServerException {
+    private void openOrCreateIndex(Document indexDescription) {
         String ns = indexDescription.get("ns").toString();
         String collectionName = extractCollectionNameFromNamespace(ns);
 
@@ -715,9 +715,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) throws MongoServerException;
+    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending);
 
-    private void insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) throws MongoServerException {
+    private void insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -734,7 +734,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document deleteDocuments(final Channel channel, final String collectionName, final Document selector, final int limit) throws MongoServerException {
+    private Document deleteDocuments(final Channel channel, final String collectionName, final Document selector, final int limit) {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -757,7 +757,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document updateDocuments(final Channel channel, final String collectionName, final Document selector,
-                                       final Document update, final boolean multi, final boolean upsert) throws MongoServerException {
+                                       final Document update, final boolean multi, final boolean upsert) {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
@@ -796,7 +796,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         results.set(results.size() - 1, result);
     }
 
-    private MongoCollection<P> createCollection(String collectionName) throws MongoServerException {
+    private MongoCollection<P> createCollection(String collectionName) {
         checkCollectionName(collectionName);
         if (collectionName.contains("$")) {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
@@ -816,10 +816,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collection;
     }
 
-    protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, String idField) throws MongoServerException;
+    protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, String idField);
 
     @Override
-    public void drop() throws MongoServerException {
+    public void drop() {
         log.debug("dropping {}", this);
         for (String collectionName : collections.keySet()) {
             dropCollection(collectionName);
@@ -827,12 +827,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public void dropCollection(String collectionName) throws MongoServerException {
+    public void dropCollection(String collectionName) {
         unregisterCollection(collectionName);
     }
 
     @Override
-    public MongoCollection<P> unregisterCollection(String collectionName) throws MongoServerException {
+    public MongoCollection<P> unregisterCollection(String collectionName) {
         MongoCollection<P> removedCollection = collections.remove(collectionName);
         namespaces.deleteDocuments(new Document("name", removedCollection.getFullName()), 1);
         return removedCollection;
@@ -840,7 +840,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @Override
     public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
-            throws MongoServerException {
+            {
         oldDatabase.unregisterCollection(collection.getCollectionName());
         collection.renameTo(getDatabaseName(), newCollectionName);
         // TODO resolve cast

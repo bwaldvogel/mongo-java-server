@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
@@ -54,7 +53,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Integer> positions, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Iterable<Integer> positions, Document orderBy, int numberToSkip, int numberToReturn) {
 
         List<Document> matchedDocuments = new ArrayList<>();
 
@@ -80,7 +79,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     @Override
     protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-            int numberToReturn) throws MongoServerException {
+            int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         boolean ascending = true;

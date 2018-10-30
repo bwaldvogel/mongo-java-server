@@ -17,7 +17,6 @@ import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.NullableKey;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class H2Collection extends AbstractMongoCollection<Object> {
 
@@ -102,7 +101,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy, int numberToSkip, int numberToReturn) throws MongoServerException {
+    protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy, int numberToSkip, int numberToReturn) {
 
         List<Document> matchedDocuments = new ArrayList<>();
 
@@ -128,7 +127,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
     @Override
     protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-            int numberToReturn) throws MongoServerException {
+            int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         for (Document document : dataMap.values()) {

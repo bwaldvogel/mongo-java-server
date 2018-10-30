@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class Aggregation {
 
@@ -43,11 +42,11 @@ public class Aggregation {
         this.limit = limit.intValue();
     }
 
-    private Iterable<Document> queryDocuments() throws MongoServerException {
+    private Iterable<Document> queryDocuments() {
         return collection.handleQuery(query, skip, limit);
     }
 
-    public void group(Document groupQuery) throws MongoServerException {
+    public void group(Document groupQuery) {
         if (!groupQuery.containsKey(ID_FIELD)) {
             throw new MongoServerError(15955, "a group specification must include an _id");
         }
@@ -88,7 +87,7 @@ public class Aggregation {
         }
     }
 
-    private Map<String, Supplier<Accumulator>> parseAccumulators(Document groupStage) throws MongoServerException {
+    private Map<String, Supplier<Accumulator>> parseAccumulators(Document groupStage) {
         Map<String, Supplier<Accumulator>> accumulators = new LinkedHashMap<>();
         for (Entry<String, ?> accumulatorEntry : groupStage.entrySet()) {
             if (accumulatorEntry.getKey().equals(ID_FIELD)) {
@@ -119,7 +118,7 @@ public class Aggregation {
         return accumulators;
     }
 
-    public Iterable<Document> getResult() throws MongoServerException {
+    public Iterable<Document> getResult() {
         if (result == null) {
             if (collection != null) {
                 return queryDocuments();

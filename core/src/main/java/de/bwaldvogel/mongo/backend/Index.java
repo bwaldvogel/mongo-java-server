@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.backend;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public abstract class Index<P> {
 
@@ -27,11 +26,11 @@ public abstract class Index<P> {
         return Utils.normalizeValue(value);
     }
 
-    public abstract void checkAdd(Document document) throws MongoServerException;
+    public abstract void checkAdd(Document document);
 
-    public abstract void add(Document document, P position) throws MongoServerException;
+    public abstract void add(Document document, P position);
 
-    public abstract P remove(Document document) throws MongoServerException;
+    public abstract P remove(Document document);
 
     public abstract boolean canHandle(Document query);
 
@@ -41,7 +40,7 @@ public abstract class Index<P> {
 
     public abstract long getDataSize();
 
-    public abstract void checkUpdate(Document oldDocument, Document newDocument) throws MongoServerException;
+    public abstract void checkUpdate(Document oldDocument, Document newDocument);
 
     public abstract void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError;
 

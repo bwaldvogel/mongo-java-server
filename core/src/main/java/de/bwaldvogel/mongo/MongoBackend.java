@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -15,17 +14,17 @@ public interface MongoBackend {
 
     void handleClose(Channel channel);
 
-    Document handleCommand(Channel channel, String database, String command, Document query) throws MongoServerException;
+    Document handleCommand(Channel channel, String database, String command, Document query);
 
-    Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException;
+    Iterable<Document> handleQuery(MongoQuery query);
 
-    void handleInsert(MongoInsert insert) throws MongoServerException;
+    void handleInsert(MongoInsert insert);
 
-    void handleDelete(MongoDelete delete) throws MongoServerException;
+    void handleDelete(MongoDelete delete);
 
-    void handleUpdate(MongoUpdate update) throws MongoServerException;
+    void handleUpdate(MongoUpdate update);
 
-    void dropDatabase(String database) throws MongoServerException;
+    void dropDatabase(String database);
 
     Collection<Document> getCurrentOperations(MongoQuery query);
 

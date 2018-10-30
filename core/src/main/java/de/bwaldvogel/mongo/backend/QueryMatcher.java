@@ -1,14 +1,13 @@
 package de.bwaldvogel.mongo.backend;
 
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public interface QueryMatcher {
 
-    boolean matches(Document document, Document query) throws MongoServerException;
+    boolean matches(Document document, Document query);
 
-    boolean matchesValue(Object queryValue, Object value) throws MongoServerException;
+    boolean matchesValue(Object queryValue, Object value);
 
-    Integer matchPosition(Document document, Document query) throws MongoServerException;
+    Integer matchPosition(Document document, Document query);
 
 }

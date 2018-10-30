@@ -4,7 +4,6 @@ import java.util.List;
 
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public interface MongoCollection<P> {
 
@@ -16,48 +15,48 @@ public interface MongoCollection<P> {
 
     void addIndex(Index<P> index);
 
-    void addDocument(Document document) throws MongoServerException;
+    void addDocument(Document document);
 
-    void removeDocument(Document document) throws MongoServerException;
+    void removeDocument(Document document);
 
-    default Iterable<Document> queryAll() throws MongoServerException {
+    default Iterable<Document> queryAll() {
         return handleQuery(new Document());
     }
 
-    default Iterable<Document> handleQuery(Document query) throws MongoServerException {
+    default Iterable<Document> handleQuery(Document query) {
         return handleQuery(query, 0, 0);
     }
 
-    default Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn) throws MongoServerException {
+    default Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn) {
         return handleQuery(query, numberToSkip, numberToReturn, null);
     }
 
     Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn,
-            Document returnFieldSelector) throws MongoServerException;
+            Document returnFieldSelector);
 
-    int insertDocuments(List<Document> documents) throws MongoServerException;
+    int insertDocuments(List<Document> documents);
 
     Document updateDocuments(Document selector, Document update, boolean isMulti, boolean isUpsert)
-            throws MongoServerException;
+           ;
 
-    int deleteDocuments(Document selector, int limit) throws MongoServerException;
+    int deleteDocuments(Document selector, int limit);
 
-    Document handleDistinct(Document query) throws MongoServerException;
+    Document handleDistinct(Document query);
 
-    Document getStats() throws MongoServerException;
+    Document getStats();
 
-    Document validate() throws MongoServerException;
+    Document validate();
 
-    Document findAndModify(Document query) throws MongoServerException;
+    Document findAndModify(Document query);
 
-    int count(Document query, int skip, int limit) throws MongoServerException;
+    int count(Document query, int skip, int limit);
 
-    int count() throws MongoServerException;
+    int count();
 
     int getNumIndexes();
 
-    void drop() throws MongoServerException;
+    void drop();
 
-    void renameTo(String newDatabaseName, String newCollectionName) throws MongoServerException;
+    void renameTo(String newDatabaseName, String newCollectionName);
 
 }

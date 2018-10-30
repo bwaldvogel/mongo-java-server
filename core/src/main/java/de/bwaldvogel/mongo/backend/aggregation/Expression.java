@@ -11,11 +11,10 @@ import java.util.Map.Entry;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 class Expression {
 
-    static Object evaluate(Object expression, Document document) throws MongoServerException {
+    static Object evaluate(Object expression, Document document) {
         if (expression instanceof String && ((String) expression).startsWith("$")) {
             String value = ((String) expression).substring(1);
             return Utils.getSubdocumentValue(document, value);
@@ -26,7 +25,7 @@ class Expression {
         }
     }
 
-    private static Object evaluateDocumentExpression(Document expression, Document document) throws MongoServerException {
+    private static Object evaluateDocumentExpression(Document expression, Document document) {
         Document result = new Document();
         for (Entry<String, Object> entry : expression.entrySet()) {
             String expressionKey = entry.getKey();
@@ -56,7 +55,7 @@ class Expression {
         return result;
     }
 
-    private static Number evaluateAbsValue(Object expressionValue, Document document) throws MongoServerException {
+    private static Number evaluateAbsValue(Object expressionValue, Document document) {
         Object value = evaluate(expressionValue, document);
         if (value == null) {
             return null;
@@ -71,7 +70,7 @@ class Expression {
         }
     }
 
-    private static Number evaluateSumValue(Object expressionValue, Document document) throws MongoServerException {
+    private static Number evaluateSumValue(Object expressionValue, Document document) {
         Object value = evaluate(expressionValue, document);
         if (value instanceof Number) {
             return (Number) value;
@@ -90,7 +89,7 @@ class Expression {
         }
     }
 
-    private static Number evaluateSubtractValue(Object expressionValue, Document document) throws MongoServerException {
+    private static Number evaluateSubtractValue(Object expressionValue, Document document) {
         Object value = evaluate(expressionValue, document);
         if (!(value instanceof Collection)) {
             throw new MongoServerError(16020, "Expression $subtract takes exactly 2 arguments. 1 were passed in.");
@@ -112,7 +111,7 @@ class Expression {
         return Utils.subtractNumbers((Number) one, (Number) other);
     }
 
-    private static Integer evaluateYearValue(Object expressionValue, Document document) throws MongoServerException {
+    private static Integer evaluateYearValue(Object expressionValue, Document document) {
         Object value = evaluate(expressionValue, document);
         if (value == null) {
             return null;
@@ -122,7 +121,7 @@ class Expression {
         return zonedDateTime.toLocalDate().getYear();
     }
 
-    private static Integer evaluateDayOfYearValue(Object expressionValue, Document document) throws MongoServerException {
+    private static Integer evaluateDayOfYearValue(Object expressionValue, Document document) {
         Object value = evaluate(expressionValue, document);
         if (value == null) {
             return null;
@@ -132,7 +131,7 @@ class Expression {
         return zonedDateTime.toLocalDate().getDayOfYear();
     }
 
-    private static ZonedDateTime getZonedDateTime(Object value) throws MongoServerError {
+    private static ZonedDateTime getZonedDateTime(Object value) {
         if (!(value instanceof Date)) {
             throw new MongoServerError(16006, "can't convert from " + value.getClass() + " to Date");
         }

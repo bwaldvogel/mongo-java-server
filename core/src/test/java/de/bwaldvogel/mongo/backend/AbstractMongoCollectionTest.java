@@ -56,13 +56,13 @@ public class AbstractMongoCollectionTest {
 
         @Override
         protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy,
-                                                    int numberToSkip, int numberToReturn) throws MongoServerException {
+                                                    int numberToSkip, int numberToReturn) {
             throw new UnsupportedOperationException();
         }
 
         @Override
         protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-                int numberToReturn) throws MongoServerException {
+                int numberToReturn) {
             throw new UnsupportedOperationException();
         }
 

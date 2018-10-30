@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.exception;
 
-public class MongoServerException extends Exception {
+public class MongoServerException extends RuntimeException {
 
     private static final long serialVersionUID = 3357301041846925271L;
 

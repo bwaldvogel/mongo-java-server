@@ -36,11 +36,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private static final List<Integer> VERSION = Arrays.asList(3, 0, 0);
 
-    private MongoDatabase resolveDatabase(Message message) throws MongoServerException {
+    private MongoDatabase resolveDatabase(Message message) {
         return resolveDatabase(message.getDatabaseName());
     }
 
-    protected synchronized MongoDatabase resolveDatabase(String database) throws MongoServerException {
+    protected synchronized MongoDatabase resolveDatabase(String database) {
         MongoDatabase db = databases.get(database);
         if (db == null) {
             db = openOrCreateDatabase(database);
@@ -50,7 +50,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return db;
     }
 
-    private Document getLog(String argument) throws MongoServerException {
+    private Document getLog(String argument) {
         log.debug("getLog: {}", argument);
         Document response = new Document();
         switch (argument) {
@@ -69,7 +69,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return response;
     }
 
-    private Document handleAdminCommand(String command, Document query) throws MongoServerException {
+    private Document handleAdminCommand(String command, Document query) {
 
         if (command.equalsIgnoreCase("listdatabases")) {
             Document response = new Document();
@@ -99,7 +99,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         }
     }
 
-    private Document handleRenameCollection(String command, Document query) throws MongoServerException {
+    private Document handleRenameCollection(String command, Document query) {
         final String oldNamespace = query.get(command).toString();
         final String newNamespace = query.get("to").toString();
         boolean dropTarget = Utils.isTrue(query.get("dropTarget"));
@@ -130,7 +130,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return response;
     }
 
-    private MongoCollection<?> resolveCollection(final String namespace) throws MongoServerException {
+    private MongoCollection<?> resolveCollection(final String namespace) {
         final String databaseName = Utils.getDatabaseNameFromFullName(namespace);
         final String collectionName = Utils.getCollectionNameFromFullName(namespace);
 
@@ -147,11 +147,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return collection;
     }
 
-    protected abstract MongoDatabase openOrCreateDatabase(String databaseName) throws MongoServerException;
+    protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
 
     @Override
     public Document handleCommand(Channel channel, String databaseName, String command, Document query)
-            throws MongoServerException {
+            {
 
         if (command.equalsIgnoreCase("whatsmyuri")) {
             Document response = new Document();
@@ -192,31 +192,31 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public Iterable<Document> handleQuery(MongoQuery query) throws MongoServerException {
+    public Iterable<Document> handleQuery(MongoQuery query) {
         MongoDatabase db = resolveDatabase(query);
         return db.handleQuery(query);
     }
 
     @Override
-    public void handleInsert(MongoInsert insert) throws MongoServerException {
+    public void handleInsert(MongoInsert insert) {
         MongoDatabase db = resolveDatabase(insert);
         db.handleInsert(insert);
     }
 
     @Override
-    public void handleDelete(MongoDelete delete) throws MongoServerException {
+    public void handleDelete(MongoDelete delete) {
         MongoDatabase db = resolveDatabase(delete);
         db.handleDelete(delete);
     }
 
     @Override
-    public void handleUpdate(MongoUpdate update) throws MongoServerException {
+    public void handleUpdate(MongoUpdate update) {
         MongoDatabase db = resolveDatabase(update);
         db.handleUpdate(update);
     }
 
     @Override
-    public void dropDatabase(String databaseName) throws MongoServerException {
+    public void dropDatabase(String databaseName) {
         MongoDatabase removedDatabase = databases.remove(databaseName);
         removedDatabase.drop();
     }
