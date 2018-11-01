@@ -45,6 +45,12 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateAdd() throws Exception {
+        assertThat(Expression.evaluate(new Document("$add", Arrays.asList("$a", "$b")), new Document("a", 7).append("b", 5))).isEqualTo(12);
+        assertThat(Expression.evaluate(new Document("$add", Arrays.asList(7.5, 3)), new Document())).isEqualTo(10.5);
+    }
+
+    @Test
     public void testEvaluateSubtract() throws Exception {
         assertThat(Expression.evaluate(new Document("$subtract", Arrays.asList("$a", "$b")), new Document("a", 7).append("b", 5))).isEqualTo(2);
         assertThat(Expression.evaluate(new Document("$subtract", Arrays.asList(7.5, 3)), new Document())).isEqualTo(4.5);
@@ -88,6 +94,18 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(new Document("$subtract", 123), new Document()))
             .withMessage("Expression $subtract takes exactly 2 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(new Document("$add", Collections.emptyList()), new Document()))
+            .withMessage("Expression $add takes exactly 2 arguments. 0 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(new Document("$add", Collections.singletonList(1)), new Document()))
+            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(new Document("$add", 123), new Document()))
+            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(new Document("$subtract", Arrays.asList("a", "b")), new Document()))
