@@ -124,6 +124,10 @@ wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
 
+jacoco {
+	toolVersion = "0.8.2"
+}
+
 task jacocoMerge(type: JacocoMerge) {
     subprojects.each { subproject ->
         executionData subproject.tasks.withType(Test)
