@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,8 +21,6 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class Aggregation {
-
-    private static final String ID_FIELD = "_id";
 
     private final MongoCollection<?> collection;
 

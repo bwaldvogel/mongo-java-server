@@ -46,7 +46,7 @@ public class Utils {
         }
     }
 
-    public static Number multiplyNumbers(Number a, Number b) {
+    static Number multiplyNumbers(Number a, Number b) {
         if (a instanceof Double || b instanceof Double) {
             return Double.valueOf(a.doubleValue() * b.doubleValue());
         } else if (a instanceof Float || b instanceof Float) {
@@ -107,7 +107,7 @@ public class Utils {
         return true;
     }
 
-    public static Object normalizeValue(Object value) {
+    static Object normalizeValue(Object value) {
         if (value == null) {
             return null;
         }
@@ -118,7 +118,7 @@ public class Utils {
         }
     }
 
-    public static boolean nullAwareEquals(Object a, Object b) {
+    static boolean nullAwareEquals(Object a, Object b) {
         if (a == b) {
             return true;
         } else if (a == null || b == null) {
@@ -134,7 +134,7 @@ public class Utils {
         }
     }
 
-    public static long calculateSize(Document document) {
+    static long calculateSize(Document document) {
         ByteBuf buffer = Unpooled.buffer();
         try {
             new BsonEncoder().encodeDocument(document, buffer);
@@ -146,7 +146,7 @@ public class Utils {
         }
     }
 
-    public static boolean containsQueryExpression(Object value) {
+    static boolean containsQueryExpression(Object value) {
         if (value == null) {
             return false;
         }
@@ -167,7 +167,7 @@ public class Utils {
         return false;
     }
 
-    public static Object getFieldValueListSafe(Object document, String field) throws IllegalArgumentException {
+    static Object getFieldValueListSafe(Object document, String field) throws IllegalArgumentException {
         if (document == null) {
             return null;
         }
@@ -195,11 +195,11 @@ public class Utils {
         throw new IllegalArgumentException("illegal document: " + document);
     }
 
-    public static boolean hasSubdocumentValue(Object document, String key) {
+    static boolean hasSubdocumentValue(Object document, String key) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, new AtomicReference<Integer>());
+            String subKey = getSubkey(key, dotPos, new AtomicReference<>());
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document || subObject instanceof List<?>) {
                 return hasSubdocumentValue(subObject, subKey);
@@ -211,7 +211,7 @@ public class Utils {
         }
     }
 
-    public static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) {
+    static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) {
         String subKey = key.substring(dotPos + 1);
 
         if (subKey.matches("\\$(\\..+)?")) {
@@ -254,7 +254,7 @@ public class Utils {
         result.put("ok", Integer.valueOf(1));
     }
 
-    public static void setListSafe(Object document, String key, Object obj) {
+    static void setListSafe(Object document, String key, Object obj) {
         if (document instanceof List<?>) {
             int pos = Integer.parseInt(key);
             @SuppressWarnings("unchecked")
@@ -268,7 +268,7 @@ public class Utils {
         }
     }
 
-    public static Object removeListSafe(Object document, String key) {
+    static Object removeListSafe(Object document, String key) {
         if (document instanceof Document) {
             return ((Document) document).remove(key);
         } else if (document instanceof List<?>) {

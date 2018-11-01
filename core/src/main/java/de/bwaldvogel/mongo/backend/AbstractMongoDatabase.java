@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -61,7 +63,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 String name = namespace.get("name").toString();
                 log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
-                MongoCollection<P> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
+                MongoCollection<P> collection = openOrCreateCollection(collectionName, ID_FIELD);
                 collections.put(collectionName, collection);
                 log.debug("opened collection '{}'", collectionName);
             }
@@ -253,7 +255,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             if (result.containsKey("upserted")) {
                 final Object id = result.get("upserted");
                 final Document upserted = new Document("index", upserts.size());
-                upserted.put("_id", id);
+                upserted.put(ID_FIELD, id);
                 upserts.add(upserted);
             }
             nMatched += ((Integer) result.get("n")).intValue();
@@ -698,9 +700,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
 
         Document key = (Document) indexDescription.get("key");
-        if (key.keySet().equals(Collections.singleton("_id"))) {
-            boolean ascending = Utils.normalizeValue(key.get("_id")).equals(Double.valueOf(1.0));
-            collection.addIndex(openOrCreateUniqueIndex(collectionName, "_id", ascending));
+        if (key.keySet().equals(Collections.singleton(ID_FIELD))) {
+            boolean ascending = Utils.normalizeValue(key.get(ID_FIELD)).equals(Double.valueOf(1.0));
+            collection.addIndex(openOrCreateUniqueIndex(collectionName, ID_FIELD, ascending));
             log.info("adding unique _id index for collection {}", collectionName);
         } else if (Utils.isTrue(indexDescription.get("unique"))) {
             if (key.keySet().size() != 1) {
@@ -805,13 +807,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
         }
 
-        MongoCollection<P> collection = openOrCreateCollection(collectionName, Constants.ID_FIELD);
+        MongoCollection<P> collection = openOrCreateCollection(collectionName, ID_FIELD);
         addNamespace(collection);
 
         Document indexDescription = new Document();
         indexDescription.put("name", "_id_");
         indexDescription.put("ns", collection.getFullName());
-        indexDescription.put("key", new Document("_id", Integer.valueOf(1)));
+        indexDescription.put("key", new Document(ID_FIELD, Integer.valueOf(1)));
         addIndex(indexDescription);
 
         log.info("created collection {}", collection.getFullName());
