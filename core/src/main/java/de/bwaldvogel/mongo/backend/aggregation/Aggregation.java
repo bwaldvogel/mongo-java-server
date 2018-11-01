@@ -28,6 +28,7 @@ public class Aggregation {
     private Document projection;
     private int skip = 0;
     private int limit = 0;
+    private Document orderBy;
 
     private List<Document> result;
 
@@ -48,7 +49,8 @@ public class Aggregation {
     }
 
     private Stream<Document> queryDocuments() {
-        Spliterator<Document> documents = collection.handleQuery(query, skip, limit).spliterator();
+        Document queryWithOrderBy = new Document("$query", query).append("$orderby", orderBy);
+        Spliterator<Document> documents = collection.handleQuery(queryWithOrderBy, skip, limit).spliterator();
         return StreamSupport.stream(documents, false)
             .map(this::projectDocument);
     }
@@ -180,5 +182,9 @@ public class Aggregation {
 
     public void project(Document projection) {
         this.projection = projection;
+    }
+
+    public void orderBy(Document orderBy) {
+        this.orderBy = orderBy;
     }
 }

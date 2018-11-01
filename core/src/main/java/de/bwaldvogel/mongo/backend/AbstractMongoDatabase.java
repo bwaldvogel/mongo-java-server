@@ -532,6 +532,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     Number numLimit = (Number) stage.get(stageOperation);
                     aggregation.limit(numLimit);
                     break;
+                case "$sort":
+                    Document orderBy = (Document) stage.get(stageOperation);
+                    aggregation.orderBy(orderBy);
+                    break;
                 case "$project":
                     aggregation.project((Document) stage.get(stageOperation));
                     break;

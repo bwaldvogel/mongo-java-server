@@ -294,6 +294,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithSort() throws Exception {
+        Document query = json("$sort: { price: -1, fee: 1 }");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, price: 10, fee: 1"));
+        collection.insertOne(json("_id: 2, price: 20, fee: 0"));
+        collection.insertOne(json("_id: 3, price: 10, fee: 0"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 2, price: 20, fee: 0"),
+                json("_id: 3, price: 10, fee: 0"),
+                json("_id: 1, price: 10, fee: 1")
+            );
+    }
+
+    @Test
     public void testAggregateWithProjection() throws Exception {
         Document query = json("$project: {_id: 1, value: '$x', n: '$foo.bar', other: null}");
         List<Document> pipeline = Collections.singletonList(query);
