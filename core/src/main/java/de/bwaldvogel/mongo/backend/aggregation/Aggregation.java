@@ -54,27 +54,45 @@ public class Aggregation {
     }
 
     private Document projectDocument(Document input) {
+        return projectDocument(input, projection);
+    }
+
+    static Document projectDocument(Document input, Document projection) {
         if (projection == null) {
             return input;
         }
+        if (projection.isEmpty()) {
+            throw new MongoServerError(40177, "Invalid $project :: caused by :: specification must have at least one field");
+        }
         Document result = new Document();
+
+        if (!projection.containsKey(ID_FIELD)) {
+            putIfContainsField(input, result, ID_FIELD);
+        }
+
         for (Entry<String, Object> entry : projection.entrySet()) {
             String field = entry.getKey();
-            Object projection = entry.getValue();
-            if (projection instanceof Number || projection instanceof Boolean) {
-                if (Utils.isTrue(projection)) {
-                    result.put(field, input.get(field));
+            Object projectionValue = entry.getValue();
+            if (projectionValue instanceof Number || projectionValue instanceof Boolean) {
+                if (Utils.isTrue(projectionValue)) {
+                    putIfContainsField(input, result, field);
                 }
-            } else if (projection == null) {
+            } else if (projectionValue == null) {
                 result.put(field, null);
             } else {
-                Object projectedValue = Expression.evaluate(projection, input);
+                Object projectedValue = Expression.evaluate(projectionValue, input);
                 if (projectedValue != null) {
                     result.put(field, projectedValue);
                 }
             }
         }
         return result;
+    }
+
+    private static void putIfContainsField(Document input, Document result, String field) {
+        if (input.containsKey(field)) {
+            result.put(field, input.get(field));
+        }
     }
 
     public void group(Document groupQuery) {
