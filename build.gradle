@@ -52,7 +52,6 @@ buildscript {
 
     dependencies {
         classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
-        classpath 'org.standardout:gradle-versioneye-plugin:1.5.0'
     }
 }
 
@@ -69,7 +68,6 @@ jar {
 
 allprojects {
     apply plugin: 'com.bmuschko.nexus'
-    apply plugin: 'org.standardout.versioneye'
 
     def projectName = project.name
 
