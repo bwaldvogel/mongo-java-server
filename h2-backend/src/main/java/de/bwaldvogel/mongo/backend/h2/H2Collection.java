@@ -8,7 +8,6 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.h2.mvstore.MVMap;
-import org.h2.mvstore.MVStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -172,13 +171,6 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     @Override
     protected int getDeletedCount() {
         return 0;
-    }
-
-    @Override
-    public void drop() {
-        log.debug("dropping {}", this);
-        MVStore mvStore = dataMap.getStore();
-        mvStore.removeMap(dataMap);
     }
 
     @Override

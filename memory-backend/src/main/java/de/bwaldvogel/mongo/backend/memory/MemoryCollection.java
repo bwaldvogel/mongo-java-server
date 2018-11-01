@@ -268,11 +268,6 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    public void drop() {
-        log.debug("dropping {}", this);
-    }
-
-    @Override
     protected void handleUpdate(Document document) {
         // noop
     }

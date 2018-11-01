@@ -64,12 +64,12 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
 
     @Override
     protected MongoCollection<Long> openOrCreateCollection(String collectionName, String idField) {
-        String tablename = PostgresqlCollection.getTablename(collectionName);
+        String tableName = PostgresqlCollection.getTablename(collectionName);
         String fullCollectionName = PostgresqlCollection.getQualifiedTablename(getDatabaseName(), collectionName);
         String createTableSql = "CREATE TABLE IF NOT EXISTS " + fullCollectionName + "" +
             " (id serial," +
             "  data json," +
-            " CONSTRAINT \"pk_" + tablename + "\" PRIMARY KEY (id)" +
+            " CONSTRAINT \"pk_" + tableName + "\" PRIMARY KEY (id)" +
             ")";
         String insertSql = "INSERT INTO " + getDatabaseName() + "._meta (collection_name, datasize) VALUES (?, 0) ON CONFLICT DO NOTHING";
         try (Connection connection = backend.getConnection();

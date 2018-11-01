@@ -70,8 +70,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     @Override
-    public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
-            {
+    public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName) {
         super.moveCollection(oldDatabase, collection, newCollectionName);
         String fullCollectionName = collection.getFullName();
         String newFullName = collection.getDatabaseName() + "." + newCollectionName;

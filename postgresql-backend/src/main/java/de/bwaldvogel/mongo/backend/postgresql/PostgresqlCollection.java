@@ -43,17 +43,6 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    public void drop() {
-        try (Connection connection = backend.getConnection();
-             PreparedStatement stmt = connection.prepareStatement("DROP TABLE " + getQualifiedTablename())
-        ) {
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new MongoServerException("failed to drop " + this, e);
-        }
-    }
-
-    @Override
     protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         Collection<Document> matchedDocuments = new ArrayList<>();
 

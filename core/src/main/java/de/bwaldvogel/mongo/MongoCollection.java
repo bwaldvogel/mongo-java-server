@@ -36,8 +36,7 @@ public interface MongoCollection<P> {
 
     int insertDocuments(List<Document> documents);
 
-    Document updateDocuments(Document selector, Document update, boolean isMulti, boolean isUpsert)
-           ;
+    Document updateDocuments(Document selector, Document update, boolean isMulti, boolean isUpsert);
 
     int deleteDocuments(Document selector, int limit);
 
@@ -54,8 +53,6 @@ public interface MongoCollection<P> {
     int count();
 
     int getNumIndexes();
-
-    void drop();
 
     void renameTo(String newDatabaseName, String newCollectionName);
 

@@ -9,7 +9,6 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
-import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class AbstractMongoCollectionTest {
 
@@ -64,10 +63,6 @@ public class AbstractMongoCollectionTest {
         protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
                 int numberToReturn) {
             throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void drop() {
         }
 
         @Override

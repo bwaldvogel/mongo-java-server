@@ -43,13 +43,11 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
     private final ChannelGroup channelGroup;
     private final long started;
-    private final Date startDate;
 
     public MongoDatabaseHandler(MongoBackend mongoBackend, ChannelGroup channelGroup) {
         this.channelGroup = channelGroup;
         this.mongoBackend = mongoBackend;
         this.started = System.nanoTime();
-        this.startDate = new Date();
     }
 
     @Override
@@ -83,10 +81,6 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         } else {
             throw new MongoServerException("unknown message: " + object);
         }
-    }
-
-    public Date getStartDate() {
-        return startDate;
     }
 
     protected MongoReply handleQuery(Channel channel, MongoQuery query) {

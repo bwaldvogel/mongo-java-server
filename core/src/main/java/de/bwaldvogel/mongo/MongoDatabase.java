@@ -31,8 +31,7 @@ public interface MongoDatabase {
 
     void dropCollection(String collectionName);
 
-    void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName)
-           ;
+    void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName);
 
     MongoCollection<?> unregisterCollection(String collectionName);
 
