@@ -39,6 +39,8 @@ class Expression {
                         return evaluateAbsValue(expressionValue, document);
                     case "$sum":
                         return evaluateSumValue(expressionValue, document);
+                    case "$add":
+                        return evaluateAddValue(expressionValue, document);
                     case "$subtract":
                         return evaluateSubtractValue(expressionValue, document);
                     case "$year":
@@ -87,6 +89,28 @@ class Expression {
         } else {
             return 0;
         }
+    }
+
+    private static Number evaluateAddValue(Object expressionValue, Document document) {
+        Object value = evaluate(expressionValue, document);
+        if (!(value instanceof Collection)) {
+            throw new MongoServerError(16020, "Expression $add takes exactly 2 arguments. 1 were passed in.");
+        }
+        Collection<?> values = (Collection<?>) value;
+        if (values.size() != 2) {
+            throw new MongoServerError(16020, "Expression $add takes exactly 2 arguments. " + values.size() + " were passed in.");
+        }
+
+        Iterator<?> iterator = values.iterator();
+        Object one = evaluate(iterator.next(), document);
+        Object other = evaluate(iterator.next(), document);
+
+        if (!(one instanceof Number && other instanceof Number)) {
+            throw new MongoServerError(16556,
+                "cant $add a " + one.getClass().getName() + " and a " + other.getClass().getName());
+        }
+
+        return Utils.addNumbers((Number) one, (Number) other);
     }
 
     private static Number evaluateSubtractValue(Object expressionValue, Document document) {
