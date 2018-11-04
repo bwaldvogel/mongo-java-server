@@ -29,13 +29,24 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -2"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -2.5"))).isEqualTo(2.5);
         assertThat(Expression.evaluate(new Document("$abs", 123L), json("{}"))).isEqualTo(123L);
-        assertThat(Expression.evaluate(new Document("$abs", null), json("{}"))).isNull();
+        assertThat(Expression.evaluate(json("$abs: null"), json("{}"))).isNull();
         assertThat(Expression.evaluate(json("abs: {$abs: '$a'}"), json("a: -25"))).isEqualTo(json("abs: 25"));
     }
 
     @Test
+    public void testEvaluateCeil() throws Exception {
+        assertThat(Expression.evaluate(json("$ceil: '$a'"), json("a: 2.5"))).isEqualTo(3);
+        assertThat(Expression.evaluate(json("$ceil: 42"), json(""))).isEqualTo(42);
+        assertThat(Expression.evaluate(json("$ceil: 42.3"), json(""))).isEqualTo(43);
+        assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MAX_VALUE), json("{}"))).isEqualTo(Long.MAX_VALUE);
+        assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MIN_VALUE), json("{}"))).isEqualTo(Long.MIN_VALUE);
+        assertThat(Expression.evaluate(json("$ceil: null"), json("{}"))).isNull();
+        assertThat(Expression.evaluate(json("ceil: {$ceil: '$a'}"), json("a: -25.5"))).isEqualTo(json("ceil: -25"));
+    }
+
+    @Test
     public void testEvaluateSum() throws Exception {
-        assertThat(Expression.evaluate(new Document("$sum", null), json("{}"))).isEqualTo(0);
+        assertThat(Expression.evaluate(json("$sum: null"), json("{}"))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$sum: ''"), json("{}"))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$sum: 5"), json("{}"))).isEqualTo(5);
         assertThat(Expression.evaluate(json("$sum: [1, 'foo', 2]"), json("{}"))).isEqualTo(3);
@@ -81,6 +92,10 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$abs: 'abc'"), json("{}")))
             .withMessage("$abs only supports numeric types, not class java.lang.String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$ceil: 'abc'"), json("{}")))
+            .withMessage("$ceil only supports numeric types, not class java.lang.String");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: []"), json("{}")))

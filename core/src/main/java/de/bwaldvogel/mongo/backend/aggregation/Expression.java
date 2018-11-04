@@ -47,6 +47,8 @@ public class Expression {
                         return evaluateYearValue(expressionValue, document);
                     case "$dayOfYear":
                         return evaluateDayOfYearValue(expressionValue, document);
+                    case "$ceil":
+                        return evaluateCeilValue(expressionValue, document);
                     default:
                         throw new MongoServerError(168, "InvalidPipelineOperator", "Unrecognized expression '" + expressionKey + "'");
                 }
@@ -69,6 +71,24 @@ public class Expression {
             return Math.abs(((Integer) value).intValue());
         } else {
             throw new MongoServerError(28765, "$abs only supports numeric types, not " + value.getClass());
+        }
+    }
+
+    private static Number evaluateCeilValue(Object expressionValue, Document document) {
+        Object value = evaluate(expressionValue, document);
+        if (value == null) {
+            return null;
+        } else if (value instanceof Double) {
+            long ceilValue = (long) Math.ceil(((Double) value).doubleValue());
+            if (ceilValue <= Integer.MAX_VALUE && ceilValue >= Integer.MIN_VALUE) {
+                return Math.toIntExact(ceilValue);
+            } else {
+                return ceilValue;
+            }
+        } else if (value instanceof Long || value instanceof Integer) {
+            return (Number) value;
+        } else {
+            throw new MongoServerError(28765, "$ceil only supports numeric types, not " + value.getClass());
         }
     }
 

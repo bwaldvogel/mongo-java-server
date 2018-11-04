@@ -397,6 +397,26 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithCeil() throws Exception {
+        Document query = json("$project: { value: 1, ceilingValue: { $ceil: \"$value\" } }");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, value: 9.25"));
+        collection.insertOne(json("_id: 2, value: 8.73"));
+        collection.insertOne(json("_id: 3, value: 4.32"));
+        collection.insertOne(json("_id: 4, value: -5.34"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).containsExactly(
+            json("_id: 1, value: 9.25, ceilingValue: 10"),
+            json("_id: 2, value: 8.73, ceilingValue: 9"),
+            json("_id: 3, value: 4.32, ceilingValue: 5"),
+            json("_id: 4, value: -5.34, ceilingValue: -5")
+        );
+    }
+
+    @Test
     public void testAggregateWithCount() throws Exception {
         Document match = json("$match: {score: {$gt: 80}}");
         Document count = json("$count: 'passing_scores'");
