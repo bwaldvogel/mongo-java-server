@@ -165,7 +165,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("maxWriteBatchSize", Integer.valueOf(MongoWireProtocolHandler.MAX_WRITE_BATCH_SIZE));
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
             response.put("maxWireVersion", Integer.valueOf(MongoWireProtocolHandler.MAX_WIRE_VERSION));
-            response.put("minWireVersion", Integer.valueOf(MongoWireProtocolHandler.MAX_WIRE_VERSION));
+            response.put("minWireVersion", Integer.valueOf(MongoWireProtocolHandler.MIN_WIRE_VERSION));
             response.put("localTime", new Date());
             Utils.markOkay(response);
             return response;
