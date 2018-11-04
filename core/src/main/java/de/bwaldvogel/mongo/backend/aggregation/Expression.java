@@ -12,9 +12,9 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-class Expression {
+public class Expression {
 
-    static Object evaluate(Object expression, Document document) {
+    public static Object evaluate(Object expression, Document document) {
         if (expression instanceof String && ((String) expression).startsWith("$")) {
             String value = ((String) expression).substring(1);
             return Utils.getSubdocumentValue(document, value);

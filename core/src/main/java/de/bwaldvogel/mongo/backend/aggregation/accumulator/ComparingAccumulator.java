@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.backend.aggregation;
+package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
 import java.util.Comparator;
 

@@ -1,13 +1,13 @@
-package de.bwaldvogel.mongo.backend.aggregation;
+package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
 import de.bwaldvogel.mongo.backend.Utils;
 
-class AvgAccumulator extends Accumulator {
+public class AvgAccumulator extends Accumulator {
 
     private Number sum = 0;
     private int count;
 
-    AvgAccumulator(String field, Object expression) {
+    public AvgAccumulator(String field, Object expression) {
         super(field, expression);
     }
 

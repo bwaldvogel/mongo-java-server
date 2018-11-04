@@ -1,12 +1,12 @@
-package de.bwaldvogel.mongo.backend.aggregation;
+package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
 import de.bwaldvogel.mongo.backend.Utils;
 
-class SumAccumulator extends Accumulator {
+public class SumAccumulator extends Accumulator {
 
     private Number sum = 0;
 
-    SumAccumulator(String field, Object expression) {
+    public SumAccumulator(String field, Object expression) {
         super(field, expression);
     }
 

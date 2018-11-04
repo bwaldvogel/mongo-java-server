@@ -1,14 +1,14 @@
-package de.bwaldvogel.mongo.backend.aggregation;
+package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-class AddToSetAccumulator extends Accumulator {
+public class AddToSetAccumulator extends Accumulator {
 
     private Set<Object> result = new LinkedHashSet<>();
 
-    AddToSetAccumulator(String field, Object expression) {
+    public AddToSetAccumulator(String field, Object expression) {
         super(field, expression);
     }
 

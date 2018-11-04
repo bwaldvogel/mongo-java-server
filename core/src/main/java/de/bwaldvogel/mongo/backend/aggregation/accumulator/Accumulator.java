@@ -1,6 +1,6 @@
-package de.bwaldvogel.mongo.backend.aggregation;
+package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
-abstract class Accumulator {
+public abstract class Accumulator {
 
     private final String field;
     private final Object expression;
@@ -18,7 +18,7 @@ abstract class Accumulator {
         return expression;
     }
 
-    abstract void aggregate(Object value);
+    public abstract void aggregate(Object value);
 
-    abstract Object getResult();
+    public abstract Object getResult();
 }

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -353,6 +354,26 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 json("_id: 1, value: 10, other: null"),
                 json("_id: 2, value: 20, other: null"),
                 json("_id: 3, value: 30, n: 7.3, other: null")
+            );
+    }
+
+    @Test
+    public void testAggregateWithMultipleMatches() throws Exception {
+        Document match1 = json("$match: {price: {$lt: 100}}");
+        Document match2 = json("$match: {quality: {$gt: 10}}");
+        List<Document> pipeline = Arrays.asList(match1, match2);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, price: 10, quality: 50"));
+        collection.insertOne(json("_id: 2, price: 150, quality: 500"));
+        collection.insertOne(json("_id: 3, price: 50, quality: 150"));
+        collection.insertOne(json("_id: 4, price: 10, quality: 5"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, price: 10, quality: 50"),
+                json("_id: 3, price: 50, quality: 150")
             );
     }
 

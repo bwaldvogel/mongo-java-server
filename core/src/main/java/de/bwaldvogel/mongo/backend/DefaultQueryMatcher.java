@@ -338,8 +338,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    private boolean checkExpressionMatch(Object value, boolean valueExists, Object expressionValue, String operator)
-            {
+    private boolean checkExpressionMatch(Object value, boolean valueExists, Object expressionValue, String operator) {
 
         final QueryOperator queryOperator;
         try {
@@ -349,71 +348,71 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         switch (queryOperator) {
-        case IN:
-            Collection<?> queriedObjects = (Collection<?>) expressionValue;
-            for (Object o : queriedObjects) {
-                if (o instanceof BsonRegularExpression && value instanceof String) {
-                    BsonRegularExpression pattern = (BsonRegularExpression) o;
-                    if (pattern.matcher((String) value).find()) {
+            case IN:
+                Collection<?> queriedObjects = (Collection<?>) expressionValue;
+                for (Object o : queriedObjects) {
+                    if (o instanceof BsonRegularExpression && value instanceof String) {
+                        BsonRegularExpression pattern = (BsonRegularExpression) o;
+                        if (pattern.matcher((String) value).find()) {
+                            return true;
+                        }
+                    } else if (Utils.nullAwareEquals(o, value)) {
                         return true;
                     }
-                } else if (Utils.nullAwareEquals(o, value)) {
-                    return true;
                 }
-            }
-            return false;
-        case NOT:
-            return !checkMatchesValue(expressionValue, value, valueExists);
-        case EQUAL:
-            return Utils.nullAwareEquals(value, expressionValue);
-        case NOT_EQUALS:
-            return !Utils.nullAwareEquals(value, expressionValue);
-        case NOT_IN:
-            return !checkExpressionMatch(value, valueExists, expressionValue, "$in");
-        case EXISTS:
-            return (valueExists == Utils.isTrue(expressionValue));
-        case GREATER_THAN:
-            if (!comparableTypes(value, expressionValue)) {
                 return false;
-            }
-            return comparator.compare(value, expressionValue) > 0;
-        case GREATER_THAN_OR_EQUAL:
-            if (!comparableTypes(value, expressionValue)) {
-                return false;
-            }
-            return comparator.compare(value, expressionValue) >= 0;
-        case LESS_THAN:
-            if (!comparableTypes(value, expressionValue)) {
-                return false;
-            }
-            return comparator.compare(value, expressionValue) < 0;
-        case LESS_THAN_OR_EQUAL:
-            if (!comparableTypes(value, expressionValue)) {
-                return false;
-            }
-            return comparator.compare(value, expressionValue) <= 0;
-        case MOD: {
-            if (!(value instanceof Number)) {
-                return false;
-            }
+            case NOT:
+                return !checkMatchesValue(expressionValue, value, valueExists);
+            case EQUAL:
+                return Utils.nullAwareEquals(value, expressionValue);
+            case NOT_EQUALS:
+                return !Utils.nullAwareEquals(value, expressionValue);
+            case NOT_IN:
+                return !checkExpressionMatch(value, valueExists, expressionValue, "$in");
+            case EXISTS:
+                return (valueExists == Utils.isTrue(expressionValue));
+            case GREATER_THAN:
+                if (!comparableTypes(value, expressionValue)) {
+                    return false;
+                }
+                return comparator.compare(value, expressionValue) > 0;
+            case GREATER_THAN_OR_EQUAL:
+                if (!comparableTypes(value, expressionValue)) {
+                    return false;
+                }
+                return comparator.compare(value, expressionValue) >= 0;
+            case LESS_THAN:
+                if (!comparableTypes(value, expressionValue)) {
+                    return false;
+                }
+                return comparator.compare(value, expressionValue) < 0;
+            case LESS_THAN_OR_EQUAL:
+                if (!comparableTypes(value, expressionValue)) {
+                    return false;
+                }
+                return comparator.compare(value, expressionValue) <= 0;
+            case MOD: {
+                if (!(value instanceof Number)) {
+                    return false;
+                }
 
-            @SuppressWarnings("unchecked")
-            List<Number> modValue = (List<Number>) expressionValue;
-            return (((Number) value).intValue() % modValue.get(0).intValue() == modValue.get(1).intValue());
-        }
-        case SIZE: {
-            if (!(value instanceof Collection<?>) || !(expressionValue instanceof Number)) {
-                return false;
+                @SuppressWarnings("unchecked")
+                List<Number> modValue = (List<Number>) expressionValue;
+                return (((Number) value).intValue() % modValue.get(0).intValue() == modValue.get(1).intValue());
             }
-            int listSize = ((Collection<?>) value).size();
-            double matchingSize = ((Number) expressionValue).doubleValue();
-            return listSize == matchingSize;
-        }
-        case ALL:
-            return false;
+            case SIZE: {
+                if (!(value instanceof Collection<?>) || !(expressionValue instanceof Number)) {
+                    return false;
+                }
+                int listSize = ((Collection<?>) value).size();
+                double matchingSize = ((Number) expressionValue).doubleValue();
+                return listSize == matchingSize;
+            }
+            case ALL:
+                return false;
 
-        default:
-            throw new IllegalArgumentException("unhandled query operator: " + queryOperator);
+            default:
+                throw new IllegalArgumentException("unhandled query operator: " + queryOperator);
         }
     }
 
