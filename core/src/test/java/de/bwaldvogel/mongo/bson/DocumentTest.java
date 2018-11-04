@@ -21,6 +21,41 @@ public class DocumentTest {
     }
 
     @Test
+    public void testEquals() throws Exception {
+        assertThat(new Document()).isNotEqualTo(Collections.emptyMap());
+        assertThat(new Document()).isNotEqualTo(null);
+        assertThat(new Document()).isEqualTo(new Document());
+    }
+
+    @Test
+    public void testClone() throws Exception {
+        Document original = json("abc: 123");
+        assertThat(original.clone())
+            .isInstanceOf(Document.class)
+            .isEqualTo(original);
+    }
+
+    @Test
+    public void testClear() throws Exception {
+        Document document = json("abc: 123");
+        document.clear();
+        assertThat(document).isEqualTo(json(""));
+    }
+
+    @Test
+    public void testContainsValue() throws Exception {
+        Document document = json("abc: 123");
+        assertThat(document.containsValue(123)).isTrue();
+        assertThat(document.containsValue(42)).isFalse();
+    }
+
+    @Test
+    public void testValues() throws Exception {
+        Document document = json("abc: 123, efg: 456");
+        assertThat(document.values()).containsExactly(123, 456);
+    }
+
+    @Test
     public void testToString() throws Exception {
         assertThat(new Document()).hasToString("{}");
         assertThat(new Document("key", "value")).hasToString("{\"key\" : \"value\"}");

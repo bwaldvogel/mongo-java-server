@@ -88,8 +88,9 @@ public final class Document implements Map<String, Object>, Bson {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object clone() {
-        return documentAsMap.clone();
+        return new Document((Map<String, Object>) documentAsMap.clone());
     }
 
     @Override
@@ -109,6 +110,15 @@ public final class Document implements Map<String, Object>, Bson {
 
     @Override
     public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof Document)) {
+            return false;
+        }
         return documentAsMap.equals(o);
     }
 
