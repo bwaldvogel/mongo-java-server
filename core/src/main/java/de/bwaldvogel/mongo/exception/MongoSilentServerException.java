@@ -5,7 +5,7 @@ package de.bwaldvogel.mongo.exception;
  */
 public class MongoSilentServerException extends MongoServerException {
 
-    private static final long serialVersionUID = 9148405503786686266L;
+    private static final long serialVersionUID = 1L;
 
     public MongoSilentServerException(String message) {
         super(message);

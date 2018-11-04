@@ -4,7 +4,7 @@ import de.bwaldvogel.mongo.backend.Index;
 
 public class DuplicateKeyError extends KeyConstraintError {
 
-    private static final long serialVersionUID = 7972569155402894456L;
+    private static final long serialVersionUID = 1L;
 
     public DuplicateKeyError(Index<?> index, Object value) {
         super(11000, "duplicate key error index: " + index.getName() + "  dup key: " + value);

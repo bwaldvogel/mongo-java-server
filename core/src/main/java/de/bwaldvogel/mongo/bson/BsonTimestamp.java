@@ -6,18 +6,15 @@ public class BsonTimestamp implements Bson {
 
     private long timestamp;
 
-    public BsonTimestamp(long timestamp) {
-        this.timestamp = timestamp;
+    protected BsonTimestamp() {
     }
 
-    protected BsonTimestamp() {
+    public BsonTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
 }

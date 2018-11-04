@@ -33,7 +33,7 @@ public class BsonRegularExpression implements Bson {
         return document;
     }
 
-    public static BsonRegularExpression fromDocument(Document queryObject) {
+    private static BsonRegularExpression fromDocument(Document queryObject) {
         String options = "";
         if (queryObject.containsKey(OPTIONS)) {
             options = queryObject.get(OPTIONS).toString();
@@ -46,23 +46,19 @@ public class BsonRegularExpression implements Bson {
     public static boolean isRegularExpression(Object object) {
         if (object instanceof Document) {
             return ((Document) object).containsKey(REGEX);
-        } else if (object instanceof BsonRegularExpression) {
-            return true;
         } else {
-            return false;
+            return object instanceof BsonRegularExpression;
         }
     }
 
     public static BsonRegularExpression convertToRegularExpression(Object pattern) {
         if (!isRegularExpression(pattern)) {
-            throw new IllegalArgumentException(pattern + " is not a regular expression");
+            throw new IllegalArgumentException("'" + pattern + "' is not a regular expression");
         }
         if (pattern instanceof BsonRegularExpression) {
             return (BsonRegularExpression) pattern;
-        } else if (pattern instanceof Document) {
-            return fromDocument((Document) pattern);
         } else {
-            throw new IllegalArgumentException("Not a pattern: " + pattern);
+            return fromDocument((Document) pattern);
         }
     }
 
@@ -83,7 +79,7 @@ public class BsonRegularExpression implements Bson {
         return pattern;
     }
 
-    private Pattern createPattern() {
+    Pattern createPattern() {
         int flags = 0;
         for (char flag : options.toCharArray()) {
             switch (flag) {

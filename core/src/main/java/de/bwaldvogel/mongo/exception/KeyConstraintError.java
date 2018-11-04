@@ -2,9 +2,9 @@ package de.bwaldvogel.mongo.exception;
 
 public class KeyConstraintError extends MongoServerError {
 
-    private static final long serialVersionUID = -5036998973183017889L;
+    private static final long serialVersionUID = 1L;
 
-    public KeyConstraintError(int errorCode, String message) {
+    KeyConstraintError(int errorCode, String message) {
         super(errorCode, message);
     }
 }

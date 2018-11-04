@@ -1,17 +1,17 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class Constants {
+public interface Constants {
 
-    public static final String ID_FIELD = "_id";
+    String ID_FIELD = "_id";
 
-    public static final int MAX_NS_LENGTH = 128;
+    int MAX_NS_LENGTH = 128;
 
-    public static final String ID_INDEX_NAME = "_id_";
+    String ID_INDEX_NAME = "_id_";
 
-    public static final Set<String> REFERENCE_KEYS = new HashSet<>(Arrays.asList("$ref", "$id"));
+    Set<String> REFERENCE_KEYS = new LinkedHashSet<>(Arrays.asList("$ref", "$id"));
 
 }
