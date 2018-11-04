@@ -17,7 +17,7 @@ import io.netty.buffer.ByteBuf;
 
 class BsonDecoder {
 
-    public Document decodeBson(ByteBuf buffer) throws IOException {
+    Document decodeBson(ByteBuf buffer) throws IOException {
         final int totalObjectLength = buffer.readIntLE();
         final int length = totalObjectLength - 4;
         if (buffer.readableBytes() < length) {

@@ -83,7 +83,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         }
     }
 
-    protected MongoReply handleQuery(Channel channel, MongoQuery query) {
+    private MongoReply handleQuery(Channel channel, MongoQuery query) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
             List<Document> documents = new ArrayList<>();
