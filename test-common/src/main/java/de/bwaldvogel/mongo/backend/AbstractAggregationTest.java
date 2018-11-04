@@ -17,6 +17,31 @@ import com.mongodb.MongoCommandException;
 public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
+    public void testUnrecognizedAggregatePipelineStage() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unknown: {}"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 40324: 'Unrecognized pipeline stage name: '$unknown'");
+    }
+
+    @Test
+    public void testIllegalAggregatePipelineStage() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unknown: {}, bar: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 40323: 'A pipeline stage specification object must contain exactly one field.'");
+    }
+
+    @Test
+    public void testAggregateWithMissingCursor() throws Exception {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', pipeline: [{$match: {}}]")))
+            .withMessageContaining("Command failed with error 9: 'The 'cursor' option is required, except for aggregate with the explain argument'");
+    }
+
+    @Test
     public void testAggregateWithComplexGroupBySumPipeline() throws Exception {
         Document query = new Document("_id", null);
         query.putAll(json("n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}"));

@@ -501,6 +501,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document commandAggregate(String command, Document query) {
         String collectionName = query.get(command).toString();
         Document cursor = (Document) query.get("cursor");
+        if (cursor == null) {
+            throw new MongoServerError(9, "The 'cursor' option is required, except for aggregate with the explain argument");
+        }
         if (!cursor.isEmpty()) {
             throw new MongoServerException("Non-empty cursor is not yet implemented");
         }
@@ -516,7 +519,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         List<Document> pipeline = (List<Document>) query.get("pipeline");
         for (Document stage : pipeline) {
             if (stage.size() != 1) {
-                throw new MongoServerException("Unsupported pipeline stage: " + stage);
+                throw new MongoServerError(40323, "A pipeline stage specification object must contain exactly one field.");
             }
             String stageOperation = stage.keySet().iterator().next();
             switch (stageOperation) {
@@ -544,7 +547,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     aggregation.group(groupDetails);
                     break;
                 default:
-                    throw new MongoServerException("Unhandled stage operation: " + stageOperation);
+                    throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
             }
         }
 
