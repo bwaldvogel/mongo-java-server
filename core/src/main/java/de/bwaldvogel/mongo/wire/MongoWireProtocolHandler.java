@@ -85,20 +85,20 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         }
 
         final Channel channel = ctx.channel();
-        final ClientRequest ret;
+        final ClientRequest request;
 
         switch (opCode) {
         case OP_QUERY:
-            ret = handleQuery(channel, header, in);
+            request = handleQuery(channel, header, in);
             break;
         case OP_INSERT:
-            ret = handleInsert(channel, header, in);
+            request = handleInsert(channel, header, in);
             break;
         case OP_DELETE:
-            ret = handleDelete(channel, header, in);
+            request = handleDelete(channel, header, in);
             break;
         case OP_UPDATE:
-            ret = handleUpdate(channel, header, in);
+            request = handleUpdate(channel, header, in);
             break;
         default:
             throw new UnsupportedOperationException("unsupported opcode: " + opCode);
@@ -108,7 +108,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new IOException();
         }
 
-        return ret;
+        log.debug("{}", request);
+
+        return request;
     }
 
     private ClientRequest handleDelete(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
