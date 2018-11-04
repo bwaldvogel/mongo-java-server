@@ -25,6 +25,7 @@ public abstract class AbstractTest {
     com.mongodb.async.client.MongoCollection<Document> asyncCollection;
     private MongoServer mongoServer;
     private com.mongodb.async.client.MongoClient asyncClient;
+    InetSocketAddress serverAddress;
 
     protected abstract MongoBackend createBackend() throws Exception;
 
@@ -41,7 +42,7 @@ public abstract class AbstractTest {
     protected void spinUpServer() throws Exception {
         MongoBackend backend = createBackend();
         mongoServer = new MongoServer(backend);
-        InetSocketAddress serverAddress = mongoServer.bind();
+        serverAddress = mongoServer.bind();
         syncClient = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
         asyncClient = MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
         db = syncClient.getDatabase(TEST_DATABASE_NAME);
