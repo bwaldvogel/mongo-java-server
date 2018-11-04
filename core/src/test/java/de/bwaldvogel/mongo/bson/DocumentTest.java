@@ -31,6 +31,8 @@ public class DocumentTest {
     @Test
     public void testToJsonValue() throws Exception {
         assertThat(Document.toJsonValue(null)).isEqualTo("null");
+        assertThat(Document.toJsonValue(true)).isEqualTo("true");
+        assertThat(Document.toJsonValue(Boolean.TRUE)).isEqualTo("true");
         assertThat(Document.toJsonValue("")).isEqualTo("\"\"");
         assertThat(Document.toJsonValue("abc\"\n\t\n\"efg")).isEqualTo("\"abc\\\"\\n\\t\\n\\\"efg\"");
         assertThat(Document.toJsonValue(3.14F)).isEqualTo("3.14");

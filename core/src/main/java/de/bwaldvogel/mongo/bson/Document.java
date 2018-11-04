@@ -131,6 +131,9 @@ public final class Document implements Map<String, Object>, Bson {
         if (value instanceof Number) {
             return value.toString();
         }
+        if (value instanceof Boolean) {
+            return value.toString();
+        }
         if (value instanceof String) {
             return "\"" + escapeJson((String) value) + "\"";
         }
