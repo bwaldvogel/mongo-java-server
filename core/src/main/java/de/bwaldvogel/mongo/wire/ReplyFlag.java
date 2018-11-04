@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.wire;
 
-public enum ReplyFlag implements Flag {
+public enum ReplyFlag {
     CURSOR_NOT_FOUND(0),
     QUERY_FAILURE(1),
     SHARD_CONFIG_STALE(2),
@@ -12,17 +12,6 @@ public enum ReplyFlag implements Flag {
         this.value = 1 << bit;
     }
 
-    @Override
-    public boolean isSet(int flags) {
-        return (flags & value) == value;
-    }
-
-    @Override
-    public int removeFrom(int flags) {
-        return flags - value;
-    }
-
-    @Override
     public int addTo(int flags) {
         return flags | value;
     }

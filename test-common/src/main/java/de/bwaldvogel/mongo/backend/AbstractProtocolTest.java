@@ -105,7 +105,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
             // content
             writeInt(baos, 0); // RESERVED
             writeString(baos, collection.getNamespace().getFullName());
-            writeInt(baos, 0); // flags
+            writeInt(baos, 1 | 1 << 1); // UPSERT + MULTI_UPDATE
 
             writeBson(baos, json("_id: {$gte: 2}")); // selector
             writeBson(baos, json("$set: {a: 2}")); // update
@@ -116,11 +116,11 @@ public abstract class AbstractProtocolTest extends AbstractTest {
             outputStream.flush();
         }
 
-        awaitDocumentCount(() -> collection.countDocuments(json("a: 2")) == 1);
+        awaitDocumentCount(() -> collection.countDocuments(json("a: 2")) == 2);
         assertThat(toArray(collection.find())).containsExactly(
             json("_id: 1"),
             json("_id: 2, a: 2"),
-            json("_id: 3")
+            json("_id: 3, a: 2")
         );
     }
 

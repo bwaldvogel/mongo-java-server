@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.wire;
 
-public enum QueryFlag implements Flag {
+public enum QueryFlag {
     TAILABLE(1), //
     SLAVE_OK(2), //
     OPLOG_REPLAY(3), //
@@ -15,18 +15,12 @@ public enum QueryFlag implements Flag {
         this.value = 1 << bit;
     }
 
-    @Override
     public boolean isSet(int flags) {
         return (flags & value) == value;
     }
 
-    @Override
     public int removeFrom(int flags) {
         return flags - value;
     }
 
-    @Override
-    public int addTo(int flags) {
-        return flags | value;
-    }
 }
