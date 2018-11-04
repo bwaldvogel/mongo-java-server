@@ -77,7 +77,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(new Document("$abs", "$a").append("$ceil", "$b"), new Document()))
-            .withMessage("An object representing an expression must have exactly one field: {$abs=$a, $ceil=$b}");
+            .withMessage("An object representing an expression must have exactly one field: {\"$abs\" : \"$a\", \"$ceil\" : \"$b\"}");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(new Document("$abs", "abc"), new Document()))

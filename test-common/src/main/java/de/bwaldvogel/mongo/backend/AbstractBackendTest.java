@@ -2046,7 +2046,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$mul: {bar: 'x'}")))
-            .withMessageContaining("Command failed with error -1: 'cannot multiply with non-numeric value: {bar=x}'");
+            .withMessageContaining("Command failed with error -1: 'cannot multiply with non-numeric value: {\"bar\" : \"x\"}'");
     }
 
     @Test

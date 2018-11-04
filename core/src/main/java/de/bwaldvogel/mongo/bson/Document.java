@@ -1,18 +1,19 @@
 package de.bwaldvogel.mongo.bson;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public class Document implements Map<String, Object>, Bson {
+public final class Document implements Map<String, Object>, Bson {
 
     private static final long serialVersionUID = 1L;
 
-    private final LinkedHashMap<String, Object> documentAsMap;
+    private final LinkedHashMap<String, Object> documentAsMap = new LinkedHashMap<>();
 
     public Document() {
-        documentAsMap = new LinkedHashMap<>();
     }
 
     public Document(String key, Object value) {
@@ -118,6 +119,45 @@ public class Document implements Map<String, Object>, Bson {
 
     @Override
     public String toString() {
-        return documentAsMap.toString();
+        return documentAsMap.entrySet().stream()
+            .map(entry -> "\"" + escapeJson(entry.getKey()) + "\" : " + toJsonValue(entry.getValue()))
+            .collect(Collectors.joining(", ", "{", "}"));
+    }
+
+    static String toJsonValue(Object value) {
+        if (value == null) {
+            return "null";
+        }
+        if (value instanceof Number) {
+            return value.toString();
+        }
+        if (value instanceof String) {
+            return "\"" + escapeJson((String) value) + "\"";
+        }
+        if (value instanceof Document) {
+            return value.toString();
+        }
+        if (value instanceof Date) {
+            return toJsonValue(((Date) value).toInstant().toString());
+        }
+        if (value instanceof Collection) {
+            Collection<?> collection = (Collection<?>) value;
+            return collection.stream()
+                .map(Document::toJsonValue)
+                .collect(Collectors.joining(", ", "[", "]"));
+        }
+        throw new IllegalArgumentException("Unknown value: " + value);
+    }
+
+    private static String escapeJson(String input) {
+        String escaped = input;
+        escaped = escaped.replace("\\", "\\\\");
+        escaped = escaped.replace("\"", "\\\"");
+        escaped = escaped.replace("\b", "\\b");
+        escaped = escaped.replace("\f", "\\f");
+        escaped = escaped.replace("\n", "\\n");
+        escaped = escaped.replace("\r", "\\r");
+        escaped = escaped.replace("\t", "\\t");
+        return escaped;
     }
 }

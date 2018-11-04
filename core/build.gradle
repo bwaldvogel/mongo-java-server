@@ -1,4 +1,6 @@
 dependencies {
     compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
     compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
+
+    testCompile 'nl.jqno.equalsverifier:equalsverifier:3.0.2'
 }
