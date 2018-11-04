@@ -7,7 +7,6 @@ public class MongoQuery extends ClientRequest {
 
     private final Document query;
     private final Document returnFieldSelector;
-    private boolean slaveOk;
     private int numberToSkip;
     private int numberToReturn;
 
@@ -46,14 +45,6 @@ public class MongoQuery extends ClientRequest {
         sb.append(", returnFieldSelector: ").append(returnFieldSelector);
         sb.append(")");
         return sb.toString();
-    }
-
-    public void setSlaveOk(boolean slaveOk) {
-        this.slaveOk = slaveOk;
-    }
-
-    public boolean isSlaveOk() {
-        return slaveOk;
     }
 
 }
