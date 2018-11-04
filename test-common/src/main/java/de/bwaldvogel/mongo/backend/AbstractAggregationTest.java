@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.bson.Document;
@@ -271,11 +272,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", Instant.parse("2014-01-01T08:00:00Z")));
-        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", Instant.parse("2014-02-03T09:00:00Z")));
-        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", Instant.parse("2014-02-03T09:05:00Z")));
-        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", Instant.parse("2014-02-15T08:00:00Z")));
-        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", Instant.parse("2014-02-15T09:12:00Z")));
+        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", date("2014-01-01T08:00:00Z")));
+        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", date("2014-02-03T09:00:00Z")));
+        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", date("2014-02-03T09:05:00Z")));
+        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", date("2014-02-15T08:00:00Z")));
+        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", date("2014-02-15T09:12:00Z")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
@@ -432,6 +433,32 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 6, subject: 'History', score: 83"));
 
         assertThat(toArray(collection.aggregate(pipeline))).containsExactly(json("passing_scores: 4"));
+    }
+
+    @Test
+    public void testAggregateWithFirstAndLast() throws Exception {
+        Document sort = json("$sort: { item: 1, date: 1 }");
+        Document group = json("$group: {_id: \"$item\", firstSale: { $first: \"$date\" }, lastSale: { $last: \"$date\"} }");
+        List<Document> pipeline = Arrays.asList(sort, group);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", date("2014-01-01T08:00:00Z")));
+        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", date("2014-02-03T09:00:00Z")));
+        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", date("2014-02-03T09:05:00Z")));
+        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", date("2014-02-15T08:00:00Z")));
+        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", date("2014-02-15T09:12:00Z")));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 'abc'").append("firstSale", date("2014-01-01T08:00:00Z")).append("lastSale", date("2014-02-15T08:00:00Z")),
+                json("_id: 'jkl'").append("firstSale", date("2014-02-03T09:00:00Z")).append("lastSale", date("2014-02-03T09:00:00Z")),
+                json("_id: 'xyz'").append("firstSale", date("2014-02-03T09:05:00Z")).append("lastSale", date("2014-02-15T09:12:00Z"))
+            );
+    }
+
+    private static Date date(String instant) {
+        return Date.from(Instant.parse(instant));
     }
 
 }

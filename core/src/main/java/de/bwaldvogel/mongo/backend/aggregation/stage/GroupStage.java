@@ -16,6 +16,8 @@ import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.Accumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.AddToSetAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.AvgAccumulator;
+import de.bwaldvogel.mongo.backend.aggregation.accumulator.FirstAccumulator;
+import de.bwaldvogel.mongo.backend.aggregation.accumulator.LastAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.MaxAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.MinAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.SumAccumulator;
@@ -92,6 +94,10 @@ public class GroupStage implements AggregationStage {
                 accumulators.put(field, () -> new AvgAccumulator(field, expression));
             } else if (groupOperator.equals("$addToSet")) {
                 accumulators.put(field, () -> new AddToSetAccumulator(field, expression));
+            } else if (groupOperator.equals("$first")) {
+                accumulators.put(field, () -> new FirstAccumulator(field, expression));
+            } else if (groupOperator.equals("$last")) {
+                accumulators.put(field, () -> new LastAccumulator(field, expression));
             } else {
                 throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }
