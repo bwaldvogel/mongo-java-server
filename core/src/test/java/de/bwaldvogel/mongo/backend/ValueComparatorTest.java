@@ -64,7 +64,7 @@ public class ValueComparatorTest {
     @Test
     public void testCompareNumberValues() {
         assertThat(comparator.compare(123, 123.0)).isEqualTo(0);
-        assertThat(comparator.compare(17l, 17.3)).isLessThan(0);
+        assertThat(comparator.compare(17L, 17.3)).isLessThan(0);
         assertThat(comparator.compare(59, 58.9999)).isGreaterThan(0);
         assertThat(comparator.compare(null, 27)).isLessThan(0);
         assertThat(comparator.compare(27, null)).isGreaterThan(0);
@@ -80,11 +80,11 @@ public class ValueComparatorTest {
 
     @Test
     public void testCompareByteArrayValues() {
-        assertThat(comparator.compare(new byte[]{1}, new byte[]{1})).isEqualTo(0);
-        assertThat(comparator.compare(new byte[]{1}, new byte[]{1,2})).isLessThan(0);
-        assertThat(comparator.compare(new byte[]{0x00}, new byte[]{(byte)0xFF})).isLessThan(0);
-        assertThat(comparator.compare(null, new byte[]{1})).isLessThan(0);
-        assertThat(comparator.compare(new byte[]{1}, null)).isGreaterThan(0);
+        assertThat(comparator.compare(new byte[] { 1 }, new byte[] { 1 })).isEqualTo(0);
+        assertThat(comparator.compare(new byte[] { 1 }, new byte[] { 1, 2 })).isLessThan(0);
+        assertThat(comparator.compare(new byte[] { 0x00 }, new byte[] { (byte) 0xFF })).isLessThan(0);
+        assertThat(comparator.compare(null, new byte[] { 1 })).isLessThan(0);
+        assertThat(comparator.compare(new byte[] { 1 }, null)).isGreaterThan(0);
     }
 
 }

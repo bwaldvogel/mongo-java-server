@@ -1,8 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -15,32 +16,33 @@ public class DocumentComparatorTest {
 
     @Test
     public void testCompareSingleKey() {
-        DocumentComparator comparator = new DocumentComparator(new Document("a", 1));
+        DocumentComparator comparator = new DocumentComparator(json("a: 1"));
 
-        List<Document> list = new ArrayList<>();
-        list.add(new Document("a", 10));
-        list.add(new Document("a", 15));
-        list.add(new Document("a", 5));
-        list.add(new Document("b", 1));
+        List<Document> list = Arrays.asList(
+            json("a: 10"),
+            json("a: 15"),
+            json("a: 5"),
+            json("b: 1"));
 
         list.sort(comparator);
-        assertThat(list).containsExactly(new Document("b", 1), //
-                new Document("a", 5), //
-                new Document("a", 10), //
-                new Document("a", 15));
+        assertThat(list).containsExactly(
+            json("b: 1"),
+            json("a: 5"),
+            json("a: 10"),
+            json("a: 15"));
     }
 
     @Test
     public void testCompareMultiKey() {
-        DocumentComparator comparator = new DocumentComparator(new Document("a", 1).append("b", -1));
+        DocumentComparator comparator = new DocumentComparator(json("a: 1, b: -1"));
 
-        List<Document> list = new ArrayList<>();
-        list.add(new Document("a", 15).append("b", 3));
-        list.add(new Document("a", 15).append("b", 2));
-        list.add(new Document("a", 5));
-        list.add(new Document("b", 1));
-        list.add(new Document("b", 2));
-        list.add(new Document("b", 3));
+        List<Document> list = Arrays.asList(
+            json("a: 15, b: 3"),
+            json("a: 15, b: 2"),
+            json("a: 5"),
+            json("b: 1"),
+            json("b: 2"),
+            json("b: 3"));
 
         Random rnd = new Random(4711);
 
@@ -48,22 +50,23 @@ public class DocumentComparatorTest {
             Collections.shuffle(list, rnd);
 
             list.sort(comparator);
-            assertThat(list).containsExactly(new Document("b", 3), //
-                    new Document("b", 2), //
-                    new Document("b", 1), //
-                    new Document("a", 5), //
-                    new Document("a", 15).append("b", 3), //
-                    new Document("a", 15).append("b", 2));
+            assertThat(list).containsExactly(
+                json("b: 3"),
+                json("b: 2"),
+                json("b: 1"),
+                json("a: 5"),
+                json("a: 15, b: 3"),
+                json("a: 15, b: 2"));
         }
     }
 
     @Test
     public void testCompareCompoundKey() throws Exception {
-        DocumentComparator comparator = new DocumentComparator(new Document("a.b", 1).append("c", -1));
+        DocumentComparator comparator = new DocumentComparator(json("'a.b': 1, c: -1"));
 
-        Document a = new Document("a", new Document("b", 10));
-        Document b = new Document("a", new Document("b", 15));
-        Document c = new Document("a", new Document("b", 15)).append("x", 70);
+        Document a = json("a: {b: 10}");
+        Document b = json("a: {b: 15}");
+        Document c = json("a: {b: 15, x: 70}");
 
         assertThat(comparator.compare(a, b)).isLessThan(0);
         assertThat(comparator.compare(b, a)).isGreaterThan(0);

@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.bson;
 
+import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
@@ -24,6 +25,7 @@ public class DocumentTest {
         assertThat(new Document()).hasToString("{}");
         assertThat(new Document("key", "value")).hasToString("{\"key\" : \"value\"}");
         assertThat(new Document("key", new Document("value", 12345L))).hasToString("{\"key\" : {\"value\" : 12345}}");
+        assertThat(json("array: [{'123a': {name: 'old'}}]")).hasToString("{\"array\" : [{\"123a\" : {\"name\" : \"old\"}}]}");
     }
 
     @Test

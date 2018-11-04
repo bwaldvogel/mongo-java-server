@@ -1,8 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Collections;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +13,7 @@ public class AbstractMongoCollectionTest {
 
     private static class TestCollection extends AbstractMongoCollection<Object> {
 
-        protected TestCollection(String databaseName, String collectionName, String idField) {
+        TestCollection(String databaseName, String collectionName, String idField) {
             super(databaseName, collectionName, idField);
         }
 
@@ -61,7 +60,7 @@ public class AbstractMongoCollectionTest {
 
         @Override
         protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-                int numberToReturn) {
+                                                    int numberToReturn) {
             throw new UnsupportedOperationException();
         }
 
@@ -89,47 +88,28 @@ public class AbstractMongoCollectionTest {
 
     @Test
     public void testConvertSelector() throws Exception {
-        Document selector = new Document();
+        assertThat(collection.convertSelectorToDocument(json("")))
+            .isEqualTo(json(""));
 
-        assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new Document());
+        assertThat(collection.convertSelectorToDocument(json("_id: 1")))
+            .isEqualTo(json("_id: 1"));
 
-        selector = new Document("_id", 1);
-        assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new Document("_id", 1));
+        assertThat(collection.convertSelectorToDocument(json("_id: 1, $set: {foo: 'bar'}")))
+            .isEqualTo(json("_id: 1"));
 
-        selector = new Document("_id", 1).append("$set", new Document("foo", "bar"));
-        assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new Document("_id", 1));
+        assertThat(collection.convertSelectorToDocument(json("_id: 1, 'e.i': 14")))
+            .isEqualTo(json("_id: 1, e: {i: 14}"));
 
-        selector = new Document("_id", 1).append("e.i", 14);
-        assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new Document("_id", 1).append("e", new Document("i", 14)));
-
-        selector = new Document("_id", 1).append("e.i.y", new Document("foo", "bar"));
-        assertThat(collection.convertSelectorToDocument(selector)) //
-                .isEqualTo(new Document("_id", 1).append("e", //
-                        new Document("i", new Document("y", //
-                                new Document("foo", "bar")))));
+        assertThat(collection.convertSelectorToDocument(json("_id: 1, 'e.i.y': {foo: 'bar'}")))
+            .isEqualTo(json("_id: 1, e: {i: {y: {foo: 'bar'}}}"));
     }
 
     @Test
     public void testDeriveDocumentId() throws Exception {
-        assertThat(collection.deriveDocumentId(new Document()))
-            .isInstanceOf(ObjectId.class);
-
-        assertThat(collection.deriveDocumentId(new Document("a", 1)))
-            .isInstanceOf(ObjectId.class);
-
-        assertThat(collection.deriveDocumentId(new Document("_id", 1)))
-            .isEqualTo(1);
-
-        assertThat(collection.deriveDocumentId(new Document("_id",
-            new Document("$in", Collections.singletonList(1)))))
-                .isEqualTo(1);
-
-        assertThat(collection.deriveDocumentId(new Document("_id",
-            new Document("$in", Collections.emptyList()))))
-                .isInstanceOf(ObjectId.class);
+        assertThat(collection.deriveDocumentId(json(""))).isInstanceOf(ObjectId.class);
+        assertThat(collection.deriveDocumentId(json("a: 1"))).isInstanceOf(ObjectId.class);
+        assertThat(collection.deriveDocumentId(json("_id: 1"))).isEqualTo(1);
+        assertThat(collection.deriveDocumentId(json("_id: {$in: [1]}"))).isEqualTo(1);
+        assertThat(collection.deriveDocumentId(json("_id: {$in: []}"))).isInstanceOf(ObjectId.class);
     }
 }

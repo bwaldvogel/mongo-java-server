@@ -2,5 +2,6 @@ dependencies {
     compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
     compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
 
+    testCompile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
     testCompile 'nl.jqno.equalsverifier:equalsverifier:3.0.2'
 }

@@ -1,9 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.allOf;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.and;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.elemMatch;
-import static de.bwaldvogel.mongo.backend.DocumentBuilder.eq;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.exists;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.gt;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.gte;
@@ -13,7 +13,6 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.lt;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.lte;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.map;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.mod;
-import static de.bwaldvogel.mongo.backend.DocumentBuilder.ne;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.nor;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.not;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.notIn;
@@ -34,16 +33,14 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesSimple() throws Exception {
-        Document document = map();
-        assertThat(matcher.matches(document, map())).isTrue();
-        assertThat(matcher.matches(document, map("foo", "bar"))).isFalse();
-        document.put("foo", "bar");
-        assertThat(matcher.matches(document, map("foo", "bar"))).isTrue();
+        assertThat(matcher.matches(json(""), json(""))).isTrue();
+        assertThat(matcher.matches(json(""), json("foo: 'bar'"))).isFalse();
+        assertThat(matcher.matches(json("foo: 'bar'"), json("foo: 'bar'"))).isTrue();
     }
 
     @Test
     public void testMatchesPattern() throws Exception {
-        Document document = map("name", "john");
+        Document document = json("name: 'john'");
         assertThat(matcher.matches(document, map("name", regex("jo.*")))).isTrue();
         assertThat(matcher.matches(document, map("name", regex("Jo.*", "i")))).isTrue();
         assertThat(matcher.matches(document, map("name", regex("marta")))).isFalse();
@@ -69,121 +66,117 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesInQuery() throws Exception {
         Document query = map("a", in(3, 2, 1));
-        assertThat(matcher.matches(map(), query)).isFalse();
-        assertThat(matcher.matches(map("a", "x"), query)).isFalse();
-        assertThat(matcher.matches(map("a", 1), query)).isTrue();
-        assertThat(matcher.matches(map("a", 2), query)).isTrue();
-        assertThat(matcher.matches(map("a", 4), query)).isFalse();
-        assertThat(matcher.matches(map("a", 1.0), query)).isTrue();
+        assertThat(matcher.matches(json(""), query)).isFalse();
+        assertThat(matcher.matches(json("a: 'x'"), query)).isFalse();
+        assertThat(matcher.matches(json("a: 1"), query)).isTrue();
+        assertThat(matcher.matches(json("a: 2"), query)).isTrue();
+        assertThat(matcher.matches(json("a: 4"), query)).isFalse();
+        assertThat(matcher.matches(json("a: 1.0"), query)).isTrue();
         Document otherQuery = map("a", in(3.0, 2.0, 1.00001));
-        assertThat(matcher.matches(map("a", 1), otherQuery)).isFalse();
+        assertThat(matcher.matches(json("a: 1"), otherQuery)).isFalse();
     }
 
     @Test
     public void testMatchesGreaterThanQuery() throws Exception {
-        assertThat(matcher.matches(map(), map("a", gt(-1)))).isFalse();
-        assertThat(matcher.matches(map("a", 1), map("a", gt(0.9)))).isTrue();
-        assertThat(matcher.matches(map("a", 1), map("a", gt(0)))).isTrue();
-        assertThat(matcher.matches(map("a", 1), map("a", gt(1)))).isFalse();
-        assertThat(matcher.matches(map("a", 1), map("a", gte(1)))).isTrue();
-        assertThat(matcher.matches(map("a", "x"), map("a", gt(1)))).isFalse();
-        assertThat(matcher.matches(map("a", "x"), map("a", gte(1)))).isFalse();
+        assertThat(matcher.matches(json(""), map("a", gt(-1)))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), map("a", gt(0.9)))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), map("a", gt(0)))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), map("a", gt(1)))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), map("a", gte(1)))).isTrue();
+        assertThat(matcher.matches(json("a: 'x'"), map("a", gt(1)))).isFalse();
+        assertThat(matcher.matches(json("a: 'x'"), map("a", gte(1)))).isFalse();
     }
 
     @Test
     public void testMatchesLessThanQuery() throws Exception {
-        assertThat(matcher.matches(map(), map("a", lt(-1)))).isFalse();
-        assertThat(matcher.matches(map("a", 1), map("a", lt(1.001)))).isTrue();
-        assertThat(matcher.matches(map("a", 1), map("a", lt(2)))).isTrue();
-        assertThat(matcher.matches(map("a", 1), map("a", lt(1)))).isFalse();
-        assertThat(matcher.matches(map("a", 1), map("a", lte(1)))).isTrue();
-        assertThat(matcher.matches(map("a", "x"), map("a", lt(1)))).isFalse();
-        assertThat(matcher.matches(map("a", "x"), map("a", lte(1)))).isFalse();
+        assertThat(matcher.matches(json(""), map("a", lt(-1)))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), map("a", lt(1.001)))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), map("a", lt(2)))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), map("a", lt(1)))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), map("a", lte(1)))).isTrue();
+        assertThat(matcher.matches(json("a: 'x'"), map("a", lt(1)))).isFalse();
+        assertThat(matcher.matches(json("a: 'x'"), map("a", lte(1)))).isFalse();
     }
 
     @Test
     public void testMatchesValueList() throws Exception {
-        Document document = map("a", list(1, 2, 3));
-        assertThat(matcher.matches(document, map())).isTrue();
-        assertThat(matcher.matches(document, map("a", 1))).isTrue();
-        assertThat(matcher.matches(document, map("a", 2))).isTrue();
-        assertThat(matcher.matches(document, map("a", 3))).isTrue();
-        assertThat(matcher.matches(document, map("a", 4))).isFalse();
+        Document document = json("a: [1, 2, 3]");
+        assertThat(matcher.matches(document, json(""))).isTrue();
+        assertThat(matcher.matches(document, json("a: 1"))).isTrue();
+        assertThat(matcher.matches(document, json("a: 2"))).isTrue();
+        assertThat(matcher.matches(document, json("a: 3"))).isTrue();
+        assertThat(matcher.matches(document, json("a: 4"))).isFalse();
     }
 
     @Test
     public void testMatchesDocumentList() throws Exception {
-        Document document = map("_id", 1)
-            .append("c", list(
-                map("a", 1).append("b", 2),
-                map("a", 3).append("b", 4))
-        );
+        Document document = json("_id: 1, c: [{a: 1, b: 2}, {a: 3, b: 4}]");
 
-        assertThat(matcher.matches(document, map())).isTrue();
-        assertThat(matcher.matches(document, map("c", 1))).isFalse();
-        assertThat(matcher.matches(document, map("c.a", 1))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 3))).isTrue();
+        assertThat(matcher.matches(document, json(""))).isTrue();
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 3"))).isTrue();
 
-        assertThat(matcher.matches(document, map("c.a", 1).append("c.b", 4))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 1).append("c.b", 5))).isFalse();
-        assertThat(matcher.matches(document, map("c.a", 2).append("c.b", 4))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1").append("c.b", 4))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 1").append("c.b", 5))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 2").append("c.b", 4))).isFalse();
     }
 
     @Test
     public void testMatchesSubquery() throws Exception {
-        Document document = map("c", map("a", 1));
-        assertThat(matcher.matches(document, map())).isTrue();
-        assertThat(matcher.matches(document, map("c", 1))).isFalse();
-        assertThat(matcher.matches(document, map("c.a", 1))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 2))).isFalse();
-        assertThat(matcher.matches(document, map("c.a.x", 2))).isFalse();
+        Document document = json("c: {a: 1}");
+        assertThat(matcher.matches(document, json(""))).isTrue();
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 2"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a.x': 2"))).isFalse();
 
-        document.put("a", map("b", map("c", map("d", 1))));
-        assertThat(matcher.matches(document, map("a.b.c.d", 1))).isTrue();
-        assertThat(matcher.matches(document, map("a.b", 1))).isFalse();
-        assertThat(matcher.matches(document, map("a.b.c", map("d", 1)))).isTrue();
+        document.putAll(json("a: {b: {c: {d: 1}}}"));
+        assertThat(matcher.matches(document, json("'a.b.c.d': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'a.b': 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'a.b.c': {d: 1}"))).isTrue();
     }
 
     @Test
     public void testMatchesSubqueryList() throws Exception {
-        Document document = map("c", map("a", list(1, 2, 3)));
-        assertThat(matcher.matches(document, map())).isTrue();
+        Document document = json("c: {a: [1, 2, 3]}");
+        assertThat(matcher.matches(document, json(""))).isTrue();
 
-        assertThat(matcher.matches(document, map("c", 1))).isFalse();
-        assertThat(matcher.matches(document, map("c.a", 1))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 2))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 3))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 4))).isFalse();
-        assertThat(matcher.matches(document, map("c.a.x", 1))).isFalse();
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 2"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 3"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 4"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a.x': 1"))).isFalse();
 
-        document = map("array", list(map("123a", map("name", "old"))));
+        document = json("array: [{'123a': {name: 'old'}}]");
         Document query = map("array.123a.name", "old");
         assertThat(matcher.matches(document, query)).isTrue();
     }
 
     @Test
     public void testMatchesSubqueryListPosition() throws Exception {
-        Document document = map("c", map("a", list(1, 2, 3)));
-        assertThat(matcher.matches(document, map())).isTrue();
-        assertThat(matcher.matches(document, map("c", 1))).isFalse();
-        assertThat(matcher.matches(document, map("c.a.0", 1))).isTrue();
-        assertThat(matcher.matches(document, map("c.a.0", 2))).isFalse();
+        Document document = json("c: {a: [1, 2, 3]}");
+        assertThat(matcher.matches(document, json(""))).isTrue();
+        assertThat(matcher.matches(document, json("c: 1"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.a.0': 1"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a.0': 2"))).isFalse();
 
-        document = map("c", list(map("a", 12), map("a", 13)));
-        assertThat(matcher.matches(document, map("c.a", 12))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 13))).isTrue();
-        assertThat(matcher.matches(document, map("c.a", 14))).isFalse();
-        assertThat(matcher.matches(document, map("c.0.a", 12))).isTrue();
-        assertThat(matcher.matches(document, map("c.0.a", 13))).isFalse();
-        assertThat(matcher.matches(document, map("c.1.a", 12))).isFalse();
-        assertThat(matcher.matches(document, map("c.1.a", 13))).isTrue();
-        assertThat(matcher.matches(document, map("c.2.a", 13))).isFalse();
+        document = json("c: [{a: 12}, {a: 13}]");
+        assertThat(matcher.matches(document, json("'c.a': 12"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 13"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.a': 14"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.0.a': 12"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.0.a': 13"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.1.a': 12"))).isFalse();
+        assertThat(matcher.matches(document, json("'c.1.a': 13"))).isTrue();
+        assertThat(matcher.matches(document, json("'c.2.a': 13"))).isFalse();
     }
 
     @Test
     public void testInvalidOperator() throws Exception {
-        Document document = map();
-        Document query = map("field", map("$someInvalidOperator", 123));
+        Document document = json("");
+        Document query = json("field: {$someInvalidOperator: 123}");
         try {
             matcher.matches(document, query);
             fail("MongoServerError expected");
@@ -195,7 +188,7 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesExists() throws Exception {
-        Document document = map();
+        Document document = json("");
         Document query = map("qty", exists().appendAll(notIn(5, 15)));
 
         assertThat(matcher.matches(document, query)).isFalse();
@@ -209,9 +202,9 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesNotEqual() throws Exception {
-        Document document = map();
+        Document document = json("");
 
-        Document query = map("qty", ne(17));
+        Document query = json("qty: {$ne: 17}");
 
         assertThat(matcher.matches(document, query)).isTrue();
 
@@ -225,13 +218,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqual() throws Exception {
-        Document document1 = map("_id", 1).append("item", map("name", "ab").append("code", "123")).append("qty", 15).append("tags", list("A", "B", "C"));
-        Document document2 = map("_id", 2).append("item", map("name", "cd").append("code", "123")).append("qty", 20).append("tags", list("B"));
-        Document document3 = map("_id", 3).append("item", map("name", "ij").append("code", "456")).append("qty", 25).append("tags", list("A", "B"));
-        Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
-        Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
+        Document document1 = json("_id: 1, item: {name: 'ab', code: '123'}, qty: 15, tags: ['A', 'B', 'C']");
+        Document document2 = json("_id: 2, item: {name: 'cd', code: '123'}, qty: 20, tags: ['B']");
+        Document document3 = json("_id: 3, item: {name: 'ij', code: '456'}, qty: 25, tags: ['A', 'B']");
+        Document document4 = json("_id: 4, item: {name: 'xy', code: '456'}, qty: 30, tags: ['B', 'A']");
+        Document document5 = json("_id: 5, item: {name: 'mn', code: '000'}, qty: 20, tags: [['A', 'B'], 'C']");
 
-        Document query = map("qty", eq(20));
+        Document query = json("qty: {$eq: 20}");
 
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isTrue();
@@ -243,13 +236,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqualEmbeddedDocument() throws Exception {
-        Document document1 = map("_id", 1).append("item", map("name", "ab").append("code", "123")).append("qty", 15).append("tags", list("A", "B", "C"));
-        Document document2 = map("_id", 2).append("item", map("name", "cd").append("code", "123")).append("qty", 20).append("tags", list("B"));
-        Document document3 = map("_id", 3).append("item", map("name", "ij").append("code", "456")).append("qty", 25).append("tags", list("A", "B"));
-        Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
-        Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
+        Document document1 = json("_id: 1, item: {name: 'ab', code: '123'}, qty: 15, tags: ['A', 'B', 'C']");
+        Document document2 = json("_id: 2, item: {name: 'cd', code: '123'}, qty: 20, tags: ['B']");
+        Document document3 = json("_id: 3, item: {name: 'ij', code: '456'}, qty: 25, tags: ['A', 'B']");
+        Document document4 = json("_id: 4, item: {name: 'xy', code: '456'}, qty: 30, tags: ['B', 'A']");
+        Document document5 = json("_id: 5, item: {name: 'mn', code: '000'}, qty: 20, tags: [['A', 'B'], 'C']");
 
-        Document query = map("item.name", eq("ab"));
+        Document query = json("'item.name': {$eq: 'ab'}");
 
         assertThat(matcher.matches(document1, query)).isTrue();
         assertThat(matcher.matches(document2, query)).isFalse();
@@ -261,13 +254,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqualOneArrayValue() throws Exception {
-        Document document1 = map("_id", 1).append("item", map("name", "ab").append("code", "123")).append("qty", 15).append("tags", list("A", "B", "C"));
-        Document document2 = map("_id", 2).append("item", map("name", "cd").append("code", "123")).append("qty", 20).append("tags", list("B"));
-        Document document3 = map("_id", 3).append("item", map("name", "ij").append("code", "456")).append("qty", 25).append("tags", list("A", "B"));
-        Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
-        Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
+        Document document1 = json("_id: 1, item: {name: 'ab', code: '123'}, qty: 15, tags: ['A', 'B', 'C']");
+        Document document2 = json("_id: 2, item: {name: 'cd', code: '123'}, qty: 20, tags: ['B']");
+        Document document3 = json("_id: 3, item: {name: 'ij', code: '456'}, qty: 25, tags: ['A', 'B']");
+        Document document4 = json("_id: 4, item: {name: 'xy', code: '456'}, qty: 30, tags: ['B', 'A']");
+        Document document5 = json("_id: 5, item: {name: 'mn', code: '000'}, qty: 20, tags: [['A', 'B'], 'C']");
 
-        Document query = map("tags", eq("B"));
+        Document query = json("tags: {$eq: 'B'}");
 
         assertThat(matcher.matches(document1, query)).isTrue();
         assertThat(matcher.matches(document2, query)).isTrue();
@@ -279,13 +272,13 @@ public class DefaultQueryMatcherTest {
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     public void testMatchesEqualTwoArrayValues() throws Exception {
-        Document document1 = map("_id", 1).append("item", map("name", "ab").append("code", "123")).append("qty", 15).append("tags", list("A", "B", "C"));
-        Document document2 = map("_id", 2).append("item", map("name", "cd").append("code", "123")).append("qty", 20).append("tags", list("B"));
-        Document document3 = map("_id", 3).append("item", map("name", "ij").append("code", "456")).append("qty", 25).append("tags", list("A", "B"));
-        Document document4 = map("_id", 4).append("item", map("name", "xy").append("code", "456")).append("qty", 30).append("tags", list("B", "A"));
-        Document document5 = map("_id", 5).append("item", map("name", "mn").append("code", "000")).append("qty", 20).append("tags", list(list("A", "B"), "C"));
+        Document document1 = json("_id: 1, item: {name: 'ab', code: '123'}, qty: 15, tags: ['A', 'B', 'C']");
+        Document document2 = json("_id: 2, item: {name: 'cd', code: '123'}, qty: 20, tags: ['B']");
+        Document document3 = json("_id: 3, item: {name: 'ij', code: '456'}, qty: 25, tags: ['A', 'B']");
+        Document document4 = json("_id: 4, item: {name: 'xy', code: '456'}, qty: 30, tags: ['B', 'A']");
+        Document document5 = json("_id: 5, item: {name: 'mn', code: '000'}, qty: 20, tags: [['A', 'B'], 'C']");
 
-        Document query = map("tags", eq(list("A", "B")));
+        Document query = json("tags: {$eq: ['A', 'B']}");
 
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isFalse();
@@ -312,7 +305,7 @@ public class DefaultQueryMatcherTest {
          * value is less than or equal to 1.99.
          */
 
-        Document document = map();
+        Document document = json("");
         assertThat(matcher.matches(document, query)).isTrue();
 
         document.put("price", 1.99);
@@ -347,9 +340,9 @@ public class DefaultQueryMatcherTest {
         Document query3 = map("map.key2", not(notIn("value 2.2")));
         Document query4 = map("map.key2", not(not(in("value 2.2"))));
 
-        Document document1 = map("code", "c1").append("map", map("key1", "value 1.1").append("key2", list("value 2.1")));
-        Document document2 = map("code", "c1").append("map", map("key1", "value 1.2").append("key2", list("value 2.2")));
-        Document document3 = map("code", "c1").append("map", map("key1", "value 2.1").append("key2", list("value 2.1")));
+        Document document1 = json("code: 'c1', map: {key1: 'value 1.1', key2: ['value 2.1']}");
+        Document document2 = json("code: 'c1', map: {key1: 'value 1.2', key2: ['value 2.2']}");
+        Document document3 = json("code: 'c1', map: {key1: 'value 2.1', key2: ['value 2.1']}");
 
         assertThat(matcher.matches(document1, query1)).isTrue();
         assertThat(matcher.matches(document2, query1)).isFalse();
@@ -374,7 +367,7 @@ public class DefaultQueryMatcherTest {
         // { item: { $not: /^p.*/ } }
         Document query = map("item", not(regex("^p.*")));
 
-        Document document = map();
+        Document document = json("");
         assertThat(matcher.matches(document, query)).isTrue();
         document.put("item", "p");
         assertThat(matcher.matches(document, query)).isFalse();
@@ -387,7 +380,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesAnd() throws Exception {
 
-        Document query = and(map("price", 1.99), map("qty", lt(20)).append("sale", true));
+        Document query = and(json("price: 1.99"), map("qty", lt(20)).append("sale", true));
 
         /*
          * This query will select all documents in the inventory collection
@@ -397,7 +390,7 @@ public class DefaultQueryMatcherTest {
          * sale field value is equal to true.
          */
 
-        Document document = map();
+        Document document = json("");
         assertThat(matcher.matches(document, query)).isFalse();
 
         document.put("price", 1.99);
@@ -414,9 +407,9 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesOr() throws Exception {
 
-        Document query = or(map("price", 1.99), map("qty", lt(20)));
+        Document query = or(json("price: 1.99"), map("qty", lt(20)));
 
-        Document document = map();
+        Document document = json("");
         assertThat(matcher.matches(document, query)).isFalse();
 
         document.put("price", 1.99);
@@ -432,9 +425,9 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesNor() throws Exception {
 
-        Document query = nor(map("price", 1.99), map("qty", lt(20)));
+        Document query = nor(json("price: 1.99"), map("qty", lt(20)));
 
-        Document document = map();
+        Document document = json("");
         assertThat(matcher.matches(document, query)).isTrue();
 
         document.put("price", 1.99);
@@ -457,7 +450,7 @@ public class DefaultQueryMatcherTest {
             assertNonEmptyArrayException(op, map(op.getValue(), 2));
 
             try {
-                matcher.matches(map(), map(op, "a"));
+                matcher.matches(json(""), map(op, "a"));
                 fail("MongoServerError expected");
             } catch (MongoServerError e) {
                 assertThat(e.getCode()).isEqualTo(14817);
@@ -467,7 +460,7 @@ public class DefaultQueryMatcherTest {
     }
 
     private void assertNonEmptyArrayException(QueryFilter op, Document query) throws Exception {
-        Document emptyDocument = map();
+        Document emptyDocument = json("");
         try {
             matcher.matches(emptyDocument, query);
             fail("MongoServerError expected");
@@ -479,7 +472,7 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesMod() throws Exception {
-        Document document = map();
+        Document document = json("");
 
         Document query = map("x", mod(4, 0));
         assertThat(matcher.matches(document, query)).isFalse();
@@ -498,8 +491,8 @@ public class DefaultQueryMatcherTest {
 
         Document query = map("a", size(1));
 
-        assertThat(matcher.matches(map(), query)).isFalse();
-        assertThat(matcher.matches(map("a", "x"), query)).isFalse();
+        assertThat(matcher.matches(json(""), query)).isFalse();
+        assertThat(matcher.matches(json("a: 'x'"), query)).isFalse();
         assertThat(matcher.matches(map("a", list()), query)).isFalse();
         assertThat(matcher.matches(map("a", list(1)), query)).isTrue();
         assertThat(matcher.matches(map("a", list(1, 2)), query)).isFalse();
@@ -540,7 +533,7 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesAllSubdocument() throws Exception {
         // with subdocuments
-        Document document = map("a", list(map("x", 1), map("x", 2)));
+        Document document = map("a", list(json("x: 1"), json("x: 2")));
         assertThat(matcher.matches(document, map("a.x", allOf()))).isTrue();
         assertThat(matcher.matches(document, map("a.x", allOf(1)))).isTrue();
         assertThat(matcher.matches(document, map("a.x", allOf(2)))).isTrue();
@@ -558,34 +551,34 @@ public class DefaultQueryMatcherTest {
         document = map("a", map("x", list(1, 2, 3)));
         assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(2))))).isTrue();
 
-        document = map("a", list(map("x", 1), map("x", 2), map("x", 3)));
+        document = map("a", list(json("x: 1"), json("x: 2"), json("x: 3")));
         assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(2))))).isTrue();
     }
 
     @Test
     public void testMatchesElement() throws Exception {
-        Document document1 = map("results", list(82, 85, 88));
+        Document document1 = json("results: [82, 85, 88]");
         assertThat(matcher.matches(document1, map("results", elemMatch(gte(80))))).isTrue();
         assertThat(matcher.matches(document1, map("results", elemMatch(gte(80).appendAll(lt(85)))))).isTrue();
         assertThat(matcher.matches(document1, map("results", elemMatch(gte(90).appendAll(lt(85)))))).isFalse();
         assertThat(matcher.matches(document1, map("results", elemMatch(gte(70).appendAll(lt(80)))))).isFalse();
 
-        Document document2 = map("_id", 2).appendAll(map("results", list(75, 88, 89)));
+        Document document2 = json("_id: 2, results: [75, 88, 89]");
         assertThat(matcher.matches(document2, map("results", elemMatch(gte(80).appendAll(lt(85)))))).isFalse();
     }
 
     @Test
     public void testMatchesElementInEmbeddedDocuments() throws Exception {
-        Document document1 = map("_id", 1).append("results", list(map("product", "abc").append("score", 10), map("product", "xyz").append("score", 5)));
-        Document document2 = map("_id", 2).append("results", list(map("product", "abc").append("score", 9), map("product", "xyz").append("score", 7)));
-        Document document3 = map("_id", 3).append("results", list(map("product", "abc").append("score", 7), map("product", "xyz").append("score", 8)));
+        Document document1 = json("_id: 1, results: [{product: 'abc', score: 10}, {product: 'xyz', score: 5}]");
+        Document document2 = json("_id: 2, results: [{product: 'abc', score:  9}, {product: 'xyz', score: 7}]");
+        Document document3 = json("_id: 3, results: [{product: 'abc', score:  7}, {product: 'xyz', score: 8}]");
 
-        Document query = map("results", elemMatch(map("product", "xyz").append("score", gte(8))));
+        Document query = map("results", elemMatch(json("product: 'xyz'").append("score", gte(8))));
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isFalse();
         assertThat(matcher.matches(document3, query)).isTrue();
 
-        Document hasProductXyzElement = map("results", elemMatch(map("product", "xyz")));
+        Document hasProductXyzElement = map("results", elemMatch(json("product: 'xyz'")));
         assertThat(matcher.matches(document1, hasProductXyzElement)).isTrue();
         assertThat(matcher.matches(document2, hasProductXyzElement)).isTrue();
         assertThat(matcher.matches(document3, hasProductXyzElement)).isTrue();
@@ -593,8 +586,8 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testEmptyMatchesElementQuery() throws Exception {
-        Document document = map("_id", 1).append("results", list(map("product", "xyz").append("score", 5)));
-        assertThat(matcher.matches(document, map("results", elemMatch(map())))).isTrue();
+        Document document = json("_id: 1, results: [{product: 'xyz', score: 5}]");
+        assertThat(matcher.matches(document, map("results", elemMatch(json(""))))).isTrue();
     }
 
 }
