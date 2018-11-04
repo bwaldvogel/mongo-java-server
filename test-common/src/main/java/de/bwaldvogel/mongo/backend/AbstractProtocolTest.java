@@ -86,6 +86,43 @@ public abstract class AbstractProtocolTest extends AbstractTest {
     }
 
     @Test
+    public void testSingleDeleteOperation() throws Exception {
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3"));
+
+        assertThat(collection.countDocuments()).isEqualTo(3);
+
+        try (Socket socket = new Socket(serverAddress.getAddress(), serverAddress.getPort())) {
+            OutputStream outputStream = socket.getOutputStream();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            // header
+            writeInt(baos, 1); // requestID
+            writeInt(baos, 0); // responseTo
+            writeInt(baos, 2006); // OP_DELETE
+
+            // content
+            writeInt(baos, 0); // RESERVED
+            writeString(baos, collection.getNamespace().getFullName());
+            writeInt(baos, 1); // SINGLE DOCUMENT
+
+            writeBson(baos, new Document()); // selector
+
+            byte[] bytes = baos.toByteArray();
+            writeInt(outputStream, bytes.length + 4);
+            outputStream.write(bytes);
+            outputStream.flush();
+        }
+
+        awaitDocumentCount(() -> collection.estimatedDocumentCount() == 2);
+        assertThat(toArray(collection.find())).containsExactly(
+            json("_id: 2"),
+            json("_id: 3")
+        );
+    }
+
+    @Test
     public void testUpdateOperation() throws Exception {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
