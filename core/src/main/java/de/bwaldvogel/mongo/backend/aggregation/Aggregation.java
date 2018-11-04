@@ -10,12 +10,6 @@ import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class Aggregation {
@@ -37,8 +31,8 @@ public class Aggregation {
         return stream.collect(Collectors.toList());
     }
 
-    public void group(Document groupQuery) {
-        this.stages.add(new GroupStage(groupQuery));
+    public void addStage(AggregationStage stage) {
+        this.stages.add(stage);
     }
 
     public List<Document> getResult() {
@@ -48,23 +42,4 @@ public class Aggregation {
         return runStages();
     }
 
-    public void match(Document query) {
-        stages.add(new MatchStage(query));
-    }
-
-    public void skip(Number skip) {
-        stages.add(new SkipStage(skip.longValue()));
-    }
-
-    public void limit(Number limit) {
-        stages.add(new LimitStage(limit.longValue()));
-    }
-
-    public void project(Document projection) {
-        this.stages.add(new ProjectStage(projection));
-    }
-
-    public void orderBy(Document orderBy) {
-        this.stages.add(new OrderByStage(orderBy));
-    }
 }

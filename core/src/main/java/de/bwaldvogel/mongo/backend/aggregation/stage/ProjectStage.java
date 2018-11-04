@@ -43,9 +43,6 @@ public class ProjectStage implements AggregationStage {
     }
 
     Document projectDocument(Document document) {
-        if (projection == null) {
-            return document;
-        }
         Document result = new Document();
 
         if (!projection.containsKey(ID_FIELD)) {

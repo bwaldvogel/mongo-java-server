@@ -358,6 +358,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithAddFields() throws Exception {
+        Document query = json("$addFields: {value: '$x'}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, x: 10"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3, value: 123"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, x: 10, value: 10"),
+                json("_id: 2, value: null"),
+                json("_id: 3, value: null")
+            );
+    }
+
+    @Test
     public void testAggregateWithMultipleMatches() throws Exception {
         Document match1 = json("$match: {price: {$lt: 100}}");
         Document match2 = json("$match: {quality: {$gt: 10}}");

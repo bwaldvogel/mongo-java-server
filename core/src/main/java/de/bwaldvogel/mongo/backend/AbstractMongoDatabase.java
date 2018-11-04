@@ -18,6 +18,13 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
+import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -525,31 +532,35 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             switch (stageOperation) {
                 case "$match":
                     Document matchQuery = (Document) stage.get(stageOperation);
-                    aggregation.match(matchQuery);
+                    aggregation.addStage(new MatchStage(matchQuery));
                     break;
                 case "$skip":
                     Number numSkip = (Number) stage.get(stageOperation);
-                    aggregation.skip(numSkip);
+                    aggregation.addStage(new SkipStage(numSkip.longValue()));
                     break;
                 case "$limit":
                     Number numLimit = (Number) stage.get(stageOperation);
-                    aggregation.limit(numLimit);
+                    aggregation.addStage(new LimitStage(numLimit.longValue()));
                     break;
                 case "$sort":
                     Document orderBy = (Document) stage.get(stageOperation);
-                    aggregation.orderBy(orderBy);
+                    aggregation.addStage(new OrderByStage(orderBy));
                     break;
                 case "$project":
-                    aggregation.project((Document) stage.get(stageOperation));
+                    aggregation.addStage(new ProjectStage((Document) stage.get(stageOperation)));
                     break;
                 case "$count":
                     String count = (String) stage.get(stageOperation);
-                    aggregation.group(new Document(ID_FIELD, null).append(count, new Document("$sum", 1)));
-                    aggregation.project(new Document(ID_FIELD, 0));
+                    aggregation.addStage(new GroupStage(new Document(ID_FIELD, null).append(count, new Document("$sum", 1))));
+                    aggregation.addStage(new ProjectStage(new Document(ID_FIELD, 0)));
                     break;
                 case "$group":
                     Document groupDetails = (Document) stage.get(stageOperation);
-                    aggregation.group(groupDetails);
+                    aggregation.addStage(new GroupStage(groupDetails));
+                    break;
+                case "$addFields":
+                    Document addFieldsDetails = (Document) stage.get(stageOperation);
+                    aggregation.addStage(new AddFieldsStage(addFieldsDetails));
                     break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
