@@ -468,6 +468,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
                 if (isRelevant) {
                     result.put("nPrev", Integer.valueOf(i));
+                    Utils.markOkay(result);
                     return result;
                 }
             }

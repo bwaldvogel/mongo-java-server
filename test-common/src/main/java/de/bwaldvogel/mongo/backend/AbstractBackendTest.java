@@ -2641,6 +2641,58 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result.get("nrecords")).isEqualTo(2);
     }
 
+    @Test
+    public void testGetLastError() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThat(db.runCommand(json("getlasterror: 1")))
+            .isEqualTo(json("n: 1, ok: 1"));
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
+            .withMessageContaining("duplicate key error");
+
+        Document lastError = db.runCommand(json("getlasterror: 1"));
+        assertThat(lastError.get("code")).isEqualTo(11000);
+        assertThat(lastError.getString("err")).contains("duplicate key");
+        assertThat(lastError.get("ok")).isEqualTo(1);
+    }
+
+    @Test
+    public void testGetPrevError() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThat(db.runCommand(json("getpreverror: 1")))
+            .isEqualTo(json("n: 1, nPrev: 1, ok: 1"));
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
+            .withMessageContaining("duplicate key error");
+
+        Document lastError = db.runCommand(json("getpreverror: 1"));
+        assertThat(lastError.get("code")).isEqualTo(11000);
+        assertThat(lastError.getString("err")).contains("duplicate key");
+        assertThat(lastError.get("ok")).isEqualTo(1);
+    }
+
+    @Test
+    public void testResetError() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
+            .withMessageContaining("duplicate key error");
+
+        assertThat(db.runCommand(json("reseterror: 1")))
+            .isEqualTo(json("ok: 1"));
+
+        assertThat(db.runCommand(json("getpreverror: 1")))
+            .isEqualTo(json("nPrev: -1, ok: 1"));
+
+        assertThat(db.runCommand(json("getlasterror: 1")))
+            .isEqualTo(json("err: null, ok: 1"));
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {
