@@ -247,16 +247,6 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected int getRecordCount() {
-        return documents.size();
-    }
-
-    @Override
-    protected int getDeletedCount() {
-        return emptyPositions.size();
-    }
-
-    @Override
     protected void removeDocument(Integer position) {
         documents.set(position.intValue(), null);
         emptyPositions.add(position);

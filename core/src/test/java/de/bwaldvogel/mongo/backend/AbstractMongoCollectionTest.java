@@ -43,16 +43,6 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected int getRecordCount() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected int getDeletedCount() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy,
                                                     int numberToSkip, int numberToReturn) {
             throw new UnsupportedOperationException();

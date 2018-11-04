@@ -2625,6 +2625,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(documents.get(1).get("_id")).isEqualTo(3);
     }
 
+    @Test
+    public void testValidate() throws Exception {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(new Document("validate", collection.getNamespace().getCollectionName())))
+            .withMessageContaining("Command failed with error 26: 'No such collection: testcoll'");
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3"));
+
+        collection.deleteOne(json("_id: 2"));
+
+        Document result = db.runCommand(new Document("validate", collection.getNamespace().getCollectionName()));
+        assertThat(result.get("nrecords")).isEqualTo(2);
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {

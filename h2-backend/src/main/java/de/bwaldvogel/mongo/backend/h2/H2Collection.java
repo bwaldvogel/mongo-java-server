@@ -164,16 +164,6 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected int getRecordCount() {
-        return count();
-    }
-
-    @Override
-    protected int getDeletedCount() {
-        return 0;
-    }
-
-    @Override
     protected void handleUpdate(Document document) {
         // noop
     }

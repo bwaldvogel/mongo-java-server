@@ -234,16 +234,6 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected int getRecordCount() {
-        return 0;
-    }
-
-    @Override
-    protected int getDeletedCount() {
-        return 0;
-    }
-
-    @Override
     protected void handleUpdate(Document document) {
         String sql = "UPDATE " + getQualifiedTablename() + " SET data = ?::json WHERE " + PostgresqlUtils.toDataKey(idField) + " = ?";
         try (Connection connection = backend.getConnection();

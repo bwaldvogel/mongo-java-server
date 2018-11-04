@@ -1054,10 +1054,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document response = new Document("ns", getFullName());
         response.put("extentCount", Integer.valueOf(0));
         response.put("datasize", Long.valueOf(getDataSize()));
-        response.put("nrecords", Integer.valueOf(getRecordCount()));
-        response.put("padding", Integer.valueOf(1));
-        response.put("deletedCount", Integer.valueOf(getDeletedCount()));
-        response.put("deletedSize", Integer.valueOf(0));
+        response.put("nrecords", Integer.valueOf(count()));
 
         response.put("nIndexes", Integer.valueOf(indexes.size()));
         Document keysPerIndex = new Document();
@@ -1081,10 +1078,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected abstract void removeDocument(P position);
 
     protected abstract P findDocumentPosition(Document document);
-
-    protected abstract int getRecordCount();
-
-    protected abstract int getDeletedCount();
 
     @SuppressWarnings("unchecked")
     private static List<Object> asList(Object value) {
