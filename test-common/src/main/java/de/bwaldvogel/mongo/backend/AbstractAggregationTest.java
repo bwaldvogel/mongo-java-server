@@ -377,4 +377,22 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testAggregateWithCount() throws Exception {
+        Document match = json("$match: {score: {$gt: 80}}");
+        Document count = json("$count: 'passing_scores'");
+        List<Document> pipeline = Arrays.asList(match, count);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, subject: 'History', score: 88"));
+        collection.insertOne(json("_id: 2, subject: 'History', score: 92"));
+        collection.insertOne(json("_id: 3, subject: 'History', score: 97"));
+        collection.insertOne(json("_id: 4, subject: 'History', score: 71"));
+        collection.insertOne(json("_id: 5, subject: 'History', score: 79"));
+        collection.insertOne(json("_id: 6, subject: 'History', score: 83"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).containsExactly(json("passing_scores: 4"));
+    }
+
 }

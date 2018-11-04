@@ -542,6 +542,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 case "$project":
                     aggregation.project((Document) stage.get(stageOperation));
                     break;
+                case "$count":
+                    String count = (String) stage.get(stageOperation);
+                    aggregation.group(new Document(ID_FIELD, null).append(count, new Document("$sum", 1)));
+                    aggregation.project(new Document(ID_FIELD, 0));
+                    break;
                 case "$group":
                     Document groupDetails = (Document) stage.get(stageOperation);
                     aggregation.group(groupDetails);
