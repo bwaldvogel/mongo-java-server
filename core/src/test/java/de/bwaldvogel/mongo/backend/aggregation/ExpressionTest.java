@@ -31,6 +31,14 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(new Document("$abs", 123L), json("{}"))).isEqualTo(123L);
         assertThat(Expression.evaluate(json("$abs: null"), json("{}"))).isNull();
         assertThat(Expression.evaluate(json("abs: {$abs: '$a'}"), json("a: -25"))).isEqualTo(json("abs: 25"));
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$abs: '$a', $ceil: '$b'"), json("{}")))
+            .withMessage("An object representing an expression must have exactly one field: {\"$abs\" : \"$a\", \"$ceil\" : \"$b\"}");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$abs: 'abc'"), json("{}")))
+            .withMessage("$abs only supports numeric types, not class java.lang.String");
     }
 
     @Test
@@ -42,6 +50,10 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MIN_VALUE), json("{}"))).isEqualTo(Long.MIN_VALUE);
         assertThat(Expression.evaluate(json("$ceil: null"), json("{}"))).isNull();
         assertThat(Expression.evaluate(json("ceil: {$ceil: '$a'}"), json("a: -25.5"))).isEqualTo(json("ceil: -25"));
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$ceil: 'abc'"), json("{}")))
+            .withMessage("$ceil only supports numeric types, not class java.lang.String");
     }
 
     @Test
@@ -58,50 +70,24 @@ public class ExpressionTest {
     public void testEvaluateAdd() throws Exception {
         assertThat(Expression.evaluate(json("$add: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(12);
         assertThat(Expression.evaluate(json("$add: [7.5, 3]"), json("{}"))).isEqualTo(10.5);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$add: []"), json("{}")))
+            .withMessage("Expression $add takes exactly 2 arguments. 0 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$add: [1]"), json("{}")))
+            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$add: 123"), json("{}")))
+            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
     }
 
     @Test
     public void testEvaluateSubtract() throws Exception {
         assertThat(Expression.evaluate(json("$subtract: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$subtract: [7.5, 3]"), json("{}"))).isEqualTo(4.5);
-    }
-
-    @Test
-    public void testEvaluateYear() throws Exception {
-        assertThat(Expression.evaluate(json("$year: '$a'"), json("{}"))).isNull();
-        assertThat(Expression.evaluate(json("$year: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(2018);
-    }
-
-    @Test
-    public void testEvaluateDayOfYear() throws Exception {
-        assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), json("{}"))).isNull();
-        assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
-        assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(34);
-    }
-
-    @Test
-    public void testEvaluateLiteral() throws Exception {
-        assertThat(Expression.evaluate(json("$literal: { $add: [ 2, 3 ] }"), json(""))).isEqualTo(json("\"$add\" : [ 2, 3 ]"));
-        assertThat(Expression.evaluate(json("$literal:  { $literal: 1 }"), json(""))).isEqualTo(json("\"$literal\" : 1"));
-    }
-
-    @Test
-    public void testEvaluateIllegalExpression() throws Exception {
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$foo: '$a'"), json("{}")))
-            .withMessage("Unrecognized expression '$foo'");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$abs: '$a', $ceil: '$b'"), json("{}")))
-            .withMessage("An object representing an expression must have exactly one field: {\"$abs\" : \"$a\", \"$ceil\" : \"$b\"}");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$abs: 'abc'"), json("{}")))
-            .withMessage("$abs only supports numeric types, not class java.lang.String");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$ceil: 'abc'"), json("{}")))
-            .withMessage("$ceil only supports numeric types, not class java.lang.String");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: []"), json("{}")))
@@ -116,28 +102,66 @@ public class ExpressionTest {
             .withMessage("Expression $subtract takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$add: []"), json("{}")))
-            .withMessage("Expression $add takes exactly 2 arguments. 0 were passed in.");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$add: [1]"), json("{}")))
-            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$add: 123"), json("{}")))
-            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
-
-        assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: ['a', 'b']"), json("{}")))
             .withMessage("cant $subtract a java.lang.String from a java.lang.String");
+    }
+
+    @Test
+    public void testEvaluateYear() throws Exception {
+        assertThat(Expression.evaluate(json("$year: '$a'"), json("{}"))).isNull();
+        assertThat(Expression.evaluate(json("$year: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(2018);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$year: '$a'"), json("a: 'abc'")))
             .withMessage("can't convert from class java.lang.String to Date");
+    }
+
+    @Test
+    public void testEvaluateDayOfYear() throws Exception {
+        assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), json("{}"))).isNull();
+        assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(34);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dayOfYear: '$a'"), json("a: 'abc'")))
             .withMessage("can't convert from class java.lang.String to Date");
+    }
+
+    @Test
+    public void testEvaluateLiteral() throws Exception {
+        assertThat(Expression.evaluate(json("$literal: { $add: [ 2, 3 ] }"), json(""))).isEqualTo(json("'$add' : [ 2, 3 ]"));
+        assertThat(Expression.evaluate(json("$literal:  { $literal: 1 }"), json(""))).isEqualTo(json("'$literal' : 1"));
+    }
+
+    @Test
+    public void testEvaluateAllElementsTrue() throws Exception {
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ true, 1, 'someString' ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ [ false ] ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ null, false, 0 ] ]"), json(""))).isEqualTo(false);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: null"), json("a: 'abc'")))
+            .withMessage("$allElementsTrue's argument must be an array, but is null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [null]"), json("a: 'abc'")))
+            .withMessage("$allElementsTrue's argument must be an array, but is null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: '$a'"), json("a: 'abc'")))
+            .withMessage("$allElementsTrue's argument must be an array, but is java.lang.String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [1, 2]"), json("a: 'abc'")))
+            .withMessage("Expression $allElementsTrue takes exactly 1 arguments. 2 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateIllegalExpression() throws Exception {
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$foo: '$a'"), json("{}")))
+            .withMessage("Unrecognized expression '$foo'");
     }
 
     private static Date toDate(String instant) {

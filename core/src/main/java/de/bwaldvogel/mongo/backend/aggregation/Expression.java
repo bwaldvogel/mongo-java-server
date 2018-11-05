@@ -37,10 +37,12 @@ public class Expression {
                 switch (expressionKey) {
                     case "$abs":
                         return evaluateAbsValue(expressionValue, document);
-                    case "$sum":
-                        return evaluateSumValue(expressionValue, document);
                     case "$add":
                         return evaluateAddValue(expressionValue, document);
+                    case "$allElementsTrue":
+                        return evaluateAllElementsTrue(expressionValue, document);
+                    case "$sum":
+                        return evaluateSumValue(expressionValue, document);
                     case "$subtract":
                         return evaluateSubtractValue(expressionValue, document);
                     case "$year":
@@ -59,6 +61,34 @@ public class Expression {
             }
         }
         return result;
+    }
+
+    private static Boolean evaluateAllElementsTrue(Object expressionValue, Document document) {
+        Object value = evaluate(expressionValue, document);
+        if (value == null) {
+            throw new MongoServerError(17040, "$allElementsTrue's argument must be an array, but is null");
+        }
+        if (!(value instanceof Collection)) {
+            throw new MongoServerError(17040, "$allElementsTrue's argument must be an array, but is " + value.getClass().getName());
+        }
+        Collection<?> collection = (Collection<?>) value;
+        if (collection.size() != 1) {
+            throw new MongoServerError(16020, "Expression $allElementsTrue takes exactly 1 arguments. " + collection.size() + " were passed in.");
+        }
+        Object valueInCollection = collection.iterator().next();
+        if (valueInCollection == null) {
+            throw new MongoServerError(17040, "$allElementsTrue's argument must be an array, but is null");
+        }
+        if (!(valueInCollection instanceof Collection)) {
+            throw new MongoServerError(17040, "$allElementsTrue's argument must be an array, but is " + value.getClass().getName());
+        }
+        Collection<?> collectionInCollection = (Collection<?>) valueInCollection;
+        for (Object v : collectionInCollection) {
+            if (!Utils.isTrue(v)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static Number evaluateAbsValue(Object expressionValue, Document document) {
