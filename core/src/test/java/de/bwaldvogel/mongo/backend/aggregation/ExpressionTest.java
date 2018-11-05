@@ -80,6 +80,12 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateLiteral() throws Exception {
+        assertThat(Expression.evaluate(json("$literal: { $add: [ 2, 3 ] }"), json(""))).isEqualTo(json("\"$add\" : [ 2, 3 ]"));
+        assertThat(Expression.evaluate(json("$literal:  { $literal: 1 }"), json(""))).isEqualTo(json("\"$literal\" : 1"));
+    }
+
+    @Test
     public void testEvaluateIllegalExpression() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$foo: '$a'"), json("{}")))

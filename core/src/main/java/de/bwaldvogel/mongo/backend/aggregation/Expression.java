@@ -49,6 +49,8 @@ public class Expression {
                         return evaluateDayOfYearValue(expressionValue, document);
                     case "$ceil":
                         return evaluateCeilValue(expressionValue, document);
+                    case "$literal":
+                        return expressionValue;
                     default:
                         throw new MongoServerError(168, "InvalidPipelineOperator", "Unrecognized expression '" + expressionKey + "'");
                 }
