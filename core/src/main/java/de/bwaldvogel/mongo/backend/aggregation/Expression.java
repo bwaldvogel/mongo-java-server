@@ -39,6 +39,10 @@ public class Expression {
                         return evaluateAbsValue(expressionValue, document);
                     case "$add":
                         return evaluateAddValue(expressionValue, document);
+                    case "$and":
+                        return evaluateAndValue(expressionValue, document);
+                    case "$anyElementTrue":
+                        return evaluateAnyElementTrue(expressionValue, document);
                     case "$allElementsTrue":
                         return evaluateAllElementsTrue(expressionValue, document);
                     case "$sum":
@@ -63,7 +67,26 @@ public class Expression {
         return result;
     }
 
-    private static Boolean evaluateAllElementsTrue(Object expressionValue, Document document) {
+    private static boolean evaluateAndValue(Object expressionValue, Document document) {
+        Object value = evaluate(expressionValue, document);
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof Boolean) {
+            return ((Boolean) value).booleanValue();
+        }
+        if (value instanceof Collection<?>) {
+            Collection<?> collection = (Collection<?>) value;
+            for (Object v : collection) {
+                if (!Utils.isTrue(v)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private static boolean evaluateAllElementsTrue(Object expressionValue, Document document) {
         Object value = evaluate(expressionValue, document);
         if (value == null) {
             throw new MongoServerError(17040, "$allElementsTrue's argument must be an array, but is null");
@@ -89,6 +112,34 @@ public class Expression {
             }
         }
         return true;
+    }
+
+    private static boolean evaluateAnyElementTrue(Object expressionValue, Document document) {
+        Object value = evaluate(expressionValue, document);
+        if (value == null) {
+            throw new MongoServerError(17041, "$anyElementTrue's argument must be an array, but is null");
+        }
+        if (!(value instanceof Collection)) {
+            throw new MongoServerError(17041, "$anyElementTrue's argument must be an array, but is " + value.getClass().getName());
+        }
+        Collection<?> collection = (Collection<?>) value;
+        if (collection.size() != 1) {
+            throw new MongoServerError(16020, "Expression $anyElementTrue takes exactly 1 arguments. " + collection.size() + " were passed in.");
+        }
+        Object valueInCollection = collection.iterator().next();
+        if (valueInCollection == null) {
+            throw new MongoServerError(17041, "$anyElementTrue's argument must be an array, but is null");
+        }
+        if (!(valueInCollection instanceof Collection)) {
+            throw new MongoServerError(17041, "$anyElementTrue's argument must be an array, but is " + value.getClass().getName());
+        }
+        Collection<?> collectionInCollection = (Collection<?>) valueInCollection;
+        for (Object v : collectionInCollection) {
+            if (Utils.isTrue(v)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Number evaluateAbsValue(Object expressionValue, Document document) {

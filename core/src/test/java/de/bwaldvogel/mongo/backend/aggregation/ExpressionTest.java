@@ -42,6 +42,85 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateAdd() throws Exception {
+        assertThat(Expression.evaluate(json("$add: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(12);
+        assertThat(Expression.evaluate(json("$add: [7.5, 3]"), json("{}"))).isEqualTo(10.5);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$add: []"), json("{}")))
+            .withMessage("Expression $add takes exactly 2 arguments. 0 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$add: [1]"), json("{}")))
+            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$add: 123"), json("{}")))
+            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateAnd() throws Exception {
+        assertThat(Expression.evaluate(json("$and: [ 1, 'green' ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$and: [ ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$and: [ [ null ], [ false ], [ 0 ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$and: 'abc'"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$and: true"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$and: false"), json(""))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$and: null"), json(""))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$and: [ null, true ]"), json(""))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$and: [ 0, true ]"), json(""))).isEqualTo(false);
+    }
+
+    @Test
+    public void testEvaluateAnyElementTrue() throws Exception {
+        assertThat(Expression.evaluate(json("$anyElementTrue: [ [ true, false] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$anyElementTrue: [ [ [ false ] ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$anyElementTrue: [ [ null, false, 0 ] ]"), json(""))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$anyElementTrue: [ [ ] ]"), json(""))).isEqualTo(false);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: null"), json("a: 'abc'")))
+            .withMessage("$anyElementTrue's argument must be an array, but is null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: [null]"), json("a: 'abc'")))
+            .withMessage("$anyElementTrue's argument must be an array, but is null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: '$a'"), json("a: 'abc'")))
+            .withMessage("$anyElementTrue's argument must be an array, but is java.lang.String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: [1, 2]"), json("a: 'abc'")))
+            .withMessage("Expression $anyElementTrue takes exactly 1 arguments. 2 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateAllElementsTrue() throws Exception {
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ true, 1, 'someString' ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ [ false ] ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ ] ]"), json(""))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ null, false, 0 ] ]"), json(""))).isEqualTo(false);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: null"), json("a: 'abc'")))
+            .withMessage("$allElementsTrue's argument must be an array, but is null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [null]"), json("a: 'abc'")))
+            .withMessage("$allElementsTrue's argument must be an array, but is null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: '$a'"), json("a: 'abc'")))
+            .withMessage("$allElementsTrue's argument must be an array, but is java.lang.String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [1, 2]"), json("a: 'abc'")))
+            .withMessage("Expression $allElementsTrue takes exactly 1 arguments. 2 were passed in.");
+    }
+
+    @Test
     public void testEvaluateCeil() throws Exception {
         assertThat(Expression.evaluate(json("$ceil: '$a'"), json("a: 2.5"))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$ceil: 42"), json(""))).isEqualTo(42);
@@ -64,24 +143,6 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$sum: [1, 'foo', 2]"), json("{}"))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$sum: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(12);
         assertThat(Expression.evaluate(json("$sum: []"), json("{}"))).isEqualTo(0);
-    }
-
-    @Test
-    public void testEvaluateAdd() throws Exception {
-        assertThat(Expression.evaluate(json("$add: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(12);
-        assertThat(Expression.evaluate(json("$add: [7.5, 3]"), json("{}"))).isEqualTo(10.5);
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$add: []"), json("{}")))
-            .withMessage("Expression $add takes exactly 2 arguments. 0 were passed in.");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$add: [1]"), json("{}")))
-            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$add: 123"), json("{}")))
-            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
     }
 
     @Test
@@ -131,30 +192,6 @@ public class ExpressionTest {
     public void testEvaluateLiteral() throws Exception {
         assertThat(Expression.evaluate(json("$literal: { $add: [ 2, 3 ] }"), json(""))).isEqualTo(json("'$add' : [ 2, 3 ]"));
         assertThat(Expression.evaluate(json("$literal:  { $literal: 1 }"), json(""))).isEqualTo(json("'$literal' : 1"));
-    }
-
-    @Test
-    public void testEvaluateAllElementsTrue() throws Exception {
-        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ true, 1, 'someString' ] ]"), json(""))).isEqualTo(true);
-        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ [ false ] ] ]"), json(""))).isEqualTo(true);
-        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ ] ]"), json(""))).isEqualTo(true);
-        assertThat(Expression.evaluate(json("$allElementsTrue: [ [ null, false, 0 ] ]"), json(""))).isEqualTo(false);
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: null"), json("a: 'abc'")))
-            .withMessage("$allElementsTrue's argument must be an array, but is null");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [null]"), json("a: 'abc'")))
-            .withMessage("$allElementsTrue's argument must be an array, but is null");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: '$a'"), json("a: 'abc'")))
-            .withMessage("$allElementsTrue's argument must be an array, but is java.lang.String");
-
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [1, 2]"), json("a: 'abc'")))
-            .withMessage("Expression $allElementsTrue takes exactly 1 arguments. 2 were passed in.");
     }
 
     @Test
