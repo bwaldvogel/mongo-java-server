@@ -2126,6 +2126,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testAddSparseIndexOnNonIdField() {
+        collection.createIndex(new Document("someField", 1), new IndexOptions().sparse(true));
+
+        collection.insertOne(json("someField: 'abc'"));
+        collection.insertOne(json("someField: 'abc'"));
+    }
+
+    @Test
     public void testCompoundUniqueIndicesNotSupportedAndThrowsException() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.createIndex(new Document("a", 1).append("b", 1), new IndexOptions().unique(true)))
