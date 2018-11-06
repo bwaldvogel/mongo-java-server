@@ -159,7 +159,11 @@ public final class Document implements Map<String, Object>, Bson {
                 .map(Document::toJsonValue)
                 .collect(Collectors.joining(", ", "[", "]"));
         }
-        throw new IllegalArgumentException("Unknown value: " + value);
+        if (value instanceof ObjectId) {
+            ObjectId objectId = (ObjectId) value;
+            return objectId.getHexData();
+        }
+        return toJsonValue(value.toString());
     }
 
     private static String escapeJson(String input) {

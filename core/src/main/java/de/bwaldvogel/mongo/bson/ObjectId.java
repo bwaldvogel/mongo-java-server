@@ -63,10 +63,14 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
 
     @Override
     public String toString() {
-        String s = getClass().getSimpleName() + "[";
+        return getClass().getSimpleName() + "[" + getHexData() + "]";
+    }
+
+    public String getHexData() {
+        StringBuilder sb = new StringBuilder();
         for (byte b : data) {
-            s += String.format("%02x", b);
+            sb.append(String.format("%02x", b));
         }
-        return s + "]";
+        return sb.toString();
     }
 }
