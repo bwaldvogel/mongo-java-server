@@ -2119,17 +2119,36 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testAddNonUniqueIndexOnNonIdField() {
-        collection.createIndex(new Document("someField", 1), new IndexOptions().unique(false));
-
         collection.insertOne(json("someField: 'abc'"));
+        assertThat(toArray(collection.listIndexes())).hasSize(1);
+
+        collection.createIndex(new Document("someField", 1), new IndexOptions().unique(false));
+        assertThat(toArray(collection.listIndexes())).hasSize(2);
+
         collection.insertOne(json("someField: 'abc'"));
     }
 
     @Test
     public void testAddSparseIndexOnNonIdField() {
+        collection.insertOne(json("someField: 'abc'"));
+        assertThat(toArray(collection.listIndexes())).hasSize(1);
+
         collection.createIndex(new Document("someField", 1), new IndexOptions().sparse(true));
+        assertThat(toArray(collection.listIndexes())).hasSize(2);
 
         collection.insertOne(json("someField: 'abc'"));
+    }
+
+    @Test
+    public void testAddPartialIndexOnNonIdField() {
+        collection.insertOne(json("someField: 'abc'"));
+        assertThat(toArray(collection.listIndexes())).hasSize(1);
+
+        collection.createIndex(new Document("someField", 1), new IndexOptions()
+            .partialFilterExpression(json("someField: {$gt: 5}")));
+
+        assertThat(toArray(collection.listIndexes())).hasSize(2);
+
         collection.insertOne(json("someField: 'abc'"));
     }
 
