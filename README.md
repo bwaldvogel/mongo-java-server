@@ -5,26 +5,27 @@
 
 # MongoDB Java Server #
 
-Stub implementation of the core [MongoDB][mongodb] server in Java.
-The [MongoDB Wire Protocol][wire-protocol] is implemented with [Netty][netty].
-Different backends are possible and can be easily extended.
+Fake implementation of the core [MongoDB][mongodb] server in Java that can be used for integration tests.
+Think of H2/HSQLDB/SQLite but for MongoDB.
 
-## Usage
+The [MongoDB Wire Protocol][wire-protocol] is implemented with [Netty][netty].
+Different backends are possible and can be extended.
+
+## In-Memory backend ##
+
+The in-memory backend is the default backend that is typically used to fake MongoDB for integration tests.
+It supports most CRUD operations, commands and the aggregation framework.
+Some features are not yet implemented, such as full-text search or map/reduce.
+
 Add the following Maven dependency to your project:
 
 ```xml
 <dependency>
     <groupId>de.bwaldvogel</groupId>
-    <artifactId>mongo-java-server</artifactId>
+    <artifactId>mongo-java-server-memory-backend</artifactId>
     <version>1.9.5</version>
 </dependency>
 ```
-
-## In-Memory backend ##
-
-The in-memory backend is the default, such that mongo-java-server can be used
-as stub in unit tests. It supports the basic CRUD operations.
-However, not all features are implemented, such as full-text search or map/reduce.
 
 ### Example ###
 
@@ -95,7 +96,7 @@ public class Application {
 
 ## PostgreSQL backend ##
 
-The PostgreSQL backend connects the server to a database in a running
+The PostgreSQL backend is a proof-of-concept implementation that connects the server to a database in a running
 PostgreSQL 9.5+ instance. Each MongoDB database is mapped to a schema in
 Postgres and each MongoDB collection is stored as a table.
 
@@ -143,20 +144,19 @@ drivers.
 
 ## Related Work ##
 
-* [jmockmongo][jmockmongo]
-    * shares the basic idea of implementing the wire protocol with Netty
-    * focus on in-memory backend for unit testing
+* [Embedded MongoDB][embedded-mongodb]
+  * Spins up a real MongoDB instance
 
 * [fongo][fongo]
-    * focus on unit testing
-    * no wire protocol implementation
-    * intercepts the java mongo driver
-    * currently used in [nosql-unit][nosql-unit]
+  * focus on unit testing
+  * no wire protocol implementation
+  * intercepts the java mongo driver
+  * currently used in [nosql-unit][nosql-unit]
 
 [mongodb]: http://www.mongodb.org/
 [wire-protocol]: https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/
 [netty]: http://netty.io/
-[jmockmongo]: https://github.com/thiloplanz/jmockmongo
+[embedded-mongodb]: https://github.com/flapdoodle-oss/de.flapdoodle.embed.mongo
 [fongo]: https://github.com/fakemongo/fongo
 [nosql-unit]: https://github.com/lordofthejars/nosql-unit
 [h2-mvstore]: http://www.h2database.com/html/mvstore.html
