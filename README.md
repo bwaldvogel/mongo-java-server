@@ -6,6 +6,7 @@
 # MongoDB Java Server #
 
 Fake implementation of the core [MongoDB][mongodb] server in Java that can be used for integration tests.
+
 Think of H2/HSQLDB/SQLite but for MongoDB.
 
 The [MongoDB Wire Protocol][wire-protocol] is implemented with [Netty][netty].
@@ -22,7 +23,7 @@ Add the following Maven dependency to your project:
 ```xml
 <dependency>
     <groupId>de.bwaldvogel</groupId>
-    <artifactId>mongo-java-server-memory-backend</artifactId>
+    <artifactId>mongo-java-server</artifactId>
     <version>1.9.6</version>
 </dependency>
 ```
