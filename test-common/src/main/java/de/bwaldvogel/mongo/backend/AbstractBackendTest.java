@@ -1915,6 +1915,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find(json("{'array.123a.name': 'old'}")).first()).isNull();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/32
+    @Test
+    public void testUpdateWithNotAndSizeOperator() throws Exception {
+        collection.insertOne(json("_id: 1, array: ['a', 'b']"));
+        collection.insertOne(json("_id: 2, array: ['b']"));
+        collection.insertOne(json("_id: 3, array: ['a']"));
+
+        collection.updateMany(json("array: {$not: {$size: 1}}"), json("$pull: {array: 'a'}"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, array: ['b']"),
+                json("_id: 2, array: ['b']"),
+                json("_id: 3, array: ['a']")
+            );
+    }
+
     @Test
     public void testMultiUpdateArrayMatch() throws Exception {
         collection.insertOne(json("{}"));

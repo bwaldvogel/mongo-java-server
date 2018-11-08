@@ -152,7 +152,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                             return false;
                         }
                     } else if (queryOperator.equals(QueryOperator.NOT.getValue())) {
-                        if (checkMatchesAnyValue(subQuery, value)) {
+                        if (checkMatch(subQuery, keys, document)) {
                             return false;
                         }
                     } else {

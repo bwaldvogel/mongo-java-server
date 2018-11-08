@@ -362,6 +362,12 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchesNotSize() throws Exception {
+        assertThat(matcher.matches(json("a: [1, 2, 3]"), json("a: {$not: {$size: 3}}"))).isFalse();
+        assertThat(matcher.matches(json("a: [1, 2, 3]"), json("a: {$not: {$size: 4}}"))).isTrue();
+    }
+
+    @Test
     public void testMatchesNotPattern() throws Exception {
 
         // { item: { $not: /^p.*/ } }
