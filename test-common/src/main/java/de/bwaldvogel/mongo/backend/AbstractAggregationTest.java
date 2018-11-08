@@ -455,6 +455,32 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsExactly(json("_id: null, a: [10, 20], b: [{v: 0.1}, {v: 0.2}], c: []"));
     }
 
+    @Test
+    public void testAggregateWithUndefinedRootVariable() throws Exception {
+        Document group = json("$group: {_id: null, results: {$push: '$$UNDEFINED'}}");
+        List<Document> pipeline = Collections.singletonList(group);
+
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 17276: 'Use of undefined variable: UNDEFINED'");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/31
+    @Test
+    public void testAggregateWithRootVariable() throws Exception {
+        Document project = json("$project: {_id: 0, doc: '$$ROOT', a: '$$ROOT.a', a_v: '$$ROOT.a.v'}");
+        List<Document> pipeline = Collections.singletonList(project);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, a: {v: 10}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("doc: {_id: 1, a: {v: 10}}, a: {v: 10}, a_v: 10"));
+    }
+
     private static Date date(String instant) {
         return Date.from(Instant.parse(instant));
     }

@@ -322,6 +322,16 @@ public enum Expression {
     public static Object evaluate(Object expression, Document document) {
         if (expression instanceof String && ((String) expression).startsWith("$")) {
             String value = ((String) expression).substring(1);
+            if (value.startsWith("$")) {
+                if (value.equals("$ROOT")) {
+                    return document;
+                } else if (value.startsWith("$ROOT.")) {
+                    String subKey = value.substring("$ROOT.".length());
+                    return Utils.getSubdocumentValue(document, subKey);
+                }
+                String variable = value.substring(1);
+                throw new MongoServerError(17276, "Use of undefined variable: " + variable);
+            }
             return Utils.getSubdocumentValue(document, value);
         } else if (expression instanceof Document) {
             return evaluateDocumentExpression((Document) expression, document);
