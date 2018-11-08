@@ -20,6 +20,7 @@ import de.bwaldvogel.mongo.backend.aggregation.accumulator.FirstAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.LastAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.MaxAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.MinAccumulator;
+import de.bwaldvogel.mongo.backend.aggregation.accumulator.PushAccumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.SumAccumulator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -94,6 +95,8 @@ public class GroupStage implements AggregationStage {
                 accumulators.put(field, () -> new AvgAccumulator(field, expression));
             } else if (groupOperator.equals("$addToSet")) {
                 accumulators.put(field, () -> new AddToSetAccumulator(field, expression));
+            } else if (groupOperator.equals("$push")) {
+                accumulators.put(field, () -> new PushAccumulator(field, expression));
             } else if (groupOperator.equals("$first")) {
                 accumulators.put(field, () -> new FirstAccumulator(field, expression));
             } else if (groupOperator.equals("$last")) {

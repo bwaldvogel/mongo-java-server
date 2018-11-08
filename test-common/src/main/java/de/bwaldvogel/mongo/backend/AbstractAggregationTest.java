@@ -441,6 +441,20 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testAggregateWithPush() throws Exception {
+        Document group = json("$group: {_id: null, a: {$push: '$a'}, b: {$push: {v: '$b'}}, c: {$push: '$c'}}");
+        List<Document> pipeline = Collections.singletonList(group);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, a: 10, b: 0.1"));
+        collection.insertOne(json("_id: 2, a: 20, b: 0.2"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("_id: null, a: [10, 20], b: [{v: 0.1}, {v: 0.2}], c: []"));
+    }
+
     private static Date date(String instant) {
         return Date.from(Instant.parse(instant));
     }
