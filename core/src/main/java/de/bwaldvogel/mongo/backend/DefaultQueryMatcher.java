@@ -401,7 +401,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 return (((Number) value).intValue() % modValue.get(0).intValue() == modValue.get(1).intValue());
             }
             case SIZE: {
-                if (!(value instanceof Collection<?>) || !(expressionValue instanceof Number)) {
+                if (!(expressionValue instanceof Number)) {
+                    throw new BadValueException("$size needs a number");
+                }
+                if (!(value instanceof Collection<?>)) {
                     return false;
                 }
                 int listSize = ((Collection<?>) value).size();

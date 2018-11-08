@@ -20,6 +20,7 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.or;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.regex;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
@@ -503,6 +504,9 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(map("a", list(1)), query)).isTrue();
         assertThat(matcher.matches(map("a", list(1, 2)), query)).isFalse();
 
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> matcher.matches(json(""), json("a: {$size: {$gt: 0}}")))
+            .withMessage("$size needs a number");
     }
 
     @Test
