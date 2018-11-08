@@ -5,8 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
+import org.assertj.core.data.Offset;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -167,6 +172,102 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateCmp() throws Exception {
+        assertThat(Expression.evaluate(json("$cmp: [20, 10]"), json(""))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$cmp: [20, 20]"), json(""))).isEqualTo(0);
+        assertThat(Expression.evaluate(json("$cmp: [10, 20]"), json(""))).isEqualTo(-1);
+        assertThat(Expression.evaluate(json("$cmp: [ '$a', '$b' ]"), json("a: 10, b: 5"))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$cmp: ['b', 'a']"), json(""))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$cmp: ['a', 'b']"), json(""))).isEqualTo(-1);
+        assertThat(Expression.evaluate(json("$cmp: [ '$qty', 250 ]"), json("qty: 500"))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$cmp: [ '$qty', 250 ]"), json("qty: 100"))).isEqualTo(-1);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cmp: 'abc'"), json("")))
+            .withMessage("Expression $cmp takes exactly 2 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cmp: ['a', 'b', 'c']"), json("")))
+            .withMessage("Expression $cmp takes exactly 2 arguments. 3 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateConcat() throws Exception {
+        assertThat(Expression.evaluate(json("$concat: null"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$concat: ['A', 'B', 'C']"), json(""))).isEqualTo("ABC");
+        assertThat(Expression.evaluate(json("$concat: ['$a', '-', '$b']"), json("a: 'A', b: 'B'"))).isEqualTo("A-B");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$concat: 1"), json("")))
+            .withMessage("$concat only supports strings, not java.lang.Integer");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$concat: [1]"), json("")))
+            .withMessage("$concat only supports strings, not java.lang.Integer");
+    }
+
+    @Test
+    public void testEvaluateConcatArrays() throws Exception {
+        assertThat(Expression.evaluate(json("$concatArrays: null"), json(""))).isNull();
+
+        assertThat(Expression.evaluate(json("$concatArrays: [ [ 'hello', ' '], [ 'world' ] ]"), json("")))
+            .isEqualTo(Arrays.asList("hello", " ", "world"));
+
+        assertThat(Expression.evaluate(json("$concatArrays: [ [ 'hello', ' '], [ [ 'world' ], 'again'] ]"), json("")))
+            .isEqualTo(Arrays.asList("hello", " ", Collections.singletonList("world"), "again"));
+
+        assertThat(Expression.evaluate(json("$concatArrays: [ '$a', '$b' ]"), json("a: [1, 2], b: [3, 4]")))
+            .isEqualTo(Arrays.asList(1, 2, 3, 4));
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$concatArrays: 1"), json("")))
+            .withMessage("$concatArrays only supports arrays, not java.lang.Integer");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$concatArrays: [1]"), json("")))
+            .withMessage("$concatArrays only supports arrays, not java.lang.Integer");
+    }
+
+    @Test
+    public void testEvaluateCond() throws Exception {
+        assertThat(Expression.evaluate(json("$cond: { if: { $gte: [ '$qty', 250 ] }, then: 30, else: 20}"), json("qty: 100")))
+            .isEqualTo(20);
+
+        assertThat(Expression.evaluate(json("$cond: { if: { $gte: [ '$qty', 250 ] }, then: 30, else: 20}"), json("qty: 300")))
+            .isEqualTo(30);
+
+        assertThat(Expression.evaluate(json("$cond: { if: { $gte: [ '$qty', 250 ] }, then: '$qty', else: 20}"), json("qty: 300")))
+            .isEqualTo(300);
+
+        assertThat(Expression.evaluate(json("$cond: { if: { $gte: [ '$qty', 250 ] }, then: 10, else: '$qty'}"), json("qty: 200")))
+            .isEqualTo(200);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cond: null"), json("")))
+            .withMessage("Expression $cond takes exactly 3 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cond: {}"), json("")))
+            .withMessage("Missing 'if' parameter to $cond");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cond: {then: 1, else: 1}"), json("")))
+            .withMessage("Missing 'if' parameter to $cond");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cond: {if: 1, else: 1}"), json("")))
+            .withMessage("Missing 'then' parameter to $cond");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cond: {if: 1, then: 1}"), json("")))
+            .withMessage("Missing 'else' parameter to $cond");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$cond: {if: 1, then: 1, else: 1, foo: 1}"), json("")))
+            .withMessage("Unrecognized parameter to $cond: foo");
+    }
+
+    @Test
     public void testEvaluateEq() throws Exception {
         assertThat(Expression.evaluate(json("$eq: [20, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$eq: [20, 10]"), json(""))).isEqualTo(false);
@@ -182,6 +283,26 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$eq: ['a', 'b', 'c']"), json("")))
             .withMessage("Expression $eq takes exactly 2 arguments. 3 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateMinute() throws Exception {
+        assertThat(Expression.evaluate(json("$minute: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$minute: '$a'"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(10);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$minute: '$a'"), json("a: 'abc'")))
+            .withMessage("can't convert from java.lang.String to Date");
+    }
+
+    @Test
+    public void testEvaluateMonth() throws Exception {
+        assertThat(Expression.evaluate(json("$month: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$month: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(7);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$month: '$a'"), json("a: 'abc'")))
+            .withMessage("can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -239,6 +360,23 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateHour() throws Exception {
+        assertThat(Expression.evaluate(json("$hour: '$a'"), json(""))).isNull();
+        int expectedHour = ZonedDateTime.ofInstant(Instant.parse("2018-07-03T14:10:00Z"), ZoneId.systemDefault()).toLocalTime().getHour();
+        assertThat(Expression.evaluate(json("$hour: '$a'"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(expectedHour);
+        assertThat(Expression.evaluate(json("$hour: {date: '$a'}"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(expectedHour);
+        assertThat(Expression.evaluate(json("$hour: {date: '$a', timezone: 'UTC'}"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(14);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$hour: '$a'"), json("a: 'abc'")))
+            .withMessage("can't convert from java.lang.String to Date");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$hour: {}"), json("")))
+            .withMessage("missing 'date' argument to $hour, provided: {}");
+    }
+
+    @Test
     public void testEvaluateLt() throws Exception {
         assertThat(Expression.evaluate(json("$lt: [10, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$lt: [20, 20]"), json(""))).isEqualTo(false);
@@ -272,6 +410,16 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateSecond() throws Exception {
+        assertThat(Expression.evaluate(json("$second: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$second: '$a'"), new Document("a", toDate("2018-07-03T14:10:23Z")))).isEqualTo(23);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$second: '$a'"), json("a: 'abc'")))
+            .withMessage("can't convert from java.lang.String to Date");
+    }
+
+    @Test
     public void testEvaluateSum() throws Exception {
         assertThat(Expression.evaluate(json("$sum: null"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$sum: ''"), json(""))).isEqualTo(0);
@@ -279,6 +427,20 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$sum: [1, 'foo', 2]"), json(""))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$sum: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(12);
         assertThat(Expression.evaluate(json("$sum: []"), json(""))).isEqualTo(0);
+    }
+
+    @Test
+    public void testEvaluateSize() throws Exception {
+        assertThat(Expression.evaluate(json("$size: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(2);
+        assertThat(Expression.evaluate(json("$size: [7.5, 3]"), json(""))).isEqualTo(2);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$size: null"), json("")))
+            .withMessage("The argument to $size must be an array, but was of type: null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$size: 'abc'"), json("")))
+            .withMessage("The argument to $size must be an array, but was of type: java.lang.String");
     }
 
     @Test
@@ -304,12 +466,48 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateSqrt() throws Exception {
+        assertThat((double) Expression.evaluate(json("$sqrt: '$a'"), json("a: 2.5"))).isEqualTo(1.581, Offset.offset(0.001));
+        assertThat(Expression.evaluate(json("$sqrt: 16"), json(""))).isEqualTo(4.0);
+        assertThat(Expression.evaluate(json("$sqrt: null"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("sqrt: {$sqrt: '$a'}"), json("a: 25"))).isEqualTo(json("sqrt: 5.0"));
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$sqrt: 'abc'"), json("")))
+            .withMessage("$sqrt only supports numeric types, not class java.lang.String");
+    }
+
+    @Test
     public void testEvaluateYear() throws Exception {
         assertThat(Expression.evaluate(json("$year: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$year: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(2018);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$year: '$a'"), json("a: 'abc'")))
+            .withMessage("can't convert from java.lang.String to Date");
+    }
+
+    @Test
+    public void testEvaluateDayOfWeek() throws Exception {
+        assertThat(Expression.evaluate(json("$dayOfWeek: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$dayOfWeek: '$a'"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$dayOfWeek: '$a'"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$dayOfWeek: '$a'"), new Document("a", toDate("2018-11-08T22:00:00Z")))).isEqualTo(4);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dayOfWeek: '$a'"), json("a: 'abc'")))
+            .withMessage("can't convert from java.lang.String to Date");
+    }
+
+    @Test
+    public void testEvaluateDayOfMonth() throws Exception {
+        assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
+        assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(3);
+        assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), new Document("a", toDate("2018-11-08T22:00:00Z")))).isEqualTo(8);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dayOfMonth: '$a'"), json("a: 'abc'")))
             .withMessage("can't convert from java.lang.String to Date");
     }
 
