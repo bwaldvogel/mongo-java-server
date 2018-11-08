@@ -45,66 +45,53 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithComplexGroupBySumPipeline() throws Exception {
-        Document query = new Document("_id", null);
-        query.putAll(json("n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}"));
+        Document query = json("_id: null, n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id:1, a:30, b: {value: 20}"));
-        collection.insertOne(json("_id:2, a:15, b: {value: 10.5}"));
-        collection.insertOne(json("_id:3, b: {value: 1}"));
-        collection.insertOne(json("_id:4, a: {value: 5}"));
+        collection.insertOne(json("_id: 1, a:30, b: {value: 20}"));
+        collection.insertOne(json("_id: 2, a:15, b: {value: 10.5}"));
+        collection.insertOne(json("_id: 3, b: {value: 1}"));
+        collection.insertOne(json("_id: 4, a: {value: 5}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null)
-                .append("n", 4)
-                .append("sumOfA", 45)
-                .append("sumOfB", 31.5));
+            .containsExactly(json("_id: null, n:4, sumOfA: 45, sumOfB: 31.5"));
     }
 
     @Test
     public void testAggregateWithGroupByMinAndMax() throws Exception {
-        Document query = new Document("_id", null);
-        query.putAll(json("minA: {$min: '$a'}, maxB: {$max: '$b.value'}, maxC: {$max: '$c'}, minC: {$min: '$c'}"));
+        Document query = json("_id: null, minA: {$min: '$a'}, maxB: {$max: '$b.value'}, maxC: {$max: '$c'}, minC: {$min: '$c'}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id:1, a:30, b: {value: 20}, c: 1.0"));
-        collection.insertOne(json("_id:2, a:15, b: {value: 10}, c: 2"));
-        collection.insertOne(json("_id:3, c: 'zzz'"));
-        collection.insertOne(json("_id:4, c: 'aaa'"));
+        collection.insertOne(json("_id: 1, a:30, b: {value: 20}, c: 1.0"));
+        collection.insertOne(json("_id: 2, a:15, b: {value: 10}, c: 2"));
+        collection.insertOne(json("_id: 3, c: 'zzz'"));
+        collection.insertOne(json("_id: 4, c: 'aaa'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null)
-                .append("minA", 15)
-                .append("maxB", 20)
-                .append("minC", 1.0)
-                .append("maxC", "zzz"));
+            .containsExactly(json("_id: null, minA: 15, maxB: 20, minC: 1.0, maxC: 'zzz'"));
     }
 
     @Test
     public void testAggregateWithGroupByNonExistingMinAndMax() throws Exception {
-        Document query = new Document("_id", null);
-        query.putAll(json("minOfA: {$min: '$doesNotExist'}, maxOfB: {$max: '$doesNotExist'}"));
+        Document query = json("_id: null, minOfA: {$min: '$doesNotExist'}, maxOfB: {$max: '$doesNotExist'}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id:1, a:30, b: {value: 20}"));
-        collection.insertOne(json("_id:2, a:15, b: {value: 10}"));
+        collection.insertOne(json("_id: 1, a: 30, b: {value: 20}"));
+        collection.insertOne(json("_id: 2, a: 15, b: {value: 10}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null)
-                .append("minOfA", null)
-                .append("maxOfB", null));
+            .containsExactly(json("_id: null, minOfA: null, maxOfB: null"));
     }
 
     @Test
     public void testAggregateWithUnknownGroupOperator() throws Exception {
-        Document query = new Document("_id", null);
-        query.putAll(json("n: {$foo: 1}"));
+        Document query = json("_id: null, n: {$foo: 1}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -114,8 +101,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithTooManyGroupOperators() throws Exception {
-        Document query = new Document("_id", null);
-        query.putAll(json("n: {$sum: 1, $max: 1}"));
+        Document query = json("_id: null, n: {$sum: 1, $max: 1}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -127,11 +113,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     public void testAggregateWithEmptyPipeline() throws Exception {
         assertThat(toArray(collection.aggregate(Collections.emptyList()))).isEmpty();
 
-        collection.insertOne(json("_id:1"));
-        collection.insertOne(json("_id:2"));
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
 
         assertThat(toArray(collection.aggregate(Collections.emptyList())))
-            .containsExactly(json("_id:1"), json("_id:2"));
+            .containsExactly(json("_id: 1"), json("_id: 2"));
     }
 
     @Test
@@ -145,62 +131,60 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithGroupBySumPipeline() throws Exception {
-        Document query = new Document("_id", null);
-        query.putAll(json("n: {$sum: 1}"));
+        Document query = json("_id: null, n: {$sum: 1}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id:1"));
-        collection.insertOne(json("_id:2"));
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", 2));
+            .containsExactly(json("_id: null, n: 2"));
 
         query.putAll(json("n: {$sum: 'abc'}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", 0));
+            .containsExactly(json("_id: null, n: 0"));
 
         query.putAll(json("n: {$sum: 2}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", 4));
+            .containsExactly(json("_id: null, n: 4"));
 
         query.putAll(json("n: {$sum: 1.75}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", 3.5));
+            .containsExactly(json("_id: null, n: 3.5"));
 
         query.putAll(new Document("n", new Document("$sum", 10000000000L)));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", 20000000000L));
+            .containsExactly(json("_id: null, n: 20000000000"));
 
         query.putAll(new Document("n", new Document("$sum", -2.5F)));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("n", -5.0));
+            .containsExactly(json("_id: null, n: -5.0"));
     }
 
     @Test
     public void testAggregateWithGroupByAvg() throws Exception {
-        Document query = new Document("_id", null);
-        query.putAll(json("avg: {$avg: 1}"));
+        Document query = json("_id: null, avg: {$avg: 1}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id:1, a: 6.0, b: 'zzz'"));
-        collection.insertOne(json("_id:2, a: 3.0, b: 'aaa'"));
+        collection.insertOne(json("_id: 1, a: 6.0, b: 'zzz'"));
+        collection.insertOne(json("_id: 2, a: 3.0, b: 'aaa'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("avg", 1.0));
+            .containsExactly(json("_id: null, avg: 1.0"));
 
         query.putAll(json("avg: {$avg: '$a'}, avgB: {$avg: '$b'}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(new Document("_id", null).append("avg", 4.5).append("avgB", null));
+            .containsExactly(json("_id: null, avg: 4.5, avgB: null"));
     }
 
     @Test
@@ -209,19 +193,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id:1, a: 1"));
-        collection.insertOne(json("_id:2, a: 1"));
-        collection.insertOne(json("_id:3, a: 2, b: 3"));
-        collection.insertOne(json("_id:4, a: 2, b: 4"));
-        collection.insertOne(json("_id:5, a: 5, b: 10"));
-        collection.insertOne(json("_id:6, a: 7, c: 'a'"));
+        collection.insertOne(json("_id: 1, a: 1"));
+        collection.insertOne(json("_id: 2, a: 1"));
+        collection.insertOne(json("_id: 3, a: 2, b: 3"));
+        collection.insertOne(json("_id: 4, a: 2, b: 4"));
+        collection.insertOne(json("_id: 5, a: 5, b: 10"));
+        collection.insertOne(json("_id: 6, a: 7, c: 'a'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
-                json("_id: 1, count: 2").append("avg", null),
+                json("_id: 1, count: 2, avg: null"),
                 json("_id: 2, count: 2, avg: 3.5"),
                 json("_id: 5, count: 1, avg: 10.0"),
-                json("_id: 7, count: 1").append("avg", null)
+                json("_id: 7, count: 1, avg: null")
             );
     }
 
@@ -399,7 +383,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithCeil() throws Exception {
-        Document query = json("$project: { value: 1, ceilingValue: { $ceil: \"$value\" } }");
+        Document query = json("$project: { value: 1, ceilingValue: { $ceil: '$value' } }");
         List<Document> pipeline = Collections.singletonList(query);
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
@@ -438,7 +422,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     public void testAggregateWithFirstAndLast() throws Exception {
         Document sort = json("$sort: { item: 1, date: 1 }");
-        Document group = json("$group: {_id: \"$item\", firstSale: { $first: \"$date\" }, lastSale: { $last: \"$date\"} }");
+        Document group = json("$group: {_id: '$item', firstSale: { $first: '$date' }, lastSale: { $last: '$date'} }");
         List<Document> pipeline = Arrays.asList(sort, group);
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
