@@ -131,6 +131,9 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, json("'c.a': 2"))).isFalse();
         assertThat(matcher.matches(document, json("'c.a.x': 2"))).isFalse();
 
+        assertThat(matcher.matches(json("c: 5"), json("'c.a.x': 2"))).isFalse();
+        assertThat(matcher.matches(json(""), json("'c.a.x': 2"))).isFalse();
+
         document.putAll(json("a: {b: {c: {d: 1}}}"));
         assertThat(matcher.matches(document, json("'a.b.c.d': 1"))).isTrue();
         assertThat(matcher.matches(document, json("'a.b': 1"))).isFalse();

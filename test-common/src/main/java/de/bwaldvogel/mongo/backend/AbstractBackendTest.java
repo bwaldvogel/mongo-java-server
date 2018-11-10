@@ -2150,6 +2150,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(toArray(collection.find(json("action: {actionId: 2}"))))
             .containsExactly(json("_id: 3, action: { actionId: 2 }"));
+
+        assertThat(toArray(collection.find(json("'action.actionId.subKey': 23")))).isEmpty();
     }
 
     @Test

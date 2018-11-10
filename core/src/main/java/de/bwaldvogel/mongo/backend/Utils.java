@@ -201,9 +201,9 @@ public class Utils {
                 return Missing.getInstance();
             }
             return document.get(field);
+        } else {
+            return Missing.getInstance();
         }
-
-        throw new IllegalArgumentException("illegal value: " + value);
     }
 
     static boolean hasSubdocumentValue(Object document, String key) {
