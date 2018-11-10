@@ -113,7 +113,6 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     @Override
     public synchronized Iterable<P> getPositions(Document query) {
-        // Do not use getKeyValue, it's only valid for document.
         List<Object> queriedKeys = getQueriedKeys(query);
 
         for (Object queriedKey : queriedKeys) {
