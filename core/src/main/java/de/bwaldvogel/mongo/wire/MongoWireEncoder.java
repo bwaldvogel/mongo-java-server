@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.wire;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -33,7 +34,13 @@ public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
         buf.writeIntLE(documents.size());
 
         for (Document document : documents) {
-            bsonEncoder.encodeDocument(document, buf);
+            try {
+                bsonEncoder.encodeDocument(document, buf);
+            } catch (IOException e) {
+                log.error("Failed to encode {}", document, e);
+                ctx.channel().close();
+                throw e;
+            }
         }
 
         log.debug("wrote reply: {}", reply);

@@ -6,8 +6,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
@@ -31,13 +31,13 @@ public class BsonEncoder {
         out.writerIndex(indexAfter);
     }
 
-    private void encodeCString(String data, ByteBuf buffer) throws IOException {
+    private void encodeCString(String data, ByteBuf buffer) {
         byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
         buffer.writeBytes(bytes);
         buffer.writeByte(BsonConstants.STRING_TERMINATION);
     }
 
-    private void encodeString(String data, ByteBuf buffer) throws IOException {
+    private void encodeString(String data, ByteBuf buffer) {
         byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
         buffer.writeIntLE(bytes.length + 1);
         buffer.writeBytes(bytes);
@@ -83,13 +83,13 @@ public class BsonEncoder {
                     buffer.writeLongLE(uuid.getMostSignificantBits());
                     buffer.writeLongLE(uuid.getLeastSignificantBits());
                 } else {
-                    throw new IllegalArgumentException("Unknown data: " + value.getClass());
+                    throw new IOException("Unknown data: " + value.getClass());
                 }
                 break;
             case BsonConstants.TYPE_OBJECT_ID:
                 byte[] bytes = ((ObjectId) value).toByteArray();
                 if (bytes.length != BsonConstants.LENGTH_OBJECTID) {
-                    throw new IllegalArgumentException("Illegal ObjectId: " + value);
+                    throw new IOException("Illegal ObjectId: " + value);
                 }
                 buffer.writeBytes(bytes);
                 break;
@@ -132,7 +132,7 @@ public class BsonEncoder {
         }
     }
 
-    private byte determineType(Object value) {
+    private byte determineType(Object value) throws IOException {
         if (value == null) {
             return BsonConstants.TYPE_NULL;
         } else if (value instanceof Document) {
@@ -166,7 +166,7 @@ public class BsonEncoder {
         } else if (value instanceof UUID) {
             return BsonConstants.TYPE_DATA;
         } else {
-            throw new IllegalArgumentException("Unknown type: " + value.getClass());
+            throw new IOException("Unknown type: " + value.getClass());
         }
     }
 
