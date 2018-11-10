@@ -566,7 +566,7 @@ public enum Expression {
 
     private static <T> T evaluateDateTime(Object expressionValue, Document document, String expressionName, Function<ZonedDateTime, T> dateFunction) {
         Object value = evaluate(expressionValue, document);
-        if (value == null) {
+        if (Utils.isNullOrMissing(value)) {
             return null;
         }
 

@@ -3,6 +3,8 @@ package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.bwaldvogel.mongo.backend.Utils;
+
 public class PushAccumulator extends Accumulator {
 
     private List<Object> result = new ArrayList<>();
@@ -13,7 +15,7 @@ public class PushAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        if (value == null) {
+        if (Utils.isNullOrMissing(value)) {
             return;
         }
         result.add(value);

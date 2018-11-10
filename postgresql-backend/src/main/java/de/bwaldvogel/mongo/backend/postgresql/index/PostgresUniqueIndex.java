@@ -12,6 +12,7 @@ import de.bwaldvogel.mongo.backend.postgresql.PostgresqlBackend;
 import de.bwaldvogel.mongo.backend.postgresql.PostgresqlCollection;
 import de.bwaldvogel.mongo.backend.postgresql.PostgresqlUtils;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -38,6 +39,9 @@ public class PostgresUniqueIndex extends Index<Long> {
     @Override
     public void checkAdd(Document document) {
         Object keyValue = Utils.getSubdocumentValue(document, key);
+        if (keyValue instanceof Missing) {
+            keyValue = null;
+        }
         String sql = createSelectStatement(keyValue);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {

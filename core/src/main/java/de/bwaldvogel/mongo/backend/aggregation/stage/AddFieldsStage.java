@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class AddFieldsStage implements AggregationStage {
@@ -29,7 +30,7 @@ public class AddFieldsStage implements AggregationStage {
         for (Entry<String, Object> entry : document.entrySet()) {
             String field = entry.getKey();
             if (addFields.containsKey(field)) {
-                Object projectedValue = Expression.evaluate(addFields.get(field), document);
+                Object projectedValue = evaluate(addFields.get(field), document);
                 result.put(field, projectedValue);
             } else {
                 result.put(field, entry.getValue());
@@ -38,12 +39,20 @@ public class AddFieldsStage implements AggregationStage {
 
         for (Entry<String, Object> entry : addFields.entrySet()) {
             if (!result.containsKey(entry.getKey())) {
-                Object projectedValue = Expression.evaluate(entry.getValue(), document);
+                Object projectedValue = evaluate(entry.getValue(), document);
                 result.put(entry.getKey(), projectedValue);
             }
         }
 
         return result;
+    }
+
+    private static Object evaluate(Object value, Document document) {
+        Object evaluatedValue = Expression.evaluate(value, document);
+        if (evaluatedValue instanceof Missing) {
+            return null;
+        }
+        return evaluatedValue;
     }
 
 }

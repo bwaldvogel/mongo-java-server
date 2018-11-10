@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.BsonEncoder;
@@ -13,6 +14,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public class Utils {
+
+    public static boolean isNullOrMissing(Object value) {
+        return (value == null || value instanceof Missing);
+    }
 
     public static Number addNumbers(Number a, Number b) {
         if (a instanceof Double || b instanceof Double) {
@@ -74,7 +79,7 @@ public class Utils {
             if (subObject instanceof Document) {
                 return getSubdocumentValue((Document) subObject, subKey);
             } else {
-                return null;
+                return Missing.getInstance();
             }
         } else {
             return Utils.getFieldValueListSafe(document, key);
@@ -92,7 +97,7 @@ public class Utils {
     }
 
     public static boolean isTrue(Object value) {
-        if (value == null) {
+        if (Utils.isNullOrMissing(value)) {
             return false;
         }
 
@@ -108,7 +113,7 @@ public class Utils {
     }
 
     static Object normalizeValue(Object value) {
-        if (value == null) {
+        if (isNullOrMissing(value)) {
             return null;
         }
         if (value instanceof Number) {
@@ -121,7 +126,9 @@ public class Utils {
     static boolean nullAwareEquals(Object a, Object b) {
         if (a == b) {
             return true;
-        } else if (a == null || b == null) {
+        } else if (Utils.isNullOrMissing(a) && Utils.isNullOrMissing(b)) {
+            return true;
+        } else if (Utils.isNullOrMissing(a) || Utils.isNullOrMissing(b)) {
             return false;
         } else if (a instanceof byte[] && b instanceof byte[]) {
             byte[] bytesA = (byte[]) a;
@@ -167,19 +174,23 @@ public class Utils {
         return false;
     }
 
-    static Object getFieldValueListSafe(Object document, String field) throws IllegalArgumentException {
-        if (document == null) {
+    static Object getFieldValueListSafe(Object value, String field) throws IllegalArgumentException {
+        if (value == null) {
             return null;
+        }
+
+        if (value instanceof Missing) {
+            return value;
         }
 
         if (field.equals("$") || field.contains(".")) {
             throw new IllegalArgumentException("illegal field: " + field);
         }
 
-        if (document instanceof List<?>) {
+        if (value instanceof List<?>) {
             if (field.matches("\\d+")) {
                 int pos = Integer.parseInt(field);
-                List<?> list = (List<?>) document;
+                List<?> list = (List<?>) value;
                 if (pos >= 0 && pos < list.size()) {
                     return list.get(pos);
                 } else {
@@ -188,11 +199,15 @@ public class Utils {
             } else {
                 throw new IllegalArgumentException("illegal field: " + field);
             }
-        } else if (document instanceof Document) {
-            return ((Document) document).get(field);
+        } else if (value instanceof Document) {
+            Document document = (Document) value;
+            if (!document.containsKey(field)) {
+                return Missing.getInstance();
+            }
+            return document.get(field);
         }
 
-        throw new IllegalArgumentException("illegal document: " + document);
+        throw new IllegalArgumentException("illegal value: " + value);
     }
 
     static boolean hasSubdocumentValue(Object document, String key) {

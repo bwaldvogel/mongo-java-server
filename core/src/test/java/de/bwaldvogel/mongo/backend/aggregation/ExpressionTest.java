@@ -15,6 +15,7 @@ import org.assertj.core.data.Offset;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ExpressionTest {
@@ -25,7 +26,8 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(null, json(""))).isNull();
         assertThat(Expression.evaluate("abc", json(""))).isEqualTo("abc");
         assertThat(Expression.evaluate("$a", json("a: 123"))).isEqualTo(123);
-        assertThat(Expression.evaluate("$a", json(""))).isNull();
+        assertThat(Expression.evaluate("$a", json(""))).isInstanceOf(Missing.class);
+        assertThat(Expression.evaluate("$a", json("a: null"))).isNull();
         assertThat(Expression.evaluate(json("a: 1, b: 2"), json("a: -2"))).isEqualTo(json("a: 1, b: 2"));
     }
 

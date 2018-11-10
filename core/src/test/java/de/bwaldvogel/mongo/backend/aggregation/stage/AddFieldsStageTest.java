@@ -16,6 +16,7 @@ public class AddFieldsStageTest {
         assertThat(addFields(json("a: 'value'"), json("a: true"))).isEqualTo(json("a: true"));
         assertThat(addFields(json("_id: 1"), json("a: 10"))).isEqualTo(json("_id: 1, a: 10"));
         assertThat(addFields(json("_id: 1, a: 'value'"), json("b: '$a'"))).isEqualTo(json("_id: 1, a: 'value', b: 'value'"));
+        assertThat(addFields(json("_id: 1"), json("b: '$a'"))).isEqualTo(json("_id: 1, b: null"));
         assertThat(addFields(json("_id: 1, a: 'value'"), json("_id: null"))).isEqualTo(json("_id: null, a: 'value'"));
     }
 

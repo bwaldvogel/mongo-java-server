@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import de.bwaldvogel.mongo.backend.Utils;
+
 public class AddToSetAccumulator extends Accumulator {
 
     private Set<Object> result = new LinkedHashSet<>();
@@ -14,7 +16,7 @@ public class AddToSetAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        if (value == null) {
+        if (Utils.isNullOrMissing(value)) {
             return;
         }
         result.add(value);

@@ -8,6 +8,7 @@ import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -22,8 +23,11 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareNulls() {
+    public void testCompareNullsAndMissings() {
         assertThat(comparator.compare(null, null)).isZero();
+        assertThat(comparator.compare(Missing.getInstance(), Missing.getInstance())).isZero();
+        assertThat(comparator.compare(null, Missing.getInstance())).isZero();
+        assertThat(comparator.compare(Missing.getInstance(), null)).isZero();
     }
 
     @Test

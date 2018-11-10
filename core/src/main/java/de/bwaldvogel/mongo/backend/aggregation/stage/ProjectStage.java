@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ProjectStage implements AggregationStage {
@@ -28,10 +29,8 @@ public class ProjectStage implements AggregationStage {
     private static boolean hasInclusions(Document projection) {
         for (Entry<String, Object> entry : projection.entrySet()) {
             Object projectionValue = entry.getValue();
-            if (projectionValue instanceof Number || projectionValue instanceof Boolean) {
-                if (Utils.isTrue(projectionValue)) {
-                    return true;
-                }
+            if (Utils.isTrue(projectionValue)) {
+                return true;
             }
         }
         return false;
@@ -62,7 +61,7 @@ public class ProjectStage implements AggregationStage {
                 result.put(field, null);
             } else {
                 Object projectedValue = Expression.evaluate(projectionValue, document);
-                if (projectedValue != null) {
+                if (!(projectedValue instanceof Missing)) {
                     result.put(field, projectedValue);
                 }
             }

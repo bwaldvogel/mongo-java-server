@@ -2,6 +2,8 @@ package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
 import java.util.Comparator;
 
+import de.bwaldvogel.mongo.backend.Utils;
+
 class ComparingAccumulator extends Accumulator {
 
     private final Comparator<Object> comparator;
@@ -14,7 +16,7 @@ class ComparingAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        if (value == null) {
+        if (Utils.isNullOrMissing(value)) {
             return;
         }
         if (result == null) {

@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -133,13 +134,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos)
-            {
+    private void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos) {
         changeSubdocumentValue(document, key, newValue, new AtomicReference<>(matchPos));
     }
 
-    private void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos)
-            {
+    private void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -193,7 +192,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             if (subObject instanceof Document || subObject instanceof List<?>) {
                 return getSubdocumentValue(subObject, subKey, matchPos);
             } else {
-                return null;
+                return Missing.getInstance();
             }
         } else {
             return Utils.getFieldValueListSafe(document, key);
@@ -246,7 +245,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
                 List<Object> list;
-                if (value == null) {
+                if (Utils.isNullOrMissing(value)) {
                     return;
                 } else if (value instanceof List<?>) {
                     list = asList(value);
@@ -280,7 +279,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
                 List<Object> list;
-                if (value == null) {
+                if (Utils.isNullOrMissing(value)) {
                     return;
                 } else if (value instanceof List<?>) {
                     list = asList(value);
@@ -308,7 +307,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 String operation = (op == UpdateOperator.INC) ? "increment" : "multiply";
                 Object value = getSubdocumentValue(document, key, matchPos);
                 Number number;
-                if (value == null) {
+                if (Utils.isNullOrMissing(value)) {
                     number = Integer.valueOf(0);
                 } else if (value instanceof Number) {
                     number = (Number) value;
@@ -346,9 +345,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 int valueComparison = comparator.compare(newValue, oldValue);
 
                 final boolean shouldChange;
-                // If the field does not exists, the $min/$max operator sets the
-                // field to the specified value
-                if (oldValue == null && !Utils.hasSubdocumentValue(document, key)) {
+                if (oldValue instanceof Missing) {
                     shouldChange = true;
                 } else if (op == UpdateOperator.MAX) {
                     shouldChange = valueComparison > 0;
@@ -461,7 +458,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         for (String key : change.keySet()) {
             Object value = getSubdocumentValue(document, key, matchPos);
             List<Object> list;
-            if (value == null) {
+            if (Utils.isNullOrMissing(value)) {
                 list = new ArrayList<>();
             } else if (value instanceof List<?>) {
                 list = asList(value);

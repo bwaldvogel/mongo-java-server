@@ -4,6 +4,7 @@ import java.util.*;
 
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.bson.ObjectId;
 
 public class ValueComparator implements Comparator<Object> {
@@ -30,6 +31,14 @@ public class ValueComparator implements Comparator<Object> {
 
     @Override
     public int compare(Object value1, Object value2) {
+
+        if (value1 instanceof Missing) {
+            value1 = null;
+        }
+
+        if (value2 instanceof Missing) {
+            value2 = null;
+        }
 
         // also catches null/null case
         if (value1 == value2)

@@ -11,8 +11,16 @@ import java.util.Date;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Missing;
 
 public class UtilsTest {
+
+    @Test
+    public void testIsNullOrMissing() throws Exception {
+        assertThat(Utils.isNullOrMissing(null)).isTrue();
+        assertThat(Utils.isNullOrMissing(Missing.getInstance())).isTrue();
+        assertThat(Utils.isNullOrMissing("value")).isFalse();
+    }
 
     @Test
     public void testAddNumbers() {
@@ -59,18 +67,23 @@ public class UtilsTest {
         assertThat(Utils.isTrue(1)).isTrue();
         assertThat(Utils.isTrue(1.0)).isTrue();
         assertThat(Utils.isTrue(0)).isFalse();
+        assertThat(Utils.isTrue(Missing.getInstance())).isFalse();
     }
 
     @Test
     public void testNormalizeValue() {
         assertThat(Utils.normalizeValue(Integer.valueOf(4))).isEqualTo(4.0);
         assertThat(Utils.normalizeValue(null)).isNull();
+        assertThat(Utils.normalizeValue(Missing.getInstance())).isNull();
         assertThat(Utils.normalizeValue(new Date())).isInstanceOf(Date.class);
     }
 
     @Test
     public void testNullAwareEquals() {
         assertThat(Utils.nullAwareEquals(null, null)).isTrue();
+        assertThat(Utils.nullAwareEquals(null, Missing.getInstance())).isTrue();
+        assertThat(Utils.nullAwareEquals(Missing.getInstance(), null)).isTrue();
+        assertThat(Utils.nullAwareEquals(Missing.getInstance(), Missing.getInstance())).isTrue();
         assertThat(Utils.nullAwareEquals(null, 4)).isFalse();
         assertThat(Utils.nullAwareEquals(4, null)).isFalse();
         assertThat(Utils.nullAwareEquals(4, 4)).isTrue();
@@ -94,14 +107,16 @@ public class UtilsTest {
     public void testGetSubdocumentValue() throws Exception {
         Document document = json("foo: 25");
         assertThat(Utils.getSubdocumentValue(document, "foo")).isEqualTo(25);
-        assertThat(Utils.getSubdocumentValue(document, "foo.bar")).isNull();
-        assertThat(Utils.getSubdocumentValue(document, "foo.bar.x")).isNull();
+        assertThat(Utils.getSubdocumentValue(document, "foo.bar")).isInstanceOf(Missing.class);
+        assertThat(Utils.getSubdocumentValue(document, "foo.bar.x")).isInstanceOf(Missing.class);
+
+        assertThat(Utils.getSubdocumentValue(json("foo: {bar: null}"), "foo.bar")).isNull();
 
         document.put("foo", json("a: 10").append("b", json("x: 29").append("z", 17)));
         assertThat(Utils.getSubdocumentValue(document, "foo.a")).isEqualTo(10);
         assertThat(Utils.getSubdocumentValue(document, "foo.b.x")).isEqualTo(29);
         assertThat(Utils.getSubdocumentValue(document, "foo.b.z")).isEqualTo(17);
-        assertThat(Utils.getSubdocumentValue(document, "foo.c")).isNull();
+        assertThat(Utils.getSubdocumentValue(document, "foo.c")).isInstanceOf(Missing.class);
     }
 
     @Test

@@ -1500,6 +1500,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(obj);
 
         // pull from non-existing field
+        collection.updateOne(obj, json("$pull: {field1: 'value2', field2: 'value3'}"));
+
         assertThat(collection.find(obj).first()).isEqualTo(obj);
 
         // pull from non-array
