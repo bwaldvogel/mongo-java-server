@@ -517,6 +517,22 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testAggregateWithUnwind() throws Exception {
+        Document unwind = json("$unwind: '$sizes'");
+        List<Document> pipeline = Collections.singletonList(unwind);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+        collection.insertOne(json("_id: 1, item: 'ABC1', sizes: ['S', 'M', 'L']"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, item: 'ABC1', sizes: 'S'"),
+                json("_id: 1, item: 'ABC1', sizes: 'M'"),
+                json("_id: 1, item: 'ABC1', sizes: 'L'")
+            );
+    }
+
     private static Date date(String instant) {
         return Date.from(Instant.parse(instant));
     }

@@ -25,6 +25,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -562,6 +563,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 case "$addFields":
                     Document addFieldsDetails = (Document) stage.get(stageOperation);
                     aggregation.addStage(new AddFieldsStage(addFieldsDetails));
+                    break;
+                case "$unwind":
+                    String unwindField = (String) stage.get(stageOperation);
+                    aggregation.addStage(new UnwindStage(unwindField));
                     break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");

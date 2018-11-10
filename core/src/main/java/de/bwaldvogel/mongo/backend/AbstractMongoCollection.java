@@ -134,50 +134,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos) {
-        changeSubdocumentValue(document, key, newValue, new AtomicReference<>(matchPos));
-    }
-
-    private void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = Utils.getSubkey(key, dotPos, matchPos);
-
-            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document || subObject instanceof List<?>) {
-                changeSubdocumentValue(subObject, subKey, newValue, matchPos);
-            } else {
-                Document obj = new Document();
-                changeSubdocumentValue(obj, subKey, newValue, matchPos);
-                Utils.setListSafe(document, mainKey, obj);
-            }
-        } else {
-            Utils.setListSafe(document, key, newValue);
-        }
-    }
-
-    private Object removeSubdocumentValue(Object document, String key, Integer matchPos) {
-        return removeSubdocumentValue(document, key, new AtomicReference<>(matchPos));
-    }
-
-    private Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
-            {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = Utils.getSubkey(key, dotPos, matchPos);
-            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document || subObject instanceof List<?>) {
-                return removeSubdocumentValue(subObject, subKey, matchPos);
-            } else {
-                throw new MongoServerException("failed to remove subdocument");
-            }
-        } else {
-            return Utils.removeListSafe(document, key);
-        }
-    }
-
     private Object getSubdocumentValue(Object document, String key, Integer matchPos) {
         return getSubdocumentValue(document, key, new AtomicReference<>(matchPos));
     }
@@ -223,14 +179,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
                 assertNotKeyField(key);
 
-                changeSubdocumentValue(document, key, newValue, matchPos);
+                Utils.changeSubdocumentValue(document, key, newValue, matchPos);
             }
             break;
 
         case UNSET:
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
-                removeSubdocumentValue(document, key, matchPos);
+                Utils.removeSubdocumentValue(document, key, matchPos);
             }
             break;
 
@@ -329,7 +285,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     throw new RuntimeException();
                 }
 
-                changeSubdocumentValue(document, key, newValue, matchPos);
+                Utils.changeSubdocumentValue(document, key, newValue, matchPos);
             }
             break;
 
@@ -356,7 +312,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 }
 
                 if (shouldChange) {
-                    changeSubdocumentValue(document, key, newValue, matchPos);
+                    Utils.changeSubdocumentValue(document, key, newValue, matchPos);
                 }
             }
             break;
@@ -397,7 +353,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     newValue = new BsonTimestamp(System.currentTimeMillis());
                 }
 
-                changeSubdocumentValue(document, key, newValue, matchPos);
+                Utils.changeSubdocumentValue(document, key, newValue, matchPos);
             }
             break;
 
@@ -424,8 +380,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             }
 
             for (Entry<String, String> entry : renames.entrySet()) {
-                Object value = removeSubdocumentValue(document, entry.getKey(), matchPos);
-                changeSubdocumentValue(document, entry.getValue(), value, matchPos);
+                Object value = Utils.removeSubdocumentValue(document, entry.getKey(), matchPos);
+                Utils.changeSubdocumentValue(document, entry.getValue(), value, matchPos);
             }
             break;
 
@@ -498,7 +454,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     }
                 }
             }
-            changeSubdocumentValue(document, key, list, matchPos);
+            Utils.changeSubdocumentValue(document, key, list, matchPos);
         }
     }
 
@@ -965,7 +921,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
             Object value = selector.get(key);
             if (!Utils.containsQueryExpression(value)) {
-                changeSubdocumentValue(document, key, value, (AtomicReference<Integer>) null);
+                Utils.changeSubdocumentValue(document, key, value, (AtomicReference<Integer>) null);
             }
         }
         return document;

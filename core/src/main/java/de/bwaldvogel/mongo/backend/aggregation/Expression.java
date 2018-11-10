@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import static de.bwaldvogel.mongo.backend.Utils.describeType;
+
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -1037,32 +1039,6 @@ public enum Expression {
             }
         }
         return result;
-    }
-
-    private static String describeType(Object value) {
-        if (value == null) {
-            return "null";
-        } else {
-            return describeType(value.getClass());
-        }
-    }
-
-    private static String describeType(Class<?> type) {
-        if (Missing.class.isAssignableFrom(type)) {
-            return "missing";
-        } else if (String.class.isAssignableFrom(type)) {
-            return "string";
-        } else if (Collection.class.isAssignableFrom(type)) {
-            return "array";
-        } else if (Integer.class.isAssignableFrom(type)) {
-            return "int";
-        } else if (Long.class.isAssignableFrom(type)) {
-            return "long";
-        } else if (Double.class.isAssignableFrom(type)) {
-            return "double";
-        } else {
-            return type.getName();
-        }
     }
 
     private static ZonedDateTime getZonedDateTime(Object value, String expressionName) {

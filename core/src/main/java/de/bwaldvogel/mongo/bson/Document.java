@@ -3,6 +3,8 @@ package de.bwaldvogel.mongo.bson;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,6 +26,38 @@ public final class Document implements Map<String, Object>, Bson {
     public Document(Map<String, Object> map) {
         this();
         putAll(map);
+    }
+
+    public Document cloneDeeply() {
+        return cloneDeeply(this);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T cloneDeeply(T object) {
+        if (object == null) {
+            return null;
+        } else if (object instanceof Document) {
+            Document document = (Document) object;
+            Document clone = document.clone();
+            for (String key : document.keySet()) {
+                clone.put(key, cloneDeeply(clone.get(key)));
+            }
+            return (T) clone;
+        } else if (object instanceof List) {
+            List<?> list = (List<?>) object;
+            List<?> result = list.stream()
+                .map(Document::cloneDeeply)
+                .collect(Collectors.toList());
+            return (T) result;
+        } else if (object instanceof Set) {
+            Set<?> set = (Set<?>) object;
+            Set<?> result = set.stream()
+                .map(Document::cloneDeeply)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+            return (T) result;
+        } else {
+            return object;
+        }
     }
 
     public Document append(String key, Object value) {

@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -311,4 +312,78 @@ public class Utils {
         return sb.toString();
     }
 
+    static void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos) {
+        changeSubdocumentValue(document, key, newValue, new AtomicReference<>(matchPos));
+    }
+
+    public static void changeSubdocumentValue(Object document, String key, Object newValue) {
+        changeSubdocumentValue(document, key, newValue, new AtomicReference<>());
+    }
+
+    static void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = getSubkey(key, dotPos, matchPos);
+
+            Object subObject = getFieldValueListSafe(document, mainKey);
+            if (subObject instanceof Document || subObject instanceof List<?>) {
+                changeSubdocumentValue(subObject, subKey, newValue, matchPos);
+            } else {
+                Document obj = new Document();
+                changeSubdocumentValue(obj, subKey, newValue, matchPos);
+                setListSafe(document, mainKey, obj);
+            }
+        } else {
+            setListSafe(document, key, newValue);
+        }
+    }
+
+    static Object removeSubdocumentValue(Object document, String key, Integer matchPos) {
+        return removeSubdocumentValue(document, key, new AtomicReference<>(matchPos));
+    }
+
+    private static Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = getSubkey(key, dotPos, matchPos);
+            Object subObject = getFieldValueListSafe(document, mainKey);
+            if (subObject instanceof Document || subObject instanceof List<?>) {
+                return removeSubdocumentValue(subObject, subKey, matchPos);
+            } else {
+                throw new MongoServerException("failed to remove subdocument");
+            }
+        } else {
+            return removeListSafe(document, key);
+        }
+    }
+
+    public static String describeType(Object value) {
+        if (value == null) {
+            return "null";
+        } else {
+            return describeType(value.getClass());
+        }
+    }
+
+    private static String describeType(Class<?> type) {
+        if (Missing.class.isAssignableFrom(type)) {
+            return "missing";
+        } else if (Document.class.isAssignableFrom(type)) {
+            return "object";
+        } else if (String.class.isAssignableFrom(type)) {
+            return "string";
+        } else if (Collection.class.isAssignableFrom(type)) {
+            return "array";
+        } else if (Integer.class.isAssignableFrom(type)) {
+            return "int";
+        } else if (Long.class.isAssignableFrom(type)) {
+            return "long";
+        } else if (Double.class.isAssignableFrom(type)) {
+            return "double";
+        } else {
+            return type.getName();
+        }
+    }
 }

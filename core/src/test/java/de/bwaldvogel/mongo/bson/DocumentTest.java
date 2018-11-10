@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.backend.Utils;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class DocumentTest {
@@ -35,6 +36,32 @@ public class DocumentTest {
         assertThat(clone)
             .isNotSameAs(original)
             .isEqualTo(original);
+    }
+
+    @Test
+    public void testCloneDeeply() throws Exception {
+        Document original = new Document();
+        original.put("subDocument", new Document("_id", 1));
+        original.put("sub", new Document("sub", Arrays.asList(1, new Document("key", "value"), 3)));
+        original.put("null-value", null);
+
+        String originalToString = "{\"subDocument\" : {\"_id\" : 1}, \"sub\" : {\"sub\" : [1, {\"key\" : \"value\"}, 3]}, \"null-value\" : null}";
+        assertThat(original).hasToString(originalToString);
+
+        Document deepClone = original.cloneDeeply();
+
+        assertThat(deepClone)
+            .isNotSameAs(original)
+            .isEqualTo(original);
+
+        assertThat(deepClone).hasToString(original.toString());
+
+        Utils.changeSubdocumentValue(deepClone, "sub.sub.1", 25);
+        Utils.changeSubdocumentValue(deepClone, "subDocument._id", 2);
+        deepClone.remove("null-value");
+
+        assertThat(deepClone).hasToString("{\"subDocument\" : {\"_id\" : 2}, \"sub\" : {\"sub\" : [1, 25, 3]}}");
+        assertThat(original).hasToString(originalToString);
     }
 
     @Test
