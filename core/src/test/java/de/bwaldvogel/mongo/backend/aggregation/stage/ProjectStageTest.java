@@ -28,7 +28,7 @@ public class ProjectStageTest {
     public void testIllegalProject() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ProjectStage(json("")))
-            .withMessage("Invalid $project :: caused by :: specification must have at least one field");
+            .withMessage("[Error 40177] Invalid $project :: caused by :: specification must have at least one field");
     }
 
 }

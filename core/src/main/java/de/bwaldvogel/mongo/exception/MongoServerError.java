@@ -4,17 +4,19 @@ public class MongoServerError extends MongoServerException {
 
     private static final long serialVersionUID = 1L;
 
-    private int errorCode;
-    private String codeName;
+    private final String message;
+    private final int errorCode;
+    private final String codeName;
 
     public MongoServerError(int errorCode, String message) {
         this(errorCode, null, message);
     }
 
     public MongoServerError(int errorCode, String codeName, String message) {
-        super(message);
+        super("[Error " + errorCode + "] " + message);
         this.errorCode = errorCode;
         this.codeName = codeName;
+        this.message = message;
     }
 
     public int getCode() {
@@ -23,5 +25,10 @@ public class MongoServerError extends MongoServerException {
 
     public String getCodeName() {
         return codeName;
+    }
+
+    @Override
+    public String getMessageWithoutErrorCode() {
+        return message;
     }
 }

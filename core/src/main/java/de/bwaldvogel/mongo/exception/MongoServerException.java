@@ -19,4 +19,8 @@ public class MongoServerException extends RuntimeException {
         return message;
     }
 
+    public String getMessageWithoutErrorCode() {
+        return getMessage();
+    }
+
 }

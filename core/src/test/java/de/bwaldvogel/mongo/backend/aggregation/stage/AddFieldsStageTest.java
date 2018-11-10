@@ -27,7 +27,7 @@ public class AddFieldsStageTest {
     public void testIllegalSpecification() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new AddFieldsStage(json("")))
-            .withMessage("Invalid $addFields :: caused by :: specification must have at least one field");
+            .withMessage("[Error 40177] Invalid $addFields :: caused by :: specification must have at least one field");
     }
 
 }

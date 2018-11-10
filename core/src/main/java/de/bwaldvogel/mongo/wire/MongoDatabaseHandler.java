@@ -117,8 +117,8 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
     private MongoReply queryFailure(MessageHeader header, MongoServerException exception, Map<String, ?> additionalInfo) {
         Document obj = new Document();
-        obj.put("$err", exception.getMessage());
-        obj.put("errmsg", exception.getLocalizedMessage());
+        obj.put("$err", exception.getMessageWithoutErrorCode());
+        obj.put("errmsg", exception.getMessageWithoutErrorCode());
         if (exception instanceof MongoServerError) {
             MongoServerError error = (MongoServerError) exception;
             obj.put("code", error.getCode());

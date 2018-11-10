@@ -39,11 +39,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$abs: '$a', $ceil: '$b'"), json("")))
-            .withMessage("An object representing an expression must have exactly one field: {\"$abs\" : \"$a\", \"$ceil\" : \"$b\"}");
+            .withMessage("[Error 15983] An object representing an expression must have exactly one field: {\"$abs\" : \"$a\", \"$ceil\" : \"$b\"}");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$abs: 'abc'"), json("")))
-            .withMessage("$abs only supports numeric types, not class java.lang.String");
+            .withMessage("[Error 28765] $abs only supports numeric types, not class java.lang.String");
     }
 
     @Test
@@ -53,15 +53,15 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$add: []"), json("")))
-            .withMessage("Expression $add takes exactly 2 arguments. 0 were passed in.");
+            .withMessage("[Error 16020] Expression $add takes exactly 2 arguments. 0 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$add: [1]"), json("")))
-            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $add takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$add: 123"), json("")))
-            .withMessage("Expression $add takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $add takes exactly 2 arguments. 1 were passed in.");
     }
 
     @Test
@@ -90,19 +90,19 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: null"), json("")))
-            .withMessage("$anyElementTrue's argument must be an array, but is null");
+            .withMessage("[Error 17041] $anyElementTrue's argument must be an array, but is null");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: [null]"), json("")))
-            .withMessage("$anyElementTrue's argument must be an array, but is null");
+            .withMessage("[Error 17041] $anyElementTrue's argument must be an array, but is null");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: 'abc'"), json("")))
-            .withMessage("$anyElementTrue's argument must be an array, but is java.lang.String");
+            .withMessage("[Error 17041] $anyElementTrue's argument must be an array, but is java.lang.String");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$anyElementTrue: [1, 2]"), json("")))
-            .withMessage("Expression $anyElementTrue takes exactly 1 arguments. 2 were passed in.");
+            .withMessage("[Error 16020] Expression $anyElementTrue takes exactly 1 arguments. 2 were passed in.");
     }
 
     @Test
@@ -115,19 +115,19 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: null"), json("")))
-            .withMessage("$allElementsTrue's argument must be an array, but is null");
+            .withMessage("[Error 17040] $allElementsTrue's argument must be an array, but is null");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [null]"), json("")))
-            .withMessage("$allElementsTrue's argument must be an array, but is null");
+            .withMessage("[Error 17040] $allElementsTrue's argument must be an array, but is null");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: 'abc'"), json("")))
-            .withMessage("$allElementsTrue's argument must be an array, but is java.lang.String");
+            .withMessage("[Error 17040] $allElementsTrue's argument must be an array, but is java.lang.String");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$allElementsTrue: [1, 2]"), json("")))
-            .withMessage("Expression $allElementsTrue takes exactly 1 arguments. 2 were passed in.");
+            .withMessage("[Error 16020] Expression $allElementsTrue takes exactly 1 arguments. 2 were passed in.");
     }
 
     @Test
@@ -141,19 +141,19 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayElemAt: null"), json("")))
-            .withMessage("Expression $arrayElemAt takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $arrayElemAt takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayElemAt: [1, 2, 3]"), json("")))
-            .withMessage("Expression $arrayElemAt takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $arrayElemAt takes exactly 2 arguments. 3 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayElemAt: ['a', 'b']"), json("")))
-            .withMessage("$arrayElemAt's first argument must be an array, but is java.lang.String");
+            .withMessage("[Error 28689] $arrayElemAt's first argument must be an array, but is java.lang.String");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayElemAt: [['a', 'b'], 'b']"), json("")))
-            .withMessage("$arrayElemAt's second argument must be a numeric value, but is java.lang.String");
+            .withMessage("[Error 28690] $arrayElemAt's second argument must be a numeric value, but is java.lang.String");
     }
 
     @Test
@@ -168,7 +168,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$ceil: 'abc'"), json("")))
-            .withMessage("$ceil only supports numeric types, not class java.lang.String");
+            .withMessage("[Error 28765] $ceil only supports numeric types, not class java.lang.String");
     }
 
     @Test
@@ -184,11 +184,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cmp: 'abc'"), json("")))
-            .withMessage("Expression $cmp takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $cmp takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cmp: ['a', 'b', 'c']"), json("")))
-            .withMessage("Expression $cmp takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $cmp takes exactly 2 arguments. 3 were passed in.");
     }
 
     @Test
@@ -199,11 +199,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$concat: 1"), json("")))
-            .withMessage("$concat only supports strings, not java.lang.Integer");
+            .withMessage("[Error 16702] $concat only supports strings, not java.lang.Integer");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$concat: [1]"), json("")))
-            .withMessage("$concat only supports strings, not java.lang.Integer");
+            .withMessage("[Error 16702] $concat only supports strings, not java.lang.Integer");
     }
 
     @Test
@@ -221,11 +221,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$concatArrays: 1"), json("")))
-            .withMessage("$concatArrays only supports arrays, not java.lang.Integer");
+            .withMessage("[Error 28664] $concatArrays only supports arrays, not java.lang.Integer");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$concatArrays: [1]"), json("")))
-            .withMessage("$concatArrays only supports arrays, not java.lang.Integer");
+            .withMessage("[Error 28664] $concatArrays only supports arrays, not java.lang.Integer");
     }
 
     @Test
@@ -244,27 +244,27 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cond: null"), json("")))
-            .withMessage("Expression $cond takes exactly 3 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $cond takes exactly 3 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cond: {}"), json("")))
-            .withMessage("Missing 'if' parameter to $cond");
+            .withMessage("[Error 17080] Missing 'if' parameter to $cond");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cond: {then: 1, else: 1}"), json("")))
-            .withMessage("Missing 'if' parameter to $cond");
+            .withMessage("[Error 17080] Missing 'if' parameter to $cond");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cond: {if: 1, else: 1}"), json("")))
-            .withMessage("Missing 'then' parameter to $cond");
+            .withMessage("[Error 17080] Missing 'then' parameter to $cond");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cond: {if: 1, then: 1}"), json("")))
-            .withMessage("Missing 'else' parameter to $cond");
+            .withMessage("[Error 17080] Missing 'else' parameter to $cond");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$cond: {if: 1, then: 1, else: 1, foo: 1}"), json("")))
-            .withMessage("Unrecognized parameter to $cond: foo");
+            .withMessage("[Error 17083] Unrecognized parameter to $cond: foo");
     }
 
     @Test
@@ -278,11 +278,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$eq: 'abc'"), json("")))
-            .withMessage("Expression $eq takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $eq takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$eq: ['a', 'b', 'c']"), json("")))
-            .withMessage("Expression $eq takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $eq takes exactly 2 arguments. 3 were passed in.");
     }
 
     @Test
@@ -292,7 +292,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$minute: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -302,7 +302,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$month: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -316,11 +316,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$ne: 'abc'"), json("")))
-            .withMessage("Expression $ne takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $ne takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$ne: ['a', 'b', 'c']"), json("")))
-            .withMessage("Expression $ne takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $ne takes exactly 2 arguments. 3 were passed in.");
     }
 
     @Test
@@ -335,11 +335,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$gt: 'abc'"), json("")))
-            .withMessage("Expression $gt takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $gt takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$gt: ['a', 'b', 'c']"), json("")))
-            .withMessage("Expression $gt takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $gt takes exactly 2 arguments. 3 were passed in.");
     }
 
     @Test
@@ -352,11 +352,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$gte: 'abc'"), json("")))
-            .withMessage("Expression $gte takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $gte takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$gte: ['a', 'b', 'c']"), json("")))
-            .withMessage("Expression $gte takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $gte takes exactly 2 arguments. 3 were passed in.");
     }
 
     @Test
@@ -369,27 +369,27 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$hour: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$hour: {}"), json("")))
-            .withMessage("missing 'date' argument to $hour, provided: {}");
+            .withMessage("[Error 40539] missing 'date' argument to $hour, provided: {}");
     }
 
     @Test
     public void testEvaluateLt() throws Exception {
         assertThat(Expression.evaluate(json("$lt: [10, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$lt: [20, 20]"), json(""))).isEqualTo(false);
-        assertThat(Expression.evaluate(json("$lt: [ '$qty', 250 ]"), json("qty: 100"))).isEqualTo(true);
-        assertThat(Expression.evaluate(json("$lt: [ '$qty', 250 ]"), json("qty: 500"))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$lt: ['$qty', 250]"), json("qty: 100"))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$lt: ['$qty', 250]"), json("qty: 500"))).isEqualTo(false);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$lt: 'abc'"), json("")))
-            .withMessage("Expression $lt takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $lt takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$lt: ['a', 'b', 'c']"), json("")))
-            .withMessage("Expression $lt takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $lt takes exactly 2 arguments. 3 were passed in.");
     }
 
     @Test
@@ -402,11 +402,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$lte: 'abc'"), json("")))
-            .withMessage("Expression $lte takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $lte takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$lte: ['a', 'b', 'c']"), json("")))
-            .withMessage("Expression $lte takes exactly 2 arguments. 3 were passed in.");
+            .withMessage("[Error 16020] Expression $lte takes exactly 2 arguments. 3 were passed in.");
     }
 
     @Test
@@ -416,7 +416,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$second: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -436,11 +436,11 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$size: null"), json("")))
-            .withMessage("The argument to $size must be an array, but was of type: null");
+            .withMessage("[Error 17124] The argument to $size must be an array, but was of type: null");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$size: 'abc'"), json("")))
-            .withMessage("The argument to $size must be an array, but was of type: java.lang.String");
+            .withMessage("[Error 17124] The argument to $size must be an array, but was of type: java.lang.String");
     }
 
     @Test
@@ -450,19 +450,19 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: []"), json("")))
-            .withMessage("Expression $subtract takes exactly 2 arguments. 0 were passed in.");
+            .withMessage("[Error 16020] Expression $subtract takes exactly 2 arguments. 0 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: [1]"), json("")))
-            .withMessage("Expression $subtract takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $subtract takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: 123"), json("")))
-            .withMessage("Expression $subtract takes exactly 2 arguments. 1 were passed in.");
+            .withMessage("[Error 16020] Expression $subtract takes exactly 2 arguments. 1 were passed in.");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: ['a', 'b']"), json("")))
-            .withMessage("cant $subtract a java.lang.String from a java.lang.String");
+            .withMessage("[Error 16556] cant $subtract a java.lang.String from a java.lang.String");
     }
 
     @Test
@@ -474,7 +474,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$sqrt: 'abc'"), json("")))
-            .withMessage("$sqrt only supports numeric types, not class java.lang.String");
+            .withMessage("[Error 28765] $sqrt only supports numeric types, not class java.lang.String");
     }
 
     @Test
@@ -484,7 +484,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$year: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -496,7 +496,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dayOfWeek: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -508,7 +508,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dayOfMonth: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -519,7 +519,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dayOfYear: '$a'"), json("a: 'abc'")))
-            .withMessage("can't convert from java.lang.String to Date");
+            .withMessage("[Error 16006] can't convert from java.lang.String to Date");
     }
 
     @Test
@@ -532,7 +532,7 @@ public class ExpressionTest {
     public void testEvaluateIllegalExpression() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$foo: '$a'"), json("")))
-            .withMessage("Unrecognized expression '$foo'");
+            .withMessage("[Error 168] Unrecognized expression '$foo'");
     }
 
     private static Date toDate(String instant) {

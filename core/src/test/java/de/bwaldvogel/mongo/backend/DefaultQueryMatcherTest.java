@@ -21,7 +21,6 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.regex;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
@@ -178,13 +177,10 @@ public class DefaultQueryMatcherTest {
     public void testInvalidOperator() throws Exception {
         Document document = json("");
         Document query = json("field: {$someInvalidOperator: 123}");
-        try {
-            matcher.matches(document, query);
-            fail("MongoServerError expected");
-        } catch (MongoServerError e) {
-            assertThat(e.getCode()).isEqualTo(10068);
-            assertThat(e.getMessage()).isEqualTo("invalid operator: $someInvalidOperator");
-        }
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> matcher.matches(document, query))
+            .withMessage("[Error 10068] invalid operator: $someInvalidOperator");
     }
 
     @Test
@@ -291,7 +287,6 @@ public class DefaultQueryMatcherTest {
     @Test
     public void testMatchesNot() throws Exception {
 
-        // db.inventory.find( { } )
         Document query = map("price", not(gt(1.99)));
 
         /*
@@ -456,25 +451,18 @@ public class DefaultQueryMatcherTest {
             assertNonEmptyArrayException(op, map(op.getValue(), 2));
             assertNonEmptyArrayException(op, map(op.getValue(), 2));
 
-            try {
-                matcher.matches(json(""), map(op, "a"));
-                fail("MongoServerError expected");
-            } catch (MongoServerError e) {
-                assertThat(e.getCode()).isEqualTo(14817);
-                assertThat(e.getMessage()).isEqualTo(op + " elements must be objects");
-            }
+            assertThatExceptionOfType(MongoServerError.class)
+                .isThrownBy(() -> matcher.matches(json(""), map(op, "a")))
+                .withMessage("[Error 14817] " + op + " elements must be objects");
         }
     }
 
     private void assertNonEmptyArrayException(QueryFilter op, Document query) throws Exception {
         Document emptyDocument = json("");
-        try {
-            matcher.matches(emptyDocument, query);
-            fail("MongoServerError expected");
-        } catch (MongoServerError e) {
-            assertThat(e.getCode()).isEqualTo(14816);
-            assertThat(e.getMessage()).isEqualTo(op.getValue() + " expression must be a nonempty array");
-        }
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> matcher.matches(emptyDocument, query))
+            .withMessage("[Error 14816] " + op.getValue() + " expression must be a nonempty array");
     }
 
     @Test
@@ -506,7 +494,7 @@ public class DefaultQueryMatcherTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> matcher.matches(json(""), json("a: {$size: {$gt: 0}}")))
-            .withMessage("$size needs a number");
+            .withMessage("[Error 2] $size needs a number");
     }
 
     @Test

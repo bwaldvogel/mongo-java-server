@@ -227,7 +227,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             } catch (MongoServerError e) {
                 Document error = new Document();
                 error.put("index", Integer.valueOf(n));
-                error.put("errmsg", e.getMessage());
+                error.put("errmsg", e.getMessageWithoutErrorCode());
                 error.put("code", Integer.valueOf(e.getCode()));
                 error.putIfNotNull("codeName", e.getCodeName());
                 writeErrors.add(error);
@@ -805,11 +805,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Document error = new Document();
         if (ex instanceof MongoServerError) {
             MongoServerError err = (MongoServerError) ex;
-            error.put("err", err.getMessage());
+            error.put("err", err.getMessageWithoutErrorCode());
             error.put("code", Integer.valueOf(err.getCode()));
             error.putIfNotNull("codeName", err.getCodeName());
         } else {
-            error.put("err", ex.getMessage());
+            error.put("err", ex.getMessageWithoutErrorCode());
         }
         error.put("connectionId", channel.id().asShortText());
         putLastResult(channel, error);
