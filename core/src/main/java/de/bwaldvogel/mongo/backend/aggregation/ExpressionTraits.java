@@ -53,22 +53,22 @@ interface ExpressionTraits {
         return comparison.test(comparisonResult);
     }
 
-    default <T> T evaluateDateTime(List<?> expressionValue, Function<ZonedDateTime, T> dateFunction) {
+    default <T> T evaluateDateTime(List<?> expressionValue, Function<ZonedDateTime, T> dateFunction, Document document) {
         Object value = requireSingleValue(expressionValue);
         if (Missing.isNullOrMissing(value)) {
             return null;
         }
 
-        ZonedDateTime zonedDateTime = getZonedDateTime(value);
+        ZonedDateTime zonedDateTime = getZonedDateTime(value, document);
         return dateFunction.apply(zonedDateTime);
     }
 
-    default <T> T evaluateDate(List<?> expressionValue, Function<LocalDate, T> dateFunction) {
-        return evaluateDateTime(expressionValue, zonedDateTime -> dateFunction.apply(zonedDateTime.toLocalDate()));
+    default <T> T evaluateDate(List<?> expressionValue, Function<LocalDate, T> dateFunction, Document document) {
+        return evaluateDateTime(expressionValue, zonedDateTime -> dateFunction.apply(zonedDateTime.toLocalDate()), document);
     }
 
-    default <T> T evaluateTime(List<?> expressionValue, Function<LocalTime, T> timeFunction) {
-        return evaluateDateTime(expressionValue, zonedDateTime -> timeFunction.apply(zonedDateTime.toLocalTime()));
+    default <T> T evaluateTime(List<?> expressionValue, Function<LocalTime, T> timeFunction, Document document) {
+        return evaluateDateTime(expressionValue, zonedDateTime -> timeFunction.apply(zonedDateTime.toLocalTime()), document);
     }
 
     default List<?> requireCollectionInSize(List<?> value, int expectedCollectionSize) {
@@ -100,16 +100,16 @@ interface ExpressionTraits {
         return new TwoNumericParameters((Number) one, (Number) other);
     }
 
-    default ZonedDateTime getZonedDateTime(Object value) {
+    default ZonedDateTime getZonedDateTime(Object value, Document document) {
         ZoneId timezone = ZoneId.systemDefault();
         if (value instanceof Document) {
-            Document document = (Document) value;
-            if (!document.containsKey("date")) {
+            Document valueAsDocument = (Document) value;
+            if (!valueAsDocument.containsKey("date")) {
                 throw new MongoServerError(40539, "missing 'date' argument to " + name() + ", provided: " + value);
             }
-            value = document.get("date");
+            value = Expression.evaluate(valueAsDocument.get("date"), document);
 
-            Object timezoneExpression = document.get("timezone");
+            Object timezoneExpression = Expression.evaluate(valueAsDocument.get("timezone"), document);
             if (timezoneExpression != null) {
                 timezone = ZoneId.of(timezoneExpression.toString());
             }
@@ -189,5 +189,12 @@ interface ExpressionTraits {
                 "The argument to " + name() + " must be an array, but was of type: " + describeType(value));
         }
         return (Collection<?>) value;
+    }
+
+    default Document requireDocument(Object expressionValue, int errorCode) {
+        if (!(expressionValue instanceof Document)) {
+            throw new MongoServerError(errorCode, name() + " only supports an object as its argument");
+        }
+        return (Document) expressionValue;
     }
 }

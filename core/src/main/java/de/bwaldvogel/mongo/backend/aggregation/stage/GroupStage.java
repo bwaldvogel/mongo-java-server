@@ -42,7 +42,7 @@ public class GroupStage implements AggregationStage {
     public Stream<Document> apply(Stream<Document> stream) {
         Map<Object, Collection<Accumulator>> accumulatorsPerKey = new LinkedHashMap<>();
         stream.forEach(document -> {
-            Object key = Expression.evaluate(idExpression, document);
+            Object key = Expression.evaluateDocument(idExpression, document);
 
             Collection<Accumulator> accumulators = accumulatorsPerKey.computeIfAbsent(key, k -> accumulatorSuppliers.values()
                 .stream()
@@ -51,7 +51,7 @@ public class GroupStage implements AggregationStage {
 
             for (Accumulator accumulator : accumulators) {
                 Object expression = accumulator.getExpression();
-                accumulator.aggregate(Expression.evaluate(expression, document));
+                accumulator.aggregate(Expression.evaluateDocument(expression, document));
             }
         });
 

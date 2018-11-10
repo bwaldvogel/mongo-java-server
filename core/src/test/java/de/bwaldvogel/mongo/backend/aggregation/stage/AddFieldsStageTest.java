@@ -16,8 +16,12 @@ public class AddFieldsStageTest {
         assertThat(addFields(json("a: 'value'"), json("a: true"))).isEqualTo(json("a: true"));
         assertThat(addFields(json("_id: 1"), json("a: 10"))).isEqualTo(json("_id: 1, a: 10"));
         assertThat(addFields(json("_id: 1, a: 'value'"), json("b: '$a'"))).isEqualTo(json("_id: 1, a: 'value', b: 'value'"));
-        assertThat(addFields(json("_id: 1"), json("b: '$a'"))).isEqualTo(json("_id: 1, b: null"));
+        assertThat(addFields(json("a: 123"), json("a: '$missing'"))).isEqualTo(json(""));
+        assertThat(addFields(json("_id: 1"), json("b: '$a'"))).isEqualTo(json("_id: 1"));
         assertThat(addFields(json("_id: 1, a: 'value'"), json("_id: null"))).isEqualTo(json("_id: null, a: 'value'"));
+        assertThat(addFields(json("_id: null, value: 25"), json("_id: 1, a: {b: '$value'}"))).isEqualTo(json("_id: 1, value: 25, a: {b: 25}"));
+        assertThat(addFields(json("a: {b: 1}"), json("a: {c: '$a.b'}"))).isEqualTo(json("a: {b: 1, c: 1}"));
+        assertThat(addFields(json("_id: 1"), json("_id: {b: 1, m: '$missing'}"))).isEqualTo(json("_id: {b: 1}"));
     }
 
     private static Document addFields(Document document, Document addFields) {

@@ -25,34 +25,32 @@ public class AddFieldsStage implements AggregationStage {
     }
 
     Document projectDocument(Document document) {
-        Document result = new Document();
-
-        for (Entry<String, Object> entry : document.entrySet()) {
-            String field = entry.getKey();
-            if (addFields.containsKey(field)) {
-                Object projectedValue = evaluate(addFields.get(field), document);
-                result.put(field, projectedValue);
-            } else {
-                result.put(field, entry.getValue());
-            }
-        }
-
-        for (Entry<String, Object> entry : addFields.entrySet()) {
-            if (!result.containsKey(entry.getKey())) {
-                Object projectedValue = evaluate(entry.getValue(), document);
-                result.put(entry.getKey(), projectedValue);
-            }
-        }
-
-        return result;
+        Document clone = document.clone();
+        putRecursively(clone, addFields);
+        return clone;
     }
 
-    private static Object evaluate(Object value, Document document) {
-        Object evaluatedValue = Expression.evaluate(value, document);
-        if (evaluatedValue instanceof Missing) {
-            return null;
+    private void putRecursively(Document target, Document source) {
+        for (Entry<String, Object> entry : source.entrySet()) {
+            String key = entry.getKey();
+            Object value = Expression.evaluateDocument(entry.getValue(), target);
+            if (value instanceof Document) {
+                Document subDocument = (Document) target.compute(key, (k, oldValue) -> {
+                    if (!(oldValue instanceof Document)) {
+                        return new Document();
+                    } else {
+                        return oldValue;
+                    }
+                });
+                putRecursively(subDocument, (Document) value);
+            } else {
+                if (value instanceof Missing) {
+                    target.remove(key);
+                } else {
+                    target.put(key, value);
+                }
+            }
         }
-        return evaluatedValue;
     }
 
 }

@@ -60,9 +60,9 @@ public class ProjectStage implements AggregationStage {
             } else if (projectionValue == null) {
                 result.put(field, null);
             } else {
-                Object projectedValue = Expression.evaluate(projectionValue, document);
-                if (!(projectedValue instanceof Missing)) {
-                    result.put(field, projectedValue);
+                Object value = Expression.evaluateDocument(projectionValue, document);
+                if (!(value instanceof Missing)) {
+                    result.put(field, value);
                 }
             }
         }

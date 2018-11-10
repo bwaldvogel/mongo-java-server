@@ -1,6 +1,8 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import static de.bwaldvogel.mongo.backend.Missing.isNullOrMissing;
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
+import static de.bwaldvogel.mongo.bson.Json.toJsonValue;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -14,6 +16,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -37,8 +40,8 @@ public enum Expression implements ExpressionTraits {
             boolean returnDate = false;
             Number sum = 0;
             for (Object value : expressionValue) {
-                Object number = evaluate(value, document);
-                if (Missing.isNullOrMissing(number)) {
+                Object number = value;
+                if (isNullOrMissing(number)) {
                     return null;
                 }
                 if (!(number instanceof Number) && !(number instanceof Date)) {
@@ -62,8 +65,7 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (!Utils.isTrue(evaluatedValue)) {
+                if (!Utils.isTrue(value)) {
                     return false;
                 }
             }
@@ -158,15 +160,14 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             StringBuilder result = new StringBuilder();
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (Missing.isNullOrMissing(evaluatedValue)) {
+                if (isNullOrMissing(value)) {
                     return null;
                 }
-                if (!(evaluatedValue instanceof String)) {
+                if (!(value instanceof String)) {
                     throw new MongoServerError(16702,
-                        name() + " only supports strings, not " + describeType(evaluatedValue));
+                        name() + " only supports strings, not " + describeType(value));
                 }
-                result.append(evaluatedValue);
+                result.append(value);
             }
             return result.toString();
         }
@@ -177,15 +178,14 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             List<Object> result = new ArrayList<>();
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (Missing.isNullOrMissing(evaluatedValue)) {
+                if (isNullOrMissing(value)) {
                     return null;
                 }
-                if (!(evaluatedValue instanceof Collection<?>)) {
+                if (!(value instanceof Collection<?>)) {
                     throw new MongoServerError(28664,
-                        name() + " only supports arrays, not " + describeType(evaluatedValue));
+                        name() + " only supports arrays, not " + describeType(value));
                 }
-                result.addAll((Collection<?>) evaluatedValue);
+                result.addAll((Collection<?>) value);
             }
             return result;
         }
@@ -234,21 +234,21 @@ public enum Expression implements ExpressionTraits {
     $dayOfMonth {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, LocalDate::getDayOfMonth);
+            return evaluateDate(expressionValue, LocalDate::getDayOfMonth, document);
         }
     },
 
     $dayOfWeek {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, date -> date.getDayOfWeek().getValue());
+            return evaluateDate(expressionValue, date -> date.getDayOfWeek().getValue(), document);
         }
     },
 
     $dayOfYear {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, LocalDate::getDayOfYear);
+            return evaluateDate(expressionValue, LocalDate::getDayOfYear, document);
         }
     },
 
@@ -287,11 +287,7 @@ public enum Expression implements ExpressionTraits {
     $filter {
         @Override
         Object apply(Object expressionValue, Document document) {
-            if (!(expressionValue instanceof Document)) {
-                throw new MongoServerError(28646, name() + " only supports an object as its argument");
-            }
-            Document filterExpression = (Document) expressionValue;
-
+            Document filterExpression = requireDocument(expressionValue, 28646);
             List<String> requiredKeys = Arrays.asList("input", "cond");
             for (String requiredKey : requiredKeys) {
                 if (!filterExpression.containsKey(requiredKey)) {
@@ -307,15 +303,15 @@ public enum Expression implements ExpressionTraits {
 
             Object input = evaluate(filterExpression.get("input"), document);
             Object as = evaluate(filterExpression.getOrDefault("as", "this"), document);
-            if (!(as instanceof String)) {
+            if (!(as instanceof String) || Objects.equals(as, "")) {
                 throw new MongoServerError(16866, "empty variable names are not allowed");
             }
-            if (input == null) {
+            if (Missing.isNullOrMissing(input)) {
                 return null;
             }
 
             if (!(input instanceof Collection)) {
-                throw new MongoServerError(28651, "input to " + name() + " must be an array not string");
+                throw new MongoServerError(28651, "input to " + name() + " must be an array not " + describeType(input));
             }
 
             Collection<?> inputCollection = (Collection<?>) input;
@@ -366,7 +362,7 @@ public enum Expression implements ExpressionTraits {
     $hour {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateTime(expressionValue, LocalTime::getHour);
+            return evaluateTime(expressionValue, LocalTime::getHour, document);
         }
     },
 
@@ -375,7 +371,7 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
             Object expression = parameters.getFirst();
-            if (!Missing.isNullOrMissing(expression)) {
+            if (!isNullOrMissing(expression)) {
                 return expression;
             } else {
                 return parameters.getSecond();
@@ -407,7 +403,7 @@ public enum Expression implements ExpressionTraits {
             }
 
             Object first = expressionValue.get(0);
-            if (Missing.isNullOrMissing(first)) {
+            if (isNullOrMissing(first)) {
                 return null;
             }
             if (!(first instanceof List<?>)) {
@@ -528,10 +524,81 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+
+    $map {
+        @Override
+        Object apply(Object expressionValue, Document document) {
+            Document filterExpression = requireDocument(expressionValue, 16878);
+            List<String> requiredKeys = Arrays.asList("input", "in");
+            for (String requiredKey : requiredKeys) {
+                if (!filterExpression.containsKey(requiredKey)) {
+                    throw new MongoServerError(16882, "Missing '" + requiredKey + "' parameter to " + name());
+                }
+            }
+
+            for (String key : filterExpression.keySet()) {
+                if (!Arrays.asList("input", "in", "as").contains(key)) {
+                    throw new MongoServerError(16879, "Unrecognized parameter to " + name() + ": " + key);
+                }
+            }
+
+            Object input = evaluate(filterExpression.get("input"), document);
+            Object as = evaluate(filterExpression.getOrDefault("as", "this"), document);
+            if (!(as instanceof String) || Objects.equals(as, "")) {
+                throw new MongoServerError(16866, "empty variable names are not allowed");
+            }
+            if (Missing.isNullOrMissing(input)) {
+                return null;
+            }
+
+            if (!(input instanceof Collection)) {
+                throw new MongoServerError(16883, "input to " + name() + " must be an array not " + describeType(input));
+            }
+
+            Collection<?> inputCollection = (Collection<?>) input;
+
+            String key = "$" + as;
+            Document documentForCondition = document.clone();
+            if (documentForCondition.containsKey(key)) {
+                throw new IllegalArgumentException("Document contains " + key + ". This must not happen");
+            }
+            List<Object> result = new ArrayList<>();
+            for (Object inputValue : inputCollection) {
+                Object evaluatedInputValue = evaluate(inputValue, document);
+                documentForCondition.put(key, evaluatedInputValue);
+                result.add(evaluate(filterExpression.get("in"), documentForCondition));
+            }
+            return result;
+        }
+
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            throw new UnsupportedOperationException("must not be invoked");
+        }
+    },
+
+    $mergeObjects {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            Document result = new Document();
+            for (Object value : expressionValue) {
+                if (isNullOrMissing(value)) {
+                    continue;
+                }
+                if (!(value instanceof Document)) {
+                    throw new MongoServerError(40400,
+                        "$mergeObjects requires object inputs, but input " + toJsonValue(value) + " is of type " + describeType(value));
+                }
+                result.putAll((Document) value);
+            }
+            return result;
+        }
+    },
+
     $minute {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateTime(expressionValue, LocalTime::getMinute);
+            return evaluateTime(expressionValue, LocalTime::getMinute, document);
         }
     },
 
@@ -551,7 +618,7 @@ public enum Expression implements ExpressionTraits {
     $month {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, date -> date.getMonth().getValue());
+            return evaluateDate(expressionValue, date -> date.getMonth().getValue(), document);
         }
     },
 
@@ -582,7 +649,7 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             Object value = requireSingleValue(expressionValue);
-            return !Utils.isTrue(evaluate(value, document));
+            return !Utils.isTrue(value);
         }
     },
 
@@ -590,8 +657,7 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (Utils.isTrue(evaluatedValue)) {
+                if (Utils.isTrue(value)) {
                     return true;
                 }
             }
@@ -681,7 +747,7 @@ public enum Expression implements ExpressionTraits {
     $second {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateTime(expressionValue, LocalTime::getSecond);
+            return evaluateTime(expressionValue, LocalTime::getSecond, document);
         }
     },
 
@@ -723,11 +789,10 @@ public enum Expression implements ExpressionTraits {
 
             final Set<Set<?>> result = new HashSet<>();
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (!(evaluatedValue instanceof Collection)) {
-                    throw new MongoServerError(17044, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(evaluatedValue));
+                if (!(value instanceof Collection)) {
+                    throw new MongoServerError(17044, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(value));
                 }
-                result.add(new HashSet<>((Collection<?>) evaluatedValue));
+                result.add(new HashSet<>((Collection<?>) value));
             }
             return result.size() == 1;
         }
@@ -738,17 +803,16 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             Set<?> result = null;
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (Missing.isNullOrMissing(evaluatedValue)) {
+                if (isNullOrMissing(value)) {
                     return null;
                 }
-                if (!(evaluatedValue instanceof Collection)) {
-                    throw new MongoServerError(17047, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(evaluatedValue));
+                if (!(value instanceof Collection)) {
+                    throw new MongoServerError(17047, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(value));
                 }
                 if (result == null) {
-                    result = new LinkedHashSet<>((Collection<?>) evaluatedValue);
+                    result = new LinkedHashSet<>((Collection<?>) value);
                 } else {
-                    result.retainAll((Collection<?>) evaluatedValue);
+                    result.retainAll((Collection<?>) value);
                 }
             }
             if (result == null) {
@@ -784,15 +848,14 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             Set<Object> result = new LinkedHashSet<>();
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (Missing.isNullOrMissing(evaluatedValue)) {
+                if (isNullOrMissing(value)) {
                     return null;
                 }
-                if (!(evaluatedValue instanceof Collection<?>)) {
+                if (!(value instanceof Collection<?>)) {
                     throw new MongoServerError(17043,
-                        "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(evaluatedValue));
+                        "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(value));
                 }
-                result.addAll((Collection<?>) evaluatedValue);
+                result.addAll((Collection<?>) value);
             }
             return result;
         }
@@ -815,7 +878,7 @@ public enum Expression implements ExpressionTraits {
             }
 
             Object first = expressionValue.get(0);
-            if (Missing.isNullOrMissing(first)) {
+            if (isNullOrMissing(first)) {
                 return null;
             }
             if (!(first instanceof List)) {
@@ -869,7 +932,7 @@ public enum Expression implements ExpressionTraits {
             Object string = parameters.getFirst();
             Object delimiter = parameters.getSecond();
 
-            if (Missing.isNullOrMissing(string)) {
+            if (isNullOrMissing(string)) {
                 return null;
             }
 
@@ -893,7 +956,7 @@ public enum Expression implements ExpressionTraits {
             Object one = parameters.getFirst();
             Object other = parameters.getSecond();
 
-            if (Missing.isNullOrMissing(one) || Missing.isNullOrMissing(other)) {
+            if (isNullOrMissing(one) || isNullOrMissing(other)) {
                 return null;
             }
 
@@ -910,16 +973,15 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             if (expressionValue.size() == 1) {
-                Object singleValue = evaluate(expressionValue.get(0), document);
+                Object singleValue = expressionValue.get(0);
                 if (singleValue instanceof Collection<?>) {
                     return apply(singleValue, document);
                 }
             }
             Number sum = 0;
             for (Object value : expressionValue) {
-                Object evaluatedValue = evaluate(value, document);
-                if (evaluatedValue instanceof Number) {
-                    sum = Utils.addNumbers(sum, (Number) evaluatedValue);
+                if (value instanceof Number) {
+                    sum = Utils.addNumbers(sum, (Number) value);
                 }
             }
             return sum;
@@ -943,7 +1005,7 @@ public enum Expression implements ExpressionTraits {
     $year {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, LocalDate::getYear);
+            return evaluateDate(expressionValue, LocalDate::getYear, document);
         }
     },
 
@@ -963,7 +1025,23 @@ public enum Expression implements ExpressionTraits {
 
     abstract Object apply(List<?> expressionValue, Document document);
 
-    public static Object evaluate(Object expression, Document document) {
+    public static Object evaluateDocument(Object documentWithExpression, Document document) {
+        Object evaluatedValue = evaluate(documentWithExpression, document);
+        if (evaluatedValue instanceof Document) {
+            Document projectedDocument = (Document) evaluatedValue;
+            Document result = new Document();
+            for (Entry<String, Object> entry : projectedDocument.entrySet()) {
+                String field = entry.getKey();
+                Object expression = entry.getValue();
+                result.put(field, evaluate(expression, document));
+            }
+            return result;
+        } else {
+            return evaluatedValue;
+        }
+    }
+
+    static Object evaluate(Object expression, Document document) {
         if (expression instanceof String && ((String) expression).startsWith("$")) {
             String value = ((String) expression).substring(1);
             if (value.startsWith("$")) {
@@ -1006,7 +1084,7 @@ public enum Expression implements ExpressionTraits {
                 }
                 return exp.apply(expressionValue, document);
             } else {
-                result.put(expressionKey, evaluate(expressionValue, document));
+                result.put(expressionKey, expressionValue);
             }
         }
         return result;

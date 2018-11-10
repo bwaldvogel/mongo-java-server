@@ -358,8 +358,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
                 json("_id: 1, x: 10, value: 10"),
-                json("_id: 2, value: null"),
-                json("_id: 3, value: null")
+                json("_id: 2"),
+                json("_id: 3")
             );
     }
 

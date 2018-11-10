@@ -177,7 +177,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) {
         if (filter == QueryFilter.EXPR) {
-            Object result = Expression.evaluate(queryValue, (Document) document);
+            Object result = Expression.evaluateDocument(queryValue, (Document) document);
             return Utils.isTrue(result);
         }
 

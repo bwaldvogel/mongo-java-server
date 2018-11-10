@@ -39,7 +39,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$abs: ['$a']"), json("a: -2.5"))).isEqualTo(2.5);
         assertThat(Expression.evaluate(new Document("$abs", 123L), json(""))).isEqualTo(123.0);
         assertThat(Expression.evaluate(json("$abs: null"), json(""))).isNull();
-        assertThat(Expression.evaluate(json("abs: {$abs: '$a'}"), json("a: -25"))).isEqualTo(json("abs: 25.0"));
+        assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -25"))).isEqualTo(25.0);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$abs: '$a', $ceil: '$b'"), json("")))
@@ -171,7 +171,6 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MAX_VALUE), json(""))).isEqualTo(Long.MAX_VALUE);
         assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MIN_VALUE), json(""))).isEqualTo(Long.MIN_VALUE);
         assertThat(Expression.evaluate(json("$ceil: null"), json(""))).isNull();
-        assertThat(Expression.evaluate(json("ceil: {$ceil: '$a'}"), json("a: -25.5"))).isEqualTo(json("ceil: -25"));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$ceil: 'abc'"), json("")))
@@ -306,6 +305,76 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$eq: ['a', 'b', 'c']"), json("")))
             .withMessage("[Error 16020] Expression $eq takes exactly 2 arguments. 3 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateMap() throws Exception {
+        assertThat((Collection<Object>) Expression.evaluate(
+            json("$map: {input: '$quizzes', as: 'grade', in: {$add: ['$$grade', 2]}}"),
+            json("quizzes: [5, 6, 7]")))
+            .containsExactly(7, 8, 9);
+
+        assertThat((Collection<Object>) Expression.evaluate(
+            json("$map: {input: '$quizzes', as: 'grade', in: {$add: ['$$grade', 2]}}"),
+            json("quizzes: []")))
+            .isEmpty();
+
+        assertThat(Expression.evaluate(json("$map: {input: '$q', in: '$this'}"), json(""))).isNull();
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: 'a'"), json("")))
+            .withMessage("[Error 16878] $map only supports an object as its argument");
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: {input: [1, 2, 3], in: true}"), json("$this: 1")))
+            .withMessage("Document contains $this. This must not happen");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: {input: 'a', in: null}"), json("")))
+            .withMessage("[Error 16883] input to $map must be an array not string");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: {}"), json("")))
+            .withMessage("[Error 16882] Missing 'input' parameter to $map");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: {input: null}"), json("")))
+            .withMessage("[Error 16882] Missing 'in' parameter to $map");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: {input: 1, in: 1, foo: 1}"), json("")))
+            .withMessage("[Error 16879] Unrecognized parameter to $map: foo");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: {input: [], as: [], in: 1}"), json("")))
+            .withMessage("[Error 16866] empty variable names are not allowed");
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$map: {input: [], as: '', in: 1}"), json("")))
+            .withMessage("[Error 16866] empty variable names are not allowed");
+    }
+
+    @Test
+    public void testEvaluateMergeObjects() throws Exception {
+        assertThat(Expression.evaluate(json("$mergeObjects: [{a: 1}, null]"), json(""))).isEqualTo(json("a: 1"));
+        assertThat(Expression.evaluate(json("$mergeObjects: [null, null]"), json(""))).isEqualTo(json(""));
+        assertThat(Expression.evaluate(json("$mergeObjects: ['$a', '$b']"), json(""))).isEqualTo(json(""));
+        assertThat(Expression.evaluate(json("$mergeObjects: ['$a', '$b']"), json("a: {x: 1}, b: {y: 2}"))).isEqualTo(json("x: 1, y: 2"));
+        assertThat(Expression.evaluate(json("$mergeObjects: ['$a']"), json("a: {x: 1, y: 2}"))).isEqualTo(json("x: 1, y: 2"));
+        assertThat(Expression.evaluate(json("$mergeObjects: ['$a', '$a.x']"), json("a: {x: {y: 2}}"))).isEqualTo(json("x: {y: 2}, y: 2"));
+
+        assertThat(Expression.evaluate(json("$mergeObjects: [{a: 1}, {a: 2, b: 2}, {a: 3, c: 3}]"), json("")))
+            .isEqualTo(json("a: 3, b: 2, c: 3"));
+
+        assertThat(Expression.evaluate(json("$mergeObjects: [{a: 1}, {a: 2, b: 2}, {a: 3, b: null, c: 3}]"), json("")))
+            .isEqualTo(json("a: 3, b: null, c: 3"));
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$mergeObjects: [[], []]"), json("")))
+            .withMessage("[Error 40400] $mergeObjects requires object inputs, but input [] is of type array");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$mergeObjects: 'x'"), json("")))
+            .withMessage("[Error 40400] $mergeObjects requires object inputs, but input \"x\" is of type string");
     }
 
     @Test
@@ -552,6 +621,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$hour: '$a'"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(expectedHour);
         assertThat(Expression.evaluate(json("$hour: {date: '$a'}"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(expectedHour);
         assertThat(Expression.evaluate(json("$hour: {date: '$a', timezone: 'UTC'}"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(14);
+        assertThat(Expression.evaluate(json("$hour: {date: '$a', timezone: '$TZ'}"), new Document("a", toDate("2018-07-03T14:10:00Z")).append("TZ", "Europe/Berlin"))).isEqualTo(16);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$hour: '$a'"), json("a: 'abc'")))
@@ -908,7 +978,6 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(new Document("$trunc", (double) Long.MAX_VALUE), json(""))).isEqualTo(Long.MAX_VALUE);
         assertThat(Expression.evaluate(new Document("$trunc", (double) Long.MIN_VALUE), json(""))).isEqualTo(Long.MIN_VALUE);
         assertThat(Expression.evaluate(json("$trunc: null"), json(""))).isNull();
-        assertThat(Expression.evaluate(json("trunc: {$trunc: '$a'}"), json("a: -25.5"))).isEqualTo(json("trunc: -25"));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$trunc: 'abc'"), json("")))
@@ -925,7 +994,6 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$sqrt: 16"), json(""))).isEqualTo(4.0);
         assertThat(Expression.evaluate(json("$sqrt: [25]"), json(""))).isEqualTo(5.0);
         assertThat(Expression.evaluate(json("$sqrt: null"), json(""))).isNull();
-        assertThat(Expression.evaluate(json("sqrt: {$sqrt: '$a'}"), json("a: 25"))).isEqualTo(json("sqrt: 5.0"));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$sqrt: [1, 2]"), json("")))
@@ -1047,6 +1115,9 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$filter: {input: [1, 2, 3], cond: 1}"), json("")))
             .isEqualTo(Arrays.asList(1, 2, 3));
 
+        assertThat(Expression.evaluate(json("$filter: {input: '$doesNotExist', cond: 1}"), json("")))
+            .isNull();
+
         assertThat(Expression.evaluate(json("$filter: {input: '$items', as: 'item', cond: {$gte: ['$$item.price', 10]}}"),
             json("items: [{item_id: 1, price: 110}, {item_id: 2, price: 5}, {item_id: 3, price: 50}]")))
             .isEqualTo(Arrays.asList(
@@ -1079,7 +1150,11 @@ public class ExpressionTest {
             .withMessage("[Error 28647] Unrecognized parameter to $filter: foo");
 
         assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> Expression.evaluate(json("$filter: {input: 1, as: [], cond: 1}"), json("")))
+            .isThrownBy(() -> Expression.evaluate(json("$filter: {input: [], as: [], cond: 1}"), json("")))
+            .withMessage("[Error 16866] empty variable names are not allowed");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$filter: {input: [], as: '', cond: 1}"), json("")))
             .withMessage("[Error 16866] empty variable names are not allowed");
     }
 
@@ -1094,7 +1169,6 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(new Document("$floor", (double) Long.MAX_VALUE), json(""))).isEqualTo(Long.MAX_VALUE);
         assertThat(Expression.evaluate(new Document("$floor", (double) Long.MIN_VALUE), json(""))).isEqualTo(Long.MIN_VALUE);
         assertThat(Expression.evaluate(json("$floor: null"), json(""))).isNull();
-        assertThat(Expression.evaluate(json("floor: {$floor: '$a'}"), json("a: -25.5"))).isEqualTo(json("floor: -26"));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$floor: 'abc'"), json("")))
