@@ -805,7 +805,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: null")))
-            .withMessage("duplicate key error index: _id_  dup key: null");
+            .withMessage("duplicate key error index: _id_ dup key: { : null }");
 
         assertThat(collection.countDocuments()).isEqualTo(1);
         assertThat(collection.find(json("_id: null")).first()).isEqualTo(json("{_id: null, name: 'test'}"));
@@ -875,7 +875,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: 1")))
-            .withMessageContaining("duplicate key error index: _id_  dup key: 1");
+            .withMessageContaining("duplicate key error index: _id_ dup key: { : 1.0 }");
 
         assertThat(collection.countDocuments()).isEqualTo(1);
     }
@@ -2113,7 +2113,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("uniqueKeyField: 'abc2', afield: 'avalue'")))
-            .withMessage("duplicate key error index: uniqueKeyField_1  dup key: abc2");
+            .withMessage("duplicate key error index: uniqueKeyField_1 dup key: { : \"abc2\" }");
+
+        collection.insertOne(json("uniqueKeyField: 1"));
+        collection.insertOne(json("uniqueKeyField: 1.1"));
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("uniqueKeyField: 1.0")))
+            .withMessage("duplicate key error index: uniqueKeyField_1 dup key: { : 1.0 }");
     }
 
     @Test
@@ -2133,7 +2140,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("action: { actionId: 1 }")))
-            .withMessageContaining("duplicate key error index: action.actionId_1  dup key: 1");
+            .withMessageContaining("duplicate key error index: action.actionId_1 dup key: { : 1.0 }");
     }
 
     @Test
@@ -2172,10 +2179,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCompoundUniqueIndicesNotSupportedAndThrowsException() {
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.createIndex(new Document("a", 1).append("b", 1), new IndexOptions().unique(true)))
-            .withMessageContaining("Command failed with error -1: 'Compound unique indices are not yet implemented'");
+    public void testCompoundUniqueIndices() {
+        collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("a: 'foo'"));
+        collection.insertOne(json("b: 'foo'"));
+        collection.insertOne(json("a: 'foo', b: 'foo'"));
+        collection.insertOne(json("a: 'foo', b: 'bar'"));
+        collection.insertOne(json("a: 'bar', b: 'foo'"));
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("a: 'foo', b: 'foo'")))
+            .withMessageContaining("duplicate key error index: a_1_b_1 dup key: { : \"foo\", : \"foo\" }");
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("b: 'foo'")))
+            .withMessageContaining("duplicate key error index: a_1_b_1 dup key: { : null, : \"foo\" }");
     }
 
     @Test
@@ -2358,11 +2378,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.createIndex(json("bla: 1"));
 
+        collection.createIndex(new Document("a", 1), new IndexOptions().unique(true));
+        collection.createIndex(new Document("a", 1).append("b", -1.0), new IndexOptions().unique(true));
+
         List<Document> indexInfo = toArray(collection.listIndexes());
-        assertThat(indexInfo).containsOnly( //
-            json("name:'_id_', ns:'testdb.testcoll', key:{_id:1}"), //
-            json("name:'_id_', ns:'testdb.other', key:{_id:1}"), //
-            json("name:'bla_1', ns:'testdb.testcoll', key:{bla:1}"));
+        assertThat(indexInfo).containsOnly(
+            json("name:'_id_', ns:'testdb.testcoll', key:{_id:1}"),
+            json("name:'_id_', ns:'testdb.other', key:{_id:1}"),
+            json("name:'bla_1', ns:'testdb.testcoll', key:{bla:1}"),
+            json("name: 'a_1', ns:'testdb.testcoll', key:{a:1}, unique:true"),
+            json("name: 'a_1_b_-1', ns:'testdb.testcoll', key:{a:1, b:-1.0}, unique:true")
+        );
     }
 
     @Test
@@ -2696,7 +2722,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: 1")))
-            .withMessageContaining("duplicate key error");
+            .withMessageContaining("duplicate key error index: _id_ dup key: { : 1.0 }");
 
         Document lastError = db.runCommand(json("getlasterror: 1"));
         assertThat(lastError.get("code")).isEqualTo(11000);
@@ -2713,7 +2739,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: 1")))
-            .withMessageContaining("duplicate key error");
+            .withMessageContaining("duplicate key error index: _id_ dup key: { : 1.0 }");
 
         Document lastError = db.runCommand(json("getpreverror: 1"));
         assertThat(lastError.get("code")).isEqualTo(11000);
@@ -2727,7 +2753,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: 1")))
-            .withMessageContaining("duplicate key error");
+            .withMessageContaining("duplicate key error index: _id_ dup key: { : 1.0 }");
 
         assertThat(db.runCommand(json("reseterror: 1")))
             .isEqualTo(json("ok: 1"));

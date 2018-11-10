@@ -5,6 +5,7 @@ import static de.bwaldvogel.mongo.backend.Utils.describeType;
 import java.util.Collection;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -44,7 +45,7 @@ public class UnwindStage implements AggregationStage {
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.flatMap(document -> {
             Object values = Utils.getSubdocumentValue(document, path);
-            if (Utils.isNullOrMissing(values)) {
+            if (Missing.isNullOrMissing(values)) {
                 return Stream.empty();
             }
             Collection<?> collection = (Collection<?>) values;

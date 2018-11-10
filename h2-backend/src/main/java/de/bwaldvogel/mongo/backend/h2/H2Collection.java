@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
-import de.bwaldvogel.mongo.backend.NullableKey;
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -62,7 +62,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             key = UUID.randomUUID();
         }
 
-        Document previous = dataMap.put(NullableKey.of(key), document);
+        Document previous = dataMap.put(Missing.ofNullable(key), document);
         if (previous != null) {
             throw new IllegalArgumentException("Document with key '" + key + "' already existed in " + this + ": "
                     + previous);

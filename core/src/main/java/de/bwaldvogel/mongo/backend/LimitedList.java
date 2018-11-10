@@ -8,7 +8,7 @@ public class LimitedList<E> extends ArrayList<E> {
 
     private int limit;
 
-    public LimitedList(int limit) {
+    LimitedList(int limit) {
         this.limit = limit;
     }
 

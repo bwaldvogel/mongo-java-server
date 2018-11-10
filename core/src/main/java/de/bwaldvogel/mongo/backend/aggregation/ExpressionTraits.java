@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 
-import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -29,7 +29,7 @@ interface ExpressionTraits {
 
     default Number evaluateNumericValue(List<?> expressionValue, Function<Double, ? extends Number> function) {
         Object value = requireSingleValue(expressionValue);
-        if (Utils.isNullOrMissing(value)) {
+        if (Missing.isNullOrMissing(value)) {
             return null;
         }
         if (!(value instanceof Number)) {
@@ -55,7 +55,7 @@ interface ExpressionTraits {
 
     default <T> T evaluateDateTime(List<?> expressionValue, Function<ZonedDateTime, T> dateFunction) {
         Object value = requireSingleValue(expressionValue);
-        if (Utils.isNullOrMissing(value)) {
+        if (Missing.isNullOrMissing(value)) {
             return null;
         }
 
@@ -145,7 +145,7 @@ interface ExpressionTraits {
         }
 
         Object first = expressionValue.get(0);
-        if (Utils.isNullOrMissing(first)) {
+        if (Missing.isNullOrMissing(first)) {
             return null;
         }
         if (!(first instanceof String)) {

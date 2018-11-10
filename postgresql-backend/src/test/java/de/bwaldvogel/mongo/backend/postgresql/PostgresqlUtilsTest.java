@@ -25,7 +25,10 @@ public class PostgresqlUtilsTest {
     @Test
     public void testToQueryValue() throws Exception {
         assertThat(PostgresqlUtils.toQueryValue(123)).isEqualTo("123");
+        assertThat(PostgresqlUtils.toQueryValue(123.0)).isEqualTo("123");
+        assertThat(PostgresqlUtils.toQueryValue(123.1)).isEqualTo("123.1");
         assertThat(PostgresqlUtils.toQueryValue("foobar")).isEqualTo("foobar");
+        assertThat(PostgresqlUtils.toQueryValue("1.0")).isEqualTo("1.0");
         assertThat(PostgresqlUtils.toQueryValue(new LinkedHashMap<>(Collections.singletonMap("foo", "bar")))).isEqualTo("{\"foo\":\"bar\"}");
         assertThat(PostgresqlUtils.toQueryValue(Arrays.asList("foo", "bar"))).isEqualTo("[\"foo\",\"bar\"]");
         assertThat(PostgresqlUtils.toQueryValue(new ObjectId("foobarfoobar".getBytes(StandardCharsets.UTF_8)))).isEqualTo("{\"@class\":\"de.bwaldvogel.mongo.bson.ObjectId\",\"data\":\"Zm9vYmFyZm9vYmFy\"}");

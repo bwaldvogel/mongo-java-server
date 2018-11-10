@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -201,7 +200,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
                 List<Object> list;
-                if (Utils.isNullOrMissing(value)) {
+                if (Missing.isNullOrMissing(value)) {
                     return;
                 } else if (value instanceof List<?>) {
                     list = asList(value);
@@ -235,7 +234,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
                 List<Object> list;
-                if (Utils.isNullOrMissing(value)) {
+                if (Missing.isNullOrMissing(value)) {
                     return;
                 } else if (value instanceof List<?>) {
                     list = asList(value);
@@ -263,7 +262,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 String operation = (op == UpdateOperator.INC) ? "increment" : "multiply";
                 Object value = getSubdocumentValue(document, key, matchPos);
                 Number number;
-                if (Utils.isNullOrMissing(value)) {
+                if (Missing.isNullOrMissing(value)) {
                     number = Integer.valueOf(0);
                 } else if (value instanceof Number) {
                     number = (Number) value;
@@ -414,7 +413,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         for (String key : change.keySet()) {
             Object value = getSubdocumentValue(document, key, matchPos);
             List<Object> list;
-            if (Utils.isNullOrMissing(value)) {
+            if (Missing.isNullOrMissing(value)) {
                 list = new ArrayList<>();
             } else if (value instanceof List<?>) {
                 list = asList(value);

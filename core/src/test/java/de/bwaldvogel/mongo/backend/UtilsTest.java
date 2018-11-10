@@ -11,16 +11,8 @@ import java.util.Date;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 
 public class UtilsTest {
-
-    @Test
-    public void testIsNullOrMissing() throws Exception {
-        assertThat(Utils.isNullOrMissing(null)).isTrue();
-        assertThat(Utils.isNullOrMissing(Missing.getInstance())).isTrue();
-        assertThat(Utils.isNullOrMissing("value")).isFalse();
-    }
 
     @Test
     public void testAddNumbers() {

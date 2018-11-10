@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.Missing;
 
 public class AddToSetAccumulator extends Accumulator {
 
@@ -16,7 +16,7 @@ public class AddToSetAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        if (Utils.isNullOrMissing(value)) {
+        if (Missing.isNullOrMissing(value)) {
             return;
         }
         result.add(value);

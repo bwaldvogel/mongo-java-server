@@ -1,6 +1,8 @@
 package de.bwaldvogel.mongo.backend.h2;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
@@ -11,6 +13,7 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class H2Database extends AbstractMongoDatabase<Object> {
@@ -27,9 +30,18 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     @Override
-    protected Index<Object> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) {
-        MVMap<Object, Object> mvMap = mvStore.openMap(databaseName + "." + collectionName + "._index_" + key);
-        return new H2UniqueIndex(key, ascending, mvMap);
+    protected Index<Object> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys) {
+        MVMap<List<Object>, Object> mvMap = mvStore.openMap(databaseName + "." + collectionName + "._index_" + indexName(keys));
+        return new H2UniqueIndex(mvMap, keys);
+    }
+
+    static String indexName(List<IndexKey> keys) {
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("No keys");
+        }
+        return keys.stream()
+            .map(k -> k.getKey() + "." + (k.isAscending() ? "ASC" : "DESC"))
+            .collect(Collectors.joining("_"));
     }
 
     @Override

@@ -8,7 +8,6 @@ import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

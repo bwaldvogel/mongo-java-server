@@ -12,8 +12,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 import io.netty.buffer.Unpooled;
@@ -43,7 +43,7 @@ public class MongoWireEncoderTest {
 
         assertThatExceptionOfType(IOException.class)
             .isThrownBy(() -> mongoWireEncoder.encode(ctx, reply, Unpooled.buffer()))
-            .withMessageContaining("Unknown type: class de.bwaldvogel.mongo.bson.Missing");
+            .withMessageContaining("Unknown type: class de.bwaldvogel.mongo.backend.Missing");
 
         verify(channel).close();
     }

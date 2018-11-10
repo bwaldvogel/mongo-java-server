@@ -1,45 +1,47 @@
 package de.bwaldvogel.mongo.backend.h2;
 
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.h2.mvstore.MVMap;
 
 import de.bwaldvogel.mongo.backend.AbstractUniqueIndex;
-import de.bwaldvogel.mongo.backend.NullableKey;
+import de.bwaldvogel.mongo.backend.IndexKey;
+import de.bwaldvogel.mongo.backend.Missing;
 
 public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
-    private MVMap<Object, Object> mvMap;
+    private MVMap<List<Object>, Object> mvMap;
 
-    public H2UniqueIndex(String key, boolean ascending, MVMap<Object, Object> mvMap) {
-        super(key, ascending);
+    H2UniqueIndex(MVMap<List<Object>, Object> mvMap, List<IndexKey> keys) {
+        super(keys);
         this.mvMap = mvMap;
     }
 
     @Override
-    protected Object removeDocument(Object key) {
-        return mvMap.remove(NullableKey.of(key));
+    protected Object removeDocument(List<Object> key) {
+        return mvMap.remove(key);
     }
 
     @Override
-    protected boolean containsKey(Object key) {
-        return mvMap.containsKey(NullableKey.of(key));
+    protected boolean containsKey(List<Object> key) {
+        return mvMap.containsKey(key);
     }
 
     @Override
-    protected boolean putKeyPosition(Object key, Object position) {
-        Object oldValue = mvMap.put(NullableKey.of(key), NullableKey.of(position));
+    protected boolean putKeyPosition(List<Object> key, Object position) {
+        Object oldValue = mvMap.put(key, Missing.ofNullable(position));
         return oldValue == null;
     }
 
     @Override
-    protected Iterable<Entry<Object, Object>> getIterable() {
+    protected Iterable<Entry<List<Object>, Object>> getIterable() {
         return mvMap.entrySet();
     }
 
     @Override
-    protected Object getPosition(Object key) {
-        return mvMap.get(NullableKey.of(key));
+    protected Object getPosition(List<Object> key) {
+        return mvMap.get(key);
     }
 
     @Override

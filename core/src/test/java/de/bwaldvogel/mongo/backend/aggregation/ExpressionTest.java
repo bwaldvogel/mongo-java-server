@@ -15,8 +15,8 @@ import java.util.Date;
 import org.assertj.core.data.Offset;
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ExpressionTest {

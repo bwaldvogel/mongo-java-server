@@ -1,7 +1,11 @@
 package de.bwaldvogel.mongo.backend.memory;
 
+import java.util.List;
+
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
+import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 
 public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
@@ -17,8 +21,8 @@ public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
     }
 
     @Override
-    protected MemoryUniqueIndex openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) {
-        return new MemoryUniqueIndex(key, ascending);
+    protected Index<Integer> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys) {
+        return new MemoryUniqueIndex(keys);
     }
 
     @Override

@@ -1,29 +1,47 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
 public abstract class Index<P> {
 
-    protected final String key;
-    protected final boolean ascending;
+    private final List<IndexKey> keys;
 
-    protected Index(String key, boolean ascending) {
-        this.key = key;
-        this.ascending = ascending;
+    protected Index(List<IndexKey> keys) {
+        this.keys = keys;
     }
 
     public String getName() {
-        if (key.equals(Constants.ID_FIELD)) {
+        if (keys.size() == 1 && keys.get(0).getKey().equals(Constants.ID_FIELD)) {
             return Constants.ID_INDEX_NAME;
-        } else {
-            return key + "_" + (ascending ? "1" : "-1");
         }
+        return keys.stream()
+            .map(indexKey -> indexKey.getKey() + "_" + (indexKey.isAscending() ? "1" : "-1"))
+            .collect(Collectors.joining("_"));
     }
 
-    protected Object getKey(Document document) {
-        Object value = Utils.getSubdocumentValue(document, key);
-        return Utils.normalizeValue(value);
+    protected List<String> keys() {
+        return keys.stream()
+            .map(IndexKey::getKey)
+            .collect(Collectors.toList());
+    }
+
+    protected Set<String> keySet() {
+        return keys.stream()
+            .map(IndexKey::getKey)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    List<Object> getKeyValue(Document document) {
+        return keys().stream()
+            .map(key -> Utils.getSubdocumentValue(document, key))
+            .map(Utils::normalizeValue)
+            .collect(Collectors.toList());
     }
 
     public abstract void checkAdd(Document document);
@@ -44,4 +62,7 @@ public abstract class Index<P> {
 
     public abstract void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError;
 
+    protected boolean isCompoundIndex() {
+        return keys().size() > 1;
+    }
 }

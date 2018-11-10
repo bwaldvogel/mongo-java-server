@@ -17,9 +17,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public enum Expression implements ExpressionTraits {
@@ -38,7 +38,7 @@ public enum Expression implements ExpressionTraits {
             Number sum = 0;
             for (Object value : expressionValue) {
                 Object number = evaluate(value, document);
-                if (Utils.isNullOrMissing(number)) {
+                if (Missing.isNullOrMissing(number)) {
                     return null;
                 }
                 if (!(number instanceof Number) && !(number instanceof Date)) {
@@ -159,7 +159,7 @@ public enum Expression implements ExpressionTraits {
             StringBuilder result = new StringBuilder();
             for (Object value : expressionValue) {
                 Object evaluatedValue = evaluate(value, document);
-                if (Utils.isNullOrMissing(evaluatedValue)) {
+                if (Missing.isNullOrMissing(evaluatedValue)) {
                     return null;
                 }
                 if (!(evaluatedValue instanceof String)) {
@@ -178,7 +178,7 @@ public enum Expression implements ExpressionTraits {
             List<Object> result = new ArrayList<>();
             for (Object value : expressionValue) {
                 Object evaluatedValue = evaluate(value, document);
-                if (Utils.isNullOrMissing(evaluatedValue)) {
+                if (Missing.isNullOrMissing(evaluatedValue)) {
                     return null;
                 }
                 if (!(evaluatedValue instanceof Collection<?>)) {
@@ -375,7 +375,7 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
             Object expression = parameters.getFirst();
-            if (!Utils.isNullOrMissing(expression)) {
+            if (!Missing.isNullOrMissing(expression)) {
                 return expression;
             } else {
                 return parameters.getSecond();
@@ -407,7 +407,7 @@ public enum Expression implements ExpressionTraits {
             }
 
             Object first = expressionValue.get(0);
-            if (Utils.isNullOrMissing(first)) {
+            if (Missing.isNullOrMissing(first)) {
                 return null;
             }
             if (!(first instanceof List<?>)) {
@@ -739,7 +739,7 @@ public enum Expression implements ExpressionTraits {
             Set<?> result = null;
             for (Object value : expressionValue) {
                 Object evaluatedValue = evaluate(value, document);
-                if (Utils.isNullOrMissing(evaluatedValue)) {
+                if (Missing.isNullOrMissing(evaluatedValue)) {
                     return null;
                 }
                 if (!(evaluatedValue instanceof Collection)) {
@@ -785,7 +785,7 @@ public enum Expression implements ExpressionTraits {
             Set<Object> result = new LinkedHashSet<>();
             for (Object value : expressionValue) {
                 Object evaluatedValue = evaluate(value, document);
-                if (Utils.isNullOrMissing(evaluatedValue)) {
+                if (Missing.isNullOrMissing(evaluatedValue)) {
                     return null;
                 }
                 if (!(evaluatedValue instanceof Collection<?>)) {
@@ -815,7 +815,7 @@ public enum Expression implements ExpressionTraits {
             }
 
             Object first = expressionValue.get(0);
-            if (Utils.isNullOrMissing(first)) {
+            if (Missing.isNullOrMissing(first)) {
                 return null;
             }
             if (!(first instanceof List)) {
@@ -869,7 +869,7 @@ public enum Expression implements ExpressionTraits {
             Object string = parameters.getFirst();
             Object delimiter = parameters.getSecond();
 
-            if (Utils.isNullOrMissing(string)) {
+            if (Missing.isNullOrMissing(string)) {
                 return null;
             }
 
@@ -893,7 +893,7 @@ public enum Expression implements ExpressionTraits {
             Object one = parameters.getFirst();
             Object other = parameters.getSecond();
 
-            if (Utils.isNullOrMissing(one) || Utils.isNullOrMissing(other)) {
+            if (Missing.isNullOrMissing(one) || Missing.isNullOrMissing(other)) {
                 return null;
             }
 

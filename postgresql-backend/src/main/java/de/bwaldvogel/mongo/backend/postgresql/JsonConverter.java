@@ -46,12 +46,12 @@ final class JsonConverter {
         return objectMapper;
     }
 
-    public static String toJson(Object object) throws IOException {
+    static String toJson(Object object) throws IOException {
         ObjectWriter writer = objectMapper.writer();
         return writer.writeValueAsString(object);
     }
 
-    public static Document fromJson(String json) throws IOException {
+    static Document fromJson(String json) throws IOException {
         ObjectReader reader = objectMapper.reader();
         return reader.forType(Document.class).readValue(json);
     }

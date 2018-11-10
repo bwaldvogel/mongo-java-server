@@ -3,10 +3,12 @@ package de.bwaldvogel.mongo.backend.postgresql;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.postgresql.index.PostgresUniqueIndex;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -46,8 +48,8 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     }
 
     @Override
-    protected Index<Long> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending) {
-        return new PostgresUniqueIndex(backend, databaseName, collectionName, key, ascending);
+    protected Index<Long> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys) {
+        return new PostgresUniqueIndex(backend, databaseName, collectionName, keys);
     }
 
     @Override

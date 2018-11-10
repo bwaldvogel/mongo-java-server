@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
-import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.Missing;
 
 class TwoParameters {
     private final Object first;
@@ -12,7 +12,7 @@ class TwoParameters {
     }
 
     boolean isAnyNull() {
-        return Utils.isNullOrMissing(first) || Utils.isNullOrMissing(second);
+        return Missing.isNullOrMissing(first) || Missing.isNullOrMissing(second);
     }
 
     Object getFirst() {

@@ -37,7 +37,8 @@ public final class PostgresqlUtils {
         if (queryValue instanceof String) {
             return (String) queryValue;
         } else if (queryValue instanceof Number) {
-            return queryValue.toString();
+            String numberString = queryValue.toString();
+            return numberString.replaceAll("^(\\d+)\\.0+$", "$1");
         } else if (queryValue instanceof Document) {
             return toJsonWithClass(queryValue);
         } else if (queryValue instanceof Map) {

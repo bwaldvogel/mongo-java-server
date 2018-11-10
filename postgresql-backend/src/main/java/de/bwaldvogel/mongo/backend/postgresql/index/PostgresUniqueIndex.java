@@ -5,14 +5,19 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.IndexKey;
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.postgresql.PostgresqlBackend;
 import de.bwaldvogel.mongo.backend.postgresql.PostgresqlCollection;
 import de.bwaldvogel.mongo.backend.postgresql.PostgresqlUtils;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -22,12 +27,13 @@ public class PostgresUniqueIndex extends Index<Long> {
     private final PostgresqlBackend backend;
     private final String fullCollectionName;
 
-    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, String key, boolean ascending) {
-        super(key, ascending);
+    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, List<IndexKey> keys) {
+        super(keys);
         this.backend = backend;
         fullCollectionName = PostgresqlCollection.getQualifiedTablename(databaseName, collectionName);
-        String indexName = collectionName + "_" + key;
-        String sql = "CREATE UNIQUE INDEX IF NOT EXISTS \"" + indexName + "\" ON " + fullCollectionName + " ((" + PostgresqlUtils.toDataKey(key) + "))";
+        String indexName = collectionName + "_" + indexName(keys);
+        String columns = keyColumns(keys);
+        String sql = "CREATE UNIQUE INDEX IF NOT EXISTS \"" + indexName + "\" ON " + fullCollectionName + " (" + columns + ")";
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.executeUpdate();
@@ -36,26 +42,51 @@ public class PostgresUniqueIndex extends Index<Long> {
         }
     }
 
+    private static String keyColumns(List<IndexKey> keys) {
+        return keys.stream()
+            .map(key -> "(" + PostgresqlUtils.toDataKey(key.getKey()) + ") " + (key.isAscending() ? "ASC" : "DESC"))
+            .collect(Collectors.joining(", "));
+    }
+
+    private static String indexName(List<IndexKey> keys) {
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("No keys");
+        }
+        return keys.stream()
+            .map(k -> k.getKey() + "_" + (k.isAscending() ? "ASC" : "DESC"))
+            .collect(Collectors.joining("_"));
+    }
+
     @Override
     public void checkAdd(Document document) {
-        Object keyValue = Utils.getSubdocumentValue(document, key);
-        if (keyValue instanceof Missing) {
-            keyValue = null;
-        }
-        String sql = createSelectStatement(keyValue);
+        Map<String, Object> keyValues = getKeyValues(document);
+        String sql = createSelectStatement(keyValues);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
-            if (keyValue != null) {
-                stmt.setString(1, PostgresqlUtils.toQueryValue(keyValue));
-            }
+            fillStrings(stmt, keyValues);
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (resultSet.next()) {
-                    throw new DuplicateKeyError(this, keyValue);
+                    List<Object> normalizedValues = keyValues.values().stream()
+                        .map(Utils::normalizeValue)
+                        .collect(Collectors.toList());
+                    throw new DuplicateKeyError(this, normalizedValues);
                 }
             }
         } catch (SQLException | IOException e) {
-            throw new MongoServerException("failed to remove document from " + fullCollectionName, e);
+            throw new MongoServerException("failed to add document to " + fullCollectionName, e);
         }
+    }
+
+    private Map<String, Object> getKeyValues(Document document) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (String key : keys()) {
+            Object value = Utils.getSubdocumentValue(document, key);
+            if (value instanceof Missing) {
+                value = null;
+            }
+            result.put(key, value);
+        }
+        return result;
     }
 
     @Override
@@ -64,13 +95,11 @@ public class PostgresUniqueIndex extends Index<Long> {
 
     @Override
     public Long remove(Document document) {
-        Object keyValue = Utils.getSubdocumentValue(document, key);
-        String sql = createSelectStatement(keyValue);
+        Map<String, Object> keyValues = getKeyValues(document);
+        String sql = createSelectStatement(keyValues);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
-            if (keyValue != null) {
-                stmt.setString(1, PostgresqlUtils.toQueryValue(keyValue));
-            }
+            fillStrings(stmt, keyValues);
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (!resultSet.next()) {
                     return null;
@@ -86,8 +115,22 @@ public class PostgresUniqueIndex extends Index<Long> {
         }
     }
 
-    private String createSelectStatement(Object keyValue) {
-        return "SELECT id FROM " + fullCollectionName + " WHERE " + PostgresqlUtils.toDataKey(key) + (keyValue == null ? " IS NULL" : " = ?");
+    private void fillStrings(PreparedStatement statement, Map<String, Object> keyValues) throws SQLException, IOException {
+        int pos = 1;
+        for (Object keyValue : keyValues.values()) {
+            if (keyValue != null) {
+                String queryValue = PostgresqlUtils.toQueryValue(keyValue);
+                statement.setString(pos++, queryValue);
+            }
+        }
+    }
+
+    private String createSelectStatement(Map<String, Object> keyValues) {
+        return "SELECT id FROM " + fullCollectionName + " WHERE " +
+            keyValues.entrySet().stream()
+                .map(entry -> PostgresqlUtils.toDataKey(entry.getKey()) + (entry.getValue() == null ? " IS NULL" : " = ?"))
+                .collect(Collectors.joining(" AND "));
+
     }
 
     @Override

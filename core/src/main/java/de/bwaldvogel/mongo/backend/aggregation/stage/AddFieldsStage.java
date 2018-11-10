@@ -3,9 +3,9 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class AddFieldsStage implements AggregationStage {

@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -108,9 +110,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
         } else if (command.equalsIgnoreCase("getpreverror")) {
-            return commandGetPrevError(channel, command, query);
+            return commandGetPrevError(channel);
         } else if (command.equalsIgnoreCase("reseterror")) {
-            return commandResetError(channel, command, query);
+            return commandResetError(channel);
         }
 
         clearLastStatus(channel);
@@ -436,7 +438,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         List<Document> results = lastResults.get(channel);
 
-        Document result = null;
+        Document result;
         if (results != null && !results.isEmpty()) {
             result = results.get(results.size() - 1);
             if (result == null) {
@@ -450,7 +452,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return result;
     }
 
-    private Document commandGetPrevError(Channel channel, String command, Document query) {
+    private Document commandGetPrevError(Channel channel) {
         List<Document> results = lastResults.get(channel);
 
         if (results != null) {
@@ -482,7 +484,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return result;
     }
 
-    private Document commandResetError(Channel channel, String command, Document query) {
+    private Document commandResetError(Channel channel) {
         List<Document> results = lastResults.get(channel);
         if (results != null) {
             results.clear();
@@ -605,11 +607,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private synchronized void clearLastStatus(Channel channel) {
-        List<Document> results = lastResults.get(channel);
-        if (results == null) {
-            results = new LimitedList<>(10);
-            lastResults.put(channel, results);
-        }
+        List<Document> results = lastResults.computeIfAbsent(channel, k -> new LimitedList<>(10));
         results.add(null);
     }
 
@@ -617,7 +615,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     public void handleInsert(MongoInsert insert) {
         Channel channel = insert.getChannel();
         String collectionName = insert.getCollectionName();
-        final List<Document> documents = insert.getDocuments();
+        List<Document> documents = insert.getDocuments();
 
         if (collectionName.equals(INDEXES_COLLECTION_NAME)) {
             for (Document indexDescription : documents) {
@@ -671,9 +669,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     @Override
     public void handleDelete(MongoDelete delete) {
         Channel channel = delete.getChannel();
-        final String collectionName = delete.getCollectionName();
-        final Document selector = delete.getSelector();
-        final int limit = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
+        String collectionName = delete.getCollectionName();
+        Document selector = delete.getSelector();
+        int limit = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
 
         try {
             deleteDocuments(channel, collectionName, selector, limit);
@@ -684,12 +682,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @Override
     public void handleUpdate(MongoUpdate updateCommand) {
-        final Channel channel = updateCommand.getChannel();
-        final String collectionName = updateCommand.getCollectionName();
-        final Document selector = updateCommand.getSelector();
-        final Document update = updateCommand.getUpdate();
-        final boolean multi = updateCommand.isMulti();
-        final boolean upsert = updateCommand.isUpsert();
+        Channel channel = updateCommand.getChannel();
+        String collectionName = updateCommand.getCollectionName();
+        Document selector = updateCommand.getSelector();
+        Document update = updateCommand.getUpdate();
+        boolean multi = updateCommand.isMulti();
+        boolean upsert = updateCommand.isUpsert();
 
         try {
             Document result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
@@ -730,37 +728,46 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         Document key = (Document) indexDescription.get("key");
         if (key.keySet().equals(Collections.singleton(ID_FIELD))) {
-            boolean ascending = Utils.normalizeValue(key.get(ID_FIELD)).equals(Double.valueOf(1.0));
-            collection.addIndex(openOrCreateUniqueIndex(collectionName, ID_FIELD, ascending));
+            boolean ascending = isAscending(key.get(ID_FIELD));
+            collection.addIndex(openOrCreateIdIndex(collectionName, ascending));
             log.info("adding unique _id index for collection {}", collectionName);
         } else if (Utils.isTrue(indexDescription.get("unique"))) {
-            if (key.keySet().size() != 1) {
-                throw new MongoServerException("Compound unique indices are not yet implemented");
+            List<IndexKey> keys = new ArrayList<>();
+            for (Entry<String, Object> entry : key.entrySet()) {
+                String field = entry.getKey();
+                boolean ascending = isAscending(entry.getValue());
+                keys.add(new IndexKey(field, ascending));
             }
 
-            log.info("adding unique index {} for collection {}", key.keySet(), collectionName);
+            log.info("adding unique index {} for collection {}", keys, collectionName);
 
-            final String field = key.keySet().iterator().next();
-            boolean ascending = Utils.normalizeValue(key.get(field)).equals(Double.valueOf(1.0));
-            collection.addIndex(openOrCreateUniqueIndex(collectionName, field, ascending));
+            collection.addIndex(openOrCreateUniqueIndex(collectionName, keys));
         } else {
             // TODO: non-unique non-id indexes not yet implemented
             log.warn("adding non-unique non-id index with key {} is not yet implemented", key);
         }
     }
 
-    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String key, boolean ascending);
+    private static boolean isAscending(Object keyValue) {
+        return Objects.equals(Utils.normalizeValue(keyValue), Double.valueOf(1.0));
+    }
 
-    private void insertDocuments(final Channel channel, final String collectionName, final List<Document> documents) {
+    private Index<P> openOrCreateIdIndex(String collectionName, boolean ascending) {
+        return openOrCreateUniqueIndex(collectionName, Collections.singletonList(new IndexKey(ID_FIELD, ascending)));
+    }
+
+    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys);
+
+    private void insertDocuments(Channel channel, String collectionName, List<Document> documents) {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
-            final MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
+            MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
             int n = collection.insertDocuments(documents);
             assert n == documents.size();
-            final Document result = new Document("n", Integer.valueOf(n));
+            Document result = new Document("n", Integer.valueOf(n));
             putLastResult(channel, result);
         } catch (MongoServerError e) {
             putLastError(channel, e);
@@ -768,20 +775,20 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document deleteDocuments(final Channel channel, final String collectionName, final Document selector, final int limit) {
+    private Document deleteDocuments(Channel channel, String collectionName, Document selector, int limit) {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(12050, "cannot delete from system namespace");
             }
             MongoCollection<P> collection = resolveCollection(collectionName, false);
-            int n;
+            final int n;
             if (collection == null) {
                 n = 0;
             } else {
                 n = collection.deleteDocuments(selector, limit);
             }
-            final Document result = new Document("n", Integer.valueOf(n));
+            Document result = new Document("n", Integer.valueOf(n));
             putLastResult(channel, result);
             return result;
         } catch (MongoServerError e) {
@@ -790,8 +797,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document updateDocuments(final Channel channel, final String collectionName, final Document selector,
-                                       final Document update, final boolean multi, final boolean upsert) {
+    private Document updateDocuments(Channel channel, String collectionName, Document selector,
+                                     Document update, boolean multi, boolean upsert) {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {

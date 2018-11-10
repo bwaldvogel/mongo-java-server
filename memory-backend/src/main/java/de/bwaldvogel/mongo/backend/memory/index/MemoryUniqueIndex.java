@@ -1,18 +1,19 @@
 package de.bwaldvogel.mongo.backend.memory.index;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import de.bwaldvogel.mongo.backend.AbstractUniqueIndex;
-import de.bwaldvogel.mongo.backend.NullableKey;
+import de.bwaldvogel.mongo.backend.IndexKey;
 
 public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
 
-    private Map<Object, Integer> index = new ConcurrentHashMap<>();
+    private Map<List<Object>, Integer> index = new ConcurrentHashMap<>();
 
-    public MemoryUniqueIndex(String key, boolean ascending) {
-        super(key, ascending);
+    public MemoryUniqueIndex(List<IndexKey> keys) {
+        super(keys);
     }
 
     @Override
@@ -26,28 +27,28 @@ public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
     }
 
     @Override
-    protected Integer removeDocument(Object key) {
-        return index.remove(NullableKey.of(key));
+    protected Integer removeDocument(List<Object> key) {
+        return index.remove(key);
     }
 
     @Override
-    protected boolean containsKey(Object key) {
-        return index.containsKey(NullableKey.of(key));
+    protected boolean containsKey(List<Object> key) {
+        return index.containsKey(key);
     }
 
     @Override
-    protected boolean putKeyPosition(Object key, Integer position) {
-        Integer oldValue = index.put(NullableKey.of(key), position);
+    protected boolean putKeyPosition(List<Object> key, Integer position) {
+        Integer oldValue = index.put(key, position);
         return oldValue == null;
     }
 
     @Override
-    protected Integer getPosition(Object key) {
-        return index.get(NullableKey.of(key));
+    protected Integer getPosition(List<Object> key) {
+        return index.get(key);
     }
 
     @Override
-    protected Iterable<Entry<Object, Integer>> getIterable() {
+    protected Iterable<Entry<List<Object>, Integer>> getIterable() {
         return index.entrySet();
     }
 

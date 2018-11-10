@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.wire.BsonEncoder;
@@ -15,10 +14,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public class Utils {
-
-    public static boolean isNullOrMissing(Object value) {
-        return (value == null || value instanceof Missing);
-    }
 
     public static Number addNumbers(Number a, Number b) {
         if (a instanceof Double || b instanceof Double) {
@@ -98,7 +93,7 @@ public class Utils {
     }
 
     public static boolean isTrue(Object value) {
-        if (Utils.isNullOrMissing(value)) {
+        if (Missing.isNullOrMissing(value)) {
             return false;
         }
 
@@ -113,8 +108,8 @@ public class Utils {
         return true;
     }
 
-    static Object normalizeValue(Object value) {
-        if (isNullOrMissing(value)) {
+    public static Object normalizeValue(Object value) {
+        if (Missing.isNullOrMissing(value)) {
             return null;
         }
         if (value instanceof Number) {
@@ -127,9 +122,9 @@ public class Utils {
     static boolean nullAwareEquals(Object a, Object b) {
         if (a == b) {
             return true;
-        } else if (Utils.isNullOrMissing(a) && Utils.isNullOrMissing(b)) {
+        } else if (Missing.isNullOrMissing(a) && Missing.isNullOrMissing(b)) {
             return true;
-        } else if (Utils.isNullOrMissing(a) || Utils.isNullOrMissing(b)) {
+        } else if (Missing.isNullOrMissing(a) || Missing.isNullOrMissing(b)) {
             return false;
         } else if (a instanceof byte[] && b instanceof byte[]) {
             byte[] bytesA = (byte[]) a;
