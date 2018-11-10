@@ -162,9 +162,6 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         List<Document> documents = new ArrayList<>();
         while (buffer.isReadable()) {
             Document document = bsonDecoder.decodeBson(buffer);
-            if (document == null) {
-                return null;
-            }
             documents.add(document);
         }
         log.debug("insert {} in {}", documents, fullCollectionName);
