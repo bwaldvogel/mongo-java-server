@@ -4,8 +4,10 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -44,8 +46,9 @@ public class DocumentTest {
         original.put("subDocument", new Document("_id", 1));
         original.put("sub", new Document("sub", Arrays.asList(1, new Document("key", "value"), 3)));
         original.put("null-value", null);
+        original.put("set", new LinkedHashSet<>());
 
-        String originalToString = "{\"subDocument\" : {\"_id\" : 1}, \"sub\" : {\"sub\" : [1, {\"key\" : \"value\"}, 3]}, \"null-value\" : null}";
+        String originalToString = "{\"subDocument\" : {\"_id\" : 1}, \"sub\" : {\"sub\" : [1, {\"key\" : \"value\"}, 3]}, \"null-value\" : null, \"set\" : []}";
         assertThat(original).hasToString(originalToString);
 
         Document deepClone = original.cloneDeeply();
@@ -59,8 +62,9 @@ public class DocumentTest {
         Utils.changeSubdocumentValue(deepClone, "sub.sub.1", 25);
         Utils.changeSubdocumentValue(deepClone, "subDocument._id", 2);
         deepClone.remove("null-value");
+        ((Collection<Object>) deepClone.get("set")).add("more");
 
-        assertThat(deepClone).hasToString("{\"subDocument\" : {\"_id\" : 2}, \"sub\" : {\"sub\" : [1, 25, 3]}}");
+        assertThat(deepClone).hasToString("{\"subDocument\" : {\"_id\" : 2}, \"sub\" : {\"sub\" : [1, 25, 3]}, \"set\" : [\"more\"]}");
         assertThat(original).hasToString(originalToString);
     }
 

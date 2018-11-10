@@ -3,11 +3,8 @@ package de.bwaldvogel.mongo.backend.aggregation;
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,22 +15,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.backend.Utils;
-import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.Missing;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public enum Expression {
+public enum Expression implements ExpressionTraits {
 
     $abs {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$abs", Math::abs);
+            return evaluateNumericValue(expressionValue, Math::abs);
         }
     },
 
@@ -49,7 +43,7 @@ public enum Expression {
                 }
                 if (!(number instanceof Number) && !(number instanceof Date)) {
                     throw new MongoServerError(16554,
-                        "$add only supports numeric or date types, not " + describeType(number));
+                        name() + " only supports numeric or date types, not " + describeType(number));
                 }
                 if (number instanceof Date) {
                     number = ((Date) number).getTime();
@@ -80,10 +74,10 @@ public enum Expression {
     $anyElementTrue {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            Object valueInCollection = singleValue(expressionValue, "$anyElementTrue");
+            Object valueInCollection = requireSingleValue(expressionValue);
             if (!(valueInCollection instanceof Collection)) {
                 throw new MongoServerError(17041,
-                    "$anyElementTrue's argument must be an array, but is " + describeType(valueInCollection));
+                    name() + "'s argument must be an array, but is " + describeType(valueInCollection));
             }
             Collection<?> collectionInCollection = (Collection<?>) valueInCollection;
             for (Object value : collectionInCollection) {
@@ -98,12 +92,12 @@ public enum Expression {
     $allElementsTrue {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            Object valueInCollection = singleValue(expressionValue, "$allElementsTrue");
-            if (!(valueInCollection instanceof Collection)) {
+            Object parameter = requireSingleValue(expressionValue);
+            if (!(parameter instanceof Collection)) {
                 throw new MongoServerError(17040,
-                    "$allElementsTrue's argument must be an array, but is " + describeType(valueInCollection));
+                    name() + "'s argument must be an array, but is " + describeType(parameter));
             }
-            Collection<?> collectionInCollection = (Collection<?>) valueInCollection;
+            Collection<?> collectionInCollection = (Collection<?>) parameter;
             for (Object value : collectionInCollection) {
                 if (!Utils.isTrue(value)) {
                     return false;
@@ -116,7 +110,7 @@ public enum Expression {
     $arrayElemAt {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$arrayElemAt");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
 
             if (parameters.isAnyNull()) {
                 return null;
@@ -126,11 +120,11 @@ public enum Expression {
             Object secondValue = parameters.getSecond();
             if (!(firstValue instanceof List<?>)) {
                 throw new MongoServerError(28689,
-                    "$arrayElemAt's first argument must be an array, but is " + describeType(firstValue));
+                    name() + "'s first argument must be an array, but is " + describeType(firstValue));
             }
             if (!(secondValue instanceof Number)) {
                 throw new MongoServerError(28690,
-                    "$arrayElemAt's second argument must be a numeric value, but is " + describeType(secondValue));
+                    name() + "'s second argument must be a numeric value, but is " + describeType(secondValue));
             }
             List<?> collection = (List<?>) firstValue;
             int index = ((Number) secondValue).intValue();
@@ -148,14 +142,14 @@ public enum Expression {
     $ceil {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$ceil", a -> toIntOrLong(Math.ceil(a)));
+            return evaluateNumericValue(expressionValue, a -> toIntOrLong(Math.ceil(a)));
         }
     },
 
     $cmp {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateComparison(expressionValue, "$cmp");
+            return evaluateComparison(expressionValue);
         }
     },
 
@@ -170,7 +164,7 @@ public enum Expression {
                 }
                 if (!(evaluatedValue instanceof String)) {
                     throw new MongoServerError(16702,
-                        "$concat only supports strings, not " + describeType(evaluatedValue));
+                        name() + " only supports strings, not " + describeType(evaluatedValue));
                 }
                 result.append(evaluatedValue);
             }
@@ -189,7 +183,7 @@ public enum Expression {
                 }
                 if (!(evaluatedValue instanceof Collection<?>)) {
                     throw new MongoServerError(28664,
-                        "$concatArrays only supports arrays, not " + describeType(evaluatedValue));
+                        name() + " only supports arrays, not " + describeType(evaluatedValue));
                 }
                 result.addAll((Collection<?>) evaluatedValue);
             }
@@ -210,12 +204,12 @@ public enum Expression {
                 List<String> requiredKeys = Arrays.asList("if", "then", "else");
                 for (String requiredKey : requiredKeys) {
                     if (!condDocument.containsKey(requiredKey)) {
-                        throw new MongoServerError(17080, "Missing '" + requiredKey + "' parameter to $cond");
+                        throw new MongoServerError(17080, "Missing '" + requiredKey + "' parameter to " + name());
                     }
                 }
                 for (String key : condDocument.keySet()) {
                     if (!requiredKeys.contains(key)) {
-                        throw new MongoServerError(17083, "Unrecognized parameter to $cond: " + key);
+                        throw new MongoServerError(17083, "Unrecognized parameter to " + name() + ": " + key);
                     }
                 }
 
@@ -223,7 +217,7 @@ public enum Expression {
                 thenExpression = condDocument.get("then");
                 elseExpression = condDocument.get("else");
             } else {
-                List<?> collection = requireCollectionInSize(expressionValue, "$cond", 3);
+                List<?> collection = requireCollectionInSize(expressionValue, 3);
                 ifExpression = collection.get(0);
                 thenExpression = collection.get(1);
                 elseExpression = collection.get(2);
@@ -240,44 +234,37 @@ public enum Expression {
     $dayOfMonth {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, "$dayOfMonth", LocalDate::getDayOfMonth);
+            return evaluateDate(expressionValue, LocalDate::getDayOfMonth);
         }
     },
 
     $dayOfWeek {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, "$dayOfWeek", date -> date.getDayOfWeek().getValue());
+            return evaluateDate(expressionValue, date -> date.getDayOfWeek().getValue());
         }
     },
 
     $dayOfYear {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, "$dayOfYear", LocalDate::getDayOfYear);
+            return evaluateDate(expressionValue, LocalDate::getDayOfYear);
         }
     },
 
     $divide {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$divide");
-            Object one = parameters.getFirst();
-            Object other = parameters.getSecond();
+            TwoNumericParameters parameters = requireTwoNumericParameters(expressionValue, 16609);
 
-            if (parameters.isAnyNull()) {
+            if (parameters == null) {
                 return null;
             }
 
-            if (!(one instanceof Number && other instanceof Number)) {
-                throw new MongoServerError(16609,
-                    "$divide only supports numeric types, not " + describeType(one) + " and " + describeType(other));
-            }
-
-            double a = ((Number) one).doubleValue();
-            double b = ((Number) other).doubleValue();
+            double a = parameters.getFirst();
+            double b = parameters.getSecond();
             if (Double.compare(b, 0.0) == 0) {
-                throw new MongoServerError(16608, "can't $divide by zero");
+                throw new MongoServerError(16608, "can't " + name() + " by zero");
             }
             return a / b;
         }
@@ -286,14 +273,14 @@ public enum Expression {
     $eq {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateComparison(expressionValue, "$eq", v -> v == 0);
+            return evaluateComparison(expressionValue, v -> v == 0);
         }
     },
 
     $exp {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$exp", Math::exp);
+            return evaluateNumericValue(expressionValue, Math::exp);
         }
     },
 
@@ -301,20 +288,20 @@ public enum Expression {
         @Override
         Object apply(Object expressionValue, Document document) {
             if (!(expressionValue instanceof Document)) {
-                throw new MongoServerError(28646, "$filter only supports an object as its argument");
+                throw new MongoServerError(28646, name() + " only supports an object as its argument");
             }
             Document filterExpression = (Document) expressionValue;
 
             List<String> requiredKeys = Arrays.asList("input", "cond");
             for (String requiredKey : requiredKeys) {
                 if (!filterExpression.containsKey(requiredKey)) {
-                    throw new MongoServerError(28648, "Missing '" + requiredKey + "' parameter to $filter");
+                    throw new MongoServerError(28648, "Missing '" + requiredKey + "' parameter to " + name());
                 }
             }
 
             for (String key : filterExpression.keySet()) {
                 if (!Arrays.asList("input", "cond", "as").contains(key)) {
-                    throw new MongoServerError(28647, "Unrecognized parameter to $filter: " + key);
+                    throw new MongoServerError(28647, "Unrecognized parameter to " + name() + ": " + key);
                 }
             }
 
@@ -328,7 +315,7 @@ public enum Expression {
             }
 
             if (!(input instanceof Collection)) {
-                throw new MongoServerError(28651, "input to $filter must be an array not string");
+                throw new MongoServerError(28651, "input to " + name() + " must be an array not string");
             }
 
             Collection<?> inputCollection = (Collection<?>) input;
@@ -358,35 +345,35 @@ public enum Expression {
     $floor {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$floor", a -> toIntOrLong(Math.floor(a)));
+            return evaluateNumericValue(expressionValue, a -> toIntOrLong(Math.floor(a)));
         }
     },
 
     $gt {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateComparison(expressionValue, "$gt", v -> v > 0);
+            return evaluateComparison(expressionValue, v -> v > 0);
         }
     },
 
     $gte {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateComparison(expressionValue, "$gte", v -> v >= 0);
+            return evaluateComparison(expressionValue, v -> v >= 0);
         }
     },
 
     $hour {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateTime(expressionValue, "$hour", LocalTime::getHour);
+            return evaluateTime(expressionValue, LocalTime::getHour);
         }
     },
 
     $ifNull {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$ifNull");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
             Object expression = parameters.getFirst();
             if (!Utils.isNullOrMissing(expression)) {
                 return expression;
@@ -399,12 +386,12 @@ public enum Expression {
     $in {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$in");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
             Object needle = parameters.getFirst();
             Object haystack = parameters.getSecond();
 
             if (!(haystack instanceof Collection)) {
-                throw new MongoServerError(40081, "$in requires an array as a second argument, found: " + describeType(haystack));
+                throw new MongoServerError(40081, name() + " requires an array as a second argument, found: " + describeType(haystack));
             }
 
             return ((Collection<?>) haystack).contains(needle);
@@ -416,7 +403,7 @@ public enum Expression {
         Object apply(List<?> expressionValue, Document document) {
             if (expressionValue.size() < 2 || expressionValue.size() > 4) {
                 throw new MongoServerError(28667,
-                    "Expression $indexOfArray takes at least 2 arguments, and at most 4, but " + expressionValue.size() + " were passed in.");
+                    "Expression " + name() + " takes at least 2 arguments, and at most 4, but " + expressionValue.size() + " were passed in.");
             }
 
             Object first = expressionValue.get(0);
@@ -425,21 +412,21 @@ public enum Expression {
             }
             if (!(first instanceof List<?>)) {
                 throw new MongoServerError(40090,
-                    "$indexOfArray requires an array as a first argument, found: " + describeType(first));
+                    name() + " requires an array as a first argument, found: " + describeType(first));
             }
             List<?> elementsToSearchIn = (List<?>) first;
 
             int start = 0;
             if (expressionValue.size() >= 3) {
                 Object startValue = expressionValue.get(2);
-                start = requireIntegral(startValue, "$indexOfArray", "starting index");
+                start = requireIntegral(startValue, "starting index");
                 start = Math.min(start, elementsToSearchIn.size());
             }
 
             int end = elementsToSearchIn.size();
             if (expressionValue.size() >= 4) {
                 Object endValue = expressionValue.get(3);
-                end = requireIntegral(endValue, "$indexOfArray", "ending index");
+                end = requireIntegral(endValue, "ending index");
                 end = Math.min(Math.max(start, end), elementsToSearchIn.size());
             }
 
@@ -455,7 +442,7 @@ public enum Expression {
     $indexOfBytes {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateIndexOf(expressionValue, "$indexOfBytes", this::toList,
+            return evaluateIndexOf(expressionValue, this::toList,
                 40091, 40092);
         }
 
@@ -472,7 +459,7 @@ public enum Expression {
     $indexOfCP {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateIndexOf(expressionValue, "$indexOfCP", this::toList,
+            return evaluateIndexOf(expressionValue, this::toList,
                 40093, 40094);
         }
 
@@ -489,7 +476,7 @@ public enum Expression {
     $isArray {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            Object value = singleValue(expressionValue, "$isArray");
+            Object value = requireSingleValue(expressionValue);
             return (value instanceof List);
         }
     },
@@ -509,59 +496,54 @@ public enum Expression {
     $ln {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$ln", Math::log);
+            return evaluateNumericValue(expressionValue, Math::log);
         }
     },
 
     $log {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$log", Math::log);
+            return evaluateNumericValue(expressionValue, Math::log);
         }
     },
 
     $log10 {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$log10", Math::log10);
+            return evaluateNumericValue(expressionValue, Math::log10);
         }
     },
 
     $lt {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateComparison(expressionValue, "$lt", v -> v < 0);
+            return evaluateComparison(expressionValue, v -> v < 0);
         }
     },
 
     $lte {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateComparison(expressionValue, "$lte", v -> v <= 0);
+            return evaluateComparison(expressionValue, v -> v <= 0);
         }
     },
 
     $minute {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateTime(expressionValue, "$minute", LocalTime::getMinute);
+            return evaluateTime(expressionValue, LocalTime::getMinute);
         }
     },
 
     $mod {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$mod");
-            Object one = parameters.getFirst();
-            Object other = parameters.getSecond();
-
-            if (!(one instanceof Number && other instanceof Number)) {
-                throw new MongoServerError(16611,
-                    "$mod only supports numeric types, not " + describeType(one) + " and " + describeType(other));
+            TwoNumericParameters parameters = requireTwoNumericParameters(expressionValue, 16611);
+            if (parameters == null) {
+                return null;
             }
-
-            double a = ((Number) one).doubleValue();
-            double b = ((Number) other).doubleValue();
+            double a = parameters.getFirst();
+            double b = parameters.getSecond();
             return a % b;
         }
     },
@@ -569,28 +551,21 @@ public enum Expression {
     $month {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, "$month", date -> date.getMonth().getValue());
+            return evaluateDate(expressionValue, date -> date.getMonth().getValue());
         }
     },
 
     $multiply {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$multiply");
-            Object one = parameters.getFirst();
-            Object other = parameters.getSecond();
+            TwoNumericParameters parameters = requireTwoNumericParameters(expressionValue, 16555);
 
-            if (parameters.isAnyNull()) {
+            if (parameters == null) {
                 return null;
             }
 
-            if (!(one instanceof Number && other instanceof Number)) {
-                throw new MongoServerError(16555,
-                    "$multiply only supports numeric types, not " + describeType(one) + " and " + describeType(other));
-            }
-
-            double a = ((Number) one).doubleValue();
-            double b = ((Number) other).doubleValue();
+            double a = parameters.getFirst();
+            double b = parameters.getSecond();
             return a * b;
         }
     },
@@ -599,14 +574,14 @@ public enum Expression {
     $ne {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateComparison(expressionValue, "$ne", v -> v != 0);
+            return evaluateComparison(expressionValue, v -> v != 0);
         }
     },
 
     $not {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            Object value = singleValue(expressionValue, "$not");
+            Object value = requireSingleValue(expressionValue);
             return !Utils.isTrue(evaluate(value, document));
         }
     },
@@ -628,7 +603,7 @@ public enum Expression {
     $pow {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$pow");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
             if (parameters.isAnyNull()) {
                 return null;
             }
@@ -638,12 +613,12 @@ public enum Expression {
 
             if (!(base instanceof Number)) {
                 throw new MongoServerError(28762,
-                    "$pow's base must be numeric, not " + describeType(base));
+                    name() + "'s base must be numeric, not " + describeType(base));
             }
 
             if (!(exponent instanceof Number)) {
                 throw new MongoServerError(28763,
-                    "$pow's exponent must be numeric, not " + describeType(exponent));
+                    name() + "'s exponent must be numeric, not " + describeType(exponent));
             }
 
             double a = ((Number) base).doubleValue();
@@ -656,7 +631,7 @@ public enum Expression {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             if (expressionValue.size() < 2 || expressionValue.size() > 3) {
-                throw new MongoServerError(28667, "Expression $range takes at least 2 arguments, and at most 3, but " + expressionValue.size() + " were passed in.");
+                throw new MongoServerError(28667, "Expression " + name() + " takes at least 2 arguments, and at most 3, but " + expressionValue.size() + " were passed in.");
             }
 
             Object first = expressionValue.get(0);
@@ -670,7 +645,7 @@ public enum Expression {
                 Object third = expressionValue.get(2);
                 step = toInt(third, 34447, 34448, "step value");
                 if (step == 0) {
-                    throw new MongoServerError(34449, "$range requires a non-zero step value");
+                    throw new MongoServerError(34449, name() + " requires a non-zero step value");
                 }
             } else {
                 step = 1;
@@ -691,13 +666,13 @@ public enum Expression {
 
         private int toInt(Object object, int errorCodeIfNotANumber, int errorCodeIfNonInt, String errorMessage) {
             if (!(object instanceof Number)) {
-                throw new MongoServerError(errorCodeIfNotANumber, "$range requires a numeric " + errorMessage + ", found value of type: " + describeType(object));
+                throw new MongoServerError(errorCodeIfNotANumber, name() + " requires a numeric " + errorMessage + ", found value of type: " + describeType(object));
             }
             Number number = (Number) object;
             int value = number.intValue();
             if (number.doubleValue() != value) {
                 throw new MongoServerError(errorCodeIfNonInt,
-                    "$range requires a " + errorMessage + " that can be represented as a 32-bit integer, found value: " + number);
+                    name() + " requires a " + errorMessage + " that can be represented as a 32-bit integer, found value: " + number);
             }
             return value;
         }
@@ -706,14 +681,14 @@ public enum Expression {
     $second {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateTime(expressionValue, "$second", LocalTime::getSecond);
+            return evaluateTime(expressionValue, LocalTime::getSecond);
         }
     },
 
     $setDifference {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$setDifference");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
 
             if (parameters.isAnyNull()) {
                 return null;
@@ -724,12 +699,12 @@ public enum Expression {
 
             if (!(first instanceof Collection)) {
                 throw new MongoServerError(17048,
-                    "both operands of $setDifference must be arrays. First argument is of type: " + describeType(first));
+                    "both operands of " + name() + " must be arrays. First argument is of type: " + describeType(first));
             }
 
             if (!(second instanceof Collection)) {
                 throw new MongoServerError(17049,
-                    "both operands of $setDifference must be arrays. First argument is of type: " + describeType(second));
+                    "both operands of " + name() + " must be arrays. First argument is of type: " + describeType(second));
             }
 
             Set<Object> result = new LinkedHashSet<>((Collection<?>) first);
@@ -743,14 +718,14 @@ public enum Expression {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             if (expressionValue.size() < 2) {
-                throw new MongoServerError(17045, "$setEquals needs at least two arguments had: " + expressionValue.size());
+                throw new MongoServerError(17045, name() + " needs at least two arguments had: " + expressionValue.size());
             }
 
             final Set<Set<?>> result = new HashSet<>();
             for (Object value : expressionValue) {
                 Object evaluatedValue = evaluate(value, document);
                 if (!(evaluatedValue instanceof Collection)) {
-                    throw new MongoServerError(17044, "All operands of $setEquals must be arrays. One argument is of type: " + describeType(evaluatedValue));
+                    throw new MongoServerError(17044, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(evaluatedValue));
                 }
                 result.add(new HashSet<>((Collection<?>) evaluatedValue));
             }
@@ -768,7 +743,7 @@ public enum Expression {
                     return null;
                 }
                 if (!(evaluatedValue instanceof Collection)) {
-                    throw new MongoServerError(17047, "All operands of $setIntersection must be arrays. One argument is of type: " + describeType(evaluatedValue));
+                    throw new MongoServerError(17047, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(evaluatedValue));
                 }
                 if (result == null) {
                     result = new LinkedHashSet<>((Collection<?>) evaluatedValue);
@@ -786,16 +761,16 @@ public enum Expression {
     $setIsSubset {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$setIsSubset");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
             Object first = parameters.getFirst();
             Object second = parameters.getSecond();
 
             if (!(first instanceof Collection<?>)) {
-                throw new MongoServerError(17046, "both operands of $setIsSubset must be arrays. First argument is of type: " + describeType(first));
+                throw new MongoServerError(17046, "both operands of " + name() + " must be arrays. First argument is of type: " + describeType(first));
             }
 
             if (!(second instanceof Collection<?>)) {
-                throw new MongoServerError(17042, "both operands of $setIsSubset must be arrays. Second argument is of type: " + describeType(second));
+                throw new MongoServerError(17042, "both operands of " + name() + " must be arrays. Second argument is of type: " + describeType(second));
             }
 
             Set<?> one = new HashSet<>((Collection<?>) first);
@@ -815,7 +790,7 @@ public enum Expression {
                 }
                 if (!(evaluatedValue instanceof Collection<?>)) {
                     throw new MongoServerError(17043,
-                        "All operands of $setUnion must be arrays. One argument is of type: " + describeType(evaluatedValue));
+                        "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(evaluatedValue));
                 }
                 result.addAll((Collection<?>) evaluatedValue);
             }
@@ -826,12 +801,8 @@ public enum Expression {
     $size {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            Object value = singleValue(expressionValue, "$size");
-            if (!(value instanceof Collection)) {
-                throw new MongoServerError(17124,
-                    "The argument to $size must be an array, but was of type: " + describeType(value));
-            }
-            Collection<?> collection = (Collection<?>) value;
+            Object value = requireSingleValue(expressionValue);
+            Collection<?> collection = requireArray(17124, value);
             return collection.size();
         }
     },
@@ -840,7 +811,7 @@ public enum Expression {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             if (expressionValue.size() < 2 || expressionValue.size() > 3) {
-                throw new MongoServerError(28667, "Expression $slice takes at least 2 arguments, and at most 3, but " + expressionValue.size() + " were passed in.");
+                throw new MongoServerError(28667, "Expression " + name() + " takes at least 2 arguments, and at most 3, but " + expressionValue.size() + " were passed in.");
             }
 
             Object first = expressionValue.get(0);
@@ -848,25 +819,25 @@ public enum Expression {
                 return null;
             }
             if (!(first instanceof List)) {
-                throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: " + describeType(first));
+                throw new MongoServerError(28724, "First argument to " + name() + " must be an array, but is of type: " + describeType(first));
             }
             List<?> list = (List<?>) first;
 
             Object second = expressionValue.get(1);
             if (!(second instanceof Number)) {
-                throw new MongoServerError(28725, "Second argument to $slice must be a numeric value, but is of type: " + describeType(second));
+                throw new MongoServerError(28725, "Second argument to " + name() + " must be a numeric value, but is of type: " + describeType(second));
             }
 
             final List<?> result;
             if (expressionValue.size() > 2) {
                 Object third = expressionValue.get(2);
                 if (!(third instanceof Number)) {
-                    throw new MongoServerError(28725, "Third argument to $slice must be numeric, but is of type: " + describeType(third));
+                    throw new MongoServerError(28725, "Third argument to " + name() + " must be numeric, but is of type: " + describeType(third));
                 }
 
                 Number number = (Number) third;
                 if (number.intValue() < 0) {
-                    throw new MongoServerError(28729, "Third argument to $slice must be positive: " + third);
+                    throw new MongoServerError(28729, "Third argument to " + name() + " must be positive: " + third);
                 }
 
                 int position = ((Number) second).intValue();
@@ -894,7 +865,7 @@ public enum Expression {
     $split {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$split");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
             Object string = parameters.getFirst();
             Object delimiter = parameters.getSecond();
 
@@ -904,11 +875,11 @@ public enum Expression {
 
             if (!(string instanceof String)) {
                 throw new MongoServerError(40085,
-                    "$split requires an expression that evaluates to a string as a first argument, found: " + describeType(string));
+                    name() + " requires an expression that evaluates to a string as a first argument, found: " + describeType(string));
             }
             if (!(delimiter instanceof String)) {
                 throw new MongoServerError(40086,
-                    "$split requires an expression that evaluates to a string as a second argument, found: " + describeType(delimiter));
+                    name() + " requires an expression that evaluates to a string as a second argument, found: " + describeType(delimiter));
             }
 
             return ((String) string).split(Pattern.quote((String) delimiter));
@@ -918,7 +889,7 @@ public enum Expression {
     $subtract {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            TwoParameters parameters = requireTwoParameters(expressionValue, "$subtract");
+            TwoParameters parameters = requireTwoParameters(expressionValue);
             Object one = parameters.getFirst();
             Object other = parameters.getSecond();
 
@@ -928,7 +899,7 @@ public enum Expression {
 
             if (!(one instanceof Number && other instanceof Number)) {
                 throw new MongoServerError(16556,
-                    "cant $subtract a " + describeType(one) + " from a " + describeType(other));
+                    "cant " + name() + " a " + describeType(one) + " from a " + describeType(other));
             }
 
             return Utils.subtractNumbers((Number) one, (Number) other);
@@ -958,21 +929,21 @@ public enum Expression {
     $sqrt {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$sqrt", Math::sqrt);
+            return evaluateNumericValue(expressionValue, Math::sqrt);
         }
     },
 
     $trunc {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, "$trunc", a -> toIntOrLong(a.longValue()));
+            return evaluateNumericValue(expressionValue, a -> toIntOrLong(a.longValue()));
         }
     },
 
     $year {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateDate(expressionValue, "$year", LocalDate::getYear);
+            return evaluateDate(expressionValue, LocalDate::getYear);
         }
     },
 
@@ -1041,113 +1012,6 @@ public enum Expression {
         return result;
     }
 
-    private static ZonedDateTime getZonedDateTime(Object value, String expressionName) {
-        ZoneId timezone = ZoneId.systemDefault();
-        if (value instanceof Document) {
-            Document document = (Document) value;
-            if (!document.containsKey("date")) {
-                throw new MongoServerError(40539, "missing 'date' argument to " + expressionName + ", provided: " + value);
-            }
-            value = document.get("date");
-
-            Object timezoneExpression = document.get("timezone");
-            if (timezoneExpression != null) {
-                timezone = ZoneId.of(timezoneExpression.toString());
-            }
-        }
-        if (!(value instanceof Date)) {
-            throw new MongoServerError(16006, "can't convert from " + describeType(value) + " to Date");
-        }
-
-        Instant instant = ((Date) value).toInstant();
-        return ZonedDateTime.ofInstant(instant, timezone);
-    }
-
-    private static int evaluateComparison(List<?> expressionValue, String expressionName) {
-        TwoParameters parameters = requireTwoParameters(expressionValue, expressionName);
-        return new ValueComparator().compare(parameters.getFirst(), parameters.getSecond());
-    }
-
-    private static boolean evaluateComparison(List<?> expressionValue, String expressionName, IntPredicate comparison) {
-        int comparisonResult = evaluateComparison(expressionValue, expressionName);
-        return comparison.test(comparisonResult);
-    }
-
-    private static <T> T evaluateDateTime(List<?> expressionValue, String expressionName, Function<ZonedDateTime, T> dateFunction) {
-        Object value = singleValue(expressionValue, expressionName);
-        if (Utils.isNullOrMissing(value)) {
-            return null;
-        }
-
-        ZonedDateTime zonedDateTime = getZonedDateTime(value, expressionName);
-        return dateFunction.apply(zonedDateTime);
-    }
-
-    private static <T> T evaluateDate(List<?> expressionValue, String expressionName, Function<LocalDate, T> dateFunction) {
-        return evaluateDateTime(expressionValue, expressionName, zonedDateTime -> dateFunction.apply(zonedDateTime.toLocalDate()));
-    }
-
-    private static <T> T evaluateTime(List<?> expressionValue, String expressionName, Function<LocalTime, T> timeFunction) {
-        return evaluateDateTime(expressionValue, expressionName, zonedDateTime -> timeFunction.apply(zonedDateTime.toLocalTime()));
-    }
-
-    private static Object singleValue(List<?> list, String expressionName) {
-        if (list.size() != 1) {
-            throw new MongoServerError(16020, "Expression " + expressionName + " takes exactly 1 arguments. " + list.size() + " were passed in.");
-        }
-        return list.get(0);
-    }
-
-    private static List<?> requireCollectionInSize(List<?> value, String expressionName, int expectedCollectionSize) {
-        if (value.size() != expectedCollectionSize) {
-            throw new MongoServerError(16020, "Expression " + expressionName + " takes exactly " + expectedCollectionSize + " arguments. " + value.size() + " were passed in.");
-        }
-        return value;
-    }
-
-    private static TwoParameters requireTwoParameters(List<?> value, String expressionName) {
-        List<?> parameters = requireCollectionInSize(value, expressionName, 2);
-        return new TwoParameters(parameters.get(0), parameters.get(1));
-    }
-
-    private static class TwoParameters {
-        private final Object first;
-        private final Object second;
-
-        private TwoParameters(Object first, Object second) {
-            this.first = first;
-            this.second = second;
-        }
-
-        boolean isAnyNull() {
-            return Utils.isNullOrMissing(first) || Utils.isNullOrMissing(second);
-        }
-
-        Object getFirst() {
-            return first;
-        }
-
-        Object getSecond() {
-            return second;
-        }
-    }
-
-    private static Number evaluateNumericValue(List<?> expressionValue, String expressionName, Function<Double, ? extends Number> function) {
-        Object value = singleValue(expressionValue, expressionName);
-        if (Utils.isNullOrMissing(value)) {
-            return null;
-        }
-        if (!(value instanceof Number)) {
-            throw new MongoServerError(28765,
-                expressionName + " only supports numeric types, not " + describeType(value));
-        }
-        Number number = (Number) value;
-        if (Double.isNaN(number.doubleValue())) {
-            return number;
-        }
-        return function.apply(number.doubleValue());
-    }
-
     private static Number toIntOrLong(double value) {
         long number = (long) value;
         if (number < Integer.MIN_VALUE || number > Integer.MAX_VALUE) {
@@ -1155,67 +1019,6 @@ public enum Expression {
         } else {
             return Math.toIntExact(number);
         }
-    }
-
-    private static int requireIntegral(Object value, String expressionName, String name) {
-        if (!(value instanceof Number)) {
-            throw new MongoServerError(40096,
-                expressionName + " requires an integral " + name + ", found a value of type: " + describeType(value) + ", with value: \"" + value + "\"");
-        }
-        Number number = (Number) value;
-        int intValue = number.intValue();
-        if (intValue < 0) {
-            throw new MongoServerError(40097, expressionName + " requires a nonnegative " + name + ", found: " + intValue);
-        }
-        return intValue;
-    }
-
-    private static <T> Object evaluateIndexOf(List<?> expressionValue, String expressionName,
-                                              Function<String, List<T>> toList,
-                                              int errorCodeFirstParameterTypeMismatch,
-                                              int errorCodeSecondParameterTypeMismatch) {
-        if (expressionValue.size() < 2 || expressionValue.size() > 4) {
-            throw new MongoServerError(28667,
-                "Expression " + expressionName + " takes at least 2 arguments, and at most 4, but " + expressionValue.size() + " were passed in.");
-        }
-
-        Object first = expressionValue.get(0);
-        if (Utils.isNullOrMissing(first)) {
-            return null;
-        }
-        if (!(first instanceof String)) {
-            throw new MongoServerError(errorCodeFirstParameterTypeMismatch,
-                expressionName + " requires a string as the first argument, found: " + describeType(first));
-        }
-        List<T> elementsToSearchIn = toList.apply((String) first);
-
-        Object searchValue = expressionValue.get(1);
-        if (!(searchValue instanceof String)) {
-            throw new MongoServerError(errorCodeSecondParameterTypeMismatch,
-                expressionName + " requires a string as the second argument, found: " + describeType(searchValue));
-        }
-        List<T> search = toList.apply((String) searchValue);
-
-        int start = 0;
-        if (expressionValue.size() >= 3) {
-            Object startValue = expressionValue.get(2);
-            start = requireIntegral(startValue, expressionName, "starting index");
-            start = Math.min(start, elementsToSearchIn.size());
-        }
-
-        int end = elementsToSearchIn.size();
-        if (expressionValue.size() >= 4) {
-            Object endValue = expressionValue.get(3);
-            end = requireIntegral(endValue, expressionName, "ending index");
-            end = Math.min(Math.max(start, end), elementsToSearchIn.size());
-        }
-
-        elementsToSearchIn = elementsToSearchIn.subList(start, end);
-        int index = Collections.indexOfSubList(elementsToSearchIn, search);
-        if (index >= 0) {
-            return index + start;
-        }
-        return index;
     }
 
 }

@@ -324,6 +324,9 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$mod: [3, 2]"), json(""))).isEqualTo(1.0);
         assertThat(Expression.evaluate(json("$mod: [3.5, 3]"), json(""))).isEqualTo(0.5);
         assertThat(Expression.evaluate(json("$mod: ['$a', '$b']"), json("a: -10, b: 4"))).isEqualTo(-2.0);
+        assertThat(Expression.evaluate(json("$mod: ['$a', '$b']"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$mod: [null, 2]"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$mod: [2, null]"), json(""))).isNull();
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$mod: ''"), json("")))
