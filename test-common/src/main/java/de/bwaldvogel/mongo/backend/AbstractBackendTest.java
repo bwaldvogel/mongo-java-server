@@ -2748,6 +2748,29 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessageContaining("Query failed with error code 2 and error message 'unknown top level operator: $illegalOperator'");
     }
 
+    @Test
+    public void testExprQuery() throws Exception {
+        Document query = json("$expr: {$gt: ['$spent', '$budget']}");
+
+        assertThat(toArray(collection.find(query))).isEmpty();
+
+        collection.insertOne(json("_id: 1, category: 'food', budget: 400, spent: 450"));
+        collection.insertOne(json("_id: 2, category: 'drinks', budget: 100, spent: 150"));
+        collection.insertOne(json("_id: 3, category: 'clothes', budget: 100, spent: 50"));
+        collection.insertOne(json("_id: 4, category: 'misc', budget: 500, spent: 300"));
+        collection.insertOne(json("_id: 5, category: 'travel', budget: 200, spent: 650"));
+
+        assertThat(toArray(collection.find(query)))
+            .containsExactly(
+                json("_id: 1, category: 'food', budget: 400, spent: 450"),
+                json("_id: 2, category: 'drinks', budget: 100, spent: 150"),
+                json("_id: 5, category: 'travel', budget: 200, spent: 650")
+            );
+
+        assertThat(toArray(collection.find(json("_id: {$gt: 3}")))).hasSize(2);
+        assertThat(toArray(collection.find(json("_id: {$gt: {$expr: {$literal: 3}}}")))).isEmpty();
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {

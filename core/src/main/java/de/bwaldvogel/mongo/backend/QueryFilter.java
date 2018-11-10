@@ -8,6 +8,7 @@ enum QueryFilter {
     AND("$and"),
     OR("$or"),
     NOR("$nor"),
+    EXPR("$expr"),
     ;
 
     private final String value;

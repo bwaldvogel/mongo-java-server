@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
@@ -175,6 +176,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) {
+        if (filter == QueryFilter.EXPR) {
+            Object result = Expression.evaluate(queryValue, (Document) document);
+            return Utils.isTrue(result);
+        }
+
         if (!(queryValue instanceof List<?>)) {
             throw new MongoServerError(14816, filter + " expression must be a nonempty array");
         }
