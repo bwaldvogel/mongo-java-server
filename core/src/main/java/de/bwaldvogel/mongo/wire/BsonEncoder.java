@@ -2,6 +2,9 @@ package de.bwaldvogel.mongo.wire;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -64,7 +67,7 @@ public class BsonEncoder {
                 break;
             case BsonConstants.TYPE_ARRAY:
                 Document document = new Document();
-                List<?> array = (List<?>) value;
+                List<?> array = collectionToList(value);
                 for (int i = 0; i < array.size(); i++) {
                     document.put(String.valueOf(i), array.get(i));
                 }
@@ -151,7 +154,7 @@ public class BsonEncoder {
             return BsonConstants.TYPE_BOOLEAN;
         } else if (value instanceof byte[]) {
             return BsonConstants.TYPE_DATA;
-        } else if (value instanceof List<?>) {
+        } else if (value instanceof Collection<?> || value instanceof String[]) {
             return BsonConstants.TYPE_ARRAY;
         } else if (value instanceof Date) {
             return BsonConstants.TYPE_UTC_DATETIME;
@@ -170,5 +173,14 @@ public class BsonEncoder {
         }
     }
 
+    private static List<?> collectionToList(Object value) {
+        if (value instanceof String[]) {
+            return Arrays.asList((String[]) value);
+        } else if (value instanceof List<?>) {
+            return (List<?>) value;
+        } else {
+            return new ArrayList<>((Collection<?>) value);
+        }
+    }
 
 }

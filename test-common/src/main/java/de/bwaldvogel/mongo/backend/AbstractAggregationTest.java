@@ -217,14 +217,14 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
         collection.insertOne(json("_id: 1, value: 1"));
-        collection.insertOne(json("_id: 2, value: -1"));
+        collection.insertOne(json("_id: -2, value: -1"));
         collection.insertOne(json("_id: 3, value: 2"));
         collection.insertOne(json("_id: 4, value: 2"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
-                json("_id: 1, count: 2"),
-                json("_id: 2, count: 2")
+                json("_id: 1.0, count: 2"),
+                json("_id: 2.0, count: 2")
             );
     }
 
@@ -235,17 +235,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, value: 1, start: 5, end: 8"));
-        collection.insertOne(json("_id: 2, value: -1, start: 4, end: 4"));
-        collection.insertOne(json("_id: 3, value: 2, start: 9, end: 7"));
-        collection.insertOne(json("_id: 4, value: 2, start: 6, end: 7"));
+        collection.insertOne(json("_id: 1, value: NaN"));
+        collection.insertOne(json("_id: 2, value: 1, start: 5, end: 8"));
+        collection.insertOne(json("_id: 3, value: -1, start: 4, end: 4"));
+        collection.insertOne(json("_id: 4, value: 2, start: 9, end: 7"));
+        collection.insertOne(json("_id: 5, value: 2, start: 6, end: 7"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
-                json("_id: {abs: 1, sum: 3}, count: 1"),
-                json("_id: {abs: 1, sum: 0}, count: 1"),
-                json("_id: {abs: 2, sum: -2}, count: 1"),
-                json("_id: {abs: 2, sum: 1}, count: 1")
+                json("_id: {abs: NaN, sum: null}, count: 1"),
+                json("_id: {abs: 1.0, sum: 3}, count: 1"),
+                json("_id: {abs: 1.0, sum: 0}, count: 1"),
+                json("_id: {abs: 2.0, sum: -2}, count: 1"),
+                json("_id: {abs: 2.0, sum: 1}, count: 1")
             );
     }
 
@@ -344,8 +346,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithAddFields() throws Exception {
-        Document query = json("$addFields: {value: '$x'}");
-        List<Document> pipeline = Collections.singletonList(query);
+        Document addFields = json("$addFields: {value: '$x'}");
+        List<Document> pipeline = Collections.singletonList(addFields);
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -456,9 +458,9 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
-    public void testAggregateWithUndefinedRootVariable() throws Exception {
-        Document group = json("$group: {_id: null, results: {$push: '$$UNDEFINED'}}");
-        List<Document> pipeline = Collections.singletonList(group);
+    public void testAggregateWithUndefinedVariable() throws Exception {
+        Document project = json("$project: {result: '$$UNDEFINED'}");
+        List<Document> pipeline = Collections.singletonList(project);
 
         collection.insertOne(json("_id: 1"));
 
@@ -479,6 +481,40 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(json("doc: {_id: 1, a: {v: 10}}, a: {v: 10}, a_v: 10"));
+    }
+
+    @Test
+    public void testAggregateWithSetUnion() throws Exception {
+        Document project = json("$project: {all: {$setUnion: ['$a', '$b']}}");
+        List<Document> pipeline = Collections.singletonList(project);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, a: [1, 2, 3]"));
+        collection.insertOne(json("_id: 2, a: [1], b: [3, 2]"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, all: null"),
+                json("_id: 2, all: [1, 3, 2]")
+            );
+    }
+
+    @Test
+    public void testAggregateWithSplit() throws Exception {
+        Document project = json("$project: {name: 0, names: {$split: ['$name', ' ']}}");
+        List<Document> pipeline = Collections.singletonList(project);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, name: 'first document'"));
+        collection.insertOne(json("_id: 2, name: 'second document'"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, names: ['first', 'document']"),
+                json("_id: 2, names: ['second', 'document']")
+            );
     }
 
     private static Date date(String instant) {

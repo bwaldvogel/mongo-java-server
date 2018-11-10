@@ -593,6 +593,7 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json(""), json("$expr: true"))).isTrue();
         assertThat(matcher.matches(json(""), json("$expr: false"))).isFalse();
         assertThat(matcher.matches(json("value: 1"), json("$expr: '$value'"))).isTrue();
+        assertThat(matcher.matches(json("value: 1"), json("$expr: {$not: '$value'}"))).isFalse();
         assertThat(matcher.matches(json("value: 0"), json("$expr: '$value'"))).isFalse();
     }
 
