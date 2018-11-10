@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.UUID;
 
 import org.junit.Test;
 
@@ -30,8 +31,9 @@ public class DocumentTest {
     @Test
     public void testClone() throws Exception {
         Document original = json("abc: 123");
-        assertThat(original.clone())
-            .isInstanceOf(Document.class)
+        Document clone = original.clone();
+        assertThat(clone)
+            .isNotSameAs(original)
             .isEqualTo(original);
     }
 
@@ -78,6 +80,7 @@ public class DocumentTest {
         assertThat(Document.toJsonValue(Collections.emptyList())).isEqualTo("[]");
         assertThat(Document.toJsonValue(Collections.emptySet())).isEqualTo("[]");
         assertThat(Document.toJsonValue(new Date(1234567890000L))).isEqualTo("\"2009-02-13T23:31:30Z\"");
+        assertThat(Document.toJsonValue(UUID.fromString("a2963378-b9cb-4255-80bc-e16a3bf156b4"))).isEqualTo("\"a2963378-b9cb-4255-80bc-e16a3bf156b4\"");
     }
 
 }

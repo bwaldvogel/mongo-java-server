@@ -89,7 +89,7 @@ public final class Document implements Map<String, Object>, Bson {
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object clone() {
+    public Document clone() {
         return new Document((Map<String, Object>) documentAsMap.clone());
     }
 
