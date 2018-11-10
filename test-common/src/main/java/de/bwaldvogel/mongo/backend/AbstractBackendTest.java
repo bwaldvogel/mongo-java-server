@@ -2133,14 +2133,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUniqueIndexWithSubdocument() {
         collection.createIndex(new Document("action.actionId", 1), new IndexOptions().unique(true));
 
-        collection.insertOne(json("action: 'abc1'"));
-        collection.insertOne(json("action: { actionId: 1 }"));
-        collection.insertOne(json("action: { actionId: 2 }"));
-        collection.insertOne(json("action: { actionId: 3 }"));
+        collection.insertOne(json("_id: 1, action: 'abc1'"));
+        collection.insertOne(json("_id: 2, action: { actionId: 1 }"));
+        collection.insertOne(json("_id: 3, action: { actionId: 2 }"));
+        collection.insertOne(json("_id: 4, action: { actionId: 3 }"));
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("action: { actionId: 1 }")))
             .withMessageContaining("duplicate key error index: action.actionId_1 dup key: { : 1.0 }");
+
+        assertThat(toArray(collection.find(json("action: 'abc1'"))))
+            .containsExactly(json("_id: 1, action: 'abc1'"));
+
+        assertThat(toArray(collection.find(json("'action.actionId': 2"))))
+            .containsExactly(json("_id: 3, action: { actionId: 2 }"));
+
+        assertThat(toArray(collection.find(json("action: {actionId: 2}"))))
+            .containsExactly(json("_id: 3, action: { actionId: 2 }"));
     }
 
     @Test
