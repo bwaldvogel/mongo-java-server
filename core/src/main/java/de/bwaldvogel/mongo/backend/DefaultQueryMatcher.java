@@ -100,7 +100,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             // handle $all
             if (queryValue instanceof Document && ((Document) queryValue).keySet().contains(QueryOperator.ALL.getValue())) {
                 // clone first
-                queryValue = cloneDocument((Document) queryValue);
+                queryValue = ((Document) queryValue).clone();
                 Object allQuery = ((Document) queryValue).remove(QueryOperator.ALL.getValue());
                 if (!checkMatchesAllDocuments(allQuery, keys, document)) {
                     return false;
@@ -128,7 +128,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 Set<String> keySet = ((Document) queryValue).keySet();
 
                 // clone first
-                Document queryValueClone = cloneDocument((Document) queryValue);
+                Document queryValueClone = ((Document) queryValue).clone();
 
                 for (String queryOperator : keySet) {
 
@@ -170,10 +170,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         return checkMatchesValue(queryValue, value, valueExists);
-    }
-
-    private static Document cloneDocument(Document document) {
-        return new Document(document);
     }
 
     private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) {
