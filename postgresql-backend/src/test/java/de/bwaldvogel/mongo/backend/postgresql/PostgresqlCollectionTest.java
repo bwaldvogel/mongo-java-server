@@ -1,7 +1,7 @@
 package de.bwaldvogel.mongo.backend.postgresql;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import org.junit.Test;
 
@@ -17,19 +17,13 @@ public class PostgresqlCollectionTest {
         assertThat(PostgresqlCollection.convertOrderByToSql(new Document("$natural", 1))).isEqualTo("ORDER BY id ASC NULLS LAST");
         assertThat(PostgresqlCollection.convertOrderByToSql(new Document("$natural", -1))).isEqualTo("ORDER BY id DESC NULLS LAST");
 
-        try {
-            PostgresqlCollection.convertOrderByToSql(new Document("foo", "bar"));
-            fail("IllegalArgumentException expected");
-        } catch (IllegalArgumentException e) {
-            assertThat(e).hasMessage("Illegal sort value: bar");
-        }
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> PostgresqlCollection.convertOrderByToSql(new Document("foo", "bar")))
+            .withMessage("Illegal sort value: bar");
 
-        try {
-            PostgresqlCollection.convertOrderByToSql(new Document("$foo", 1));
-            fail("IllegalArgumentException expected");
-        } catch (IllegalArgumentException e) {
-            assertThat(e).hasMessage("Illegal key: $foo");
-        }
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> PostgresqlCollection.convertOrderByToSql(new Document("$foo", 1)))
+            .withMessage("Illegal key: $foo");
     }
 
 }

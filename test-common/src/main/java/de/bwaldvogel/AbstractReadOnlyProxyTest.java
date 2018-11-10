@@ -3,7 +3,7 @@ package de.bwaldvogel;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import org.bson.Document;
 import org.junit.After;
@@ -82,19 +82,13 @@ public abstract class AbstractReadOnlyProxyTest {
 
     @Test
     public void testIllegalCommand() throws Exception {
-        try {
-            readOnlyClient.getDatabase("testdb").runCommand(json("foo:1"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("no such cmd");
-        }
+        assertThatExceptionOfType(MongoException.class)
+            .isThrownBy(() -> readOnlyClient.getDatabase("testdb").runCommand(json("foo:1")))
+            .withMessageContaining("no such cmd");
 
-        try {
-            readOnlyClient.getDatabase("bar").runCommand(json("foo:1"));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("no such cmd");
-        }
+        assertThatExceptionOfType(MongoException.class)
+            .isThrownBy(() -> readOnlyClient.getDatabase("bar").runCommand(json("foo:1")))
+            .withMessageContaining("no such cmd");
     }
 
     @Test
@@ -118,13 +112,10 @@ public abstract class AbstractReadOnlyProxyTest {
     @Test
     public void testInsert() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
-        assertThat(collection.count()).isEqualTo(0);
-        try {
-            collection.insertOne(json("{}"));
-            fail("exception expected");
-        } catch (MongoException e) {
-            // okay
-        }
+        assertThat(collection.count()).isZero();
+
+        assertThatExceptionOfType(MongoException.class)
+            .isThrownBy(() -> collection.insertOne(json("{}")));
     }
 
     @Test
@@ -132,45 +123,34 @@ public abstract class AbstractReadOnlyProxyTest {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
         Document object = new Document("_id", 1);
         Document newObject = new Document("_id", 1);
-        try {
-            collection.replaceOne(object, newObject);
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("no such cmd: update");
-        }
+
+        assertThatExceptionOfType(MongoException.class)
+            .isThrownBy(() -> collection.replaceOne(object, newObject))
+            .withMessageContaining("no such cmd: update");
     }
 
     @Test
     public void testUpsert() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
 
-        try {
-            collection.updateMany(json("{}"), Updates.set("foo", "bar"), new UpdateOptions().upsert(true));
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("no such cmd: update");
-        }
+        assertThatExceptionOfType(MongoException.class)
+            .isThrownBy(() -> collection.updateMany(json("{}"), Updates.set("foo", "bar"), new UpdateOptions().upsert(true)))
+            .withMessageContaining("no such cmd: update");
     }
 
     @Test
     public void testDropDatabase() throws Exception {
-        try {
-            readOnlyClient.dropDatabase("testdb");
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            // okay
-        }
+        assertThatExceptionOfType(MongoException.class)
+            .isThrownBy(() -> readOnlyClient.dropDatabase("testdb"));
     }
 
     @Test
     public void testDropCollection() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("foo");
-        try {
-            collection.drop();
-            fail("MongoException expected");
-        } catch (MongoException e) {
-            assertThat(e.getMessage()).contains("no such cmd: drop");
-        }
+
+        assertThatExceptionOfType(MongoException.class)
+            .isThrownBy(collection::drop)
+            .withMessageContaining("no such cmd: drop");
     }
 
 }

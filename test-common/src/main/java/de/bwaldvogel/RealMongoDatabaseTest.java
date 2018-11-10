@@ -3,7 +3,7 @@ package de.bwaldvogel;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.List;
 
@@ -43,12 +43,9 @@ public class RealMongoDatabaseTest {
     public void testEmptyArrayQuery() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        try {
-            collection.find(Filters.and()).first();
-            fail("MongoQueryException expected");
-        } catch (MongoQueryException e) {
-            assertThat(e.getMessage()).contains("must be a nonempty array");
-        }
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(Filters.and()).first())
+            .withMessageContaining("must be a nonempty array");
     }
 
     @Test

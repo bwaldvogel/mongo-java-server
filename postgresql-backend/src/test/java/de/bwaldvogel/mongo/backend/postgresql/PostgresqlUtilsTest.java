@@ -1,7 +1,7 @@
 package de.bwaldvogel.mongo.backend.postgresql;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -31,12 +31,9 @@ public class PostgresqlUtilsTest {
         assertThat(PostgresqlUtils.toQueryValue(new ObjectId("foobarfoobar".getBytes(StandardCharsets.UTF_8)))).isEqualTo("{\"@class\":\"de.bwaldvogel.mongo.bson.ObjectId\",\"data\":\"Zm9vYmFyZm9vYmFy\"}");
         assertThat(PostgresqlUtils.toQueryValue(new Document("key", "value"))).isEqualTo("{\"@class\":\"de.bwaldvogel.mongo.bson.Document\",\"key\":\"value\"}");
 
-        try {
-            PostgresqlUtils.toQueryValue(null);
-            fail("NullPointerException expected");
-        } catch (NullPointerException e) {
-            assertThat(e).hasMessage(null);
-        }
+        assertThatExceptionOfType(NullPointerException.class)
+            .isThrownBy(() -> PostgresqlUtils.toQueryValue(null))
+            .withMessage(null);
     }
 
 }

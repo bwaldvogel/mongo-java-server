@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
@@ -121,11 +121,8 @@ public abstract class AbstractBackendSpringDataTest {
         personRepository.save(new Person("Billy", 1));
         personRepository.save(new Person("Alice", 2));
 
-        try {
-            personRepository.save(new Person("Joe", 1));
-            fail("DuplicateKeyException expected");
-        } catch (DuplicateKeyException e) {
-            assertThat(e.getMessage()).contains("duplicate key error");
-        }
+        assertThatExceptionOfType(DuplicateKeyException.class)
+            .isThrownBy(() -> personRepository.save(new Person("Joe", 1)))
+            .withMessageContaining("duplicate key error");
     }
 }

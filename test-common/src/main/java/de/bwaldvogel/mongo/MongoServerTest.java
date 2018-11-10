@@ -1,7 +1,7 @@
 package de.bwaldvogel.mongo;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -34,13 +34,12 @@ public abstract class MongoServerTest {
             pingServer(client);
 
             // new clients must fail
-            client.close();
-            try (Socket socket = new Socket()) {
-                socket.connect(serverAddress);
-                fail("IOException expected");
-            } catch (IOException e) {
-                // expected
-            }
+            assertThatExceptionOfType(IOException.class)
+                .isThrownBy(() -> {
+                    try (Socket socket = new Socket()) {
+                        socket.connect(serverAddress);
+                    }
+                });
 
         } finally {
             if (client != null) {
@@ -87,12 +86,8 @@ public abstract class MongoServerTest {
 
                 server.shutdownNow();
 
-                try {
-                    pingServer(client);
-                    fail("MongoException expected");
-                } catch (MongoException e) {
-                    // okay
-                }
+                assertThatExceptionOfType(MongoException.class)
+                    .isThrownBy(() -> pingServer(client));
 
                 // restart
                 server.bind(serverAddress);
