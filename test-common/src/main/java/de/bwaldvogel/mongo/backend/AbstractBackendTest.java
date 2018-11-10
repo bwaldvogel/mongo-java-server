@@ -2737,6 +2737,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isEqualTo(json("err: null, ok: 1"));
     }
 
+    @Test
+    public void testIllegalTopLevelOperator() throws Exception {
+        Document query = json("$illegalOperator: 1");
+
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(query).first())
+            .withMessageContaining("Query failed with error code 2 and error message 'unknown top level operator: $illegalOperator'");
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {

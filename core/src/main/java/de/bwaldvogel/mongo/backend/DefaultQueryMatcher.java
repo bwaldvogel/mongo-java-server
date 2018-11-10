@@ -85,6 +85,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (QueryFilter.isQueryFilter(firstKey)) {
             QueryFilter filter = QueryFilter.fromValue(firstKey);
             return checkMatch(queryValue, filter, document);
+        } else if (firstKey.startsWith("$") && !Constants.REFERENCE_KEYS.contains(firstKey)) {
+            throw new BadValueException("unknown top level operator: " + firstKey);
         }
 
         if (document instanceof List<?>) {
