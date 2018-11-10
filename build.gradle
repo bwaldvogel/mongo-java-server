@@ -27,16 +27,19 @@ allprojects {
     compileJava.options.encoding = 'UTF-8'
 
     ext {
-        nettyVersion = '4.1.30.Final'
-        mongoJavaDriverVersion = '3.8.2'
+        nettyVersion = '4.1.31.Final'
+        mongoJavaDriverVersion = '3.9.0'
         h2Version = '1.4.197'
-        springVersion = '5.1.1.RELEASE'
-        springDataMongoDbVersion = '2.1.1.RELEASE'
+        springVersion = '5.1.2.RELEASE'
+        springDataMongoDbVersion = '2.1.2.RELEASE'
         slf4jVersion = '1.7.25'
         jacksonVersion = '2.9.7'
         junitVersion = '4.12'
         assertjVersion = '3.11.1'
         logbackVersion = '1.2.3'
+        postgresDriverVersion = '42.2.5'
+        mockitoVersion = '2.23.0'
+        equalsVerifierVersion = '3.0.2'
     }
 
     repositories {

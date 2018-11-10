@@ -3,6 +3,6 @@ dependencies {
     compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
 
     testCompile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
-    testCompile 'org.mockito:mockito-core:2.23.0'
-    testCompile 'nl.jqno.equalsverifier:equalsverifier:3.0.2'
+    testCompile "org.mockito:mockito-core:${mockitoVersion}"
+    testCompile "nl.jqno.equalsverifier:equalsverifier:${equalsVerifierVersion}"
 }
