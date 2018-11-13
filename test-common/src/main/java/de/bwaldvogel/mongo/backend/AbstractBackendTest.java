@@ -2194,11 +2194,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
-        collection.insertOne(json("a: 'foo'"));
-        collection.insertOne(json("b: 'foo'"));
-        collection.insertOne(json("a: 'foo', b: 'foo'"));
-        collection.insertOne(json("a: 'foo', b: 'bar'"));
-        collection.insertOne(json("a: 'bar', b: 'foo'"));
+        collection.insertOne(json("_id: 2, a: 'foo'"));
+        collection.insertOne(json("_id: 3, b: 'foo'"));
+        collection.insertOne(json("_id: 4, a: 'foo', b: 'foo'"));
+        collection.insertOne(json("_id: 5, a: 'foo', b: 'bar'"));
+        collection.insertOne(json("_id: 6, a: 'bar', b: 'foo'"));
+        collection.insertOne(json("_id: 7, a: {x: 1, y: 1}, b: 'foo'"));
+        collection.insertOne(json("_id: 8, a: {x: 1, y: 2}, b: 'foo'"));
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("a: 'foo', b: 'foo'")))
@@ -2207,6 +2209,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("b: 'foo'")))
             .withMessageContaining("duplicate key error index: a_1_b_1 dup key: { : null, : \"foo\" }");
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("a: {x: 1, y: 1}, b: 'foo'")))
+            .withMessageContaining("duplicate key error index: a_1_b_1 dup key: { : {\"x\" : 1, \"y\" : 1}, : \"foo\" }");
+
+        assertThat(toArray(collection.find(json("a: 'bar'"))))
+            .containsExactly(json("_id: 6, a: 'bar', b: 'foo'"));
+
+        assertThat(toArray(collection.find(json("b: 'foo', a: 'bar'"))))
+            .containsExactly(json("_id: 6, a: 'bar', b: 'foo'"));
+
+        assertThat(toArray(collection.find(json("a: 'foo'"))))
+            .containsExactly(
+                json("_id: 2, a: 'foo'"),
+                json("_id: 4, a: 'foo', b: 'foo'"),
+                json("_id: 5, a: 'foo', b: 'bar'")
+            );
     }
 
     @Test
