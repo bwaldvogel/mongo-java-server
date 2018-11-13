@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -380,5 +381,25 @@ public class Utils {
         } else {
             return type.getName();
         }
+    }
+
+    static Document cursorResponse(String ns, Iterable<Document> documents) {
+        List<Document> firstBatch = new ArrayList<>();
+        for (Document document : documents) {
+            firstBatch.add(document);
+        }
+        return cursorResponse(ns, firstBatch);
+    }
+
+    static Document cursorResponse(String ns, List<Document> firstBatch) {
+        Document cursor = new Document();
+        cursor.put("id", Long.valueOf(0));
+        cursor.put("ns", ns);
+        cursor.put("firstBatch", firstBatch);
+
+        Document response = new Document();
+        response.put("cursor", cursor);
+        markOkay(response);
+        return response;
     }
 }

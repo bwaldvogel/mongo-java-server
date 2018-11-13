@@ -161,10 +161,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document listCollections() {
-        Document cursor = new Document();
-        cursor.put("id", Long.valueOf(0));
-        cursor.put("ns", getDatabaseName() + ".$cmd.listCollections");
-
         List<Document> firstBatch = new ArrayList<>();
         for (Document collection : namespaces.queryAll()) {
             Document collectionDescription = new Document();
@@ -176,32 +172,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             firstBatch.add(collectionDescription);
         }
 
-        cursor.put("firstBatch", firstBatch);
-
-        Document response = new Document();
-        response.put("cursor", cursor);
-        Utils.markOkay(response);
-        return response;
+        return Utils.cursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
     }
 
     private Document listIndexes() {
         MongoCollection<P> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
 
-        Document cursor = new Document();
-        cursor.put("id", Long.valueOf(0));
-        cursor.put("ns", getDatabaseName() + ".$cmd.listIndexes");
-
-        List<Document> firstBatch = new ArrayList<>();
-        for (Document description : indexes.queryAll()) {
-            firstBatch.add(description);
-        }
-
-        cursor.put("firstBatch", firstBatch);
-
-        Document response = new Document();
-        response.put("cursor", cursor);
-        Utils.markOkay(response);
-        return response;
+        return Utils.cursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes.queryAll());
     }
 
     private synchronized MongoCollection<P> resolveOrCreateCollection(final String collectionName) {
@@ -520,9 +497,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
 
         MongoCollection<P> collection = resolveCollection(collectionName, false);
-        Document response = new Document();
-        Document cursorInResponse = new Document();
-        response.put("cursor", cursorInResponse);
 
         Aggregation aggregation = new Aggregation(collection);
 
@@ -575,11 +549,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
         }
 
-        cursorInResponse.put("firstBatch", aggregation.getResult());
-        cursorInResponse.put("id", 0L);
-        cursorInResponse.put("ns", getDatabaseName() + "." + collectionName);
-        Utils.markOkay(response);
-        return response;
+        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregation.getResult());
     }
 
     private int getOptionalNumber(Document query, String fieldName, int defaultValue) {
