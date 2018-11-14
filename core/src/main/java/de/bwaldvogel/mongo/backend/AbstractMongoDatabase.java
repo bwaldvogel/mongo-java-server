@@ -117,7 +117,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         clearLastStatus(channel);
 
-        if (command.equalsIgnoreCase("insert")) {
+        if (command.equalsIgnoreCase("find")) {
+            return commandFind(command, query);
+        } else if (command.equalsIgnoreCase("insert")) {
             return commandInsert(channel, command, query);
         } else if (command.equalsIgnoreCase("update")) {
             return commandUpdate(channel, command, query);
@@ -188,6 +190,28 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else {
             return createCollection(collectionName);
         }
+    }
+
+    private Document commandFind(String command, Document query) {
+
+        final List<Document> documents = new ArrayList<>();
+        String collectionName = (String) query.get(command);
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
+        if (collection != null) {
+            int numberToSkip = ((Number) query.getOrDefault("skip", 0)).intValue();
+            int numberToReturn = ((Number) query.getOrDefault("limit", 0)).intValue();
+            Document projection = (Document) query.get("projection");
+
+            Document querySelector = new Document();
+            querySelector.put("$query", query.getOrDefault("filter", new Document()));
+            querySelector.put("$orderby", query.get("sort"));
+
+            for (Document document : collection.handleQuery(querySelector, numberToSkip, numberToReturn, projection)) {
+                documents.add(document);
+            }
+        }
+
+        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, documents);
     }
 
     private Document commandInsert(Channel channel, String command, Document query) {

@@ -34,7 +34,10 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final TreeMap<String, MongoDatabase> databases = new TreeMap<>();
 
-    private static final List<Integer> VERSION = Arrays.asList(3, 0, 0);
+    private final List<Integer> version = Arrays.asList(3, 0, 0);
+
+    private int maxWireVersion = 2;
+    private int minWireVersion = 0;
 
     private MongoDatabase resolveDatabase(Message message) {
         return resolveDatabase(message.getDatabaseName());
@@ -82,6 +85,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("databases", dbs);
             Utils.markOkay(response);
             return response;
+        } else if (command.equalsIgnoreCase("find")) {
+            String collectionName = (String) query.get(command);
+            if (collectionName.equals("$cmd.sys.inprog")) {
+                return Utils.cursorResponse(collectionName, new Document("inprog", Collections.emptyList()));
+            } else {
+                throw new NoSuchCommandException(new Document(command, collectionName).toString());
+            }
         } else if (command.equalsIgnoreCase("replSetGetStatus")) {
             throw new MongoSilentServerException("not running with --replSet");
         } else if (command.equalsIgnoreCase("getLog")) {
@@ -150,9 +160,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
 
     @Override
-    public Document handleCommand(Channel channel, String databaseName, String command, Document query)
-            {
-
+    public Document handleCommand(Channel channel, String databaseName, String command, Document query) {
         if (command.equalsIgnoreCase("whatsmyuri")) {
             Document response = new Document();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
@@ -164,14 +172,14 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             response.put("maxWriteBatchSize", Integer.valueOf(MongoWireProtocolHandler.MAX_WRITE_BATCH_SIZE));
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
-            response.put("maxWireVersion", Integer.valueOf(MongoWireProtocolHandler.MAX_WIRE_VERSION));
-            response.put("minWireVersion", Integer.valueOf(MongoWireProtocolHandler.MIN_WIRE_VERSION));
+            response.put("maxWireVersion", Integer.valueOf(maxWireVersion));
+            response.put("minWireVersion", Integer.valueOf(minWireVersion));
             response.put("localTime", new Date());
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
-            Document response = new Document("version", Utils.join(VERSION, '.'));
-            response.put("versionArray", VERSION);
+            Document response = new Document("version", Utils.join(version, '.'));
+            response.put("versionArray", version);
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             Utils.markOkay(response);
             return response;
@@ -230,7 +238,17 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public List<Integer> getVersion() {
-        return AbstractMongoBackend.VERSION;
+        return version;
     }
 
+    public void setVersion(int major, int minor, int patch) {
+        version.set(0, major);
+        version.set(1, minor);
+        version.set(2, patch);
+    }
+
+    public void setWireVersion(int maxWireVersion, int minWireVersion) {
+        this.maxWireVersion = maxWireVersion;
+        this.minWireVersion = minWireVersion;
+    }
 }

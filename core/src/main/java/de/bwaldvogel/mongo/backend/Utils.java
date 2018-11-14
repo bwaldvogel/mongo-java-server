@@ -383,6 +383,10 @@ public class Utils {
         }
     }
 
+    static Document cursorResponse(String ns, Document... documents) {
+        return cursorResponse(ns, Arrays.asList(documents));
+    }
+
     static Document cursorResponse(String ns, Iterable<Document> documents) {
         List<Document> firstBatch = new ArrayList<>();
         for (Document document : documents) {
