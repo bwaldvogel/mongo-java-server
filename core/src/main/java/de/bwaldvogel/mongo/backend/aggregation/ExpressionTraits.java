@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import static de.bwaldvogel.mongo.backend.Missing.isNullOrMissing;
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
 
 import java.time.Instant;
@@ -14,7 +15,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 
-import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -29,7 +29,7 @@ interface ExpressionTraits {
 
     default Number evaluateNumericValue(List<?> expressionValue, Function<Double, ? extends Number> function) {
         Object value = requireSingleValue(expressionValue);
-        if (Missing.isNullOrMissing(value)) {
+        if (isNullOrMissing(value)) {
             return null;
         }
         if (!(value instanceof Number)) {
@@ -55,7 +55,7 @@ interface ExpressionTraits {
 
     default <T> T evaluateDateTime(List<?> expressionValue, Function<ZonedDateTime, T> dateFunction, Document document) {
         Object value = requireSingleValue(expressionValue);
-        if (Missing.isNullOrMissing(value)) {
+        if (isNullOrMissing(value)) {
             return null;
         }
 
@@ -145,7 +145,7 @@ interface ExpressionTraits {
         }
 
         Object first = expressionValue.get(0);
-        if (Missing.isNullOrMissing(first)) {
+        if (isNullOrMissing(first)) {
             return null;
         }
         if (!(first instanceof String)) {
@@ -197,4 +197,19 @@ interface ExpressionTraits {
         }
         return (Document) expressionValue;
     }
+
+    default String evaluateString(List<?> expressionValue, Function<String, String> function) {
+        Object value = requireSingleValue(expressionValue);
+        if (isNullOrMissing(value)) {
+            return null;
+        }
+        if (value instanceof Number) {
+            value = value.toString();
+        }
+        if (!(value instanceof String)) {
+            throw new MongoServerError(16007, "can't convert from BSON type " + describeType(value) + " to String");
+        }
+        return function.apply((String) value);
+    }
+
 }

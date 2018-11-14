@@ -579,6 +579,36 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateReverseArray() throws Exception {
+        assertThat(Expression.evaluate(json("$reverseArray: null"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$reverseArray: '$a'"), json(""))).isNull();
+
+        assertThat(Expression.evaluate(json("$reverseArray: [[1, 2, 3]]"), json("")))
+            .isEqualTo(Arrays.asList(3, 2, 1));
+
+        assertThat(Expression.evaluate(json("$reverseArray: '$a'"), json("a: ['foo', 'bar']")))
+            .isEqualTo(Arrays.asList("bar", "foo"));
+
+        assertThat(Expression.evaluate(json("$reverseArray: ['$a']"), json("a: ['foo', 'bar']")))
+            .isEqualTo(Arrays.asList("bar", "foo"));
+
+        assertThat(Expression.evaluate(json("$reverseArray: [[]]"), json("")))
+            .isEqualTo(Collections.emptyList());
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reverseArray: 1"), json("")))
+            .withMessage("[Error 34435] The argument to $reverseArray must be an array, but was of type: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reverseArray: [1]"), json("")))
+            .withMessage("[Error 34435] The argument to $reverseArray must be an array, but was of type: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reverseArray: [[1, 2], [3, 4]]"), json("")))
+            .withMessage("[Error 16020] Expression $reverseArray takes exactly 1 arguments. 2 were passed in.");
+    }
+
+    @Test
     public void testEvaluateGt() throws Exception {
         assertThat(Expression.evaluate(json("$gt: [20, 10]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$gt: [20, 20]"), json(""))).isEqualTo(false);
@@ -965,6 +995,38 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$sum: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(12);
         assertThat(Expression.evaluate(json("$sum: []"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$sum: '$values'"), json("values: [1, 2, 3]"))).isEqualTo(6);
+    }
+
+    @Test
+    public void testEvaluateToLower() throws Exception {
+        assertThat(Expression.evaluate(json("$toLower: null"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$toLower: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$toLower: '$a'"), json("a: 'FOO'"))).isEqualTo("foo");
+        assertThat(Expression.evaluate(json("$toLower: 1"), json(""))).isEqualTo("1");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$toLower: [[1, 2]]"), json("")))
+            .withMessage("[Error 16007] can't convert from BSON type array to String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$toLower: [1, 2]"), json("")))
+            .withMessage("[Error 16020] Expression $toLower takes exactly 1 arguments. 2 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateToUpper() throws Exception {
+        assertThat(Expression.evaluate(json("$toUpper: null"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$toUpper: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$toUpper: '$a'"), json("a: 'foo'"))).isEqualTo("FOO");
+        assertThat(Expression.evaluate(json("$toUpper: 1"), json(""))).isEqualTo("1");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$toUpper: [[1, 2]]"), json("")))
+            .withMessage("[Error 16007] can't convert from BSON type array to String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$toUpper: [1, 2]"), json("")))
+            .withMessage("[Error 16020] Expression $toUpper takes exactly 1 arguments. 2 were passed in.");
     }
 
     @Test

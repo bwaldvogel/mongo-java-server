@@ -744,6 +744,24 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $reverseArray {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            if (isNullOrMissing(value)) {
+                return null;
+            }
+            if (!(value instanceof Collection<?>)) {
+                throw new MongoServerError(34435,
+                    "The argument to " + name() + " must be an array, but was of type: " + describeType(value));
+            }
+
+            List<?> list = new ArrayList<>((Collection<?>) value);
+            Collections.reverse(list);
+            return list;
+        }
+    },
+
     $second {
         @Override
         Object apply(List<?> expressionValue, Document document) {
@@ -992,6 +1010,20 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             return evaluateNumericValue(expressionValue, Math::sqrt);
+        }
+    },
+
+    $toLower {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            return evaluateString(expressionValue, String::toLowerCase);
+        }
+    },
+
+    $toUpper {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            return evaluateString(expressionValue, String::toUpperCase);
         }
     },
 
