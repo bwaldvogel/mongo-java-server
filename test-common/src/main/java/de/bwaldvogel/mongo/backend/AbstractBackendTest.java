@@ -443,6 +443,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testDistinctQueryWithDot() {
+        collection.insertOne(new Document("a", new Document("b", 1)));
+        collection.insertOne(new Document("a", new Document("b", 1)));
+        collection.insertOne(new Document("a", new Document("b", 1)));
+        collection.insertOne(new Document("a", new Document("b", 2)));
+        collection.insertOne(new Document("a", new Document("b", 3)));
+        assertThat(toArray(collection.distinct("a.b", Integer.class))).containsExactly(1, 2, 3);
+        assertThat(collection.distinct("a.c", Integer.class)).isEmpty();
+    }
+
+    @Test
     public void testDropCollection() throws Exception {
         collection.insertOne(json("{}"));
         assertThat(toArray(db.listCollectionNames())).contains(collection.getNamespace().getCollectionName());
