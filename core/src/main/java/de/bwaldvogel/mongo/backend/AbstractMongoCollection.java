@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
@@ -748,7 +749,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized Document handleDistinct(Document query) {
-        String key = query.get("key").toString();
+        String[] keys = query.get("key").toString().split(Pattern.quote("."));
         Document filter = (Document) query.get("query");
         if (filter == null) {
             filter = new Document();
@@ -756,8 +757,17 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Set<Object> values = new TreeSet<>(new ValueComparator());
 
         for (Document document : queryDocuments(filter, null, 0, 0)) {
-            if (document.containsKey(key)) {
-                values.add(document.get(key));
+            boolean found = true;
+            Object doc = document;
+            for (String key : keys) {
+                if (!(doc instanceof Document) || !((Document)doc).containsKey(key)) {
+                    found = false;
+                    break;
+                }
+                doc = ((Document)doc).get(key);
+            }
+            if (found) {
+                values.add(doc);
             }
         }
 
