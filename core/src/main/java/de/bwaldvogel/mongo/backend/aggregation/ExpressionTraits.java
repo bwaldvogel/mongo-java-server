@@ -17,6 +17,7 @@ import java.util.function.IntPredicate;
 
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 interface ExpressionTraits {
@@ -205,6 +206,9 @@ interface ExpressionTraits {
         }
         if (value instanceof Number) {
             value = value.toString();
+        }
+        if (value instanceof ObjectId) {
+            value = ((ObjectId) value).getHexData();
         }
         if (!(value instanceof String)) {
             throw new MongoServerError(16007, "can't convert from BSON type " + describeType(value) + " to String");

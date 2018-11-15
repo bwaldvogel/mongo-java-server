@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ExpressionTest {
@@ -1048,6 +1049,23 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$trunc: [1, 2]"), json("")))
             .withMessage("[Error 16020] Expression $trunc takes exactly 1 arguments. 2 were passed in.");
+    }
+
+    @Test
+    public void testEvaluateToString() throws Exception {
+        assertThat(Expression.evaluate(json("$toString: null"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$toString: '$a'"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$toString: '$a'"), json("a: 'foo'"))).isEqualTo("foo");
+        assertThat(Expression.evaluate(json("$toString: 1"), json(""))).isEqualTo("1");
+        assertThat(Expression.evaluate(json("$toString: 1.3"), json(""))).isEqualTo("1.3");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$toString: [[1, 2]]"), json("")))
+            .withMessage("[Error 16007] can't convert from BSON type array to String");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$toString: [1, 2]"), json("")))
+            .withMessage("[Error 16020] Expression $toString takes exactly 1 arguments. 2 were passed in.");
     }
 
     @Test

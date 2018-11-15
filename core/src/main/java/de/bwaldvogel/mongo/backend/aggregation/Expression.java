@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.backend.Missing;
@@ -1024,6 +1025,13 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             return evaluateString(expressionValue, String::toUpperCase);
+        }
+    },
+
+    $toString {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            return evaluateString(expressionValue, Function.identity());
         }
     },
 

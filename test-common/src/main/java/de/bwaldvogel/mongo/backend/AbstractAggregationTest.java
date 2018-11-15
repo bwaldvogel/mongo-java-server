@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 
 import com.mongodb.MongoCommandException;
@@ -342,6 +343,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 json("_id: 2, value: 20, other: null"),
                 json("_id: 3, value: 30, n: 7.3, other: null")
             );
+    }
+
+    @Test
+    public void testAggregateWithExpressionProjection() throws Exception {
+        Document query = json("$project: {_id: 0, idHex: {$toString: '$_id'}}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(new Document("_id", new ObjectId("abcd01234567890123456789")));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("idHex: 'abcd01234567890123456789'"));
     }
 
     @Test
