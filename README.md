@@ -69,6 +69,56 @@ public class SimpleTest {
 }
 ```
 
+### Example with SpringBoot ###
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes={SimpleSpringBootTest.TestConfiguration.class})
+public class SimpleSpringBootTest {
+
+    @Autowired private MyRepository repository;
+
+    @Before
+    public void setUp() {
+        // initialize your repository with some test data
+        repository.deleteAll();
+        repository.save(...);
+    }
+
+    @Test
+    public void testMyRepository() {
+        // test your repository ...
+        ...
+    }
+
+    @Configuration
+    @EnableMongoRepositories(basePackageClasses={MyRepository.class})
+    protected static class TestConfiguration {
+        @Bean
+        public MongoTemplate mongoTemplate(MongoClient mongoClient) {
+            return new MongoTemplate(mongoDbFactory(mongoClient));
+        }
+
+        @Bean
+        public MongoDbFactory mongoDbFactory(MongoClient mongoClient) {
+            return new SimpleMongoDbFactory(mongoClient, "test");
+        }
+
+        @Bean(destroyMethod="shutdown")
+        public MongoServer mongoServer() {
+            MongoServer mongoServer = new MongoServer(new MemoryBackend());
+            mongoServer.bind();
+            return mongoServer;
+        }
+
+        @Bean(destroyMethod="close")
+        public MongoClient mongoClient(MongoServer mongoServer) {
+            return new MongoClient(new ServerAddress(mongoServer.getLocalAddress()));
+        }
+    }
+}
+```
+
 ## H2 MVStore backend ##
 
 The [H2 MVStore][h2-mvstore] backend connects the server to a `MVStore` that
