@@ -1139,11 +1139,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testQueryAllExpression() throws Exception {
-        collection.insertOne(json(" _id : [ { x : 1 } , { x : 2  } ]"));
-        collection.insertOne(json(" _id : [ { x : 2 } , { x : 3  } ]"));
+        collection.insertOne(json("a: [{x: 1}, {x: 2}]"));
+        collection.insertOne(json("a: [{x: 2}, {x: 3}]"));
 
-        assertThat(collection.countDocuments(json("'_id.x':{$all:[1,2]}"))).isEqualTo(1);
-        assertThat(collection.countDocuments(json("'_id.x':{$all:[2,3]}"))).isEqualTo(1);
+        assertThat(collection.countDocuments(json("'a.x': {$all: [1, 2]}"))).isEqualTo(1);
+        assertThat(collection.countDocuments(json("'a.x': {$all: [2, 3]}"))).isEqualTo(1);
     }
 
     @Test
@@ -2116,6 +2116,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         objs = toArray(collection.find(exists("other", false)));
         assertThat(objs).as("should return all documents").hasSize(5);
+    }
+
+    @Test
+    public void testInsertWithIllegalId() throws Exception {
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("_id: [1, 2, 3]")))
+            .withMessageContaining("can't use an array for _id");
     }
 
     @Test

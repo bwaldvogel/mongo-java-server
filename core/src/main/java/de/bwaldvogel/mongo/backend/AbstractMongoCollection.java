@@ -89,6 +89,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     @Override
     public synchronized void addDocument(Document document) {
 
+        if (document.get(Constants.ID_FIELD) instanceof Collection) {
+            throw new BadValueException("can't use an array for _id");
+        }
+
         for (Index<P> index : indexes) {
             index.checkAdd(document);
         }
