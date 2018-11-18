@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
@@ -44,9 +45,9 @@ public abstract class Index<P> {
             .collect(Collectors.toList());
     }
 
-    public abstract void checkAdd(Document document);
+    public abstract void checkAdd(Document document, MongoCollection<P> collection);
 
-    public abstract void add(Document document, P position);
+    public abstract void add(Document document, P position, MongoCollection<P> collection);
 
     public abstract P remove(Document document);
 
@@ -58,7 +59,7 @@ public abstract class Index<P> {
 
     public abstract long getDataSize();
 
-    public abstract void checkUpdate(Document oldDocument, Document newDocument);
+    public abstract void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection);
 
     public abstract void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError;
 

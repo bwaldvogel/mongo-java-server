@@ -94,13 +94,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         for (Index<P> index : indexes) {
-            index.checkAdd(document);
+            index.checkAdd(document, this);
         }
 
         P position = addDocumentInternal(document);
 
         for (Index<P> index : indexes) {
-            index.add(document, position);
+            index.add(document, position, this);
         }
 
         updateDataSize(Utils.calculateSize(document));
@@ -842,7 +842,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
             if (!newDocument.equals(oldDocument)) {
                 for (Index<P> index : indexes) {
-                    index.checkUpdate(oldDocument, newDocument);
+                    index.checkUpdate(oldDocument, newDocument, this);
                 }
                 for (Index<P> index : indexes) {
                     index.updateInPlace(oldDocument, newDocument);

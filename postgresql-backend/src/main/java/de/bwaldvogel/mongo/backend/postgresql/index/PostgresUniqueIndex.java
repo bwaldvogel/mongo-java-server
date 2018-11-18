@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.Missing;
@@ -58,7 +59,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    public void checkAdd(Document document) {
+    public void checkAdd(Document document, MongoCollection<Long> collection) {
         Map<String, Object> keyValues = getKeyValues(document);
         String sql = createSelectStatement(keyValues);
         try (Connection connection = backend.getConnection();
@@ -69,7 +70,7 @@ public class PostgresUniqueIndex extends Index<Long> {
                     List<Object> normalizedValues = keyValues.values().stream()
                         .map(Utils::normalizeValue)
                         .collect(Collectors.toList());
-                    throw new DuplicateKeyError(this, normalizedValues);
+                    throw new DuplicateKeyError(this, collection, normalizedValues);
                 }
             }
         } catch (SQLException | IOException e) {
@@ -90,7 +91,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    public void add(Document document, Long position) {
+    public void add(Document document, Long position, MongoCollection<Long> collection) {
     }
 
     @Override
@@ -154,7 +155,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    public void checkUpdate(Document oldDocument, Document newDocument) {
+    public void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<Long> collection) {
     }
 
     @Override

@@ -9,6 +9,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
@@ -37,20 +38,20 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public synchronized void checkAdd(Document document) {
+    public synchronized void checkAdd(Document document, MongoCollection<P> collection) {
         if (hasNoValueForKeys(document)) {
             return;
         }
 
         List<Object> key = getKeyValue(document);
         if (containsKey(key)) {
-            throw new DuplicateKeyError(this, key);
+            throw new DuplicateKeyError(this, collection, key);
         }
     }
 
     @Override
-    public synchronized void add(Document document, P position) {
-        checkAdd(document);
+    public synchronized void add(Document document, P position, MongoCollection<P> collection) {
+        checkAdd(document, collection);
         if (hasNoValueForKeys(document)) {
             return;
         }
@@ -71,11 +72,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public void checkUpdate(Document oldDocument, Document newDocument) {
+    public void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection) {
         if (nullAwareEqualsKeys(oldDocument, newDocument)) {
             return;
         }
-        checkAdd(newDocument);
+        checkAdd(newDocument, collection);
     }
 
     @Override
