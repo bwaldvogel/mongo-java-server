@@ -47,6 +47,8 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 import org.junit.Test;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +59,6 @@ import com.mongodb.MongoNamespace;
 import com.mongodb.MongoQueryException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.WriteConcern;
-import com.mongodb.async.SingleResultCallback;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
@@ -80,6 +81,7 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
+import com.mongodb.reactivestreams.client.Success;
 
 public abstract class AbstractBackendTest extends AbstractTest {
 
@@ -2599,9 +2601,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testInsertAndUpdateAsynchronously() throws Exception {
         int numDocuments = 1000;
-        final CountDownLatch latch = new CountDownLatch(numDocuments);
-        final Queue<RuntimeException> errors = new LinkedBlockingQueue<>();
-        final Semaphore concurrentOperationsOnTheFly = new Semaphore(50); // prevent MongoWaitQueueFullException
+        CountDownLatch latch = new CountDownLatch(numDocuments);
+        Queue<RuntimeException> errors = new LinkedBlockingQueue<>();
+        Semaphore concurrentOperationsOnTheFly = new Semaphore(50); // prevent MongoWaitQueueFullException
 
         for (int i = 1; i <= numDocuments; i++) {
             final Document document = new Document("_id", i);
@@ -2609,30 +2611,55 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 document.append("key-" + i + "-" + j, "value-" + i + "-" + j);
             }
             concurrentOperationsOnTheFly.acquire();
-            asyncCollection.insertOne(document, new SingleResultCallback<Void>() {
+            asyncCollection.insertOne(document).subscribe(new Subscriber<Success>() {
                 @Override
-                public void onResult(Void result, Throwable t) {
-                    checkError("insert", t);
+                public void onSubscribe(Subscription s) {
+                    s.request(Integer.MAX_VALUE);
+                }
+
+                @Override
+                public void onNext(Success success) {
                     log.info("inserted {}", document);
-                    final Document query = new Document("_id", document.getInteger("_id"));
-                    asyncCollection.updateOne(query, Updates.set("updated", true), new SingleResultCallback<UpdateResult>() {
+                    Document query = new Document("_id", document.getInteger("_id"));
+                    asyncCollection.updateOne(query, Updates.set("updated", true)).subscribe(new Subscriber<UpdateResult>() {
                         @Override
-                        public void onResult(UpdateResult result, Throwable t) {
-                            checkError("update", t);
-                            log.info("updated {}: {}", query, result);
+                        public void onSubscribe(Subscription s) {
+                            s.request(Integer.MAX_VALUE);
+                        }
+
+                        @Override
+                        public void onNext(UpdateResult updateResult) {
+                            log.info("updated {}: {}", query, updateResult);
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                            handleError("update", t);
+                        }
+
+                        @Override
+                        public void onComplete() {
                             release();
                         }
                     });
                 }
 
-                private void checkError(String operation, Throwable t) {
-                    if (t != null) {
-                        log.error(operation + " of {} failed", document, t);
-                        RuntimeException exception = new RuntimeException("Failed to " + operation + " " + document, t);
-                        errors.add(exception);
-                        release();
-                        throw exception;
-                    }
+                @Override
+                public void onError(Throwable t) {
+                    handleError("insert", t);
+                }
+
+                @Override
+                public void onComplete() {
+                    log.info("insert completed");
+                }
+
+                private void handleError(String operation, Throwable t) {
+                    log.error(operation + " of {} failed", document, t);
+                    RuntimeException exception = new RuntimeException("Failed to " + operation + " " + document, t);
+                    errors.add(exception);
+                    release();
+                    throw exception;
                 }
 
                 private void release() {

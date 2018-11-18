@@ -1,7 +1,7 @@
 dependencies {
     compile project(':mongo-java-server-core')
     compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
-    compile group: 'org.mongodb', name: 'mongodb-driver-async', version: mongoJavaDriverVersion
+    compile group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: mongoJavaDriverReactiveStreamsVersion
 
     compile "org.springframework:spring-core:${springVersion}"
     compile "org.springframework:spring-beans:${springVersion}"

@@ -29,6 +29,7 @@ allprojects {
     ext {
         nettyVersion = '4.1.31.Final'
         mongoJavaDriverVersion = '3.9.0'
+        mongoJavaDriverReactiveStreamsVersion = '1.10.0'
         h2Version = '1.4.197'
         springVersion = '5.1.2.RELEASE'
         springDataMongoDbVersion = '2.1.2.RELEASE'
