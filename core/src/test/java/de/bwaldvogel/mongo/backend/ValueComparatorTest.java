@@ -65,6 +65,16 @@ public class ValueComparatorTest {
     }
 
     @Test
+    public void testCompareNullsLast() throws Exception {
+        ValueComparator nullsLastComparator = new ValueComparator(true);
+        assertThat(nullsLastComparator.compare("abc", "abc")).isEqualTo(0);
+        assertThat(nullsLastComparator.compare("abc", "zzz")).isLessThan(0);
+        assertThat(nullsLastComparator.compare("zzz", "abc")).isGreaterThan(0);
+        assertThat(nullsLastComparator.compare(null, "abc")).isGreaterThan(0);
+        assertThat(nullsLastComparator.compare("abc", null)).isLessThan(0);
+    }
+
+    @Test
     public void testCompareNumberValues() {
         assertThat(comparator.compare(123, 123.0)).isEqualTo(0);
         assertThat(comparator.compare(17L, 17.3)).isLessThan(0);
