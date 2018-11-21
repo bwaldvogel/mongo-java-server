@@ -162,9 +162,25 @@ public final class Document implements Map<String, Object>, Bson {
 
     @Override
     public String toString() {
+        return toString(false);
+    }
+
+    public String toString(boolean compactKey) {
+        return toString(compactKey, "{", "}");
+    }
+
+    public String toString(boolean compactKey, String prefix, String suffix) {
         return documentAsMap.entrySet().stream()
-            .map(entry -> "\"" + Json.escapeJson(entry.getKey()) + "\" : " + Json.toJsonValue(entry.getValue()))
-            .collect(Collectors.joining(", ", "{", "}"));
+            .map(entry -> writeKey(entry.getKey(), compactKey) + " " + Json.toJsonValue(entry.getValue()))
+            .collect(Collectors.joining(", ", prefix, suffix));
+    }
+
+    private String writeKey(String key, boolean compact) {
+        if (compact) {
+            return Json.escapeJson(key) + ":";
+        } else {
+            return "\"" + Json.escapeJson(key) + "\" :";
+        }
     }
 
 }

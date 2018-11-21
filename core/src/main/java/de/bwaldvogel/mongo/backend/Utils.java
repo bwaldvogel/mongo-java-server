@@ -138,7 +138,7 @@ public class Utils {
         }
     }
 
-    static long calculateSize(Document document) {
+    static int calculateSize(Document document) {
         ByteBuf buffer = Unpooled.buffer();
         try {
             new BsonEncoder().encodeDocument(document, buffer);
@@ -228,9 +228,8 @@ public class Utils {
 
         if (subKey.matches("\\$(\\..+)?")) {
             if (matchPos == null || matchPos.get() == null) {
-                throw new MongoServerError(16650, //
-                        "Cannot apply the positional operator without a corresponding query " //
-                                + "field containing an array.");
+                throw new MongoServerError(16650,
+                    "The positional operator did not find the match needed from the query.");
             }
             Integer pos = matchPos.getAndSet(null);
             return subKey.replaceFirst("\\$", String.valueOf(pos));
@@ -263,7 +262,7 @@ public class Utils {
     }
 
     public static void markOkay(Document result) {
-        result.put("ok", Integer.valueOf(1));
+        result.put("ok", 1.0);
     }
 
     static void setListSafe(Object document, String key, Object obj) {

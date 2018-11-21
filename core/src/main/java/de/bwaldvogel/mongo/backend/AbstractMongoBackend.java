@@ -16,6 +16,7 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -93,7 +94,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
                 throw new NoSuchCommandException(new Document(command, collectionName).toString());
             }
         } else if (command.equalsIgnoreCase("replSetGetStatus")) {
-            throw new MongoSilentServerException("not running with --replSet");
+            throw new MongoServerError(76, "NoReplicationEnabled", "not running with --replSet");
         } else if (command.equalsIgnoreCase("getLog")) {
             final Object argument = query.get(command);
             return getLog(argument == null ? null : argument.toString());
@@ -130,7 +131,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
                 if (dropTarget) {
                     newDatabase.dropCollection(newCollectionName);
                 } else {
-                    throw new MongoServerException("target namespace already exists");
+                    throw new MongoServerError(48, "NamespaceExists", "target namespace exists");
                 }
             }
 

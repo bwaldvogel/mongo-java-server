@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,7 +33,6 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
-import de.bwaldvogel.mongo.exception.NoSuchCollectionException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -146,7 +146,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             MongoCollection<P> collection = resolveCollection(command, query, true);
             return collection.getStats();
         } else if (command.equalsIgnoreCase("validate")) {
-            MongoCollection<P> collection = resolveCollection(command, query, true);
+            MongoCollection<P> collection = resolveCollection(command, query, false);
+            if (collection == null) {
+                throw new MongoServerError(26, "NamespaceNotFound", "ns not found");
+            }
             return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {
             String collectionName = query.get(command).toString();
@@ -178,9 +181,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document listIndexes() {
-        MongoCollection<P> indexes = resolveCollection(INDEXES_COLLECTION_NAME, true);
-
-        return Utils.cursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes.queryAll());
+        Iterable<Document> indexes = Optional.ofNullable(resolveCollection(INDEXES_COLLECTION_NAME, false))
+            .map(MongoCollection::queryAll)
+            .orElse(Collections.emptyList());
+        return Utils.cursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
     }
 
     private synchronized MongoCollection<P> resolveOrCreateCollection(final String collectionName) {
@@ -248,6 +252,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandUpdate(Channel channel, String command, Document query) {
+        clearLastStatus(channel);
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -257,12 +262,23 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         int nMatched = 0;
         int nModified = 0;
         Collection<Document> upserts = new ArrayList<>();
-        for (Document updateObj : updates) {
+
+        List<Document> writeErrors = new ArrayList<>();
+
+        Document response = new Document();
+        for (int i = 0; i < updates.size(); i++) {
+            Document updateObj = updates.get(i);
             Document selector = (Document) updateObj.get("q");
             Document update = (Document) updateObj.get("u");
             boolean multi = Utils.isTrue(updateObj.get("multi"));
             boolean upsert = Utils.isTrue(updateObj.get("upsert"));
-            final Document result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
+            Document result;
+            try {
+                result = updateDocuments(collectionName, selector, update, multi, upsert);
+            } catch (MongoServerException e) {
+                writeErrors.add(toWriteError(i, e));
+                continue;
+            }
             if (result.containsKey("upserted")) {
                 final Object id = result.get("upserted");
                 final Document upserted = new Document("index", upserts.size());
@@ -273,11 +289,16 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             nModified += ((Integer) result.get("nModified")).intValue();
         }
 
-        Document response = new Document();
-        response.put("n", nMatched);
+        response.put("n", nMatched + upserts.size());
         response.put("nModified", nModified);
         if (!upserts.isEmpty()) {
+            if (upserts.size() != 1) {
+                throw new IllegalStateException("Unexpected number of upserts: " + upserts.size());
+            }
             response.put("upserted", upserts);
+        }
+        if (!writeErrors.isEmpty()) {
+            response.put("writeErrors", writeErrors);
         }
         Utils.markOkay(response);
         putLastResult(channel, response);
@@ -448,6 +469,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else {
             result = new Document();
             result.put("err", null);
+            result.put("n", 0);
         }
         Utils.markOkay(result);
         return result;
@@ -480,7 +502,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         // found no prev error
         Document result = new Document();
-        result.put("nPrev", Integer.valueOf(-1));
+        result.put("nPrev", -1);
+        result.put("n", 0);
+        result.put("err", null);
         Utils.markOkay(result);
         return result;
     }
@@ -634,7 +658,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         checkCollectionName(collectionName);
         MongoCollection<P> collection = collections.get(collectionName);
         if (collection == null && throwIfNotFound) {
-            throw new NoSuchCollectionException(collectionName);
+            throw new MongoServerException("Collection [" + getDatabaseName() + "." + collectionName + "] not found.");
         }
         return collection;
     }
@@ -683,10 +707,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         boolean multi = updateCommand.isMulti();
         boolean upsert = updateCommand.isUpsert();
 
+        clearLastStatus(channel);
         try {
-            Document result = updateDocuments(channel, collectionName, selector, update, multi, upsert);
+            Document result = updateDocuments(collectionName, selector, update, multi, upsert);
             putLastResult(channel, result);
         } catch (MongoServerException e) {
+            putLastError(channel, e);
             log.error("failed to update {}", updateCommand, e);
         }
     }
@@ -759,9 +785,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
             MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-            int n = collection.insertDocuments(documents);
-            assert n == documents.size();
-            Document result = new Document("n", Integer.valueOf(n));
+            collection.insertDocuments(documents);
+            Document result = new Document("n", 0);
+            result.put("err", null);
             putLastResult(channel, result);
         } catch (MongoServerError e) {
             putLastError(channel, e);
@@ -773,7 +799,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         clearLastStatus(channel);
         try {
             if (collectionName.startsWith("system.")) {
-                throw new MongoServerError(12050, "cannot delete from system namespace");
+                throw new MongoServerError(73, "InvalidNamespace",
+                    "cannot write to '" + getDatabaseName() + "." + collectionName + "'");
             }
             MongoCollection<P> collection = resolveCollection(collectionName, false);
             final int n;
@@ -791,34 +818,44 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document updateDocuments(Channel channel, String collectionName, Document selector,
+    private Document updateDocuments(String collectionName, Document selector,
                                      Document update, boolean multi, boolean upsert) {
-        clearLastStatus(channel);
-        try {
-            if (collectionName.startsWith("system.")) {
-                throw new MongoServerError(10156, "cannot update system collection");
-            }
 
-            MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-            return collection.updateDocuments(selector, update, multi, upsert);
-        } catch (MongoServerException e) {
-            putLastError(channel, e);
-            throw e;
+        if (collectionName.startsWith("system.")) {
+            throw new MongoServerError(10156, "cannot update system collection");
         }
+
+        MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
+        return collection.updateDocuments(selector, update, multi, upsert);
     }
 
     private void putLastError(Channel channel, MongoServerException ex) {
+        Document error = toError(channel, ex);
+        putLastResult(channel, error);
+    }
+
+    private Document toWriteError(int index, MongoServerException e) {
         Document error = new Document();
-        if (ex instanceof MongoServerError) {
-            MongoServerError err = (MongoServerError) ex;
-            error.put("err", err.getMessageWithoutErrorCode());
+        error.put("index", index);
+        error.put("errmsg", e.getMessageWithoutErrorCode());
+        if (e instanceof MongoServerError) {
+            MongoServerError err = (MongoServerError) e;
             error.put("code", Integer.valueOf(err.getCode()));
             error.putIfNotNull("codeName", err.getCodeName());
-        } else {
-            error.put("err", ex.getMessageWithoutErrorCode());
+        }
+        return error;
+    }
+
+    private Document toError(Channel channel, MongoServerException ex) {
+        Document error = new Document();
+        error.put("err", ex.getMessageWithoutErrorCode());
+        if (ex instanceof MongoServerError) {
+            MongoServerError err = (MongoServerError) ex;
+            error.put("code", Integer.valueOf(err.getCode()));
+            error.putIfNotNull("codeName", err.getCodeName());
         }
         error.put("connectionId", channel.id().asShortText());
-        putLastResult(channel, error);
+        return error;
     }
 
     private synchronized void putLastResult(Channel channel, Document result) {

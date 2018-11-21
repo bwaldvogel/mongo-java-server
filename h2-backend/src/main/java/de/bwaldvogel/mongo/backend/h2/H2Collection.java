@@ -38,7 +38,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected void updateDataSize(long sizeDelta) {
+    protected void updateDataSize(int sizeDelta) {
         synchronized (metaMap) {
             Number value = (Number) metaMap.get(DATA_SIZE_KEY);
             Long newValue = Long.valueOf(value.longValue() + sizeDelta);
@@ -47,9 +47,9 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected long getDataSize() {
+    protected int getDataSize() {
         Number value = (Number) metaMap.get(DATA_SIZE_KEY);
-        return value.longValue();
+        return value.intValue();
     }
 
 

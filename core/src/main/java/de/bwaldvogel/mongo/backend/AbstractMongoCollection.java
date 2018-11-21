@@ -1,5 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+import static de.bwaldvogel.mongo.backend.Utils.describeType;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Json;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -80,16 +84,16 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract Document getDocument(P position);
 
-    protected abstract void updateDataSize(long sizeDelta);
+    protected abstract void updateDataSize(int sizeDelta);
 
-    protected abstract long getDataSize();
+    protected abstract int getDataSize();
 
     protected abstract P addDocumentInternal(Document document);
 
     @Override
     public synchronized void addDocument(Document document) {
 
-        if (document.get(Constants.ID_FIELD) instanceof Collection) {
+        if (document.get(ID_FIELD) instanceof Collection) {
             throw new BadValueException("can't use an array for _id");
         }
 
@@ -133,7 +137,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private void assertNotKeyField(String key) {
         if (key.equals(idField)) {
-            throw new MongoServerError(10148, "Mod on " + idField + " not allowed");
+            throw new MongoServerError(66, "ImmutableField",
+                "Performing an update on the path '" + idField + "' would modify the immutable field '" + idField + "'");
         }
     }
 
@@ -203,32 +208,30 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         case PULL_ALL:
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
-                List<Object> list;
+                final List<Object> list;
                 if (Missing.isNullOrMissing(value)) {
                     return;
                 } else if (value instanceof List<?>) {
                     list = asList(value);
                 } else {
-                    throw new MongoServerError(10142, "Cannot apply " + modifier + " modifier to non-array");
+                    if (op == UpdateOperator.PULL) {
+                        throw new MongoServerError(10142, "Cannot apply " + modifier + " to a non-array value");
+                    } else {
+                        throw new MongoServerError(10142,
+                            modifier + " requires an array argument but was given a " + describeType(value));
+                    }
                 }
 
                 Object pullValue = change.get(key);
                 if (modifier.equals("$pullAll")) {
                     if (!(pullValue instanceof Collection<?>)) {
-                        throw new MongoServerError(10153, "Modifier " + modifier + " allowed for arrays only");
+                        throw new MongoServerError(10153, modifier + " requires an array argument but was given a " + describeType(pullValue));
                     }
                     @SuppressWarnings("unchecked")
                     Collection<Object> valueList = (Collection<Object>) pullValue;
-                    do {
-                    } while (list.removeAll(valueList));
+                    list.removeIf(valueList::contains);
                 } else {
-                    Iterator<Object> it = list.iterator();
-                    while (it.hasNext()) {
-                        Object obj = it.next();
-                        if (matcher.matchesValue(pullValue, obj)) {
-                            it.remove();
-                        }
-                    }
+                    list.removeIf(obj -> matcher.matchesValue(pullValue, obj));
                 }
                 // no need to put something back
             }
@@ -237,13 +240,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         case POP:
             for (String key : change.keySet()) {
                 Object value = getSubdocumentValue(document, key, matchPos);
-                List<Object> list;
+                final List<Object> list;
                 if (Missing.isNullOrMissing(value)) {
                     return;
                 } else if (value instanceof List<?>) {
                     list = asList(value);
                 } else {
-                    throw new MongoServerError(10143, "Cannot apply " + modifier + " modifier to non-array");
+                    throw new MongoServerError(10143, modifier + " requires an array argument but was given a " + describeType(value));
                 }
 
                 Object pushValue = change.get(key);
@@ -263,7 +266,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
 
-                String operation = (op == UpdateOperator.INC) ? "increment" : "multiply";
                 Object value = getSubdocumentValue(document, key, matchPos);
                 Number number;
                 if (Missing.isNullOrMissing(value)) {
@@ -271,12 +273,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 } else if (value instanceof Number) {
                     number = (Number) value;
                 } else {
-                    throw new MongoServerException("cannot " + operation + " value '" + value + "'");
+                    throw new MongoServerError(14, "Cannot apply " + op.getValue() + " to a value of non-numeric type." +
+                        " {" + ID_FIELD + ": " + Json.toJsonValue(document.get(ID_FIELD)) + "} has the field '" + key + "'" +
+                        " of non-numeric type " + describeType(value));
                 }
 
                 Object changeObject = change.get(key);
                 if (!(changeObject instanceof Number)) {
-                    throw new MongoServerException("cannot " + operation + " with non-numeric value: " + change);
+                    throw new MongoServerError(14, "Cannot increment with non-numeric argument: " + change.toString(true));
                 }
                 Number changeValue = (Number) changeObject;
                 final Number newValue;
@@ -336,17 +340,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     } else if (type.equals("date")) {
                         useDate = true;
                     } else {
-                        throw new BadValueException("The '$type' string field is required to be 'date' or 'timestamp': " + change);
+                        throw new BadValueException("The '$type' string field is required to be 'date' or 'timestamp': " +
+                            "{$currentDate: {field : {$type: 'date'}}}");
                     }
                 } else {
-                    final String type;
-                    if (typeSpecification != null) {
-                        type = typeSpecification.getClass().getSimpleName();
-                    } else {
-                        type = "NULL";
-                    }
-                    throw new BadValueException(type + " is not a valid type for $currentDate." + //
-                            " Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'})");
+                    throw new BadValueException(describeType(typeSpecification) + " is not valid type for $currentDate." + //
+                        " Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'}).");
                 }
 
                 final Object newValue;
@@ -366,17 +365,18 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 assertNotKeyField(key);
                 Object toField = change.get(key);
                 if (!(toField instanceof String)) {
-                    throw new BadValueException("The 'to' field for $rename must be a string: " + toField);
+                    throw new BadValueException("The 'to' field for $rename must be a string: " + key + ": " + toField);
                 }
                 String newKey = (String) toField;
                 assertNotKeyField(newKey);
 
                 if (renames.containsKey(key) || renames.containsValue(key)) {
-                    throw new MongoServerError(16837, "Cannot update '" + key + "' and '" + key + "' at the same time");
+                    throw new MongoServerError(16837,
+                        "Updating the path '" + key + "' would create a conflict at '" + key + "'");
                 }
                 if (renames.containsKey(newKey) || renames.containsValue(newKey)) {
                     throw new MongoServerError(16837,
-                            "Cannot update '" + newKey + "' and '" + newKey + "' at the same time");
+                        "Updating the path '" + newKey + "' would create a conflict at '" + newKey + "'");
                 }
 
                 renames.put(key, newKey);
@@ -416,13 +416,22 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         // http://docs.mongodb.org/manual/reference/operator/push/
         for (String key : change.keySet()) {
             Object value = getSubdocumentValue(document, key, matchPos);
-            List<Object> list;
+            final List<Object> list;
             if (Missing.isNullOrMissing(value)) {
                 list = new ArrayList<>();
             } else if (value instanceof List<?>) {
                 list = asList(value);
             } else {
-                throw new MongoServerError(10141, "Cannot apply " + updateOperator + " modifier to non-array");
+                if (updateOperator == UpdateOperator.ADD_TO_SET) {
+                    throw new MongoServerError(10141,
+                        "Cannot apply $addToSet to non-array field. Field named '" + key + "' has non-array type " + describeType(value));
+                } else if (updateOperator == UpdateOperator.PUSH_ALL || updateOperator == UpdateOperator.PUSH) {
+                    throw new MongoServerError(10141,
+                        "The field '" + key + "' must be an array but is of type " + describeType(value)
+                            + " in document {" + ID_FIELD + ": " + document.get(ID_FIELD) + "}");
+                } else {
+                    throw new IllegalArgumentException("Unsupported operator: " + updateOperator);
+                }
             }
 
             Object changeValue = change.get(key);
@@ -540,7 +549,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         boolean returnNew = Utils.isTrue(query.get("new"));
 
         if (!query.containsKey("remove") && !query.containsKey("update")) {
-            throw new MongoServerException("need remove or update");
+            throw new MongoServerError(9, "FailedToParse", "Either an update or remove=true must be specified");
         }
 
         Document queryObject = new Document();
@@ -769,11 +778,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized int insertDocuments(List<Document> documents) {
+    public synchronized void insertDocuments(List<Document> documents) {
         for (Document document : documents) {
             addDocument(document);
         }
-        return documents.size();
     }
 
     @Override
@@ -821,9 +829,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         // insert?
         if (nMatched == 0 && isUpsert) {
             Document newDocument = handleUpsert(updateQuery, selector);
-            if (!selector.containsKey(idField)) {
-                result.put("upserted", newDocument.get(idField));
-            }
+            result.put("upserted", newDocument.get(idField));
         }
 
         result.put("n", Integer.valueOf(nMatched));
@@ -848,8 +854,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     index.updateInPlace(oldDocument, newDocument);
                 }
 
-                long oldSize = Utils.calculateSize(oldDocument);
-                long newSize = Utils.calculateSize(newDocument);
+                int oldSize = Utils.calculateSize(oldDocument);
+                int newSize = Utils.calculateSize(newDocument);
                 updateDataSize(newSize - oldSize);
 
                 // only keep fields that are also in the updated document
@@ -958,17 +964,17 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public Document getStats() {
-        long dataSize = getDataSize();
+        int dataSize = getDataSize();
 
         Document response = new Document("ns", getFullName());
         response.put("count", Integer.valueOf(count()));
-        response.put("size", Long.valueOf(dataSize));
+        response.put("size", Integer.valueOf(dataSize));
 
-        double averageSize = 0;
+        int averageSize = 0;
         if (count() > 0) {
-            averageSize = dataSize / (double) count();
+            averageSize = dataSize / count();
         }
-        response.put("avgObjSize", Double.valueOf(averageSize));
+        response.put("avgObjSize", Integer.valueOf(averageSize));
         response.put("storageSize", Integer.valueOf(0));
         response.put("numExtents", Integer.valueOf(0));
         response.put("nindexes", Integer.valueOf(indexes.size()));

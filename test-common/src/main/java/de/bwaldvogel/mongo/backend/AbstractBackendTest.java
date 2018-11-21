@@ -41,6 +41,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import org.bson.BsonInt32;
 import org.bson.BsonObjectId;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -57,6 +58,7 @@ import com.mongodb.MongoCommandException;
 import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.MongoQueryException;
+import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
@@ -136,9 +138,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testUnsupportedModifier() throws Exception {
         collection.insertOne(json("{}"));
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("{}"), json("$foo: {}")))
-            .withMessageContaining("Command failed with error 10147: 'Invalid modifier specified: $foo'");
+            .withMessage("Invalid modifier specified: $foo");
     }
 
     @Test
@@ -166,18 +168,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testCollectionStats() throws Exception {
+        db.createCollection("other-collection");
+
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(this::getCollStats)
-            .withMessageContaining("Command failed with error 26: 'No such collection");
+            .withMessageContaining("Command failed with error -1: 'Collection [testdb.testcoll] not found.'");
 
-        collection.insertOne(json("{}"));
+        collection.insertOne(json(""));
         collection.insertOne(json("abc: 'foo'"));
 
         Document stats = getCollStats();
-        assertThat(stats.getInteger("ok")).isEqualTo(1);
-        assertThat(stats.getInteger("count").longValue()).isEqualTo(2);
-        assertThat(stats.getLong("size").longValue()).isEqualTo(57);
-        assertThat(stats.getDouble("avgObjSize").doubleValue()).isEqualTo(28.5);
+        assertThat(stats.getDouble("ok")).isEqualTo(1.0);
+        assertThat(stats.getInteger("count")).isEqualTo(2);
+        assertThat(stats.getInteger("size")).isEqualTo(57);
+        assertThat(stats.getInteger("avgObjSize")).isEqualTo(28);
     }
 
     private Document getCollStats() {
@@ -188,7 +192,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testGetLogStartupWarnings() throws Exception {
         Document startupWarnings = getAdminDb().runCommand(json("getLog: 'startupWarnings'"));
-        assertThat(startupWarnings.getInteger("ok")).isEqualTo(1);
+        assertThat(startupWarnings.getDouble("ok")).isEqualTo(1.0);
         assertThat(startupWarnings.get("totalLinesWritten")).isEqualTo(0);
         assertThat(startupWarnings.get("log")).isEqualTo(Collections.emptyList());
     }
@@ -308,7 +312,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testListCollectionsEmpty() throws Exception {
         Document result = db.runCommand(json("listCollections: 1"));
-        assertThat(result.getInteger("ok")).isEqualTo(1);
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
         Document cursor = (Document) result.get("cursor");
         assertThat(cursor.keySet()).containsOnly("id", "ns", "firstBatch");
         assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
@@ -325,7 +329,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
 
         Document result = db.runCommand(json("listCollections: 1"));
-        assertThat(result.getInteger("ok")).isEqualTo(1);
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
         Document cursor = (Document) result.get("cursor");
         assertThat(cursor.keySet()).containsOnly("id", "ns", "firstBatch");
         assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
@@ -383,7 +387,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testDatabaseStats() throws Exception {
         Document stats = db.runCommand(new Document("dbStats", 1).append("scale", 1));
-        assertThat(stats.getInteger("ok")).isEqualTo(1);
+        assertThat(stats.getDouble("ok")).isEqualTo(1.0);
         assertThat(stats.getLong("objects")).isZero();
         assertThat(stats.getInteger("collections")).isZero();
         assertThat(stats.getInteger("indexes")).isZero();
@@ -394,7 +398,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         getCollection("bar").insertOne(json("{}"));
 
         stats = db.runCommand(new Document("dbStats", 1).append("scale", 1));
-        assertThat(stats.getInteger("ok")).isEqualTo(1);
+        assertThat(stats.getDouble("ok")).isEqualTo(1.0);
         assertThat(stats.getLong("objects")).isEqualTo(8);
         assertThat(stats.getInteger("collections")).isEqualTo(3);
         assertThat(stats.getInteger("indexes")).isEqualTo(2);
@@ -413,11 +417,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testDeleteInSystemNamespace() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> getCollection("system.foobar").deleteOne(json("{}")))
-            .withMessageContaining("Command failed with error 12050: 'cannot delete from system namespace'");
+            .withMessageContaining("Command failed with error 73 (InvalidNamespace): 'cannot write to 'testdb.system.foobar'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> getCollection("system.namespaces").deleteOne(json("{}")))
-            .withMessageContaining("Command failed with error 12050: 'cannot delete from system namespace'");
+            .withMessageContaining("Command failed with error 73 (InvalidNamespace): 'cannot write to 'testdb.system.namespaces'");
     }
 
     @Test
@@ -425,21 +429,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
         for (String collectionName : Arrays.asList("system.foobar", "system.namespaces")) {
             MongoCollection<Document> collection = getCollection(collectionName);
 
-            assertThatExceptionOfType(MongoCommandException.class)
+            assertThatExceptionOfType(MongoWriteException.class)
                 .isThrownBy(() -> collection.updateMany(eq("some", "value"), set("field", "value")))
-                .withMessageContaining("Command failed with error 10156: 'cannot update system collection'");
+                .withMessage("cannot update system collection");
         }
     }
 
     @Test
     public void testDistinctQuery() {
-        collection.insertOne(new Document("n", 3));
-        collection.insertOne(new Document("n", 1));
-        collection.insertOne(new Document("n", 2));
-        collection.insertOne(new Document("n", 1));
-        collection.insertOne(new Document("n", 1));
-        assertThat(toArray(collection.distinct("n", Integer.class))).containsExactly(1, 2, 3);
-        assertThat(toArray(collection.distinct("n", json("n: {$gt: 1}"), Integer.class))).containsExactly(2, 3);
+        collection.insertOne(json("n: 3"));
+        collection.insertOne(json("n: 1"));
+        collection.insertOne(json("n: 2"));
+        collection.insertOne(json("n: 1"));
+        collection.insertOne(json("n: 1"));
+        assertThat(toArray(collection.distinct("n", Integer.class))).containsExactlyInAnyOrder(1, 2, 3);
+        assertThat(toArray(collection.distinct("n", json("n: {$gt: 1}"), Integer.class))).containsExactlyInAnyOrder(2, 3);
         assertThat(collection.distinct("foobar", String.class)).isEmpty();
         assertThat(collection.distinct("_id", ObjectId.class)).hasSize((int) collection.countDocuments());
     }
@@ -516,7 +520,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(cmd))
-            .withMessageContaining("Command failed with error -1: 'need remove or update'");
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Either an update or remove=true must be specified'");
     }
 
     @Test
@@ -531,7 +535,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(cmd))
-            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
+            .withMessageContaining("Command failed with error 66 (ImmutableField): 'Performing an update on the path '_id' would modify the immutable field '_id'");
     }
 
     @Test
@@ -544,7 +548,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         Document result = db.runCommand(cmd);
         assertThat(result.get("lastErrorObject")).isEqualTo(json("updatedExisting: true, n: 1"));
-        assertThat(result.getInteger("ok")).isEqualTo(1);
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
     }
@@ -555,7 +559,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$inc: {_id: 1}")))
-            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
+            .withMessageContaining("Command failed with error 66 (ImmutableField): 'Performing an update on the path '_id' would modify the immutable field '_id'");
     }
 
     @Test
@@ -844,15 +848,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testIdNotAllowedToBeUpdated() {
         collection.insertOne(json("_id: 1"));
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.replaceOne(json("_id: 1"), json("_id:2, a:4")))
-            .withMessageContaining("Command failed with error 13596: 'cannot change _id of a document old: 1, new: 2'");
+            .withMessage("cannot change _id of a document old: 1, new: 2");
 
         // test with $set
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), new Document("$set", json("_id: 2"))))
-            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
+            .withMessage("Performing an update on the path '_id' would modify the immutable field '_id'");
     }
 
     @Test
@@ -889,8 +893,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.countDocuments()).isEqualTo(1);
 
         assertThatExceptionOfType(MongoWriteException.class)
-            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
+            .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
+            .withMessage("E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
 
         assertThat(collection.countDocuments()).isEqualTo(1);
     }
@@ -1239,7 +1243,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testServerStatus() throws Exception {
         Date before = new Date();
         Document serverStatus = runCommand("serverStatus");
-        assertThat(serverStatus.getInteger("ok")).isEqualTo(1);
+        assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
         assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);
         Date serverTime = (Date) serverStatus.get("localTime");
@@ -1253,22 +1257,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testPing() throws Exception {
-        Document response = runCommand("ping");
-        assertThat(response.getInteger("ok")).isEqualTo(1);
-    }
-
-    @Test
-    public void testPingTrue() throws Exception {
-        Document command = new Document("ping", Boolean.TRUE);
-        Document response = runCommand(command);
-        assertThat(response.getInteger("ok")).isEqualTo(1);
+        assertThat(runCommand("ping").getDouble("ok")).isEqualTo(1.0);
+        assertThat(runCommand(json("ping: true")).getDouble("ok")).isEqualTo(1.0);
+        assertThat(runCommand(json("ping: 2.0")).getDouble("ok")).isEqualTo(1.0);
     }
 
     @Test
     public void testReplSetGetStatus() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand("replSetGetStatus"))
-            .withMessageContaining("Command failed with error -1: 'not running with --replSet'");
+            .withMessageContaining("Command failed with error 76 (NoReplicationEnabled): 'not running with --replSet'");
     }
 
     @Test
@@ -1282,19 +1280,31 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testSort() {
-        collection.insertOne(json("a:1, _id:1"));
-        collection.insertOne(json("a:2, _id:2"));
-        collection.insertOne(json("_id: 5"));
-        collection.insertOne(json("a:3, _id:3"));
-        collection.insertOne(json("a:4, _id:4"));
+        collection.insertOne(json("a: null, _id: 1"));
+        collection.insertOne(json("a: 1, _id: 2"));
+        collection.insertOne(json("a: 2, _id: 3"));
+        collection.insertOne(json("_id: 4"));
+        collection.insertOne(json("a: 3, _id: 5"));
+        collection.insertOne(json("a: 4, _id: 6"));
 
-        List<Document> objs = toArray(collection.find().sort(json("a: -1")));
-        assertThat(objs).containsExactly(
-            json("a:4, _id:4"),
-            json("a:3, _id:3"),
-            json("a:2, _id:2"),
-            json("a:1, _id:1"),
-            json("_id: 5")
+        List<Document> ascending = toArray(collection.find().sort(json("a: 1")));
+        assertThat(ascending).containsExactly(
+            json("a: null, _id: 1"),
+            json("_id: 4"),
+            json("a: 1, _id: 2"),
+            json("a: 2, _id: 3"),
+            json("a: 3, _id: 5"),
+            json("a: 4, _id: 6")
+        );
+
+        List<Document> descending = toArray(collection.find().sort(json("a: -1")));
+        assertThat(descending).containsExactly(
+            json("a: 4, _id: 6"),
+            json("a: 3, _id: 5"),
+            json("a: 2, _id: 3"),
+            json("a: 1, _id: 2"),
+            json("a: null, _id: 1"),
+            json("_id: 4")
         );
     }
 
@@ -1344,17 +1354,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testUpdateEmptyPositional() throws Exception {
         collection.insertOne(json("{}"));
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("{}"), json("$set:{'a.$.b': 1}")))
-            .withMessageContaining("Command failed with error 16650: 'Cannot apply the positional operator without a corresponding query field containing an array.'");
+            .withMessage("The positional operator did not find the match needed from the query.");
     }
 
     @Test
     public void testUpdateMultiplePositional() throws Exception {
         collection.insertOne(json("{a: {b: {c: 1}}}"));
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("{'a.b.c':1}"), json("$set:{'a.$.b.$.c': 1}")))
-            .withMessageContaining("Command failed with error 16650: 'Cannot apply the positional operator without a corresponding query field containing an array.'");
+            .withMessage("The positional operator did not find the match needed from the query.");
     }
 
     @Test
@@ -1362,25 +1372,24 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         // Disallow $ in field names - SERVER-3730
 
-        collection.insertOne(json("{x:1}"));
+        collection.insertOne(json("x: 1"));
 
-        collection.updateOne(json("{x:1}"), json("$set: {y:1}")); // ok
+        collection.updateOne(json("x: 1"), json("$set: {y: 1}")); // ok
 
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.updateOne(json("{x:1}"), json("$set: {$z:1}")))
-            .withMessageContaining("Command failed with error 15896: 'Modified field name may not start with $'");
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.updateOne(json("x: 1"), json("$set: {$z: 1}")))
+            .withMessage("Modified field name may not start with $");
 
         // unset ok to remove bad fields
-        collection.updateOne(json("{x:1}"), json("$unset: {$z:1}"));
+        collection.updateOne(json("x: 1"), json("$unset: {$z: 1}"));
 
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.updateOne(json("{x:1}"), json("$inc: {$z:1}")))
-            .withMessageContaining("Command failed with error 15896: 'Modified field name may not start with $'");
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.updateOne(json("x: 1"), json("$inc: {$z: 1}")))
+            .withMessage("Modified field name may not start with $");
 
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.updateOne(json("{x:1}"), json("$pushAll: {$z:[1,2,3]}")))
-            .withMessageContaining("Command failed with error 15896: 'Modified field name may not start with $'");
-
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.updateOne(json("x: 1"), json("$pushAll: {$z: [1,2,3]}")))
+            .withMessage("Modified field name may not start with $");
     }
 
     @Test
@@ -1413,14 +1422,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document idObj = json("_id: 1");
         collection.insertOne(idObj);
         collection.updateOne(idObj, json("$push: {'field.subfield.subsubfield': 'value'}"));
-        Document expected = json("_id: 1, field:{subfield:{subsubfield: ['value']}}");
+        Document expected = json("_id: 1, field: {subfield: {subsubfield: ['value']}}");
         assertThat(collection.find(idObj).first()).isEqualTo(expected);
 
         // push to non-array
         collection.updateOne(idObj, json("$set: {field: 'value'}"));
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(idObj, json("$push: {field: 'value'}")))
-            .withMessageContaining("Command failed with error 10141: 'Cannot apply $push modifier to non-array'");
+            .withMessage("The field 'field' must be an array but is of type string in document {_id: 1}");
 
         // push with multiple fields
 
@@ -1441,9 +1450,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUpdatePushAll() throws Exception {
         Document idObj = json("_id: 1");
         collection.insertOne(idObj);
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(idObj, json("$pushAll: {field: 'value'}")))
-            .withMessageContaining("Command failed with error 10153: 'Modifier $pushAll allowed for arrays only'");
+            .withMessage("Modifier $pushAll allowed for arrays only");
 
         collection.updateOne(idObj, json("$pushAll: {field: ['value', 'value2']}"));
         assertThat(collection.find(idObj).first()).isEqualTo(json("_id: 1, field: ['value', 'value2']"));
@@ -1458,9 +1467,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         // addToSet to non-array
         collection.updateOne(idObj, json("$set: {field: 'value'}"));
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(idObj, json("$addToSet: {field: 'value'}")))
-            .withMessageContaining("Command failed with error 10141: 'Cannot apply $addToSet modifier to non-array'");
+            .withMessageContaining("Cannot apply $addToSet to non-array field. Field named 'field' has non-array type string");
 
         // addToSet with multiple fields
 
@@ -1496,17 +1505,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUpdateDatasize() throws Exception {
         Document obj = json("{_id:1, a:{x:[1, 2, 3]}}");
         collection.insertOne(obj);
-        Number oldSize = getCollStats().getLong("size");
+        Number oldSize = getCollStats().getInteger("size");
 
         collection.updateOne(json("_id:1"), set("a.x.0", 3));
         assertThat(collection.find().first().get("a")).isEqualTo(json("x:[3,2,3]"));
-        Number newSize = getCollStats().getLong("size");
+        Number newSize = getCollStats().getInteger("size");
         assertThat(newSize).isEqualTo(oldSize);
 
         // now increase the db
         collection.updateOne(json("_id:1"), set("a.x.0", "abc"));
-        Number yetNewSize = getCollStats().getLong("size");
-        assertThat(yetNewSize.longValue() - oldSize.longValue()).isEqualTo(4);
+        Number yetNewSize = getCollStats().getInteger("size");
+        assertThat(yetNewSize.intValue() - oldSize.intValue()).isEqualTo(4);
     }
 
     @Test
@@ -1522,9 +1531,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         // pull from non-array
         collection.updateOne(obj, set("field", "value"));
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(obj, pull("field", "value")))
-            .withMessageContaining("Command failed with error 10142: 'Cannot apply $pull modifier to non-array'");
+            .withMessage("Cannot apply $pull to a non-array value");
 
         // pull standard
         collection.updateOne(obj, json("$set: {field: ['value1', 'value2', 'value1']}"));
@@ -1579,9 +1588,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document obj = json("_id: 1");
         collection.insertOne(obj);
         collection.updateOne(obj, json("$set: {field: 'value'}"));
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(obj, json("$pullAll: {field: 'value'}")))
-            .withMessageContaining("Command failed with error 10142: 'Cannot apply $pullAll modifier to non-array'");
+            .withMessage("$pullAll requires an array argument but was given a string");
 
         collection.updateOne(obj, json("$set: {field1: ['value1', 'value2', 'value1', 'value3', 'value4', 'value3']}"));
 
@@ -1589,9 +1598,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.find(obj).first().get("field1")).isEqualTo(Arrays.asList("value2", "value4"));
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(obj, json("$pullAll: {field1: 'bar'}")))
-            .withMessageContaining("Command failed with error 10153: 'Modifier $pullAll allowed for arrays only'");
+            .withMessage("$pullAll requires an array argument but was given a string");
 
     }
 
@@ -1831,9 +1840,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUpdateUnset() throws Exception {
         Document obj = json("_id: 1, a: 1, b: null, c: 'value'");
         collection.insertOne(obj);
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(obj, json("$unset: {_id: ''}")))
-            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
+            .withMessage("Performing an update on the path '_id' would modify the immutable field '_id'");
 
         collection.updateOne(obj, json("$unset: {a:'', b:''}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, c: 'value'"));
@@ -1876,13 +1885,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUpdateIllegalInt() throws Exception {
         collection.insertOne(json("_id: 1, a: {x:1}"));
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$inc: {a: 1}")))
-            .withMessageContaining("Command failed with error -1: 'cannot increment value");
+            .withMessage("Cannot apply $inc to a value of non-numeric type. {_id: 1} has the field 'a' of non-numeric type object");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoServerException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$inc: {'a.x': 'b'}")))
-            .withMessageContaining("Command failed with error -1: 'cannot increment with non-numeric value");
+            .withMessage("Cannot increment with non-numeric argument: {a.x: \"b\"}");
     }
 
     @Test
@@ -1952,16 +1961,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testMultiUpdateArrayMatch() throws Exception {
         collection.insertOne(json("{}"));
-        collection.insertOne(json("x:[1,2,3]"));
-        collection.insertOne(json("x:99"));
+        collection.insertOne(json("x: [1, 2, 3]"));
+        collection.insertOne(json("x: 99"));
 
-        collection.updateMany(json("x:2"), json("$inc:{'x.$': 1}"));
-        assertThat(collection.find(json("x:1")).first().get("x")).isEqualTo(Arrays.asList(1, 3, 3));
+        collection.updateMany(json("x: 2"), json("$inc: {'x.$': 1}"));
+        assertThat(collection.find(json("x: 1")).first().get("x")).isEqualTo(Arrays.asList(1, 3, 3));
     }
 
     @Test
     public void testUpsert() {
-        UpdateResult result = collection.updateMany(json("n:'jon'"), json("$inc:{a:1}"), new UpdateOptions().upsert(true));
+        UpdateResult result = collection.updateMany(json("n:'jon'"), json("$inc: {a: 1}"), new UpdateOptions().upsert(true));
         assertThat(result.getModifiedCount()).isEqualTo(0);
 
         Document object = collection.find().first();
@@ -1970,9 +1979,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         object.remove("_id");
         assertThat(object).isEqualTo(json("n:'jon', a:1"));
 
-        result = collection.updateOne(json("_id: 17, n:'jon'"), json("$inc:{a:1}"), new UpdateOptions().upsert(true));
-        assertThat(result.getUpsertedId()).isNull();
-        assertThat(collection.find(json("_id:17")).first()).isEqualTo(json("_id: 17, n:'jon', a:1"));
+        result = collection.updateOne(json("_id: 17, n: 'jon'"), json("$inc: {a: 1}"), new UpdateOptions().upsert(true));
+        assertThat(result.getUpsertedId()).isEqualTo(new BsonInt32(17));
+        assertThat(collection.find(json("_id: 17")).first()).isEqualTo(json("_id: 17, n:'jon', a:1"));
     }
 
     @Test
@@ -2070,17 +2079,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.insertOne(object);
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$mul: {_id: 2}")))
-            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed'");
+            .withMessage("Performing an update on the path '_id' would modify the immutable field '_id'");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$mul: {foo: 2}")))
-            .withMessageContaining("Command failed with error -1: 'cannot multiply value 'x''");
+            .withMessage("Cannot apply $mul to a value of non-numeric type. {_id: 1} has the field 'foo' of non-numeric type string");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$mul: {bar: 'x'}")))
-            .withMessageContaining("Command failed with error -1: 'cannot multiply with non-numeric value: {\"bar\" : \"x\"}'");
+            .withMessage("Cannot increment with non-numeric argument: {bar: \"x\"}");
     }
 
     @Test
@@ -2122,7 +2131,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testInsertWithIllegalId() throws Exception {
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: [1, 2, 3]")))
-            .withMessageContaining("can't use an array for _id");
+            .withMessage("can't use an array for _id");
     }
 
     @Test
@@ -2161,8 +2170,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 4, action: { actionId: 3 }"));
 
         assertThatExceptionOfType(MongoWriteException.class)
-            .isThrownBy(() -> collection.insertOne(json("action: { actionId: 1 }")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: action.actionId_1 dup key: { : 1.0 }");
+            .isThrownBy(() -> collection.insertOne(json("action: { actionId: 1.0 }")))
+            .withMessage("E11000 duplicate key error collection: testdb.testcoll index: action.actionId_1 dup key: { : 1.0 }");
 
         assertThat(toArray(collection.find(json("action: 'abc1'"))))
             .containsExactly(json("_id: 1, action: 'abc1'"));
@@ -2226,15 +2235,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("a: 'foo', b: 'foo'")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : \"foo\", : \"foo\" }");
+            .withMessage("E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : \"foo\", : \"foo\" }");
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("b: 'foo'")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : null, : \"foo\" }");
+            .withMessage("E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : null, : \"foo\" }");
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("a: {x: 1, y: 1}, b: 'foo'")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : {\"x\" : 1, \"y\" : 1}, : \"foo\" }");
+            .withMessage("E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : { x: 1, y: 1 }, : \"foo\" }");
 
         assertThat(toArray(collection.find(json("a: 'bar'"))))
             .containsExactly(json("_id: 6, a: 'bar', b: 'foo'"));
@@ -2243,7 +2252,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(json("_id: 6, a: 'bar', b: 'foo'"));
 
         assertThat(toArray(collection.find(json("a: 'foo'"))))
-            .containsExactly(
+            .containsExactlyInAnyOrder(
                 json("_id: 2, a: 'foo'"),
                 json("_id: 4, a: 'foo', b: 'foo'"),
                 json("_id: 5, a: 'foo', b: 'bar'")
@@ -2290,21 +2299,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.insertOne(object);
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: null}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'NULL is not a valid type for $currentDate");
+            .withMessage("null is not valid type for $currentDate. Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'}).");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: 123.456}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Double is not a valid type for $currentDate");
+            .withMessage("double is not valid type for $currentDate. Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'}).");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: 'foo'}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'String is not a valid type for $currentDate");
+            .withMessage("string is not valid type for $currentDate. Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'}).");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(object, json("$currentDate: {lastModified: {$type: 'foo'}}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'The '$type' string field is required to be 'date' or 'timestamp'");
+            .withMessage("The '$type' string field is required to be 'date' or 'timestamp': {$currentDate: {field : {$type: 'date'}}}");
 
         assertThat(collection.find(object).first()).isEqualTo(object);
     }
@@ -2344,25 +2353,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document object = json("_id: 1, foo: 'x', bar: 'y'");
         collection.insertOne(object);
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {foo: 12345}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'The 'to' field for $rename must be a string");
+            .withMessage("The 'to' field for $rename must be a string: foo: 12345");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {'_id': 'id'}")))
-            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed");
+            .withMessage("Performing an update on the path '_id' would modify the immutable field '_id'");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {foo: '_id'}")))
-            .withMessageContaining("Command failed with error 10148: 'Mod on _id not allowed");
+            .withMessage("Performing an update on the path '_id' would modify the immutable field '_id'");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {foo: 'bar', 'bar': 'bar2'}")))
-            .withMessageContaining("Command failed with error 16837: 'Cannot update 'bar' and 'bar' at the same time");
+            .withMessage("Updating the path 'bar' would create a conflict at 'bar'");
 
-        assertThatExceptionOfType(MongoCommandException.class)
+        assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {bar: 'foo', bar2: 'foo'}")))
-            .withMessageContaining("Command failed with error 16837: 'Cannot update 'foo' and 'foo' at the same time");
+            .withMessage("Updating the path 'foo' would create a conflict at 'foo'");
     }
 
     @Test
@@ -2390,7 +2399,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.renameCollection(new MongoNamespace(db.getName(), "other-collection-name")))
-            .withMessageContaining("Command failed with error -1: 'target namespace already exists'");
+            .withMessageContaining("Command failed with error 48 (NamespaceExists): 'target namespace exists'");
 
         List<String> collectionNames = toArray(db.listCollectionNames());
         assertThat(collectionNames).containsOnly("system.indexes", collection.getNamespace().getCollectionName(),
@@ -2778,7 +2787,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testValidate() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(new Document("validate", collection.getNamespace().getCollectionName())))
-            .withMessageContaining("Command failed with error 26: 'No such collection: testcoll'");
+            .withMessageContaining("Command failed with error 26 (NamespaceNotFound): 'ns not found'");
 
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
@@ -2794,17 +2803,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testGetLastError() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        assertThat(db.runCommand(json("getlasterror: 1")))
-            .isEqualTo(json("n: 1, ok: 1"));
+        Document actual = db.runCommand(json("getlasterror: 1"));
+        assertThat(actual.get("n")).isEqualTo(0);
+        assertThat(actual).containsKey("err");
+        assertThat(actual.get("err")).isNull();
+        assertThat(actual.get("ok")).isEqualTo(1.0);
 
         assertThatExceptionOfType(MongoWriteException.class)
-            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
+            .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
+            .withMessageContaining("E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
 
         Document lastError = db.runCommand(json("getlasterror: 1"));
         assertThat(lastError.get("code")).isEqualTo(11000);
         assertThat(lastError.getString("err")).contains("duplicate key");
-        assertThat(lastError.get("ok")).isEqualTo(1);
+        assertThat(lastError.get("ok")).isEqualTo(1.0);
     }
 
     @Test
@@ -2812,16 +2824,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
 
         assertThat(db.runCommand(json("getpreverror: 1")))
-            .isEqualTo(json("n: 1, nPrev: 1, ok: 1"));
+            .isEqualTo(json("n: 0, nPrev: -1, err: null, ok: 1.0"));
 
         assertThatExceptionOfType(MongoWriteException.class)
-            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
+            .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
+            .withMessage("E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
 
         Document lastError = db.runCommand(json("getpreverror: 1"));
         assertThat(lastError.get("code")).isEqualTo(11000);
         assertThat(lastError.getString("err")).contains("duplicate key");
-        assertThat(lastError.get("ok")).isEqualTo(1);
+        assertThat(lastError.getDouble("ok")).isEqualTo(1.0);
     }
 
     @Test
@@ -2829,17 +2841,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoWriteException.class)
-            .isThrownBy(() -> collection.insertOne(json("_id: 1")))
+            .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
             .withMessageContaining("duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
 
         assertThat(db.runCommand(json("reseterror: 1")))
-            .isEqualTo(json("ok: 1"));
+            .isEqualTo(json("ok: 1.0"));
 
         assertThat(db.runCommand(json("getpreverror: 1")))
-            .isEqualTo(json("nPrev: -1, ok: 1"));
+            .isEqualTo(json("nPrev: -1, err: null, n: 0, ok: 1.0"));
 
         assertThat(db.runCommand(json("getlasterror: 1")))
-            .isEqualTo(json("err: null, ok: 1"));
+            .containsAllEntriesOf(json("err: null, n: 0, ok: 1.0"));
     }
 
     @Test

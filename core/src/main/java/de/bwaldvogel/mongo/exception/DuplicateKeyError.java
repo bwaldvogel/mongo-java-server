@@ -18,7 +18,7 @@ public class DuplicateKeyError extends KeyConstraintError {
 
     private static String valuesToString(List<?> values) {
         return values.stream()
-            .map(value -> ": " + Json.toJsonValue(value))
+            .map(value -> ": " + Json.toJsonValue(value, true, "{ ", " }"))
             .collect(Collectors.joining(", ", "{ ", " }"));
     }
 

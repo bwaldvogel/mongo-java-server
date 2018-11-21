@@ -9,7 +9,11 @@ public final class Json {
     private Json() {
     }
 
-   public static String toJsonValue(Object value) {
+    public static String toJsonValue(Object value) {
+        return toJsonValue(value, false, "{", "}");
+    }
+
+    public static String toJsonValue(Object value, boolean compactKey, String jsonPrefix, String jsonSuffix) {
         if (value == null) {
             return "null";
         }
@@ -23,10 +27,12 @@ public final class Json {
             return "\"" + escapeJson((String) value) + "\"";
         }
         if (value instanceof Document) {
-            return value.toString();
+            Document document = (Document) value;
+            return document.toString(compactKey, jsonPrefix, jsonSuffix);
         }
         if (value instanceof Date) {
-            return toJsonValue(((Date) value).toInstant().toString());
+            Date date = (Date) value;
+            return toJsonValue(date.toInstant().toString());
         }
         if (value instanceof Collection) {
             Collection<?> collection = (Collection<?>) value;

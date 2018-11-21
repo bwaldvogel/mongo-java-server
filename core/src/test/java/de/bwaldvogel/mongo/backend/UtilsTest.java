@@ -48,7 +48,7 @@ public class UtilsTest {
     public void testMarkOkay() throws Exception {
         Document obj = new Document();
         Utils.markOkay(obj);
-        assertThat(obj.get("ok")).isEqualTo(Integer.valueOf(1));
+        assertThat(obj.get("ok")).isEqualTo(Double.valueOf(1.0));
     }
 
     @Test

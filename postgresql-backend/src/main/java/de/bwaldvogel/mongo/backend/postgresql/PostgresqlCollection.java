@@ -93,13 +93,12 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
                     orderBySql.append(PostgresqlUtils.toDataKey(key));
                 }
                 if (sortValue == 1) {
-                    orderBySql.append(" ASC");
+                    orderBySql.append(" ASC NULLS FIRST");
                 } else if (sortValue == -1) {
-                    orderBySql.append(" DESC");
+                    orderBySql.append(" DESC NULLS LAST");
                 } else {
                     throw new IllegalArgumentException("Illegal sort value: " + sortValue);
                 }
-                orderBySql.append(" NULLS LAST");
                 num++;
             }
         }
@@ -126,7 +125,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected void updateDataSize(long sizeDelta) {
+    protected void updateDataSize(int sizeDelta) {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("UPDATE " + getDatabaseName() + "._meta" +
                  " SET datasize = datasize + ? WHERE collection_name = ?")
@@ -140,13 +139,13 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected long getDataSize() {
+    protected int getDataSize() {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("SELECT datasize FROM " + getDatabaseName() + "._meta" +
                  " WHERE collection_name = ?")
         ) {
             stmt.setString(1, getCollectionName());
-            return querySingleValue(stmt);
+            return Math.toIntExact(querySingleValue(stmt));
         } catch (SQLException e) {
             throw new MongoServerException("failed to retrieve datasize", e);
         }

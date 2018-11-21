@@ -55,11 +55,11 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected void updateDataSize(long sizeDelta) {
+        protected void updateDataSize(int sizeDelta) {
         }
 
         @Override
-        protected long getDataSize() {
+        protected int getDataSize() {
             throw new UnsupportedOperationException();
         }
 

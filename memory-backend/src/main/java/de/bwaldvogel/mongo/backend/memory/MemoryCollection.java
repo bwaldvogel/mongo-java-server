@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,19 +21,19 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     private List<Document> documents = new ArrayList<>();
     private Queue<Integer> emptyPositions = new LinkedList<>();
-    private AtomicLong dataSize = new AtomicLong();
+    private AtomicInteger dataSize = new AtomicInteger();
 
     public MemoryCollection(String databaseName, String collectionName, String idField) {
         super(databaseName, collectionName, idField);
     }
 
     @Override
-    protected void updateDataSize(long sizeDelta) {
+    protected void updateDataSize(int sizeDelta) {
         dataSize.addAndGet(sizeDelta);
     }
 
     @Override
-    protected long getDataSize() {
+    protected int getDataSize() {
         return dataSize.get();
     }
 
