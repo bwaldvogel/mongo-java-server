@@ -84,11 +84,11 @@ public abstract class AbstractReadOnlyProxyTest {
     public void testIllegalCommand() throws Exception {
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> readOnlyClient.getDatabase("testdb").runCommand(json("foo:1")))
-            .withMessageContaining("no such cmd");
+            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> readOnlyClient.getDatabase("bar").runCommand(json("foo:1")))
-            .withMessageContaining("no such cmd");
+            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
     }
 
     @Test
@@ -126,7 +126,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> collection.replaceOne(object, newObject))
-            .withMessageContaining("no such cmd: update");
+            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'update'");
     }
 
     @Test
@@ -135,7 +135,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> collection.updateMany(json("{}"), Updates.set("foo", "bar"), new UpdateOptions().upsert(true)))
-            .withMessageContaining("no such cmd: update");
+            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'update'");
     }
 
     @Test
@@ -150,7 +150,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(collection::drop)
-            .withMessageContaining("no such cmd: drop");
+            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'drop'");
     }
 
 }

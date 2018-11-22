@@ -226,9 +226,14 @@ public class Utils {
     static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) {
         String subKey = key.substring(dotPos + 1);
 
+        if (key.matches(".*\\$(\\.).+\\$(\\.).*")) {
+            throw new MongoServerError(2,
+                "Too many positional (i.e. '$') elements found in path '" + key + "'");
+        }
+
         if (subKey.matches("\\$(\\..+)?")) {
             if (matchPos == null || matchPos.get() == null) {
-                throw new MongoServerError(16650,
+                throw new MongoServerError(2,
                     "The positional operator did not find the match needed from the query.");
             }
             Integer pos = matchPos.getAndSet(null);
@@ -324,6 +329,9 @@ public class Utils {
             Object subObject = getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document || subObject instanceof List<?>) {
                 changeSubdocumentValue(subObject, subKey, newValue, matchPos);
+            } else if (!Missing.isNullOrMissing(subObject)) {
+                String element = new Document(mainKey, subObject).toString(true);
+                throw new MongoServerError(28, "Cannot create field 'bar' in element " + element);
             } else {
                 Document obj = new Document();
                 changeSubdocumentValue(obj, subKey, newValue, matchPos);

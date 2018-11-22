@@ -215,9 +215,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     list = asList(value);
                 } else {
                     if (op == UpdateOperator.PULL) {
-                        throw new MongoServerError(10142, "Cannot apply " + modifier + " to a non-array value");
+                        throw new MongoServerError(2, "Cannot apply " + modifier + " to a non-array value");
                     } else {
-                        throw new MongoServerError(10142,
+                        throw new MongoServerError(2,
                             modifier + " requires an array argument but was given a " + describeType(value));
                     }
                 }
@@ -225,7 +225,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 Object pullValue = change.get(key);
                 if (modifier.equals("$pullAll")) {
                     if (!(pullValue instanceof Collection<?>)) {
-                        throw new MongoServerError(10153, modifier + " requires an array argument but was given a " + describeType(pullValue));
+                        throw new MongoServerError(2, modifier + " requires an array argument but was given a " + describeType(pullValue));
                     }
                     @SuppressWarnings("unchecked")
                     Collection<Object> valueList = (Collection<Object>) pullValue;
@@ -249,9 +249,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     throw new MongoServerError(10143, modifier + " requires an array argument but was given a " + describeType(value));
                 }
 
-                Object pushValue = change.get(key);
+                Object popValue = change.get(key);
+                if (popValue == null) {
+                    throw new MongoServerError(9, "Expected a number in: " + key + ": null");
+                }
                 if (!list.isEmpty()) {
-                    if (pushValue != null && Utils.normalizeValue(pushValue).equals(Double.valueOf(-1.0))) {
+                    if (Utils.normalizeValue(popValue).equals(Double.valueOf(-1.0))) {
                         list.remove(0);
                     } else {
                         list.remove(list.size() - 1);
@@ -280,7 +283,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
                 Object changeObject = change.get(key);
                 if (!(changeObject instanceof Number)) {
-                    throw new MongoServerError(14, "Cannot increment with non-numeric argument: " + change.toString(true));
+                    String operation = (op == UpdateOperator.INC) ? "increment" : "multiply";
+                    throw new MongoServerError(14, "Cannot " + operation + " with non-numeric argument: " + change.toString(true));
                 }
                 Number changeValue = (Number) changeObject;
                 final Number newValue;
@@ -371,11 +375,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 assertNotKeyField(newKey);
 
                 if (renames.containsKey(key) || renames.containsValue(key)) {
-                    throw new MongoServerError(16837,
+                    throw new MongoServerError(40,
                         "Updating the path '" + key + "' would create a conflict at '" + key + "'");
                 }
                 if (renames.containsKey(newKey) || renames.containsValue(newKey)) {
-                    throw new MongoServerError(16837,
+                    throw new MongoServerError(40,
                         "Updating the path '" + newKey + "' would create a conflict at '" + newKey + "'");
                 }
 
@@ -398,7 +402,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         try {
             op = UpdateOperator.fromValue(modifier);
         } catch (IllegalArgumentException e) {
-            throw new MongoServerError(10147, "Invalid modifier specified: " + modifier);
+            throw new MongoServerError(9, "Unknown modifier: " + modifier);
         }
 
         if (op != UpdateOperator.UNSET) {
@@ -426,7 +430,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     throw new MongoServerError(10141,
                         "Cannot apply $addToSet to non-array field. Field named '" + key + "' has non-array type " + describeType(value));
                 } else if (updateOperator == UpdateOperator.PUSH_ALL || updateOperator == UpdateOperator.PUSH) {
-                    throw new MongoServerError(10141,
+                    throw new MongoServerError(2,
                         "The field '" + key + "' must be an array but is of type " + describeType(value)
                             + " in document {" + ID_FIELD + ": " + document.get(ID_FIELD) + "}");
                 } else {
@@ -480,7 +484,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Object newId = newDocument.get(idField);
 
         if (newId != null && !Utils.nullAwareEquals(oldId, newId)) {
-            throw new MongoServerError(13596, "cannot change _id of a document old: " + oldId + ", new: " + newId);
+            throw new MongoServerError(13596,
+                "After applying the update, the (immutable) field '_id' was found to have been altered to _id: " + newId);
         }
 
         if (newId == null && oldId != null) {

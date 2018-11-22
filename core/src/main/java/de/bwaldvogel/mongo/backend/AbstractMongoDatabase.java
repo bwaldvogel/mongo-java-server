@@ -340,7 +340,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
-            throw new MongoServerError(48, "collection already exists");
+            throw new MongoServerError(48, "NamespaceExists",
+                "a collection '" + getDatabaseName() + "." + collectionName + "' already exists");
         }
 
         createCollection(collectionName);

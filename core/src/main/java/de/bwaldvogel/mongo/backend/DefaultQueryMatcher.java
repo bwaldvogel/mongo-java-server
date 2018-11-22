@@ -182,13 +182,13 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         if (!(queryValue instanceof List<?>)) {
-            throw new MongoServerError(14816, filter + " expression must be a nonempty array");
+            throw new MongoServerError(2, "$and/$or/$nor expression must be a nonempty array");
         }
 
         @SuppressWarnings("unchecked")
         List<Object> list = (List<Object>) queryValue;
         if (list.isEmpty()) {
-            throw new MongoServerError(14816, filter + " expression must be a nonempty array");
+            throw new MongoServerError(2, "$and/$or/$nor expression must be a nonempty array");
         }
 
         for (Object subqueryValue : list) {
@@ -348,7 +348,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         try {
             queryOperator = QueryOperator.fromValue(operator);
         } catch (IllegalArgumentException e) {
-            throw new MongoServerError(10068, "invalid operator: " + operator);
+            throw new MongoServerError(2, "unknown operator: " + operator);
         }
 
         switch (queryOperator) {

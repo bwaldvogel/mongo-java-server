@@ -183,7 +183,7 @@ public class DefaultQueryMatcherTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> matcher.matches(document, query))
-            .withMessage("[Error 10068] invalid operator: $someInvalidOperator");
+            .withMessage("[Error 2] unknown operator: $someInvalidOperator");
     }
 
     @Test
@@ -450,9 +450,9 @@ public class DefaultQueryMatcherTest {
     public void testMatchesIllegalQueryAndOrNor() throws Exception {
 
         for (QueryFilter op : new QueryFilter[] { QueryFilter.AND, QueryFilter.OR, QueryFilter.NOR }) {
-            assertNonEmptyArrayException(op, map(op.getValue(), null));
-            assertNonEmptyArrayException(op, map(op.getValue(), 2));
-            assertNonEmptyArrayException(op, map(op.getValue(), 2));
+            assertNonEmptyArrayException(map(op.getValue(), null));
+            assertNonEmptyArrayException(map(op.getValue(), 2));
+            assertNonEmptyArrayException(map(op.getValue(), 2));
 
             assertThatExceptionOfType(MongoServerError.class)
                 .isThrownBy(() -> matcher.matches(json(""), map(op, "a")))
@@ -460,12 +460,12 @@ public class DefaultQueryMatcherTest {
         }
     }
 
-    private void assertNonEmptyArrayException(QueryFilter op, Document query) throws Exception {
+    private void assertNonEmptyArrayException(Document query) throws Exception {
         Document emptyDocument = json("");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> matcher.matches(emptyDocument, query))
-            .withMessage("[Error 14816] " + op.getValue() + " expression must be a nonempty array");
+            .withMessage("[Error 2] $and/$or/$nor expression must be a nonempty array");
     }
 
     @Test
