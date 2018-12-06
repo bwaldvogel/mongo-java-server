@@ -68,7 +68,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         if (document == null) {
-            return false;
+            return queryValue == null;
         }
 
         String firstKey = keys.get(0);

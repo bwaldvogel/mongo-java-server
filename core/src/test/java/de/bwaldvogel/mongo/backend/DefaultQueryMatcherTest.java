@@ -140,6 +140,19 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, json("'a.b.c': {d: 1}"))).isTrue();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/35
+    @Test
+    public void testMatchesMissingEmbeddedDocument() throws Exception {
+        assertThat(matcher.matches(json("b: null"), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: null}"), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: 123}"), json("'b.c': null"))).isFalse();
+        assertThat(matcher.matches(json("b: {c: []}"), json("'b.c': null"))).isFalse();
+        assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("'b.c': null"))).isFalse();
+        assertThat(matcher.matches(json("b: {c: [1, null, 3]}"), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json("b: {x: 'foo'}"), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json("b: {x: 'foo', c: null}"), json("'b.c': null"))).isTrue();
+    }
+
     @Test
     public void testMatchesSubqueryList() throws Exception {
         Document document = json("c: {a: [1, 2, 3]}");

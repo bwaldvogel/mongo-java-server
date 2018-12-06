@@ -2860,6 +2860,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(toArray(collection.find(json("_id: {$gt: {$expr: {$literal: 3}}}")))).isEmpty();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/35
+    @Test
+    public void testQueryMissingEmbeddedDocument() throws Exception {
+        collection.insertOne(json("_id: 1, b: null"));
+        collection.insertOne(json("_id: 2, b: {c: null}"));
+        collection.insertOne(json("_id: 3, b: {c: 123}"));
+        collection.insertOne(json("_id: 4, b: {c: ['a', null, 'b']}"));
+        collection.insertOne(json("_id: 5, b: {c: [1, 2, 3]}"));
+
+        assertThat(toArray(collection.find(json("'b.c': null"))))
+            .containsExactly(
+                json("_id: 1, b: null"),
+                json("_id: 2, b: {c: null}"),
+                json("_id: 4, b: {c: ['a', null, 'b']}")
+            );
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {
