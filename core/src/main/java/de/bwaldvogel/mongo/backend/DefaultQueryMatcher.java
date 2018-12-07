@@ -151,7 +151,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
                             return false;
                         }
                     } else if (queryOperator.equals(QueryOperator.NOT_IN.getValue())) {
-                        if (checkMatchesAllValues(subQuery, value)) {
+                        Document inQuery = new Document(QueryOperator.IN.getValue(), subQuery);
+                        if (checkMatchesAnyValue(inQuery, value)) {
                             return false;
                         }
                     } else if (queryOperator.equals(QueryOperator.NOT.getValue())) {

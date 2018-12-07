@@ -1146,6 +1146,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.countDocuments(json("'a.x': {$all: [2, 3]}"))).isEqualTo(1);
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/36
+    @Test
+    public void testAndQueryWithAllAndNin() throws Exception {
+        collection.insertOne(json("_id: 1, tags: ['A', 'B']"));
+        collection.insertOne(json("_id: 2, tags: ['A', 'D']"));
+        collection.insertOne(json("_id: 3, tags: ['A', 'C']"));
+        collection.insertOne(json("_id: 4, tags: ['C', 'D']"));
+
+        assertThat(toArray(collection.find(json("$and: [{'tags': {$all: ['A']}}, {'tags': {$nin: ['B', 'C']}}]"))))
+            .containsExactly(
+                json("_id: 2, tags: ['A', 'D']")
+            );
+    }
+
     @Test
     public void testQueryWithSubdocumentIndex() throws Exception {
         collection.createIndex(json("action:{actionId:1}"), new IndexOptions().unique(true));

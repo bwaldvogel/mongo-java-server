@@ -372,6 +372,14 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document1, query4)).isFalse();
         assertThat(matcher.matches(document2, query4)).isTrue();
         assertThat(matcher.matches(document3, query4)).isFalse();
+
+        assertThat(matcher.matches(json("values: [1, 2, 3]"), json("values: {$nin: []}"))).isTrue();
+        assertThat(matcher.matches(json("values: null"), json("values: {$nin: []}"))).isTrue();
+        assertThat(matcher.matches(json(""), json("values: {$nin: []}"))).isTrue();
+        assertThat(matcher.matches(json(""), json("values: {$nin: [1]}"))).isTrue();
+        assertThat(matcher.matches(json(""), json("values: {$nin: [1, 2]}"))).isTrue();
+        assertThat(matcher.matches(json("values: null"), json("values: {$nin: [null]}"))).isFalse();
+        assertThat(matcher.matches(json(""), json("values: {$nin: [null]}"))).isFalse();
     }
 
     @Test
@@ -568,6 +576,27 @@ public class DefaultQueryMatcherTest {
 
         document = map("a", list(json("x: 1"), json("x: 2"), json("x: 3")));
         assertThat(matcher.matches(document, map("a.x", allOf(1, 3).appendAll(in(2))))).isTrue();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/36
+    @Test
+    public void testMatchesAllAndNin() throws Exception {
+        Document query = json("$and: [{'tags': {$all: ['A']}}, {'tags': {$nin: ['B', 'C']}}]");
+
+        assertThat(matcher.matches(json("tags: ['A', 'D']"), query)).isTrue();
+        assertThat(matcher.matches(json("tags: ['A', 'B']"), query)).isFalse();
+        assertThat(matcher.matches(json("tags: ['A', 'C']"), query)).isFalse();
+        assertThat(matcher.matches(json("tags: ['C', 'D']"), query)).isFalse();
+    }
+
+    @Test
+    public void testMatchesAllAndNotIn() throws Exception {
+        Document query = json("$and: [{'tags': {$all: ['A']}}, {'tags': {$not: {$in: ['B', 'C']}}}]");
+
+        assertThat(matcher.matches(json("tags: ['A', 'D']"), query)).isTrue();
+        assertThat(matcher.matches(json("tags: ['A', 'B']"), query)).isFalse();
+        assertThat(matcher.matches(json("tags: ['A', 'C']"), query)).isFalse();
+        assertThat(matcher.matches(json("tags: ['C', 'D']"), query)).isFalse();
     }
 
     @Test
