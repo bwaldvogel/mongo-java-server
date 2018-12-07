@@ -67,7 +67,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             throw new MongoServerException("illegal keys: " + keys);
         }
 
-        if (document == null) {
+        if (Missing.isNullOrMissing(document)) {
             return queryValue == null;
         }
 
