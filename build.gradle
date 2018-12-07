@@ -47,10 +47,6 @@ allprojects {
         mavenCentral()
     }
 
-    jacoco {
-        toolVersion = "0.8.2"
-    }
-
     dependencies {
         compile group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
 
@@ -128,7 +124,7 @@ allprojects {
 }
 
 wrapper {
-    gradleVersion = "4.10.2"
+    gradleVersion = "5.0"
     distributionType = Wrapper.DistributionType.ALL
 }
 
