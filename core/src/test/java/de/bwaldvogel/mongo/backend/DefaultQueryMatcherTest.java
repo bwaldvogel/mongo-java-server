@@ -151,6 +151,7 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("b: {c: [1, null, 3]}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {x: 'foo'}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {x: 'foo', c: null}"), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json(""), json("'b.c': null"))).isTrue();
     }
 
     @Test

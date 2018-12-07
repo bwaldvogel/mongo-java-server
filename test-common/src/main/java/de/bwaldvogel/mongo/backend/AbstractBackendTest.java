@@ -2868,12 +2868,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 3, b: {c: 123}"));
         collection.insertOne(json("_id: 4, b: {c: ['a', null, 'b']}"));
         collection.insertOne(json("_id: 5, b: {c: [1, 2, 3]}"));
+        collection.insertOne(json("_id: 6"));
 
         assertThat(toArray(collection.find(json("'b.c': null"))))
             .containsExactly(
                 json("_id: 1, b: null"),
                 json("_id: 2, b: {c: null}"),
-                json("_id: 4, b: {c: ['a', null, 'b']}")
+                json("_id: 4, b: {c: ['a', null, 'b']}"),
+                json("_id: 6")
             );
     }
 
