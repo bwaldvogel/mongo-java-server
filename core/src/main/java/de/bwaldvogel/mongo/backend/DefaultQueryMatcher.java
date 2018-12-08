@@ -306,7 +306,13 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
         Collection<Object> list = (Collection<Object>) values;
 
-        for (Object query : (Collection<Object>) queryValue) {
+        Collection<Object> queryValues = (Collection<Object>) queryValue;
+
+        if (queryValues.isEmpty()) {
+            return false;
+        }
+
+        for (Object query : queryValues) {
             if (!checkMatchesAnyValue(query, list)) {
                 return false;
             }

@@ -1160,6 +1160,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/36
+    @Test
+    public void testMatchesAllWithEmptyCollection() throws Exception {
+        collection.insertOne(json("_id: 1, text: 'TextA', tags: []"));
+        collection.insertOne(json("_id: 2, text: 'TextB', tags: []"));
+        collection.insertOne(json("_id: 3, text: 'TextA', tags: ['A']"));
+
+        assertThat(toArray(collection.find(json("$and: [{'text': 'TextA'}, {'tags': {$all: []}}]")))).isEmpty();
+    }
+
     @Test
     public void testQueryWithSubdocumentIndex() throws Exception {
         collection.createIndex(json("action:{actionId:1}"), new IndexOptions().unique(true));

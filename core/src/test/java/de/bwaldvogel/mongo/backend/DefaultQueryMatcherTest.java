@@ -529,12 +529,12 @@ public class DefaultQueryMatcherTest {
 
         assertThat(matcher.matches(document, map("x", allOf(1)))).isFalse();
 
-        assertThat(matcher.matches(document, map("a.x", allOf()))).isTrue();
+        assertThat(matcher.matches(document, map("a.x", allOf()))).isFalse();
         assertThat(matcher.matches(document, map("a.x", allOf(1)))).isFalse();
 
         document = map("a", map("x", list(1, 2, 3)));
         assertThat(matcher.matches(document, map("a", allOf(1)))).isFalse();
-        assertThat(matcher.matches(document, map("a.x", allOf()))).isTrue();
+        assertThat(matcher.matches(document, map("a.x", allOf()))).isFalse();
         assertThat(matcher.matches(document, map("a.x", allOf(1)))).isTrue();
         assertThat(matcher.matches(document, map("a.y", allOf(1)))).isFalse();
         assertThat(matcher.matches(document, map("a.x", allOf(2)))).isTrue();
@@ -547,7 +547,7 @@ public class DefaultQueryMatcherTest {
 
         // with regular expresssion
         document = map("a", map("x", list("john", "jo", "maria")));
-        assertThat(matcher.matches(document, map("a.x", allOf()))).isTrue();
+        assertThat(matcher.matches(document, map("a.x", allOf()))).isFalse();
         assertThat(matcher.matches(document, map("a.x", allOf(regex("^jo.*"))))).isTrue();
         assertThat(matcher.matches(document, map("a.x", allOf(regex("^foo"))))).isFalse();
         assertThat(matcher.matches(document, map("a.x", allOf("maria", regex("^jo.*"))))).isTrue();
@@ -563,6 +563,16 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, map("a.x", allOf(1, 2)))).isTrue();
         assertThat(matcher.matches(document, map("a.x", allOf(2, 3)))).isFalse();
         assertThat(matcher.matches(document, map("a.x", allOf(3)))).isFalse();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/36
+    @Test
+    public void testMatchesAllWithEmptyCollection() throws Exception {
+        Document query = json("$and: [{'text': 'TextA'}, {'tags': {$all: []}}]");
+
+        assertThat(matcher.matches(json("text: 'TextA', tags: []"), query)).isFalse();
+        assertThat(matcher.matches(json("text: 'TextB', tags: []"), query)).isFalse();
+        assertThat(matcher.matches(json("text: 'TextA', tags: ['A']"), query)).isFalse();
     }
 
     @Test
