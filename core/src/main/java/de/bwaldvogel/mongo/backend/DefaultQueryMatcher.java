@@ -183,13 +183,13 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         if (!(queryValue instanceof List<?>)) {
-            throw new MongoServerError(2, "$and/$or/$nor expression must be a nonempty array");
+            throw new MongoServerError(2, "$and/$or/$nor must be a nonempty array");
         }
 
         @SuppressWarnings("unchecked")
         List<Object> list = (List<Object>) queryValue;
         if (list.isEmpty()) {
-            throw new MongoServerError(2, "$and/$or/$nor expression must be a nonempty array");
+            throw new MongoServerError(2, "$and/$or/$nor must be a nonempty array");
         }
 
         for (Object subqueryValue : list) {

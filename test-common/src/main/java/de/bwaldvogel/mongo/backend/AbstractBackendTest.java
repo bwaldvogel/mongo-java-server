@@ -338,21 +338,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
         @SuppressWarnings("unchecked")
         List<Document> firstBatch = (List<Document>) cursor.get("firstBatch");
 
-        Set<String> expectedCollections = new HashSet<>();
-        expectedCollections.addAll(collections);
-        expectedCollections.add("system.indexes");
-
-        assertThat(firstBatch).hasSize(expectedCollections.size());
+        assertThat(firstBatch).hasSameSizeAs(collections);
 
         Set<String> collectionNames = new HashSet<>();
         for (Document collection : firstBatch) {
-            assertThat(collection.keySet()).containsOnly("name", "options");
+            assertThat(collection.keySet()).containsOnly("name", "options", "type", "idIndex", "info");
+            String name = (String) collection.get("name");
             assertThat(collection.get("options")).isEqualTo(json("{}"));
             assertThat(collection.get("name")).isInstanceOf(String.class);
-            collectionNames.add((String) collection.get("name"));
+            assertThat(collection.get("type")).isEqualTo("collection");
+            assertThat(collection.get("idIndex")).isEqualTo(json("key: {_id: 1}, name: '_id_', ns: 'testdb." + name + "', v: 2"));
+            assertThat(collection.get("info")).isInstanceOf(Document.class);
+            collectionNames.add(name);
         }
 
-        assertThat(collectionNames).isEqualTo(expectedCollections);
+        assertThat(collectionNames).containsExactlyInAnyOrderElementsOf(collections);
     }
 
     @Test
@@ -361,7 +361,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         getCollection("bar").insertOne(json("{}"));
 
         List<String> collectionNames = toArray(db.listCollectionNames());
-        assertThat(collectionNames).containsOnly("system.indexes", "foo", "bar");
+        assertThat(collectionNames).containsOnly("foo", "bar");
     }
 
     @Test
@@ -391,10 +391,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testDatabaseStats() throws Exception {
         Document stats = db.runCommand(new Document("dbStats", 1).append("scale", 1));
         assertThat(stats.getDouble("ok")).isEqualTo(1.0);
-        assertThat(stats.getLong("objects")).isZero();
+        assertThat(stats.getInteger("objects")).isZero();
         assertThat(stats.getInteger("collections")).isZero();
         assertThat(stats.getInteger("indexes")).isZero();
-        assertThat(stats.getLong("dataSize")).isZero();
+        assertThat(stats.getInteger("dataSize")).isZero();
 
         getCollection("foo").insertOne(json("{}"));
         getCollection("foo").insertOne(json("{}"));
@@ -402,10 +402,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         stats = db.runCommand(new Document("dbStats", 1).append("scale", 1));
         assertThat(stats.getDouble("ok")).isEqualTo(1.0);
-        assertThat(stats.getLong("objects")).isEqualTo(8);
-        assertThat(stats.getInteger("collections")).isEqualTo(3);
+        assertThat(stats.getInteger("objects")).isEqualTo(3);
+        assertThat(stats.getInteger("collections")).isEqualTo(2);
         assertThat(stats.getInteger("indexes")).isEqualTo(2);
-        assertThat(stats.getLong("dataSize")).isEqualTo(271);
+        assertThat(stats.getDouble("dataSize")).isEqualTo(66.0);
     }
 
     @Test
@@ -850,7 +850,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
 
         assertMongoWriteException(() -> collection.replaceOne(json("_id: 1"), json("_id:2, a:4")),
-            13596, "After applying the update, the (immutable) field '_id' was found to have been altered to _id: 2");
+            66, "After applying the update, the (immutable) field '_id' was found to have been altered to _id: 2");
 
         // test with $set
 
@@ -2380,7 +2380,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.renameCollection(new MongoNamespace(collection.getNamespace().getDatabaseName(), "other-collection-name"));
 
         Collection<String> collectionNames = toArray(db.listCollectionNames());
-        assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
+        assertThat(collectionNames).containsOnly("other-collection-name");
 
         assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(3);
     }
@@ -2399,7 +2399,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessageContaining("Command failed with error 48 (NamespaceExists): 'target namespace exists'");
 
         List<String> collectionNames = toArray(db.listCollectionNames());
-        assertThat(collectionNames).containsOnly("system.indexes", collection.getNamespace().getCollectionName(),
+        assertThat(collectionNames).containsExactlyInAnyOrder(collection.getNamespace().getCollectionName(),
             "other-collection-name");
 
         assertThat(collection.countDocuments()).isEqualTo(3);
@@ -2419,7 +2419,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             new RenameCollectionOptions().dropTarget(true));
 
         List<String> collectionNames = toArray(db.listCollectionNames());
-        assertThat(collectionNames).containsOnly("system.indexes", "other-collection-name");
+        assertThat(collectionNames).containsExactly("other-collection-name");
 
         assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(3);
     }
@@ -2593,15 +2593,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(and()).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor expression must be a nonempty array'");
+            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(nor()).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor expression must be a nonempty array'");
+            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(or()).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor expression must be a nonempty array'");
+            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor must be a nonempty array'");
     }
 
     @Test

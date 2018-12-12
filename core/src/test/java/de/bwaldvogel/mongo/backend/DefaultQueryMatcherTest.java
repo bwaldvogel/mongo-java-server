@@ -487,7 +487,7 @@ public class DefaultQueryMatcherTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> matcher.matches(emptyDocument, query))
-            .withMessage("[Error 2] $and/$or/$nor expression must be a nonempty array");
+            .withMessage("[Error 2] $and/$or/$nor must be a nonempty array");
     }
 
     @Test

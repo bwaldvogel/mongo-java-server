@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -13,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -171,9 +173,19 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             Document collectionDescription = new Document();
             Document collectionOptions = new Document();
             String namespace = (String) collection.get("name");
+            if (namespace.endsWith(INDEXES_COLLECTION_NAME)) {
+                continue;
+            }
             String collectionName = extractCollectionNameFromNamespace(namespace);
             collectionDescription.put("name", collectionName);
             collectionDescription.put("options", collectionOptions);
+            collectionDescription.put("info", new Document("readOnly", false));
+            collectionDescription.put("type", "collection");
+            collectionDescription.put("idIndex", new Document("key", new Document(ID_FIELD, 1))
+                .append("name", "_id_")
+                .append("ns", namespace)
+                .append("v", 2)
+            );
             firstBatch.add(collectionDescription);
         }
 
@@ -381,21 +393,27 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
+    private Collection<MongoCollection<P>> collections() {
+        return collections.values().stream()
+            .filter(collection -> !collection.getCollectionName().startsWith("system."))
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
     private Document commandDatabaseStats() {
         Document response = new Document("db", getDatabaseName());
-        response.put("collections", Integer.valueOf(namespaces.count()));
+        response.put("collections", Integer.valueOf(collections().size()));
 
         long storageSize = getStorageSize();
         long fileSize = getFileSize();
         long indexSize = 0;
-        long objects = 0;
-        long dataSize = 0;
+        int objects = 0;
+        double dataSize = 0;
         double averageObjectSize = 0;
 
-        for (MongoCollection<P> collection : collections.values()) {
+        for (MongoCollection<P> collection : collections()) {
             Document stats = collection.getStats();
-            objects += ((Number) stats.get("count")).longValue();
-            dataSize += ((Number) stats.get("size")).longValue();
+            objects += ((Number) stats.get("count")).intValue();
+            dataSize += ((Number) stats.get("size")).doubleValue();
 
             Document indexSizes = (Document) stats.get("indexSize");
             for (String indexName : indexSizes.keySet()) {
@@ -406,9 +424,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (objects > 0) {
             averageObjectSize = dataSize / ((double) objects);
         }
-        response.put("objects", Long.valueOf(objects));
+        response.put("objects", Integer.valueOf(objects));
         response.put("avgObjSize", Double.valueOf(averageObjectSize));
-        response.put("dataSize", Long.valueOf(dataSize));
+        if (dataSize == 0.0) {
+            response.put("dataSize", Integer.valueOf(0));
+        } else {
+            response.put("dataSize", Double.valueOf(dataSize));
+        }
         response.put("storageSize", Long.valueOf(storageSize));
         response.put("numExtents", Integer.valueOf(0));
         response.put("indexes", Integer.valueOf(countIndexes()));

@@ -109,7 +109,7 @@ public abstract class AbstractBackendSpringDataTest {
 
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
         List<String> collectionNames = toArray(database.listCollectionNames());
-        assertThat(collectionNames).containsOnly("person", "account", "system.indexes");
+        assertThat(collectionNames).containsOnly("person", "account");
 
         assertThat(toArray(personRepository.findAll())).hasSize(2);
         assertThat(personRepository.count()).isEqualTo(2);
