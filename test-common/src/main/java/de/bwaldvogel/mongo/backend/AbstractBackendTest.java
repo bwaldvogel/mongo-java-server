@@ -209,19 +209,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document query = json("{ _id : { $lt : { n: 'a' , t: 10} , $gte: { n: 'a', t: 1}}}");
 
         List<Document> toUpsert = Arrays.asList(
-                json("_id: {n:'a', t: 1}"),
-                json("_id: {n:'a', t: 2}"),
-                json("_id: {n:'a', t: 3}"),
-                json("_id: {n:'a', t: 11}"));
+            json("_id: {n:'a', t: 1}"),
+            json("_id: {n:'a', t: 2}"),
+            json("_id: {n:'a', t: 3}"),
+            json("_id: {n:'a', t: 11}"));
 
         for (Document dbo : toUpsert) {
             collection.replaceOne(dbo, new Document(dbo).append("foo", "bar"), new ReplaceOptions().upsert(true));
         }
         List<Document> results = toArray(collection.find(query));
         assertThat(results).containsOnly(
-                json("_id: {n:'a', t:1}, foo:'bar'"), //
-                json("_id: {n:'a', t:2}, foo:'bar'"), //
-                json("_id: {n:'a', t:3}, foo:'bar'"));
+            json("_id: {n:'a', t:1}, foo:'bar'"), //
+            json("_id: {n:'a', t:2}, foo:'bar'"), //
+            json("_id: {n:'a', t:3}, foo:'bar'"));
     }
 
     @Test
@@ -234,7 +234,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         List<Document> documents = toArray(collection.find().sort(json("a:1, _id:-1")));
         assertThat(documents).containsExactly(json("a:1, _id:3"), json("a:1, _id:2"), json("a:1, _id:1"),
-                json("a:2, _id:5"), json("a:2, _id:4"));
+            json("a:2, _id:5"), json("a:2, _id:4"));
     }
 
     @Test
@@ -371,7 +371,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         MongoCollection<Document> systemIndexes = db.getCollection("system.indexes");
         assertThat(toArray(systemIndexes.find())).containsOnly(json("name: '_id_', ns: 'testdb.foo', key: {_id: 1}"),
-                json("name: '_id_', ns: 'testdb.bar', key: {_id: 1}"));
+            json("name: '_id_', ns: 'testdb.bar', key: {_id: 1}"));
     }
 
     @Test
@@ -496,7 +496,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(listDatabaseNames()).doesNotContain(db.getName());
         assertThat(collection.countDocuments()).isZero();
         assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName(),
-                collection2.getNamespace().getCollectionName());
+            collection2.getNamespace().getCollectionName());
     }
 
     @Test
@@ -509,11 +509,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         List<Document> objs = toArray(collection.find(ne("c", true)).sort(json("\"counts.done\": -1, _id: 1")));
         assertThat(objs).containsExactly(
-                json("_id: 5, counts:{done:2}"),
-                json("_id: 4, counts:{done:1}"),
-                json("_id: 1"),
-                json("_id: 2"),
-                json("_id: 3"));
+            json("_id: 5, counts:{done:2}"),
+            json("_id: 4, counts:{done:1}"),
+            json("_id: 1"),
+            json("_id: 2"),
+            json("_id: 3"));
     }
 
     @Test
@@ -568,7 +568,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testFindOneAndUpdateFields() throws Exception {
         collection.insertOne(json("_id: 1, a: 1"));
         Document result = collection.findOneAndUpdate(json("_id: 1"), json("$inc: {a:1}"),
-                new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
 
         assertThat(result).isEqualTo(json("_id: 1, a: 2"));
     }
@@ -599,7 +599,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document query = json("_id: 1");
         Document update = json("$inc: {a: 1, 'b.c': 1}");
         Document result = collection.findOneAndUpdate(query, update,
-                new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
 
         assertThat(result).isEqualTo(json("_id: 1, a: 2, b: {c: 2}"));
     }
@@ -611,7 +611,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document query = json("_id: 1");
         Document update = json("$max: {a: 2, 'b.c': 2, d : 'd'}");
         Document result = collection.findOneAndUpdate(query, update,
-                new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
 
         assertThat(result).isEqualTo(json("_id: 1, a: 2, b: {c: 2}, d : 'd'"));
     }
