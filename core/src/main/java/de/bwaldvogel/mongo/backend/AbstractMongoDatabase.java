@@ -1,36 +1,10 @@
 package de.bwaldvogel.mongo.backend;
 
-import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
-import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.*;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -41,6 +15,16 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
+import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
 public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
@@ -182,9 +166,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             collectionDescription.put("info", new Document("readOnly", false));
             collectionDescription.put("type", "collection");
             collectionDescription.put("idIndex", new Document("key", new Document(ID_FIELD, 1))
-                .append("name", "_id_")
-                .append("ns", namespace)
-                .append("v", 2)
+                    .append("name", "_id_")
+                    .append("ns", namespace)
+                    .append("v", 2)
             );
             firstBatch.add(collectionDescription);
         }
@@ -194,8 +178,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document listIndexes() {
         Iterable<Document> indexes = Optional.ofNullable(resolveCollection(INDEXES_COLLECTION_NAME, false))
-            .map(MongoCollection::queryAll)
-            .orElse(Collections.emptyList());
+                .map(MongoCollection::queryAll)
+                .orElse(Collections.emptyList());
         return Utils.cursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
     }
 
@@ -353,7 +337,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             throw new MongoServerError(48, "NamespaceExists",
-                "a collection '" + getDatabaseName() + "." + collectionName + "' already exists");
+                    "a collection '" + getDatabaseName() + "." + collectionName + "' already exists");
         }
 
         createCollection(collectionName);
@@ -366,8 +350,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document commandCreateIndexes(Document query) {
         int indexesBefore = countIndexes();
 
-        @SuppressWarnings("unchecked")
-        final Collection<Document> indexDescriptions = (Collection<Document>) query.get("indexes");
+        @SuppressWarnings("unchecked") final Collection<Document> indexDescriptions = (Collection<Document>) query.get("indexes");
         for (Document indexDescription : indexDescriptions) {
             addIndex(indexDescription);
         }
@@ -395,8 +378,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Collection<MongoCollection<P>> collections() {
         return collections.values().stream()
-            .filter(collection -> !collection.getCollectionName().startsWith("system."))
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+                .filter(collection -> !collection.getCollectionName().startsWith("system."))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private Document commandDatabaseStats() {
@@ -615,6 +598,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     String unwindField = (String) stage.get(stageOperation);
                     aggregation.addStage(new UnwindStage(unwindField));
                     break;
+                case "$lookup":
+                    Document lookup = (Document) stage.get(stageOperation);
+                    aggregation.addStage(new LookupStage(lookup, this));
+                    break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
             }
@@ -823,7 +810,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         try {
             if (collectionName.startsWith("system.")) {
                 throw new MongoServerError(73, "InvalidNamespace",
-                    "cannot write to '" + getDatabaseName() + "." + collectionName + "'");
+                        "cannot write to '" + getDatabaseName() + "." + collectionName + "'");
             }
             MongoCollection<P> collection = resolveCollection(collectionName, false);
             final int n;
