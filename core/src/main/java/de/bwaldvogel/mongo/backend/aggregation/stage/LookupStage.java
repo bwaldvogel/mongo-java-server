@@ -1,9 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import de.bwaldvogel.mongo.MongoCollection;
-import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerError;
+import static java.util.stream.Collectors.toList;
 
 import java.util.HashSet;
 import java.util.List;
@@ -12,7 +9,10 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.toList;
+import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class LookupStage implements AggregationStage {
     private static final String FROM = "from";
@@ -51,7 +51,7 @@ public class LookupStage implements AggregationStage {
             return (String) value;
         }
         throw buildConfigurationError("'" + name + "' option to $lookup must be a string, but was type " +
-                value.getClass().getName());
+            value.getClass().getName());
     }
 
     private void ensureAllConfigurationPropertiesExist(Document configuration) {
@@ -70,7 +70,7 @@ public class LookupStage implements AggregationStage {
     @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.map(this::resolveRemoteField)
-                .filter(Objects::nonNull);
+            .filter(Objects::nonNull);
     }
 
     private Document resolveRemoteField(Document document) {
@@ -87,12 +87,12 @@ public class LookupStage implements AggregationStage {
     private List<Document> lookupValue(Object value) {
         if (value instanceof List) {
             return ((List<?>) value).stream()
-                    .flatMap(item -> lookupValue(item).stream())
-                    .collect(toList());
+                .flatMap(item -> lookupValue(item).stream())
+                .collect(toList());
         }
         Document query = new Document().append(foreignField, value);
         Iterable<Document> queryResult = collection.handleQuery(query);
         return StreamSupport.stream(queryResult.spliterator(), false)
-                .collect(toList());
+            .collect(toList());
     }
 }
