@@ -29,8 +29,10 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.entity.Account;
 import de.bwaldvogel.mongo.entity.Person;
+import de.bwaldvogel.mongo.entity.TestEntity;
 import de.bwaldvogel.mongo.repository.AccountRepository;
 import de.bwaldvogel.mongo.repository.PersonRepository;
+import de.bwaldvogel.mongo.repository.TestRepository;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = AbstractBackendSpringDataTest.TestConfig.class)
@@ -73,10 +75,14 @@ public abstract class AbstractBackendSpringDataTest {
     @Autowired
     private AccountRepository accountRepository;
 
+    @Autowired
+    private TestRepository testRepository;
+
     @Before
     public void deleteAll() throws Exception {
         accountRepository.deleteAll();
         personRepository.deleteAll();
+        testRepository.deleteAll();
     }
 
     @Test
@@ -109,7 +115,7 @@ public abstract class AbstractBackendSpringDataTest {
 
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
         List<String> collectionNames = toArray(database.listCollectionNames());
-        assertThat(collectionNames).containsOnly("person", "account");
+        assertThat(collectionNames).containsOnly("person", "account", "test");
 
         assertThat(toArray(personRepository.findAll())).hasSize(2);
         assertThat(personRepository.count()).isEqualTo(2);
@@ -125,4 +131,23 @@ public abstract class AbstractBackendSpringDataTest {
             .isThrownBy(() -> personRepository.save(new Person("Joe", 1)))
             .withMessageContaining("duplicate key error");
     }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/39
+    @Test
+    public void testDeleteWithUniqueIndexes() throws Exception {
+        TestEntity document = testRepository.save(new TestEntity("DOC_1", "Text1"));
+
+        // update value of indexed property
+        document.setText("Text1 (updated)");
+        testRepository.save(document);
+
+        assertThat(testRepository.findAll()).hasSize(1);
+
+        testRepository.deleteById("DOC_1");
+
+        assertThat(testRepository.findAll()).isEmpty();
+
+        testRepository.save(new TestEntity("DOC_1", "Text1"));
+    }
+
 }

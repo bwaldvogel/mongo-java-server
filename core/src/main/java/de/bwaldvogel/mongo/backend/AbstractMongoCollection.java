@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
@@ -842,8 +843,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return result;
     }
 
-    private Document updateDocument(Document document, Document updateQuery, Integer matchPos)
-            {
+    private Document updateDocument(Document document, Document updateQuery, Integer matchPos) {
         synchronized (document) {
             // copy document
             Document oldDocument = new Document();
@@ -856,7 +856,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     index.checkUpdate(oldDocument, newDocument, this);
                 }
                 for (Index<P> index : indexes) {
-                    index.updateInPlace(oldDocument, newDocument);
+                    index.updateInPlace(oldDocument, newDocument, this);
                 }
 
                 int oldSize = Utils.calculateSize(oldDocument);
@@ -999,11 +999,19 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (!indexes.isEmpty()) {
             for (Index<P> index : indexes) {
-                position = index.remove(document);
+                P indexPosition = index.remove(document);
+                if (indexPosition == null) {
+                    throw new IllegalStateException("Found no position for " + document + " in " + index);
+                }
+                if (position != null && !Objects.equals(position, indexPosition)) {
+                    throw new IllegalStateException("Got different positions for " + document);
+                }
+                position = indexPosition;
             }
         } else {
             position = findDocumentPosition(document);
         }
+
         if (position == null) {
             // not found
             return;

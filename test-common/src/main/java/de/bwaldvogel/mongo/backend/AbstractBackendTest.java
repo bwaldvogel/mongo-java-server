@@ -2194,6 +2194,36 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(toArray(collection.find(json("'action.actionId.subKey': 23")))).isEmpty();
     }
 
+    // see https://github.com/bwaldvogel/mongo-java-server/issues/39
+    @Test
+    public void testSecondaryUniqueIndexUpdate() throws Exception {
+        collection.createIndex(new Document("text", 1), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1, text: 'abc'"));
+        collection.insertOne(json("_id: 2, text: 'def'"));
+        collection.insertOne(json("_id: 3"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 4")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), new Document("$set", json("text: 'def'"))),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : \"def\" }");
+
+        collection.updateOne(json("_id: 1"), new Document("$set", json("text: 'xyz'")));
+        collection.updateOne(json("_id: 2"), new Document("$set", json("text: 'abc'")));
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 2"), new Document("$set", json("text: null"))),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+
+        collection.deleteOne(json("text: 'xyz'"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, text: 'abc'"),
+                json("_id: 3")
+            );
+    }
+
     @Test
     public void testAddNonUniqueIndexOnNonIdField() {
         collection.insertOne(json("someField: 'abc'"));

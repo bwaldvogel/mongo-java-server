@@ -61,9 +61,15 @@ public abstract class Index<P> {
 
     public abstract void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection);
 
-    public abstract void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError;
+    public abstract void updateInPlace(Document oldDocument, Document newDocument, MongoCollection<P> collection) throws KeyConstraintError;
 
     protected boolean isCompoundIndex() {
         return keys().size() > 1;
+    }
+
+    protected boolean nullAwareEqualsKeys(Document oldDocument, Document newDocument) {
+        Object oldKey = getKeyValue(oldDocument);
+        Object newKey = getKeyValue(newDocument);
+        return Utils.nullAwareEquals(oldKey, newKey);
     }
 }

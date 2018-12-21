@@ -60,6 +60,10 @@ public class PostgresUniqueIndex extends Index<Long> {
 
     @Override
     public void checkAdd(Document document, MongoCollection<Long> collection) {
+        checkDocument(document, collection, "add");
+    }
+
+    private void checkDocument(Document document, MongoCollection<Long> collection, String operation) {
         Map<String, Object> keyValues = getKeyValues(document);
         String sql = createSelectStatement(keyValues);
         try (Connection connection = backend.getConnection();
@@ -74,7 +78,7 @@ public class PostgresUniqueIndex extends Index<Long> {
                 }
             }
         } catch (SQLException | IOException e) {
-            throw new MongoServerException("failed to add document to " + fullCollectionName, e);
+            throw new MongoServerException("failed to " + operation + " document to " + fullCollectionName, e);
         }
     }
 
@@ -156,9 +160,12 @@ public class PostgresUniqueIndex extends Index<Long> {
 
     @Override
     public void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<Long> collection) {
+        if (!nullAwareEqualsKeys(oldDocument, newDocument)) {
+            checkDocument(newDocument, collection, "update");
+        }
     }
 
     @Override
-    public void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError {
+    public void updateInPlace(Document oldDocument, Document newDocument, MongoCollection<Long> collection) throws KeyConstraintError {
     }
 }

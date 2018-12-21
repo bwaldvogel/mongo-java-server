@@ -39,10 +39,6 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     @Override
     public synchronized void checkAdd(Document document, MongoCollection<P> collection) {
-        if (hasNoValueForKeys(document)) {
-            return;
-        }
-
         List<Object> key = getKeyValue(document);
         if (containsKey(key)) {
             throw new DuplicateKeyError(this, collection, key);
@@ -52,23 +48,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     @Override
     public synchronized void add(Document document, P position, MongoCollection<P> collection) {
         checkAdd(document, collection);
-        if (hasNoValueForKeys(document)) {
-            return;
-        }
         List<Object> key = getKeyValue(document);
         boolean added = putKeyPosition(key, position);
         if (!added) {
             throw new IllegalStateException("Position " + position + " already exists. Concurrency issue?");
         }
-    }
-
-    private boolean hasNoValueForKeys(Document document) {
-        for (String key : keys()) {
-            if (Utils.hasSubdocumentValue(document, key)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override
@@ -80,8 +64,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public void updateInPlace(Document oldDocument, Document newDocument) throws KeyConstraintError {
-        // no change necessary
+    public void updateInPlace(Document oldDocument, Document newDocument, MongoCollection<P> collection) throws KeyConstraintError {
+        if (!nullAwareEqualsKeys(oldDocument, newDocument)) {
+            P position = remove(oldDocument);
+            add(newDocument, position, collection);
+        }
     }
 
     @Override
@@ -160,12 +147,6 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
             .map(query::get)
             .map(Utils::normalizeValue)
             .collect(Collectors.toList());
-    }
-
-    private boolean nullAwareEqualsKeys(Document oldDocument, Document newDocument) {
-        Object oldKey = getKeyValue(oldDocument);
-        Object newKey = getKeyValue(newDocument);
-        return Utils.nullAwareEquals(oldKey, newKey);
     }
 
     private Iterable<P> getPositionsForExpression(Document keyObj, String operator) {
