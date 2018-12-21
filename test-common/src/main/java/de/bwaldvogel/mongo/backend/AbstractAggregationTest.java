@@ -1,9 +1,10 @@
 package de.bwaldvogel.mongo.backend;
 
-import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import com.mongodb.MongoCommandException;
+import com.mongodb.client.MongoCollection;
+import org.bson.Document;
+import org.bson.types.ObjectId;
+import org.junit.Test;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -11,11 +12,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import org.bson.Document;
-import org.bson.types.ObjectId;
-import org.junit.Test;
-
-import com.mongodb.MongoCommandException;
+import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 public abstract class AbstractAggregationTest extends AbstractTest {
 
@@ -24,8 +24,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         List<Document> pipeline = Collections.singletonList(json("$unknown: {}"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40324: 'Unrecognized pipeline stage name: '$unknown'");
+                .isThrownBy(() -> collection.aggregate(pipeline).first())
+                .withMessageContaining("Command failed with error 40324: 'Unrecognized pipeline stage name: '$unknown'");
     }
 
     @Test
@@ -33,15 +33,15 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         List<Document> pipeline = Collections.singletonList(json("$unknown: {}, bar: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40323: 'A pipeline stage specification object must contain exactly one field.'");
+                .isThrownBy(() -> collection.aggregate(pipeline).first())
+                .withMessageContaining("Command failed with error 40323: 'A pipeline stage specification object must contain exactly one field.'");
     }
 
     @Test
     public void testAggregateWithMissingCursor() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', pipeline: [{$match: {}}]")))
-            .withMessageContaining("Command failed with error 9: 'The 'cursor' option is required, except for aggregate with the explain argument'");
+                .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', pipeline: [{$match: {}}]")))
+                .withMessageContaining("Command failed with error 9: 'The 'cursor' option is required, except for aggregate with the explain argument'");
     }
 
     @Test
@@ -57,7 +57,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 4, a: {value: 5}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n:4, sumOfA: 45, sumOfB: 31.5"));
+                .containsExactly(json("_id: null, n:4, sumOfA: 45, sumOfB: 31.5"));
     }
 
     @Test
@@ -73,7 +73,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 4, c: 'aaa'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, minA: 15, maxB: 20, minC: 1.0, maxC: 'zzz'"));
+                .containsExactly(json("_id: null, minA: 15, maxB: 20, minC: 1.0, maxC: 'zzz'"));
     }
 
     @Test
@@ -87,7 +87,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, a: 15, b: {value: 10}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, minOfA: null, maxOfB: null"));
+                .containsExactly(json("_id: null, minOfA: null, maxOfB: null"));
     }
 
     @Test
@@ -96,8 +96,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 15952: 'unknown group operator '$foo''");
+                .isThrownBy(() -> collection.aggregate(pipeline).first())
+                .withMessageContaining("Command failed with error 15952: 'unknown group operator '$foo''");
     }
 
     @Test
@@ -106,8 +106,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40238: 'The field 'n' must specify one accumulator'");
+                .isThrownBy(() -> collection.aggregate(pipeline).first())
+                .withMessageContaining("Command failed with error 40238: 'The field 'n' must specify one accumulator'");
     }
 
     @Test
@@ -118,7 +118,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2"));
 
         assertThat(toArray(collection.aggregate(Collections.emptyList())))
-            .containsExactly(json("_id: 1"), json("_id: 2"));
+                .containsExactly(json("_id: 1"), json("_id: 2"));
     }
 
     @Test
@@ -126,8 +126,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         List<Document> pipeline = Collections.singletonList(new Document("$group", json("n: {$sum: 1}")));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> toArray(collection.aggregate(pipeline)))
-            .withMessageContaining("Command failed with error 15955: 'a group specification must include an _id'");
+                .isThrownBy(() -> toArray(collection.aggregate(pipeline)))
+                .withMessageContaining("Command failed with error 15955: 'a group specification must include an _id'");
     }
 
     @Test
@@ -141,32 +141,32 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n: 2"));
+                .containsExactly(json("_id: null, n: 2"));
 
         query.putAll(json("n: {$sum: 'abc'}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n: 0"));
+                .containsExactly(json("_id: null, n: 0"));
 
         query.putAll(json("n: {$sum: 2}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n: 4"));
+                .containsExactly(json("_id: null, n: 4"));
 
         query.putAll(json("n: {$sum: 1.75}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n: 3.5"));
+                .containsExactly(json("_id: null, n: 3.5"));
 
         query.putAll(new Document("n", new Document("$sum", 10000000000L)));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n: 20000000000"));
+                .containsExactly(json("_id: null, n: 20000000000"));
 
         query.putAll(new Document("n", new Document("$sum", -2.5F)));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n: -5.0"));
+                .containsExactly(json("_id: null, n: -5.0"));
     }
 
     @Test
@@ -180,12 +180,12 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, a: 3.0, b: 'aaa'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, avg: 1.0"));
+                .containsExactly(json("_id: null, avg: 1.0"));
 
         query.putAll(json("avg: {$avg: '$a'}, avgB: {$avg: '$b'}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, avg: 4.5, avgB: null"));
+                .containsExactly(json("_id: null, avg: 4.5, avgB: null"));
     }
 
     @Test
@@ -202,12 +202,12 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 6, a: 7, c: 'a'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, count: 2, avg: null"),
-                json("_id: 2, count: 2, avg: 3.5"),
-                json("_id: 5, count: 1, avg: 10.0"),
-                json("_id: 7, count: 1, avg: null")
-            );
+                .containsExactly(
+                        json("_id: 1, count: 2, avg: null"),
+                        json("_id: 2, count: 2, avg: 3.5"),
+                        json("_id: 5, count: 1, avg: 10.0"),
+                        json("_id: 7, count: 1, avg: null")
+                );
     }
 
     @Test
@@ -223,10 +223,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 4, value: 2"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1.0, count: 2"),
-                json("_id: 2.0, count: 2")
-            );
+                .containsExactly(
+                        json("_id: 1.0, count: 2"),
+                        json("_id: 2.0, count: 2")
+                );
     }
 
     @Test
@@ -243,13 +243,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 5, value: 2, start: 6, end: 7"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: {abs: NaN, sum: null}, count: 1"),
-                json("_id: {abs: 1.0, sum: 3}, count: 1"),
-                json("_id: {abs: 1.0, sum: 0}, count: 1"),
-                json("_id: {abs: 2.0, sum: -2}, count: 1"),
-                json("_id: {abs: 2.0, sum: 1}, count: 1")
-            );
+                .containsExactly(
+                        json("_id: {abs: NaN, sum: null}, count: 1"),
+                        json("_id: {abs: 1.0, sum: 3}, count: 1"),
+                        json("_id: {abs: 1.0, sum: 0}, count: 1"),
+                        json("_id: {abs: 2.0, sum: -2}, count: 1"),
+                        json("_id: {abs: 2.0, sum: 1}, count: 1")
+                );
     }
 
     @Test
@@ -266,11 +266,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", date("2014-02-15T09:12:00Z")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: { day:  1, year: 2014 }, itemsSold: [ 'abc' ]"),
-                json("_id: { day: 34, year: 2014 }, itemsSold: [ 'jkl', 'xyz' ]"),
-                json("_id: { day: 46, year: 2014 }, itemsSold: [ 'abc', 'xyz' ]")
-            );
+                .containsExactly(
+                        json("_id: { day:  1, year: 2014 }, itemsSold: [ 'abc' ]"),
+                        json("_id: { day: 34, year: 2014 }, itemsSold: [ 'jkl', 'xyz' ]"),
+                        json("_id: { day: 46, year: 2014 }, itemsSold: [ 'abc', 'xyz' ]")
+                );
     }
 
     @Test
@@ -285,7 +285,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 3"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: 1, set: [ ]"));
+                .containsExactly(json("_id: 1, set: [ ]"));
     }
 
     @Test
@@ -300,11 +300,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 3, item: 'xyz', price: 5, fee: 0"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, item: 'abc', total: 12"),
-                json("_id: 2, item: 'jkl', total: 21"),
-                json("_id: 3, item: 'xyz', total: 5 ")
-            );
+                .containsExactly(
+                        json("_id: 1, item: 'abc', total: 12"),
+                        json("_id: 2, item: 'jkl', total: 21"),
+                        json("_id: 3, item: 'xyz', total: 5 ")
+                );
     }
 
     @Test
@@ -319,11 +319,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 3, price: 10, fee: 0"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 2, price: 20, fee: 0"),
-                json("_id: 3, price: 10, fee: 0"),
-                json("_id: 1, price: 10, fee: 1")
-            );
+                .containsExactly(
+                        json("_id: 2, price: 20, fee: 0"),
+                        json("_id: 3, price: 10, fee: 0"),
+                        json("_id: 1, price: 10, fee: 1")
+                );
     }
 
     @Test
@@ -338,11 +338,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 3, x: 30, foo: {bar: 7.3}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, value: 10, other: null"),
-                json("_id: 2, value: 20, other: null"),
-                json("_id: 3, value: 30, n: 7.3, other: null")
-            );
+                .containsExactly(
+                        json("_id: 1, value: 10, other: null"),
+                        json("_id: 2, value: 20, other: null"),
+                        json("_id: 3, value: 30, n: 7.3, other: null")
+                );
     }
 
     @Test
@@ -355,7 +355,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(new Document("_id", new ObjectId("abcd01234567890123456789")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("idHex: 'abcd01234567890123456789'"));
+                .containsExactly(json("idHex: 'abcd01234567890123456789'"));
     }
 
     @Test
@@ -370,11 +370,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 3, value: 123"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, x: 10, value: 10"),
-                json("_id: 2"),
-                json("_id: 3")
-            );
+                .containsExactly(
+                        json("_id: 1, x: 10, value: 10"),
+                        json("_id: 2"),
+                        json("_id: 3")
+                );
     }
 
     @Test
@@ -391,10 +391,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 4, price: 10, quality: 5"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, price: 10, quality: 50"),
-                json("_id: 3, price: 50, quality: 150")
-            );
+                .containsExactly(
+                        json("_id: 1, price: 10, quality: 50"),
+                        json("_id: 3, price: 50, quality: 150")
+                );
     }
 
     @Test
@@ -410,10 +410,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 4, value: -5.34"));
 
         assertThat(toArray(collection.aggregate(pipeline))).containsExactly(
-            json("_id: 1, value: 9.25, ceilingValue: 10"),
-            json("_id: 2, value: 8.73, ceilingValue: 9"),
-            json("_id: 3, value: 4.32, ceilingValue: 5"),
-            json("_id: 4, value: -5.34, ceilingValue: -5")
+                json("_id: 1, value: 9.25, ceilingValue: 10"),
+                json("_id: 2, value: 8.73, ceilingValue: 9"),
+                json("_id: 3, value: 4.32, ceilingValue: 5"),
+                json("_id: 4, value: -5.34, ceilingValue: -5")
         );
     }
 
@@ -450,11 +450,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", date("2014-02-15T09:12:00Z")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 'abc'").append("firstSale", date("2014-01-01T08:00:00Z")).append("lastSale", date("2014-02-15T08:00:00Z")),
-                json("_id: 'jkl'").append("firstSale", date("2014-02-03T09:00:00Z")).append("lastSale", date("2014-02-03T09:00:00Z")),
-                json("_id: 'xyz'").append("firstSale", date("2014-02-03T09:05:00Z")).append("lastSale", date("2014-02-15T09:12:00Z"))
-            );
+                .containsExactly(
+                        json("_id: 'abc'").append("firstSale", date("2014-01-01T08:00:00Z")).append("lastSale", date("2014-02-15T08:00:00Z")),
+                        json("_id: 'jkl'").append("firstSale", date("2014-02-03T09:00:00Z")).append("lastSale", date("2014-02-03T09:00:00Z")),
+                        json("_id: 'xyz'").append("firstSale", date("2014-02-03T09:05:00Z")).append("lastSale", date("2014-02-15T09:12:00Z"))
+                );
     }
 
     @Test
@@ -468,7 +468,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, a: 20, b: 0.2"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, a: [10, 20], b: [{v: 0.1}, {v: 0.2}], c: []"));
+                .containsExactly(json("_id: null, a: [10, 20], b: [{v: 0.1}, {v: 0.2}], c: []"));
     }
 
     @Test
@@ -479,8 +479,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 17276: 'Use of undefined variable: UNDEFINED'");
+                .isThrownBy(() -> collection.aggregate(pipeline).first())
+                .withMessageContaining("Command failed with error 17276: 'Use of undefined variable: UNDEFINED'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/31
@@ -494,7 +494,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1, a: {v: 10}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("doc: {_id: 1, a: {v: 10}}, a: {v: 10}, a_v: 10"));
+                .containsExactly(json("doc: {_id: 1, a: {v: 10}}, a: {v: 10}, a_v: 10"));
     }
 
     @Test
@@ -508,10 +508,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, a: [1], b: [3, 2]"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, all: null"),
-                json("_id: 2, all: [1, 3, 2]")
-            );
+                .containsExactly(
+                        json("_id: 1, all: null"),
+                        json("_id: 2, all: [1, 3, 2]")
+                );
     }
 
     @Test
@@ -525,10 +525,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, name: 'second document'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, names: ['first', 'document']"),
-                json("_id: 2, names: ['second', 'document']")
-            );
+                .containsExactly(
+                        json("_id: 1, names: ['first', 'document']"),
+                        json("_id: 2, names: ['second', 'document']")
+                );
     }
 
     @Test
@@ -540,11 +540,33 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1, item: 'ABC1', sizes: ['S', 'M', 'L']"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(
-                json("_id: 1, item: 'ABC1', sizes: 'S'"),
-                json("_id: 1, item: 'ABC1', sizes: 'M'"),
-                json("_id: 1, item: 'ABC1', sizes: 'L'")
-            );
+                .containsExactly(
+                        json("_id: 1, item: 'ABC1', sizes: 'S'"),
+                        json("_id: 1, item: 'ABC1', sizes: 'M'"),
+                        json("_id: 1, item: 'ABC1', sizes: 'L'")
+                );
+    }
+
+    @Test
+    public void testAggregateWithLookup() {
+        MongoCollection<Document> authorsCollection = db.getCollection("authors");
+        authorsCollection.insertOne(json("_id: 1, name: 'Uncle Bob'"));
+        authorsCollection.insertOne(json("_id: 2, name: 'Martin Fowler'"));
+        Document lookup = json("$lookup: {from: 'authors', localField: 'authorId', foreignField: '_id', as: 'author'}");
+        List<Document> pipeline = Collections.singletonList(lookup);
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, title: 'Refactoring', authorId: 2"));
+        collection.insertOne(json("_id: 2, title: 'Clean Code', authorId: 1"));
+        collection.insertOne(json("_id: 3, title: 'Clean Coder', authorId: 1"));
+
+        assertThat(collection.aggregate(pipeline))
+                .containsOnly(
+                        json("_id: 1, title: 'Refactoring', authorId: 2, author: [{_id: 2, name: 'Martin Fowler'}]"),
+                        json("_id: 2, title: 'Clean Code', authorId: 1, author: [{_id: 1, name: 'Uncle Bob'}]"),
+                        json("_id: 3, title: 'Clean Coder', authorId: 1, author: [{_id: 1, name: 'Uncle Bob'}]")
+                );
     }
 
     private static Date date(String instant) {
