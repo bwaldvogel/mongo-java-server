@@ -65,7 +65,7 @@ allprojects {
 
 ext {
     title = 'mongo-java-server'
-    url = 'https://www.github.com/bwaldvogel/mongo-java-server'
+    url = 'https://github.com/bwaldvogel/mongo-java-server'
 }
 
 jar {
