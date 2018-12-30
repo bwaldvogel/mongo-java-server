@@ -39,6 +39,12 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchesNullOrMissing() throws Exception {
+        assertThat(matcher.matches(json("x: null"), json("x: null"))).isTrue();
+        assertThat(matcher.matches(json(""), json("x: null"))).isTrue();
+    }
+
+    @Test
     public void testMatchesPattern() throws Exception {
         Document document = json("name: 'john'");
         assertThat(matcher.matches(document, map("name", regex("jo.*")))).isTrue();
