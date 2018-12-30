@@ -1,16 +1,12 @@
-// https://github.com/bmuschko/gradle-nexus-plugin
 buildscript {
     repositories {
         jcenter()
-    }
-
-    dependencies {
-        classpath 'com.bmuschko:gradle-nexus-plugin:2.3.1'
     }
 }
 
 plugins {
     id 'com.github.kt3k.coveralls' version '2.8.2'
+    id 'com.bmuschko.nexus' version '2.3.1'
 }
 
 allprojects {
