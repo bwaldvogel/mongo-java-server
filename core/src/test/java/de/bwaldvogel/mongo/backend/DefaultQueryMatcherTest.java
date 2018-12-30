@@ -184,8 +184,11 @@ public class DefaultQueryMatcherTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/35
     @Test
     public void testMatchesMissingEmbeddedDocument() throws Exception {
+        assertThat(matcher.matches(json(""), json("b: {c: null}"))).isFalse();
+        assertThat(matcher.matches(json("b: null"), json("b: {c: null}"))).isFalse();
         assertThat(matcher.matches(json("b: null"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {c: null}"), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: null}"), json("b: {c: null}"))).isTrue();
         assertThat(matcher.matches(json("b: {c: 123}"), json("'b.c': null"))).isFalse();
         assertThat(matcher.matches(json("b: {c: []}"), json("'b.c': null"))).isFalse();
         assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("'b.c': null"))).isFalse();

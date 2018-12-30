@@ -2982,6 +2982,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testQueryEmbeddedDocument() throws Exception {
+        collection.insertOne(json("_id: 1, b: null"));
+        collection.insertOne(json("_id: 2, b: {c: null}"));
+        collection.insertOne(json("_id: 3, b: {c: 123}"));
+        collection.insertOne(json("_id: 4, b: {c: [1, 2, 3]}"));
+        collection.insertOne(json("_id: 5, b: {c: 1, d: 2}"));
+
+        assertThat(toArray(collection.find(json("'b.c': 1"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 4, b: {c: [1, 2, 3]}"),
+                json("_id: 5, b: {c: 1, d: 2}")
+            );
+
+        assertThat(toArray(collection.find(json("'b.c': null"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, b: null"),
+                json("_id: 2, b: {c: null}")
+            );
+
+        assertThat(toArray(collection.find(json("b: {c: null}"))))
+            .containsExactly(json("_id: 2, b: {c: null}"));
+    }
+
+    @Test
     public void testEmptyArrayQuery() throws Exception {
         collection.insertOne(json("_id: 1"));
 

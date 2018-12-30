@@ -301,11 +301,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
                     if (!checkExpressionMatch(value, valueExists, querySubvalue, key)) {
                         return false;
                     }
-                } else {
+                } else if (value == null && querySubvalue == null) {
+                    return false;
+                } else if (!checkMatch(querySubvalue, key, value)) {
                     // the value of the query itself can be a complex query
-                    if (!checkMatch(querySubvalue, key, value)) {
-                        return false;
-                    }
+                    return false;
                 }
             }
             return true;
