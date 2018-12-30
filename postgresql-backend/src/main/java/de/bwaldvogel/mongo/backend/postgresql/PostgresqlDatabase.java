@@ -48,8 +48,10 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     }
 
     @Override
-    protected Index<Long> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys) {
-        return new PostgresUniqueIndex(backend, databaseName, collectionName, keys);
+    protected Index<Long> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys, boolean sparse) {
+        PostgresUniqueIndex index = new PostgresUniqueIndex(backend, databaseName, collectionName, keys, sparse);
+        index.initialize();
+        return index;
     }
 
     @Override

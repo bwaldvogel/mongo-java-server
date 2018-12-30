@@ -30,9 +30,9 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     @Override
-    protected Index<Object> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys) {
+    protected Index<Object> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys, boolean sparse) {
         MVMap<List<Object>, Object> mvMap = mvStore.openMap(databaseName + "." + collectionName + "._index_" + indexName(keys));
-        return new H2UniqueIndex(mvMap, keys);
+        return new H2UniqueIndex(mvMap, keys, sparse);
     }
 
     static String indexName(List<IndexKey> keys) {

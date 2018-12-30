@@ -10,10 +10,10 @@ import de.bwaldvogel.mongo.backend.IndexKey;
 
 public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
 
-    private Map<List<Object>, Integer> index = new ConcurrentHashMap<>();
+    private final Map<List<Object>, Integer> index = new ConcurrentHashMap<>();
 
-    public MemoryUniqueIndex(List<IndexKey> keys) {
-        super(keys);
+    public MemoryUniqueIndex(List<IndexKey> keys, boolean sparse) {
+        super(keys, sparse);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
 
     @Override
     protected boolean putKeyPosition(List<Object> key, Integer position) {
-        Integer oldValue = index.put(key, position);
+        Integer oldValue = index.putIfAbsent(key, position);
         return oldValue == null;
     }
 

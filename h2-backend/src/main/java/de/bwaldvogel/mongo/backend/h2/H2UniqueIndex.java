@@ -13,8 +13,8 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
     private MVMap<List<Object>, Object> mvMap;
 
-    H2UniqueIndex(MVMap<List<Object>, Object> mvMap, List<IndexKey> keys) {
-        super(keys);
+    H2UniqueIndex(MVMap<List<Object>, Object> mvMap, List<IndexKey> keys, boolean sparse) {
+        super(keys, sparse);
         this.mvMap = mvMap;
     }
 
@@ -30,7 +30,7 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
     @Override
     protected boolean putKeyPosition(List<Object> key, Object position) {
-        Object oldValue = mvMap.put(key, Missing.ofNullable(position));
+        Object oldValue = mvMap.putIfAbsent(key, Missing.ofNullable(position));
         return oldValue == null;
     }
 

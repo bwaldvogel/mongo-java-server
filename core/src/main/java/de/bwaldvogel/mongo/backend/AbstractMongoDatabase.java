@@ -787,9 +787,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 keys.add(new IndexKey(field, ascending));
             }
 
-            log.info("adding unique index {} for collection {}", keys, collectionName);
+            boolean sparse = Utils.isTrue(indexDescription.get("sparse"));
+            log.info("adding {} unique index {} for collection {}", sparse ? "sparse" : "non-sparse", keys, collectionName);
 
-            collection.addIndex(openOrCreateUniqueIndex(collectionName, keys));
+            collection.addIndex(openOrCreateUniqueIndex(collectionName, keys, sparse));
         } else {
             // TODO: non-unique non-id indexes not yet implemented
             log.warn("adding non-unique non-id index with key {} is not yet implemented", key);
@@ -801,10 +802,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Index<P> openOrCreateIdIndex(String collectionName, boolean ascending) {
-        return openOrCreateUniqueIndex(collectionName, Collections.singletonList(new IndexKey(ID_FIELD, ascending)));
+        return openOrCreateUniqueIndex(collectionName, Collections.singletonList(new IndexKey(ID_FIELD, ascending)), false);
     }
 
-    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys);
+    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys, boolean sparse);
 
     private void insertDocuments(Channel channel, String collectionName, List<Document> documents) {
         clearLastStatus(channel);

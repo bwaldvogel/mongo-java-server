@@ -1000,7 +1000,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             for (Index<P> index : indexes) {
                 P indexPosition = index.remove(document);
                 if (indexPosition == null) {
-                    throw new IllegalStateException("Found no position for " + document + " in " + index);
+                    if (index.isSparse()) {
+                        continue;
+                    } else {
+                        throw new IllegalStateException("Found no position for " + document + " in " + index);
+                    }
                 }
                 if (position != null && !Objects.equals(position, indexPosition)) {
                     throw new IllegalStateException("Got different positions for " + document);

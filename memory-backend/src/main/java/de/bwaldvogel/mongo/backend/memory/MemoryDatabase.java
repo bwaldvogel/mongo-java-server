@@ -21,8 +21,8 @@ public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
     }
 
     @Override
-    protected Index<Integer> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys) {
-        return new MemoryUniqueIndex(keys);
+    protected Index<Integer> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys, boolean sparse) {
+        return new MemoryUniqueIndex(keys, sparse);
     }
 
     @Override

@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend.postgresql;
 import java.util.Arrays;
 
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.postgresql.jdbc3.Jdbc3PoolingDataSource;
 
@@ -38,5 +39,27 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
             mongoDatabase.drop();
         }
         return backend;
+    }
+
+    @Override
+    public void testCompoundSparseUniqueIndex() throws Exception {
+        assumeSparseIndicesSupportedInPostgresBackend();
+        super.testCompoundSparseUniqueIndex();
+    }
+
+    @Override
+    public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() throws Exception {
+        assumeSparseIndicesSupportedInPostgresBackend();
+        super.testCompoundSparseUniqueIndexOnEmbeddedDocuments();
+    }
+
+    @Override
+    public void testSecondarySparseUniqueIndex() throws Exception {
+        assumeSparseIndicesSupportedInPostgresBackend();
+        super.testSecondarySparseUniqueIndex();
+    }
+
+    private void assumeSparseIndicesSupportedInPostgresBackend() {
+        Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictSparseIndexTest"));
     }
 }

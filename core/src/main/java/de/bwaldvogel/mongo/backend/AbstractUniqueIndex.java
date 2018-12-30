@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -17,8 +18,8 @@ import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
 public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
-    protected AbstractUniqueIndex(List<IndexKey> keys) {
-        super(keys);
+    protected AbstractUniqueIndex(List<IndexKey> keys, boolean sparse) {
+        super(keys, sparse);
     }
 
     protected abstract P removeDocument(List<Object> key);
@@ -31,14 +32,24 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     protected abstract P getPosition(List<Object> key);
 
+    private boolean hasNoValueForKeys(Document document) {
+        return keys().stream().noneMatch(key -> Utils.hasSubdocumentValue(document, key));
+    }
+
     @Override
     public synchronized P remove(Document document) {
+        if (isSparse() && hasNoValueForKeys(document)) {
+            return null;
+        }
         List<Object> key = getKeyValue(document);
         return removeDocument(key);
     }
 
     @Override
     public synchronized void checkAdd(Document document, MongoCollection<P> collection) {
+        if (isSparse() && hasNoValueForKeys(document)) {
+            return;
+        }
         List<Object> key = getKeyValue(document);
         if (containsKey(key)) {
             throw new DuplicateKeyError(this, collection, key);
@@ -48,10 +59,13 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     @Override
     public synchronized void add(Document document, P position, MongoCollection<P> collection) {
         checkAdd(document, collection);
+        if (isSparse() && hasNoValueForKeys(document)) {
+            return;
+        }
         List<Object> key = getKeyValue(document);
         boolean added = putKeyPosition(key, position);
         if (!added) {
-            throw new IllegalStateException("Position " + position + " already exists. Concurrency issue?");
+            throw new IllegalStateException("Key " + key + " already exists. Concurrency issue?");
         }
     }
 
@@ -75,6 +89,10 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     public synchronized boolean canHandle(Document query) {
 
         if (!query.keySet().equals(keySet())) {
+            return false;
+        }
+
+        if (isSparse() && query.values().stream().allMatch(Objects::isNull)) {
             return false;
         }
 

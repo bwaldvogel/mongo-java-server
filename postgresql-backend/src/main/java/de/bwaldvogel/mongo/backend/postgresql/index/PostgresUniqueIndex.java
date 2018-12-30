@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +28,17 @@ public class PostgresUniqueIndex extends Index<Long> {
 
     private final PostgresqlBackend backend;
     private final String fullCollectionName;
+    private final String indexName;
 
-    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, List<IndexKey> keys) {
-        super(keys);
+    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, List<IndexKey> keys, boolean sparse) {
+        super(keys, sparse);
         this.backend = backend;
         fullCollectionName = PostgresqlCollection.getQualifiedTablename(databaseName, collectionName);
-        String indexName = collectionName + "_" + indexName(keys);
-        String columns = keyColumns(keys);
+        indexName = collectionName + "_" + indexName(keys);
+    }
+
+    public void initialize() {
+        String columns = keyColumns(getKeys());
         String sql = "CREATE UNIQUE INDEX IF NOT EXISTS \"" + indexName + "\" ON " + fullCollectionName + " (" + columns + ")";
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -126,16 +131,20 @@ public class PostgresUniqueIndex extends Index<Long> {
             if (keyValue != null) {
                 String queryValue = PostgresqlUtils.toQueryValue(keyValue);
                 statement.setString(pos++, queryValue);
+            } else if (isSparse()) {
+                statement.setNull(pos++, Types.VARCHAR);
             }
         }
     }
 
-    private String createSelectStatement(Map<String, Object> keyValues) {
+    String createSelectStatement(Map<String, Object> keyValues) {
         return "SELECT id FROM " + fullCollectionName + " WHERE " +
             keyValues.entrySet().stream()
-                .map(entry -> PostgresqlUtils.toDataKey(entry.getKey()) + (entry.getValue() == null ? " IS NULL" : " = ?"))
+                .map(entry -> {
+                    String dataKey = PostgresqlUtils.toDataKey(entry.getKey());
+                    return dataKey + (!isSparse() && entry.getValue() == null ? " IS NULL" : " = ?");
+                })
                 .collect(Collectors.joining(" AND "));
-
     }
 
     @Override

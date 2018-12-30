@@ -12,9 +12,19 @@ import de.bwaldvogel.mongo.exception.KeyConstraintError;
 public abstract class Index<P> {
 
     private final List<IndexKey> keys;
+    private final boolean sparse;
 
-    protected Index(List<IndexKey> keys) {
+    protected Index(List<IndexKey> keys, boolean sparse) {
         this.keys = keys;
+        this.sparse = sparse;
+    }
+
+    protected boolean isSparse() {
+        return sparse;
+    }
+
+    protected List<IndexKey> getKeys() {
+        return keys;
     }
 
     public String getName() {

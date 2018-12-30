@@ -2225,6 +2225,98 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // see https://github.com/bwaldvogel/mongo-java-server/issues/39
+    @Test
+    public void testSecondarySparseUniqueIndex() throws Exception {
+        collection.createIndex(json("text: 1"), new IndexOptions().unique(true).sparse(true));
+
+        collection.insertOne(json("_id: 1, text: 'abc'"));
+        collection.insertOne(json("_id: 2, text: 'def'"));
+        collection.insertOne(json("_id: 3"));
+        collection.insertOne(json("_id: 4"));
+        collection.insertOne(json("_id: 5, text: null"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 6, text: null")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 7, text: 'abc'")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : \"abc\" }");
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 2"), new Document("$set", json("text: null"))),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+
+        collection.deleteOne(json("_id: 5"));
+
+        collection.updateOne(json("_id: 2"), new Document("$set", json("text: null")));
+        collection.updateOne(json("_id: 1"), new Document("$set", json("text: 'def'")));
+
+        collection.deleteMany(json("text: null"));
+
+        assertThat(toArray(collection.find())).containsExactly(json("_id: 1, text: 'def'"));
+    }
+
+    // see https://github.com/bwaldvogel/mongo-java-server/issues/39
+    @Test
+    public void testCompoundSparseUniqueIndex() throws Exception {
+        collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true).sparse(true));
+
+        collection.insertOne(json("_id: 1, a: 10, b: 20"));
+        collection.insertOne(json("_id: 2, a: 10"));
+        collection.insertOne(json("_id: 3, b: 20"));
+        collection.insertOne(json("_id: 4"));
+        collection.insertOne(json("_id: 5"));
+        collection.insertOne(json("_id: 6, a: null"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 7, a: null")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : null, : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 7, b: null")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : null, : null }");
+
+        collection.deleteMany(json("a: null, b: null"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: 10, b: 20"),
+                json("_id: 2, a: 10"),
+                json("_id: 3, b: 20")
+            );
+    }
+
+    @Test
+    public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() throws Exception {
+        collection.createIndex(json("'a.x': 1, 'b.x': 1"), new IndexOptions().unique(true).sparse(true));
+
+        collection.insertOne(json("_id: 1, a: 10, b: 20"));
+        collection.insertOne(json("_id: 2, a: 10"));
+        collection.insertOne(json("_id: 3, b: 20"));
+        collection.insertOne(json("_id: 4, a: {x: 1}"));
+        collection.insertOne(json("_id: 5, b: {x: 2}"));
+        collection.insertOne(json("_id: 6, a: {x: 1}, b: {x: 2}"));
+        collection.insertOne(json("_id: 7, a: {x: 2}, b: {x: 2}"));
+        collection.insertOne(json("_id: 8, a: {x: null}, b: {x: null}"));
+        collection.insertOne(json("_id: 9"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 10, a: {x: 1.0}, b: {x: 2.0}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a.x_1_b.x_1 dup key: { : 1.0, : 2.0 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 11, a: {x: null}, b: {x: null}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a.x_1_b.x_1 dup key: { : null, : null }");
+
+        collection.deleteMany(json("a: {x: null}, b: {x: null}"));
+        collection.deleteMany(json("a: 10"));
+        collection.deleteMany(json("b: 20"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactlyInAnyOrder(
+                json("_id: 4, a: {x: 1}"),
+                json("_id: 5, b: {x: 2}"),
+                json("_id: 6, a: {x: 1}, b: {x: 2}"),
+                json("_id: 7, a: {x: 2}, b: {x: 2}"),
+                json("_id: 9")
+            );
+    }
+
     @Test
     public void testAddNonUniqueIndexOnNonIdField() {
         collection.insertOne(json("someField: 'abc'"));
