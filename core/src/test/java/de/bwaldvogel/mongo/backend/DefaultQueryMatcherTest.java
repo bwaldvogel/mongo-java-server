@@ -105,6 +105,15 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchesLessThanAndGreaterThanQuery() throws Exception {
+        Document query = json("x: { $lt : { n: 'a' , t: 10}, $gt: { n: 'a', t: 1}}}");
+
+        assertThat(matcher.matches(json("x: {n: 'a', t: 1}"), query)).isFalse();
+        assertThat(matcher.matches(json("x: {n: 'a', t: 2}"), query)).isTrue();
+        assertThat(matcher.matches(json("x: {n: 'a', t: 11}"), query)).isFalse();
+    }
+
+    @Test
     public void testMatchesValueList() throws Exception {
         Document document = json("a: [1, 2, 3]");
         assertThat(matcher.matches(document, json(""))).isTrue();
@@ -158,6 +167,7 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("b: {x: 'foo'}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {x: 'foo', c: null}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json(""), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: ['a', null, 'b']}"), json("'b.c': null"))).isTrue();
     }
 
     @Test

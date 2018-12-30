@@ -207,22 +207,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testCompoundDateIdUpserts() {
-        Document query = json("{ _id : { $lt : { n: 'a' , t: 10} , $gte: { n: 'a', t: 1}}}");
+        Document query = json("_id: {$lt: {n: 'a', t: 10}, $gte: {n: 'a', t: 1}}");
 
         List<Document> toUpsert = Arrays.asList(
-            json("_id: {n:'a', t: 1}"),
-            json("_id: {n:'a', t: 2}"),
-            json("_id: {n:'a', t: 3}"),
-            json("_id: {n:'a', t: 11}"));
+            json("_id: {n: 'a', t: 1}"),
+            json("_id: {n: 'a', t: 2}"),
+            json("_id: {n: 'a', t: 3}"),
+            json("_id: {n: 'a', t: 11}"));
 
         for (Document dbo : toUpsert) {
             collection.replaceOne(dbo, new Document(dbo).append("foo", "bar"), new ReplaceOptions().upsert(true));
         }
         List<Document> results = toArray(collection.find(query));
         assertThat(results).containsOnly(
-            json("_id: {n:'a', t:1}, foo:'bar'"), //
-            json("_id: {n:'a', t:2}, foo:'bar'"), //
-            json("_id: {n:'a', t:3}, foo:'bar'"));
+            json("_id: {n: 'a', t: 1}, foo: 'bar'"),
+            json("_id: {n: 'a', t: 2}, foo: 'bar'"),
+            json("_id: {n: 'a', t: 3}, foo: 'bar'"));
     }
 
     @Test
@@ -2784,6 +2784,38 @@ public abstract class AbstractBackendTest extends AbstractTest {
         List<Document> results = toArray(collection.find(json("results: { $elemMatch: { $gte: 80, $lt: 85 } }")));
         assertThat(results).hasSize(1);
         assertThat(results.get(0)).isEqualTo(json("\"_id\" : 1, \"results\" : [ 82, 85, 88 ]"));
+    }
+
+    @Test
+    public void testMatchesElementInEmbeddedDocuments() throws Exception {
+        collection.insertOne(json("_id: 1, results: [{product: 'abc', score: 10}, {product: 'xyz', score: 5}]"));
+        collection.insertOne(json("_id: 2, results: [{product: 'abc', score:  9}, {product: 'xyz', score: 7}]"));
+        collection.insertOne(json("_id: 3, results: [{product: 'abc', score:  7}, {product: 'xyz', score: 8}]"));
+
+        assertThat(toArray(collection.find(json("results: {$elemMatch: {product: 'xyz', score: {$gte: 8}}}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 3, results: [{product: 'abc', score:  7}, {product: 'xyz', score: 8}]")
+            );
+
+        assertThat(toArray(collection.find(json("results: {$elemMatch: {product: 'xyz'}}}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, results: [{product: 'abc', score: 10}, {product: 'xyz', score: 5}]"),
+                json("_id: 2, results: [{product: 'abc', score:  9}, {product: 'xyz', score: 7}]"),
+                json("_id: 3, results: [{product: 'abc', score:  7}, {product: 'xyz', score: 8}]")
+            );
+    }
+
+    @Test
+    public void testMatchesNullOrMissing() throws Exception {
+        collection.insertOne(json("_id: 1, x: null"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3, x: 123"));
+
+        assertThat(toArray(collection.find(json("x: null"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, x: null"),
+                json("_id: 2")
+            );
     }
 
     @Test
