@@ -110,8 +110,8 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     private void restart() throws Exception {
-        shutdownServer();
-        spinUpServer();
+        tearDown();
+        super.setUp();
     }
 
 }

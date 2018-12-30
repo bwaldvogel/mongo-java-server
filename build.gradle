@@ -37,6 +37,7 @@ allprojects {
         postgresDriverVersion = '42.2.5'
         mockitoVersion = '2.23.0'
         equalsVerifierVersion = '3.0.2'
+        flapdoodleVersion = '2.2.0'
     }
 
     repositories {

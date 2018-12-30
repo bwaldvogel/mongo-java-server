@@ -25,24 +25,23 @@ public abstract class AbstractTest {
     com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection;
     private MongoServer mongoServer;
     private MongoClient asyncClient;
-    InetSocketAddress serverAddress;
+    protected InetSocketAddress serverAddress;
 
     protected abstract MongoBackend createBackend() throws Exception;
 
     @Before
     public void setUp() throws Exception {
-        spinUpServer();
+        setUpBackend();
+        setUpClients();
     }
 
     @After
     public void tearDown() {
-        shutdownServer();
+        closeClients();
+        tearDownBackend();
     }
 
-    protected void spinUpServer() throws Exception {
-        MongoBackend backend = createBackend();
-        mongoServer = new MongoServer(backend);
-        serverAddress = mongoServer.bind();
+    private void setUpClients() throws Exception {
         syncClient = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
         asyncClient = com.mongodb.reactivestreams.client.MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
         db = syncClient.getDatabase(TEST_DATABASE_NAME);
@@ -53,9 +52,18 @@ public abstract class AbstractTest {
         asyncCollection = asyncDb.getCollection(namespace.getCollectionName());
     }
 
-    protected void shutdownServer() {
+    protected void setUpBackend() throws Exception {
+        MongoBackend backend = createBackend();
+        mongoServer = new MongoServer(backend);
+        serverAddress = mongoServer.bind();
+    }
+
+    private void closeClients() {
         syncClient.close();
         asyncClient.close();
+    }
+
+    protected void tearDownBackend() {
         mongoServer.shutdownNow();
     }
 }

@@ -12,4 +12,6 @@ dependencies {
     compile group: 'junit', name: 'junit', version: junitVersion
     compile group: 'org.assertj', name: 'assertj-core', version: assertjVersion
     runtime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+
+    testCompile group: 'de.flapdoodle.embed', name: 'de.flapdoodle.embed.mongo', version: flapdoodleVersion
 }
