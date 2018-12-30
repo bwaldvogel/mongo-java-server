@@ -166,9 +166,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                     }
                 }
                 return true;
-            }
-
-            if (checkMatchesAnyValue(queryValue, value)) {
+            } else if (checkMatchesAnyValue(queryValue, value)) {
                 return true;
             }
         }
@@ -216,13 +214,12 @@ public class DefaultQueryMatcher implements QueryMatcher {
             case NOR:
                 return !checkMatch(queryValue, QueryFilter.OR, document);
             default:
-                throw new MongoServerException("illegal query filter: " + filter+ ". must not happen");
+                throw new MongoServerException("illegal query filter: " + filter + ". must not happen");
         }
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAllDocuments(Object queryValue, List<String> keys, Object document)
-            {
+    private boolean checkMatchesAllDocuments(Object queryValue, List<String> keys, Object document) {
         for (Object query : (Collection<Object>) queryValue) {
             if (!checkMatchesAnyDocument(query, keys, document)) {
                 return false;
@@ -232,8 +229,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean checkMatchesAnyDocument(Object queryValue, List<String> keys, Object document)
-            {
+    private boolean checkMatchesAnyDocument(Object queryValue, List<String> keys, Object document) {
         int i = 0;
         for (Object object : (Collection<Object>) document) {
             if (checkMatch(queryValue, keys, object)) {

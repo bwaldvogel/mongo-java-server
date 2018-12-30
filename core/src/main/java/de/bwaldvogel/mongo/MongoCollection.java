@@ -31,8 +31,7 @@ public interface MongoCollection<P> {
         return handleQuery(query, numberToSkip, numberToReturn, null);
     }
 
-    Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn,
-            Document returnFieldSelector);
+    Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
 
     void insertDocuments(List<Document> documents);
 

@@ -2173,7 +2173,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // see https://github.com/bwaldvogel/mongo-java-server/issues/9
     @Test
     public void testUniqueIndexWithSubdocument() {
-        collection.createIndex(new Document("action.actionId", 1), new IndexOptions().unique(true));
+        collection.createIndex(json("'action.actionId': 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1, action: 'abc1'"));
         collection.insertOne(json("_id: 2, action: { actionId: 1 }"));
@@ -2198,7 +2198,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // see https://github.com/bwaldvogel/mongo-java-server/issues/39
     @Test
     public void testSecondaryUniqueIndexUpdate() throws Exception {
-        collection.createIndex(new Document("text", 1), new IndexOptions().unique(true));
+        collection.createIndex(json("text: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1, text: 'abc'"));
         collection.insertOne(json("_id: 2, text: 'def'"));
