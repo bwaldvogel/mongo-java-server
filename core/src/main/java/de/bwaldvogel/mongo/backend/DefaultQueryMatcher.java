@@ -61,13 +61,12 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return checkMatch(queryValue, splitKey(key), document);
     }
 
-    private boolean checkMatch(Object queryValue, List<String> keys, Object document) {
-
+    private boolean checkMatch(Object queryValue, List<String> keys, Object value) {
         if (keys.isEmpty()) {
             throw new MongoServerException("illegal keys: " + keys);
         }
 
-        if (Missing.isNullOrMissing(document)) {
+        if (Missing.isNullOrMissing(value)) {
             return queryValue == null;
         }
 
@@ -85,14 +84,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
         if (QueryFilter.isQueryFilter(firstKey)) {
             QueryFilter filter = QueryFilter.fromValue(firstKey);
-            return checkMatch(queryValue, filter, document);
+            return checkMatch(queryValue, filter, value);
         } else if (firstKey.startsWith("$") && !Constants.REFERENCE_KEYS.contains(firstKey)) {
             throw new BadValueException("unknown top level operator: " + firstKey);
         }
 
-        if (document instanceof List<?>) {
+        if (value instanceof List<?>) {
             if (firstKey.matches("\\d+")) {
-                Object listValue = Utils.getFieldValueListSafe(document, firstKey);
+                Object listValue = Utils.getFieldValueListSafe(value, firstKey);
                 if (subKeys.isEmpty()) {
                     return checkMatchesValue(queryValue, listValue, listValue != null);
                 } else {
@@ -105,73 +104,78 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 // clone first
                 queryValue = ((Document) queryValue).clone();
                 Object allQuery = ((Document) queryValue).remove(QueryOperator.ALL.getValue());
-                if (!checkMatchesAllDocuments(allQuery, keys, document)) {
+                if (!checkMatchesAllDocuments(allQuery, keys, value)) {
                     return false;
                 }
                 // continue matching the remainder of queryValue
             }
 
-            return checkMatchesAnyDocument(queryValue, keys, document);
+            return checkMatchesAnyDocument(queryValue, keys, value);
         }
 
         if (!subKeys.isEmpty()) {
-            Object subObject = Utils.getFieldValueListSafe(document, firstKey);
+            Object subObject = Utils.getFieldValueListSafe(value, firstKey);
             return checkMatch(queryValue, subKeys, subObject);
         }
 
-        if (!(document instanceof Document)) {
+        if (!(value instanceof Document)) {
             return false;
         }
 
-        Object value = ((Document) document).get(firstKey);
-        boolean valueExists = ((Document) document).containsKey(firstKey);
+        Document document = (Document) value;
+        Object documentValue = document.get(firstKey);
+        boolean valueExists = document.containsKey(firstKey);
 
-        if (value instanceof Collection<?>) {
+        if (documentValue instanceof Collection<?>) {
             if (queryValue instanceof Document) {
-                Set<String> keySet = ((Document) queryValue).keySet();
-
-                // clone first
-                Document queryValueClone = ((Document) queryValue).clone();
-
-                for (String queryOperator : keySet) {
-
-                    Object subQuery = queryValueClone.remove(queryOperator);
-
-                    if (queryOperator.equals(QueryOperator.ALL.getValue())) {
-                        if (!checkMatchesAllValues(subQuery, value)) {
-                            return false;
-                        }
-                    } else if (queryOperator.equals(QueryOperator.ELEM_MATCH.getValue())) {
-                        if (!checkMatchesElemValues(subQuery, value)) {
-                            return false;
-                        }
-                    } else if (queryOperator.equals(QueryOperator.IN.getValue())) {
-                        Document inQuery = new Document(queryOperator, subQuery);
-                        if (!checkMatchesAnyValue(inQuery, value)) {
-                            return false;
-                        }
-                    } else if (queryOperator.equals(QueryOperator.NOT_IN.getValue())) {
-                        Document inQuery = new Document(QueryOperator.IN.getValue(), subQuery);
-                        if (checkMatchesAnyValue(inQuery, value)) {
-                            return false;
-                        }
-                    } else if (queryOperator.equals(QueryOperator.NOT.getValue())) {
-                        if (checkMatch(subQuery, keys, document)) {
-                            return false;
-                        }
-                    } else {
-                        if (!checkMatchesAnyValue(queryValue, value) && !checkMatchesValue(queryValue, value, valueExists)) {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            } else if (checkMatchesAnyValue(queryValue, value)) {
+                return checkMatchesAnyValue((Document) queryValue, keys, document, (Collection<?>) documentValue, valueExists);
+            } else if (checkMatchesAnyValue(queryValue, documentValue)) {
                 return true;
             }
         }
 
-        return checkMatchesValue(queryValue, value, valueExists);
+        return checkMatchesValue(queryValue, documentValue, valueExists);
+    }
+
+    private boolean checkMatchesAnyValue(Document queryValue, List<String> keys, Document document, Collection<?> value, boolean valueExists) {
+        Set<String> keySet = queryValue.keySet();
+
+        // clone first
+        Document queryValueClone = queryValue.clone();
+
+        for (String queryOperator : keySet) {
+
+            Object subQuery = queryValueClone.remove(queryOperator);
+
+            if (queryOperator.equals(QueryOperator.ALL.getValue())) {
+                if (!checkMatchesAllValues(subQuery, value)) {
+                    return false;
+                }
+            } else if (queryOperator.equals(QueryOperator.ELEM_MATCH.getValue())) {
+                if (!checkMatchesElemValues(subQuery, value)) {
+                    return false;
+                }
+            } else if (queryOperator.equals(QueryOperator.IN.getValue())) {
+                Document inQuery = new Document(queryOperator, subQuery);
+                if (!checkMatchesAnyValue(inQuery, value)) {
+                    return false;
+                }
+            } else if (queryOperator.equals(QueryOperator.NOT_IN.getValue())) {
+                Document inQuery = new Document(QueryOperator.IN.getValue(), subQuery);
+                if (checkMatchesAnyValue(inQuery, value)) {
+                    return false;
+                }
+            } else if (queryOperator.equals(QueryOperator.NOT.getValue())) {
+                if (checkMatch(subQuery, keys, document)) {
+                    return false;
+                }
+            } else {
+                if (!checkMatchesAnyValue(queryValue, value) && !checkMatchesValue(queryValue, value, valueExists)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private boolean checkMatch(Object queryValue, QueryFilter filter, Object document) {
