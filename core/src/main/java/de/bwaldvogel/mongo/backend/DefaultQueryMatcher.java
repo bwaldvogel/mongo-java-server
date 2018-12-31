@@ -28,12 +28,31 @@ public class DefaultQueryMatcher implements QueryMatcher {
     public boolean matches(Document document, Document query) {
         for (String key : query.keySet()) {
             Object queryValue = query.get(key);
+            validateQueryValue(queryValue);
             if (!checkMatch(queryValue, key, document)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private void validateQueryValue(Object queryValue) {
+        if (!(queryValue instanceof Document)) {
+            return;
+        }
+        if (BsonRegularExpression.isRegularExpression(queryValue)) {
+            return;
+        }
+        Document queryObject = (Document) queryValue;
+        if (!queryObject.keySet().isEmpty() && queryObject.keySet().iterator().next().startsWith("$")) {
+            for (String operator : queryObject.keySet()) {
+                if (Constants.REFERENCE_KEYS.contains(operator)) {
+                    continue;
+                }
+                QueryOperator.fromValue(operator);
+            }
+        }
     }
 
     @Override
@@ -350,12 +369,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     private boolean checkExpressionMatch(Object value, boolean valueExists, Object expressionValue, String operator) {
 
-        final QueryOperator queryOperator;
-        try {
-            queryOperator = QueryOperator.fromValue(operator);
-        } catch (IllegalArgumentException e) {
-            throw new MongoServerError(2, "unknown operator: " + operator);
-        }
+        QueryOperator queryOperator = QueryOperator.fromValue(operator);
 
         switch (queryOperator) {
             case IN:

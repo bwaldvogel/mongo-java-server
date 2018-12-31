@@ -2832,6 +2832,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testQueryWithOperatorAndWithoutOperator() throws Exception {
+        collection.insertOne(json("_id: 1, x: {y: 23}"));
+        collection.insertOne(json("_id: 2, x: 9"));
+        collection.insertOne(json("_id: 3, x: 100"));
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("x: {$lt: 10, y: 23}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message 'unknown operator: y'");
+
+        assertThat(toArray(collection.find(json("x: {y: 23, $lt: 10}")))).isEmpty();
+        assertThat(toArray(collection.find(json("x: {y: {$lt: 100, z: 23}}")))).isEmpty();
+        assertThat(toArray(collection.find(json("a: 123, x: {y: {$lt: 100, z: 23}}")))).isEmpty();
+    }
+
+    @Test
     public void testQueryWithComment() throws Exception {
         collection.insertOne(json("_id: 1, x: 2"));
         collection.insertOne(json("_id: 2, x: 3"));

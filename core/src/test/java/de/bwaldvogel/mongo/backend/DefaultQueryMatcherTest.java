@@ -22,6 +22,9 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -36,6 +39,29 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json(""), json(""))).isTrue();
         assertThat(matcher.matches(json(""), json("foo: 'bar'"))).isFalse();
         assertThat(matcher.matches(json("foo: 'bar'"), json("foo: 'bar'"))).isTrue();
+    }
+
+    @Test
+    public void testIllegalQuery() throws Exception {
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> matcher.matches(json(""), json("x: {$lt: 10, y: 23}")))
+            .withMessage("[Error 2] unknown operator: y");
+    }
+
+    @Test
+    public void testLegalQueryWithOperatorAndWithoutOperator() throws Exception {
+        List<Document> documents = Arrays.asList(
+            json(""),
+            json("x: 23"),
+            json("x: {y: 23}"),
+            json("x: {y: {z: 23}}"),
+            json("a: 123, x: {y: {z: 23}}")
+        );
+        for(Document document : documents) {
+            assertThat(matcher.matches(document, json("x: {y: 23, $lt: 10}"))).isFalse();
+            assertThat(matcher.matches(document, json("x: {y: {$lt: 100, z: 23}}"))).isFalse();
+            assertThat(matcher.matches(document, json("a: 123, x: {y: {$lt: 100, z: 23}}"))).isFalse();
+        }
     }
 
     @Test

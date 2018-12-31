@@ -3,6 +3,8 @@ package de.bwaldvogel.mongo.backend;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.bwaldvogel.mongo.exception.MongoServerError;
+
 enum QueryOperator {
 
     IN("$in"), //
@@ -41,10 +43,11 @@ enum QueryOperator {
         }
     }
 
-    static QueryOperator fromValue(String value) throws IllegalArgumentException {
+    static QueryOperator fromValue(String value) throws MongoServerError {
         QueryOperator op = MAP.get(value);
-        if (op == null)
-            throw new IllegalArgumentException("Illegal operator: " + value);
+        if (op == null) {
+            throw new MongoServerError(2, "unknown operator: " + value);
+        }
         return op;
     }
 
