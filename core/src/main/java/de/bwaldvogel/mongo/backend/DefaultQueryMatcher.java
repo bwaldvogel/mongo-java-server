@@ -147,9 +147,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
         boolean valueExists = document.containsKey(firstKey);
 
         if (documentValue instanceof Collection<?>) {
+            Collection<?> documentValues = (Collection<?>) documentValue;
             if (queryValue instanceof Document) {
-                return checkMatchesAnyValue((Document) queryValue, keys, document, (Collection<?>) documentValue, valueExists);
-            } else if (checkMatchesAnyValue(queryValue, documentValue)) {
+                return checkMatchesAnyValue((Document) queryValue, keys, document, documentValues, valueExists);
+            } else if (checkMatchesAnyValue(queryValue, documentValues)) {
                 return true;
             }
         }
@@ -315,16 +316,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return Utils.nullAwareEquals(value, queryValue);
     }
 
-    @SuppressWarnings("unchecked")
     private boolean checkMatchesAllValues(Object queryValue, Object values) {
 
         if (!(queryValue instanceof Collection)) {
             return false;
         }
 
-        Collection<Object> list = (Collection<Object>) values;
-
-        Collection<Object> queryValues = (Collection<Object>) queryValue;
+        Collection<?> list = (Collection<?>) values;
+        Collection<?> queryValues = (Collection<?>) queryValue;
 
         if (queryValues.isEmpty()) {
             return false;
@@ -352,10 +351,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
-    private boolean checkMatchesAnyValue(Object queryValue, Object values) {
+    private boolean checkMatchesAnyValue(Object queryValue, Collection<?> values) {
         int i = 0;
-        for (Object value : (Collection<Object>) values) {
+        for (Object value : values) {
             if (checkMatchesValue(queryValue, value, true)) {
                 if (lastPosition == null) {
                     lastPosition = Integer.valueOf(i);
