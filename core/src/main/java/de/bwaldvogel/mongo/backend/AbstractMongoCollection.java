@@ -46,8 +46,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return matcher.matches(document, query);
     }
 
-    private Iterable<Document> queryDocuments(Document query, Document orderBy, int numberToSkip,
-                                                int numberToReturn) {
+    private Iterable<Document> queryDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         synchronized (indexes) {
             for (Index<P> index : indexes) {
                 if (index.canHandle(query)) {
