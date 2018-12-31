@@ -189,14 +189,27 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("b: null"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {c: null}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {c: null}"), json("b: {c: null}"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: null}"), json("b: {c: null, d: null}"))).isFalse();
         assertThat(matcher.matches(json("b: {c: 123}"), json("'b.c': null"))).isFalse();
         assertThat(matcher.matches(json("b: {c: []}"), json("'b.c': null"))).isFalse();
         assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("'b.c': null"))).isFalse();
+        assertThat(matcher.matches(json("b: {c: [1, null, 3]}"), json("b: {c: null}"))).isFalse();
         assertThat(matcher.matches(json("b: {c: [1, null, 3]}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {x: 'foo'}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {x: 'foo', c: null}"), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json(""), json("'b.c': null"))).isTrue();
         assertThat(matcher.matches(json("b: {c: ['a', null, 'b']}"), json("'b.c': null"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: ['a', null, 'b']}"), json("b: {c: null}"))).isFalse();
+    }
+
+    @Test
+    public void testMatchesEmbeddedDocument() throws Exception {
+        assertThat(matcher.matches(json("b: {c: 1, d: 2}"), json("b: {c: 1}"))).isFalse();
+        assertThat(matcher.matches(json("b: {c: 1}"), json("b: {c: 1, d: 1}"))).isFalse();
+        assertThat(matcher.matches(json("b: {c: 1, d: 2}"), json("'b.c': 1"))).isTrue();
+
+        assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("'b.c': 1"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("b: {c: 1}"))).isFalse();
     }
 
     @Test

@@ -2962,47 +2962,49 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(toArray(collection.find(json("_id: {$gt: {$expr: {$literal: 3}}}")))).isEmpty();
     }
 
-    // https://github.com/bwaldvogel/mongo-java-server/issues/35
     @Test
-    public void testQueryMissingEmbeddedDocument() throws Exception {
+    public void testQueryEmbeddedDocument() throws Exception {
         collection.insertOne(json("_id: 1, b: null"));
         collection.insertOne(json("_id: 2, b: {c: null}"));
         collection.insertOne(json("_id: 3, b: {c: 123}"));
         collection.insertOne(json("_id: 4, b: {c: ['a', null, 'b']}"));
         collection.insertOne(json("_id: 5, b: {c: [1, 2, 3]}"));
         collection.insertOne(json("_id: 6"));
+        collection.insertOne(json("_id: 7, b: {c: 1, d: 2}"));
+        collection.insertOne(json("_id: 8, b: {c: {d: 1, e: 2}}"));
+
+        assertThat(toArray(collection.find(json("'b.c': 1"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 5, b: {c: [1, 2, 3]}"),
+                json("_id: 7, b: {c: 1, d: 2}")
+            );
+
+        assertThat(toArray(collection.find(json("b: {c: 1}")))).isEmpty();
 
         assertThat(toArray(collection.find(json("'b.c': null"))))
-            .containsExactly(
+            .containsExactlyInAnyOrder(
                 json("_id: 1, b: null"),
                 json("_id: 2, b: {c: null}"),
                 json("_id: 4, b: {c: ['a', null, 'b']}"),
                 json("_id: 6")
             );
-    }
-
-    @Test
-    public void testQueryEmbeddedDocument() throws Exception {
-        collection.insertOne(json("_id: 1, b: null"));
-        collection.insertOne(json("_id: 2, b: {c: null}"));
-        collection.insertOne(json("_id: 3, b: {c: 123}"));
-        collection.insertOne(json("_id: 4, b: {c: [1, 2, 3]}"));
-        collection.insertOne(json("_id: 5, b: {c: 1, d: 2}"));
-
-        assertThat(toArray(collection.find(json("'b.c': 1"))))
-            .containsExactlyInAnyOrder(
-                json("_id: 4, b: {c: [1, 2, 3]}"),
-                json("_id: 5, b: {c: 1, d: 2}")
-            );
-
-        assertThat(toArray(collection.find(json("'b.c': null"))))
-            .containsExactlyInAnyOrder(
-                json("_id: 1, b: null"),
-                json("_id: 2, b: {c: null}")
-            );
 
         assertThat(toArray(collection.find(json("b: {c: null}"))))
             .containsExactly(json("_id: 2, b: {c: null}"));
+
+        assertThat(toArray(collection.find(json("'b.c': {d: 1}")))).isEmpty();
+
+        assertThat(toArray(collection.find(json("'b.c': {d: {$gte: 1}}")))).isEmpty();
+        assertThat(toArray(collection.find(json("'b.c': {d: {$gte: 1}, e: {$lte: 2}}")))).isEmpty();
+
+        assertThat(toArray(collection.find(json("'b.c.d': {$gte: 1}"))))
+            .containsExactlyInAnyOrder(json("_id: 8, b: {c: {d: 1, e: 2}}"));
+
+        assertThat(toArray(collection.find(json("'b.c': {d: 1, e: 2}"))))
+            .containsExactlyInAnyOrder(json("_id: 8, b: {c: {d: 1, e: 2}}"));
+
+        assertThat(toArray(collection.find(json("'b.c.e': 2"))))
+            .containsExactlyInAnyOrder(json("_id: 8, b: {c: {d: 1, e: 2}}"));
     }
 
     @Test

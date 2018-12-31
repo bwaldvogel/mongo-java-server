@@ -270,11 +270,14 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     @Override
     public boolean matchesValue(Object queryValue, Object value) {
-        return checkMatchesValue(queryValue, value, true);
+        return checkMatchesValue(queryValue, value, true, false);
     }
 
     private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) {
+        return checkMatchesValue(queryValue, value, valueExists, true);
+    }
 
+    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists, boolean requireExactMatch) {
         if (BsonRegularExpression.isRegularExpression(queryValue)) {
             if (value == null) {
                 return false;
@@ -296,6 +299,12 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 }
             }
 
+            if (requireExactMatch && value instanceof Document) {
+                if (queryObject.keySet().stream().noneMatch(key -> key.startsWith("$"))) {
+                    return Utils.nullAwareEquals(value, queryValue);
+                }
+            }
+
             for (String key : queryObject.keySet()) {
                 Object querySubvalue = queryObject.get(key);
                 if (key.startsWith("$")) {
@@ -310,7 +319,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 }
             }
             return true;
-
         }
 
         return Utils.nullAwareEquals(value, queryValue);
@@ -344,7 +352,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
         Collection<Object> list = (Collection<Object>) values;
         for (Object value : list) {
-            if (checkMatchesValue(queryValue, value, true)) {
+            if (checkMatchesValue(queryValue, value, true, false)) {
                 return true;
             }
         }
