@@ -2981,6 +2981,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(new Document("_id", 2).append("ref", new DBRef("coll1", 2)));
         collection.insertOne(new Document("_id", 3).append("ref", new DBRef("coll2", 1)));
         collection.insertOne(new Document("_id", 4).append("ref", new DBRef("coll2", 2)));
+        collection.insertOne(json("_id: 5, ref: [1, 2, 3, 4]"));
+        collection.insertOne(json("_id: 6"));
 
         List<Document> documents = toArray(collection.find(json("ref: {$ref: 'coll1', $id: 1}")).projection(json("_id: 1")));
         assertThat(documents).containsExactly(json("_id: 1"));

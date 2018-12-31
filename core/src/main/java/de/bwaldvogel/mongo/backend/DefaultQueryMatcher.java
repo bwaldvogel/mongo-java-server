@@ -27,7 +27,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
     @Override
     public boolean matches(Document document, Document query) {
         for (String key : query.keySet()) {
-            if (!checkMatch(query.get(key), key, document)) {
+            Object queryValue = query.get(key);
+            if (!checkMatch(queryValue, key, document)) {
                 return false;
             }
         }
@@ -268,13 +269,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
             Document queryObject = (Document) queryValue;
 
             if (queryObject.keySet().equals(Constants.REFERENCE_KEYS)) {
-                for (String key : queryObject.keySet()) {
-                    Object querySubvalue = queryObject.get(key);
-                    if (!checkMatch(querySubvalue, key, value)) {
-                        return false;
-                    }
+                if (value instanceof Document) {
+                    return matches((Document) value, queryObject);
+                } else {
+                    return false;
                 }
-                return true;
             }
 
             for (String key : queryObject.keySet()) {
