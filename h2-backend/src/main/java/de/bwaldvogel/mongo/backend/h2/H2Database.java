@@ -35,6 +35,20 @@ public class H2Database extends AbstractMongoDatabase<Object> {
         return new H2UniqueIndex(mvMap, keys, sparse);
     }
 
+    @Override
+    public void drop() {
+        super.drop();
+
+        List<MVMap<?, ?>> maps = mvStore.getMapNames().stream()
+            .filter(name -> name.startsWith(databaseName + "."))
+            .map(mvStore::openMap)
+            .collect(Collectors.toList());
+
+        for (MVMap<?, ?> map : maps) {
+            mvStore.removeMap(map);
+        }
+    }
+
     static String indexName(List<IndexKey> keys) {
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("No keys");

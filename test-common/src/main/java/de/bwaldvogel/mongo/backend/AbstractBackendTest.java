@@ -489,15 +489,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testDropDatabaseDropsAllData() throws Exception {
-        collection.insertOne(json("{}"));
+        collection.insertOne(json("_id: 1"));
         MongoCollection<Document> collection2 = getCollection("testcoll2");
-        collection2.insertOne(json("{}"));
+        collection2.insertOne(json("_id: 1"));
 
         syncClient.dropDatabase(db.getName());
         assertThat(listDatabaseNames()).doesNotContain(db.getName());
         assertThat(collection.countDocuments()).isZero();
         assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName(),
             collection2.getNamespace().getCollectionName());
+
+        collection.insertOne(json("_id: 1"));
+        collection2.insertOne(json("_id: 1"));
     }
 
     @Test
