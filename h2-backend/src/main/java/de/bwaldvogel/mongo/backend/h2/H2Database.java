@@ -40,7 +40,10 @@ public class H2Database extends AbstractMongoDatabase<Object> {
         super.drop();
 
         List<MVMap<?, ?>> maps = mvStore.getMapNames().stream()
-            .filter(name -> name.startsWith(databaseName + "."))
+            .filter(name -> name.startsWith(databaseName + ".")
+                || name.startsWith(DATABASES_PREFIX + databaseName)
+                || name.startsWith(META_PREFIX + databaseName)
+            )
             .map(mvStore::openMap)
             .collect(Collectors.toList());
 
