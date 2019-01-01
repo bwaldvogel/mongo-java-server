@@ -17,7 +17,6 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ExpressionTest {
@@ -35,12 +34,12 @@ public class ExpressionTest {
 
     @Test
     public void testEvaluateAbs() throws Exception {
-        assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -2"))).isEqualTo(2.0);
+        assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -2"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -2.5"))).isEqualTo(2.5);
         assertThat(Expression.evaluate(json("$abs: ['$a']"), json("a: -2.5"))).isEqualTo(2.5);
-        assertThat(Expression.evaluate(new Document("$abs", 123L), json(""))).isEqualTo(123.0);
+        assertThat(Expression.evaluate(new Document("$abs", 123L), json(""))).isEqualTo(123);
         assertThat(Expression.evaluate(json("$abs: null"), json(""))).isNull();
-        assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -25"))).isEqualTo(25.0);
+        assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -25"))).isEqualTo(25);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$abs: '$a', $ceil: '$b'"), json("")))
@@ -164,13 +163,13 @@ public class ExpressionTest {
 
     @Test
     public void testEvaluateCeil() throws Exception {
-        assertThat(Expression.evaluate(json("$ceil: '$a'"), json("a: 2.5"))).isEqualTo(3);
-        assertThat(Expression.evaluate(json("$ceil: 42"), json(""))).isEqualTo(42);
-        assertThat(Expression.evaluate(json("$ceil: [5.4]"), json(""))).isEqualTo(6);
-        assertThat(Expression.evaluate(json("$ceil: ['$a']"), json("a: 9.9"))).isEqualTo(10);
-        assertThat(Expression.evaluate(json("$ceil: 42.3"), json(""))).isEqualTo(43);
-        assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MAX_VALUE), json(""))).isEqualTo(Long.MAX_VALUE);
-        assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MIN_VALUE), json(""))).isEqualTo(Long.MIN_VALUE);
+        assertThat(Expression.evaluate(json("$ceil: '$a'"), json("a: 2.5"))).isEqualTo(3.0);
+        assertThat(Expression.evaluate(json("$ceil: 42"), json(""))).isEqualTo(42.0);
+        assertThat(Expression.evaluate(json("$ceil: [5.4]"), json(""))).isEqualTo(6.0);
+        assertThat(Expression.evaluate(json("$ceil: ['$a']"), json("a: 9.9"))).isEqualTo(10.0);
+        assertThat(Expression.evaluate(json("$ceil: 42.3"), json(""))).isEqualTo(43.0);
+        assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MAX_VALUE), json(""))).isEqualTo(9.223372036854776E18);
+        assertThat(Expression.evaluate(new Document("$ceil", (double) Long.MIN_VALUE), json(""))).isEqualTo(-9.223372036854776E18);
         assertThat(Expression.evaluate(json("$ceil: null"), json(""))).isNull();
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -839,7 +838,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$setUnion: '$a'"), json(""))).isNull();
 
         assertThat((Collection<Object>) Expression.evaluate(json("$setUnion: [['a', 1], ['c', 'a']]"), json("")))
-            .containsExactly("a", 1, "c");
+            .containsExactly(1, "a", "c");
 
         assertThat((Collection<Object>) Expression.evaluate(json("$setUnion: ['$a', '$b']"), json("a: [1, 2, 3], b: [3, 4]")))
             .containsExactly(1, 2, 3, 4);

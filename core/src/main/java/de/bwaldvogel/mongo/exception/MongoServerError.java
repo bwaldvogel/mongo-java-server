@@ -9,7 +9,7 @@ public class MongoServerError extends MongoServerException {
     private final String codeName;
 
     public MongoServerError(int errorCode, String message) {
-        this(errorCode, null, message);
+        this(errorCode, codeName(errorCode), message);
     }
 
     public MongoServerError(int errorCode, String codeName, String message) {
@@ -17,6 +17,14 @@ public class MongoServerError extends MongoServerException {
         this.errorCode = errorCode;
         this.codeName = codeName;
         this.message = message;
+    }
+
+    private static String codeName(int errorCode) {
+        if (errorCode >= 10000) {
+            return "Location" + errorCode;
+        } else {
+            return null;
+        }
     }
 
     public int getCode() {

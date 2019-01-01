@@ -71,6 +71,17 @@ public class UtilsTest {
     }
 
     @Test
+    public void testNormalizeNumber() throws Exception {
+        assertThat(Utils.normalizeNumber(null)).isNull();
+        assertThat(Utils.normalizeNumber(0)).isEqualTo(0);
+        assertThat(Utils.normalizeNumber(1.0)).isEqualTo(1);
+        assertThat(Utils.normalizeNumber(-1.0)).isEqualTo(-1);
+        assertThat(Utils.normalizeNumber(10000000000.0)).isEqualTo(10000000000L);
+        assertThat(Utils.normalizeNumber(3.5)).isEqualTo(3.5);
+        assertThat(Utils.normalizeNumber(3.5F)).isEqualTo(3.5);
+    }
+
+    @Test
     public void testNullAwareEquals() {
         assertThat(Utils.nullAwareEquals(null, null)).isTrue();
         assertThat(Utils.nullAwareEquals(null, Missing.getInstance())).isTrue();

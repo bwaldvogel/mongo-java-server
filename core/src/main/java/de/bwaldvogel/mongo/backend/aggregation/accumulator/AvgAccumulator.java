@@ -20,7 +20,7 @@ public class AvgAccumulator extends Accumulator {
     }
 
     @Override
-    public Object getResult() {
+    public Number getResult() {
         if (count == 0) {
             return null;
         } else {

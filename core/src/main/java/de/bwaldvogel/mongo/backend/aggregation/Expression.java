@@ -18,11 +18,13 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
@@ -31,7 +33,7 @@ public enum Expression implements ExpressionTraits {
     $abs {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, Math::abs);
+            return Utils.normalizeNumber(evaluateNumericValue(expressionValue, Math::abs));
         }
     },
 
@@ -145,7 +147,7 @@ public enum Expression implements ExpressionTraits {
     $ceil {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            return evaluateNumericValue(expressionValue, a -> toIntOrLong(Math.ceil(a)));
+            return evaluateNumericValue(expressionValue, Math::ceil);
         }
     },
 
@@ -865,7 +867,7 @@ public enum Expression implements ExpressionTraits {
     $setUnion {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            Set<Object> result = new LinkedHashSet<>();
+            Set<Object> result = new TreeSet<>(new ValueComparator());
             for (Object value : expressionValue) {
                 if (isNullOrMissing(value)) {
                     return null;

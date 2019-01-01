@@ -18,7 +18,7 @@ public class SumAccumulator extends Accumulator {
     }
 
     @Override
-    public Object getResult() {
+    public Number getResult() {
         return sum;
     }
 }

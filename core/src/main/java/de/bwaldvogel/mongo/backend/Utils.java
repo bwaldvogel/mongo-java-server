@@ -120,6 +120,18 @@ public class Utils {
         }
     }
 
+    public static Number normalizeNumber(Number value) {
+        if (value == null) {
+            return null;
+        } else if (value.intValue() == value.doubleValue()) {
+            return value.intValue();
+        } else if (value.longValue() == value.doubleValue()) {
+            return value.longValue();
+        } else {
+            return Double.valueOf(value.doubleValue());
+        }
+    }
+
     static boolean nullAwareEquals(Object a, Object b) {
         if (a == b) {
             return true;

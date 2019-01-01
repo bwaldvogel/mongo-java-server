@@ -562,7 +562,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         String collectionName = query.get(command).toString();
         Document cursor = (Document) query.get("cursor");
         if (cursor == null) {
-            throw new MongoServerError(9, "The 'cursor' option is required, except for aggregate with the explain argument");
+            throw new MongoServerError(9, "FailedToParse",
+                "The 'cursor' option is required, except for aggregate with the explain argument");
         }
         if (!cursor.isEmpty()) {
             throw new MongoServerException("Non-empty cursor is not yet implemented");
