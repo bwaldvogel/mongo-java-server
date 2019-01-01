@@ -54,6 +54,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     @Override
+    public void testSparseUniqueIndexOnEmbeddedDocument() throws Exception {
+        assumeSparseIndicesSupportedInPostgresBackend();
+        super.testSparseUniqueIndexOnEmbeddedDocument();
+    }
+
+    @Override
     public void testSecondarySparseUniqueIndex() throws Exception {
         assumeSparseIndicesSupportedInPostgresBackend();
         super.testSecondarySparseUniqueIndex();

@@ -2321,6 +2321,40 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testSparseUniqueIndexOnEmbeddedDocument() throws Exception {
+        collection.createIndex(json("'a.b.c': 1"), new IndexOptions().unique(true).sparse(true));
+
+        collection.insertOne(json("a: 1"));
+        collection.insertOne(json("a: 1"));
+        collection.insertOne(json("a: null"));
+        collection.insertOne(json("a: null"));
+        collection.insertOne(json("a: {b: 1}"));
+        collection.insertOne(json("a: {b: 1}"));
+        collection.insertOne(json("a: {b: null}"));
+        collection.insertOne(json("a: {b: null}"));
+        collection.insertOne(json("a: {b: {c: 1}}"));
+        collection.insertOne(json("a: {b: {c: 2}}"));
+        collection.insertOne(json("a: {b: {c: null}}"));
+        collection.insertOne(json("a: {b: {c: {d: 1}}}"));
+        collection.insertOne(json("a: {b: {c: {d: null}}}"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1}}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: null}}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1, x: 100}}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: {d: 1}}}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : { d: 1 } }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: {d: null}}}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : { d: null } }");
+    }
+
+    @Test
     public void testAddNonUniqueIndexOnNonIdField() {
         collection.insertOne(json("someField: 'abc'"));
         assertThat(toArray(collection.listIndexes())).hasSize(1);
