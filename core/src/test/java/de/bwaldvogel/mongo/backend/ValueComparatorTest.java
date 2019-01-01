@@ -81,6 +81,7 @@ public class ValueComparatorTest {
         assertThat(comparator.compare(59, 58.9999)).isGreaterThan(0);
         assertThat(comparator.compare(null, 27)).isLessThan(0);
         assertThat(comparator.compare(27, null)).isGreaterThan(0);
+        assertThat(comparator.compare(-0.0, 0.0)).isZero();
     }
 
     @Test

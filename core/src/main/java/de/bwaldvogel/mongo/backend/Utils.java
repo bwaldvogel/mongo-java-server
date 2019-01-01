@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -114,7 +115,11 @@ public class Utils {
             return null;
         }
         if (value instanceof Number) {
-            return Double.valueOf(((Number) value).doubleValue());
+            double doubleValue = ((Number) value).doubleValue();
+            if (doubleValue == -0.0) {
+                doubleValue = 0.0;
+            }
+            return Double.valueOf(doubleValue);
         } else {
             return value;
         }
@@ -146,7 +151,7 @@ public class Utils {
         } else {
             Object normalizedA = normalizeValue(a);
             Object normalizedB = normalizeValue(b);
-            return normalizedA.equals(normalizedB);
+            return Objects.equals(normalizedA, normalizedB);
         }
     }
 

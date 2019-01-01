@@ -711,4 +711,14 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("value: 0"), json("$expr: '$value'"))).isFalse();
     }
 
+    @Test
+    public void testMatchesZeroValues() throws Exception {
+        assertThat(matcher.matches(json("v: 0"), json("v: 0.0"))).isTrue();
+        assertThat(matcher.matches(json("v: 0.0"), json("v: 0.0"))).isTrue();
+        assertThat(matcher.matches(json("v: 0.0"), json("v: 0"))).isTrue();
+        assertThat(matcher.matches(json("v: -0.0"), json("v: 0"))).isTrue();
+        assertThat(matcher.matches(json("v: -0.0"), json("v: -0.0"))).isTrue();
+        assertThat(matcher.matches(json("v: 0.0"), json("v: -0.0"))).isTrue();
+    }
+
 }

@@ -64,8 +64,10 @@ public class UtilsTest {
 
     @Test
     public void testNormalizeValue() {
-        assertThat(Utils.normalizeValue(Integer.valueOf(4))).isEqualTo(4.0);
         assertThat(Utils.normalizeValue(null)).isNull();
+        assertThat(Utils.normalizeValue(Integer.valueOf(4))).isEqualTo(4.0);
+        assertThat(Utils.normalizeValue(-0.0)).isEqualTo(0.0);
+        assertThat(Utils.normalizeValue(0.0)).isEqualTo(0.0);
         assertThat(Utils.normalizeValue(Missing.getInstance())).isNull();
         assertThat(Utils.normalizeValue(new Date())).isInstanceOf(Date.class);
     }

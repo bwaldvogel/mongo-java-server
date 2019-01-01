@@ -75,7 +75,9 @@ public class ValueComparator implements Comparator<Object> {
         }
 
         if (Number.class.isAssignableFrom(clazz)) {
-            return Double.compare(((Number) value1).doubleValue(), ((Number) value2).doubleValue());
+            Number number1 = Utils.normalizeNumber((Number) value1);
+            Number number2 = Utils.normalizeNumber((Number) value2);
+            return Double.compare(number1.doubleValue(), number2.doubleValue());
         }
 
         if (String.class.isAssignableFrom(clazz)) {

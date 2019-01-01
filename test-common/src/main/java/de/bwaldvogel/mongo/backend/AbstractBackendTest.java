@@ -3126,6 +3126,26 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(documents).containsExactly(json("_id: 1"));
     }
 
+    @Test
+    public void testInsertAndQueryNegativeZero() throws Exception {
+        collection.insertOne(json("_id: 1, value: -0.0"));
+        collection.insertOne(json("_id: 2, value: 0.0"));
+        collection.insertOne(json("_id: 3, value: -0.0"));
+
+        assertThat(toArray(collection.find(json("value: -0.0"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, value: -0.0"),
+                json("_id: 2, value: 0.0"),
+                json("_id: 3, value: -0.0")
+            );
+
+        assertThat(toArray(collection.find(json("value: {$lt: 0.0}")))).isEmpty();
+
+        assertThat(toArray(collection.find(json("value: 0")).sort(json("value: 1, _id: 1"))))
+            .extracting(doc -> doc.getDouble("value"))
+            .containsExactly(-0.0, +0.0, -0.0);
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {
