@@ -184,11 +184,7 @@ public class Utils {
     }
 
     static Object getFieldValueListSafe(Object value, String field) throws IllegalArgumentException {
-        if (value == null) {
-            return null;
-        }
-
-        if (value instanceof Missing) {
+        if (Missing.isNullOrMissing(value)) {
             return value;
         }
 

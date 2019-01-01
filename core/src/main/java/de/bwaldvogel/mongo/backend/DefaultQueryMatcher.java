@@ -113,7 +113,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             if (firstKey.matches("\\d+")) {
                 Object listValue = Utils.getFieldValueListSafe(value, firstKey);
                 if (subKeys.isEmpty()) {
-                    return checkMatchesValue(queryValue, listValue, listValue != null);
+                    return checkMatchesValue(queryValue, listValue);
                 } else {
                     return checkMatch(queryValue, subKeys, listValue);
                 }
@@ -143,22 +143,21 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         Document document = (Document) value;
-        Object documentValue = document.get(firstKey);
-        boolean valueExists = document.containsKey(firstKey);
+        Object documentValue = document.getOrDefault(firstKey, Missing.getInstance());
 
         if (documentValue instanceof Collection<?>) {
             Collection<?> documentValues = (Collection<?>) documentValue;
             if (queryValue instanceof Document) {
-                return checkMatchesAnyValue((Document) queryValue, keys, document, documentValues, valueExists);
+                return checkMatchesAnyValue((Document) queryValue, keys, document, documentValues);
             } else if (checkMatchesAnyValue(queryValue, documentValues)) {
                 return true;
             }
         }
 
-        return checkMatchesValue(queryValue, documentValue, valueExists);
+        return checkMatchesValue(queryValue, documentValue);
     }
 
-    private boolean checkMatchesAnyValue(Document queryValue, List<String> keys, Document document, Collection<?> value, boolean valueExists) {
+    private boolean checkMatchesAnyValue(Document queryValue, List<String> keys, Document document, Collection<?> value) {
         Set<String> keySet = queryValue.keySet();
 
         // clone first
@@ -191,7 +190,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                     return false;
                 }
             } else {
-                if (!checkMatchesAnyValue(queryValue, value) && !checkMatchesValue(queryValue, value, valueExists)) {
+                if (!checkMatchesAnyValue(queryValue, value) && !checkMatchesValue(queryValue, value)) {
                     return false;
                 }
             }
@@ -270,16 +269,16 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     @Override
     public boolean matchesValue(Object queryValue, Object value) {
-        return checkMatchesValue(queryValue, value, true, false);
+        return checkMatchesValue(queryValue, value, false);
     }
 
-    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists) {
-        return checkMatchesValue(queryValue, value, valueExists, true);
+    private boolean checkMatchesValue(Object queryValue, Object value) {
+        return checkMatchesValue(queryValue, value, true);
     }
 
-    private boolean checkMatchesValue(Object queryValue, Object value, boolean valueExists, boolean requireExactMatch) {
+    private boolean checkMatchesValue(Object queryValue, Object value, boolean requireExactMatch) {
         if (BsonRegularExpression.isRegularExpression(queryValue)) {
-            if (value == null) {
+            if (Missing.isNullOrMissing(value)) {
                 return false;
             } else {
                 BsonRegularExpression pattern = BsonRegularExpression.convertToRegularExpression(queryValue);
@@ -308,10 +307,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
             for (String key : queryObject.keySet()) {
                 Object querySubvalue = queryObject.get(key);
                 if (key.startsWith("$")) {
-                    if (!checkExpressionMatch(value, valueExists, querySubvalue, key)) {
+                    if (!checkExpressionMatch(value, querySubvalue, key)) {
                         return false;
                     }
-                } else if (value == null && querySubvalue == null) {
+                } else if (Missing.isNullOrMissing(value) && querySubvalue == null) {
                     return false;
                 } else if (!checkMatch(querySubvalue, key, value)) {
                     // the value of the query itself can be a complex query
@@ -352,7 +351,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
         Collection<Object> list = (Collection<Object>) values;
         for (Object value : list) {
-            if (checkMatchesValue(queryValue, value, true, false)) {
+            if (checkMatchesValue(queryValue, value, false)) {
                 return true;
             }
         }
@@ -362,7 +361,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     private boolean checkMatchesAnyValue(Object queryValue, Collection<?> values) {
         int i = 0;
         for (Object value : values) {
-            if (checkMatchesValue(queryValue, value, true)) {
+            if (checkMatchesValue(queryValue, value)) {
                 if (lastPosition == null) {
                     lastPosition = Integer.valueOf(i);
                 }
@@ -373,7 +372,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return false;
     }
 
-    private boolean checkExpressionMatch(Object value, boolean valueExists, Object expressionValue, String operator) {
+    private boolean checkExpressionMatch(Object value, Object expressionValue, String operator) {
 
         QueryOperator queryOperator = QueryOperator.fromValue(operator);
 
@@ -392,15 +391,15 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 }
                 return false;
             case NOT:
-                return !checkMatchesValue(expressionValue, value, valueExists);
+                return !checkMatchesValue(expressionValue, value);
             case EQUAL:
                 return Utils.nullAwareEquals(value, expressionValue);
             case NOT_EQUALS:
                 return !Utils.nullAwareEquals(value, expressionValue);
             case NOT_IN:
-                return !checkExpressionMatch(value, valueExists, expressionValue, "$in");
+                return !checkExpressionMatch(value, expressionValue, "$in");
             case EXISTS:
-                return (valueExists == Utils.isTrue(expressionValue));
+                return ((value instanceof Missing) != Utils.isTrue(expressionValue));
             case GREATER_THAN:
                 if (!comparableTypes(value, expressionValue)) {
                     return false;
