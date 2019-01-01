@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.bson.Document;
-import org.junit.Rule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -23,18 +23,20 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
     private static final Logger log = LoggerFactory.getLogger(H2OnDiskBackendTest.class);
 
-    @Rule
-    public TemporaryFolder tempFolder = new TemporaryFolder();
+    @ClassRule
+    public static TemporaryFolder tempFolder = new TemporaryFolder();
 
     private H2Backend backend;
 
-    private File tempFile;
+    private static File tempFile;
 
     @Override
-    public void setUp() throws Exception {
-        tempFile = tempFolder.newFile(getClass().getSimpleName() + ".mv");
-        log.debug("created {} for testing", tempFile);
-        super.setUp();
+    protected void setUpBackend() throws Exception {
+        if (tempFile == null) {
+            tempFile = tempFolder.newFile(getClass().getSimpleName() + ".mv");
+            log.debug("created {} for testing", tempFile);
+        }
+        super.setUpBackend();
     }
 
     @Override
@@ -107,11 +109,6 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         Document statsAfter = db.runCommand(json("{dbStats:1, scale:1}"));
 
         assertThat(statsAfter).isEqualTo(statsBefore);
-    }
-
-    private void restart() throws Exception {
-        tearDown();
-        super.setUp();
     }
 
 }

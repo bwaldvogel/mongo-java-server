@@ -1,13 +1,8 @@
 package de.bwaldvogel.mongo;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import com.mongodb.MongoClient;
-import com.mongodb.ServerAddress;
 
 import de.bwaldvogel.mongo.backend.AbstractAggregationTest;
 import de.flapdoodle.embed.mongo.MongodExecutable;
@@ -22,17 +17,16 @@ public class RealEmbeddedMongoAggregationTest extends AbstractAggregationTest {
 
     private static final MongodStarter starter = MongodStarter.getDefaultInstance();
     private static MongodExecutable mongodExecutable;
-    private static InetSocketAddress embeddedServerAddress;
 
-    @BeforeClass
-    public static void setUpServer() throws IOException {
+    @Override
+    protected void setUpBackend() throws Exception {
         String bindIp = "localhost";
         int port = 12345;
         IMongodConfig mongodConfig = new MongodConfigBuilder()
             .version(Version.Main.PRODUCTION)
             .net(new Net(bindIp, port, Network.localhostIsIPv6()))
             .build();
-        embeddedServerAddress = new InetSocketAddress(bindIp, port);
+        serverAddress = new InetSocketAddress(bindIp, port);
         mongodExecutable = starter.prepare(mongodConfig);
         mongodExecutable.start();
     }
@@ -40,25 +34,6 @@ public class RealEmbeddedMongoAggregationTest extends AbstractAggregationTest {
     @AfterClass
     public static void tearDownServer() {
         mongodExecutable.stop();
-    }
-
-    @Override
-    protected void setUpBackend() throws Exception {
-        serverAddress = embeddedServerAddress;
-        try (MongoClient client = new MongoClient(new ServerAddress(serverAddress))) {
-            client.dropDatabase(TEST_DATABASE_NAME);
-        }
-    }
-
-    @Override
-    protected void tearDownBackend() {
-        // noop
-    }
-
-    @Override
-    public void setUp() throws Exception {
-        super.setUp();
-        db.drop();
     }
 
     @Override

@@ -2991,6 +2991,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testGetPrevError() throws Exception {
+        restart();
+
         collection.insertOne(json("_id: 1"));
 
         assertThat(db.runCommand(json("getpreverror: 1")))

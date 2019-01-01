@@ -3,7 +3,7 @@ package de.bwaldvogel.mongo.backend;
 import java.net.InetSocketAddress;
 
 import org.bson.Document;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 
 import com.mongodb.MongoNamespace;
@@ -19,29 +19,42 @@ public abstract class AbstractTest {
 
     protected static final String TEST_DATABASE_NAME = "testdb";
 
-    protected com.mongodb.MongoClient syncClient;
-    protected MongoDatabase db;
-    protected MongoCollection<Document> collection;
-    com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection;
-    private MongoServer mongoServer;
-    private MongoClient asyncClient;
-    protected InetSocketAddress serverAddress;
+    protected static com.mongodb.MongoClient syncClient;
+    protected static MongoDatabase db;
+    protected static MongoCollection<Document> collection;
+    static com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection;
+    private static MongoServer mongoServer;
+    private static MongoClient asyncClient;
+    protected static InetSocketAddress serverAddress;
 
     protected abstract MongoBackend createBackend() throws Exception;
 
     @Before
     public void setUp() throws Exception {
-        setUpBackend();
-        setUpClients();
+        if (serverAddress == null) {
+            setUpBackend();
+            setUpClients();
+        } else {
+            dropAllDatabases();
+        }
     }
 
-    @After
-    public void tearDown() {
+    private void dropAllDatabases() {
+        for (String databaseName : syncClient.listDatabaseNames()) {
+            if (databaseName.equals("admin") || databaseName.equals("local")) {
+                continue;
+            }
+            syncClient.dropDatabase(databaseName);
+        }
+    }
+
+    @AfterClass
+    public static void tearDown() {
         closeClients();
         tearDownBackend();
     }
 
-    private void setUpClients() throws Exception {
+    private static void setUpClients() throws Exception {
         syncClient = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
         asyncClient = com.mongodb.reactivestreams.client.MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
         db = syncClient.getDatabase(TEST_DATABASE_NAME);
@@ -58,12 +71,22 @@ public abstract class AbstractTest {
         serverAddress = mongoServer.bind();
     }
 
-    private void closeClients() {
+    private static void closeClients() {
         syncClient.close();
         asyncClient.close();
     }
 
-    protected void tearDownBackend() {
-        mongoServer.shutdownNow();
+    private static void tearDownBackend() {
+        if (mongoServer != null) {
+            mongoServer.shutdownNow();
+            mongoServer = null;
+        }
+        serverAddress = null;
     }
+
+    protected void restart() throws Exception {
+        tearDown();
+        setUp();
+    }
+
 }
