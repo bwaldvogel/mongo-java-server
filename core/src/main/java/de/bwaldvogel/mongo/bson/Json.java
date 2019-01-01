@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.backend.Missing;
+
 public final class Json {
 
     private Json() {
@@ -14,7 +16,7 @@ public final class Json {
     }
 
     public static String toJsonValue(Object value, boolean compactKey, String jsonPrefix, String jsonSuffix) {
-        if (value == null) {
+        if (Missing.isNullOrMissing(value)) {
             return "null";
         }
         if (value instanceof Number) {

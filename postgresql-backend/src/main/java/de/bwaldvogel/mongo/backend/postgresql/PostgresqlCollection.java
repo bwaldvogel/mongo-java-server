@@ -90,8 +90,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
                 if (key.equals("$natural")) {
                     orderBySql.append("id");
                 } else {
-                    String dataKey = PostgresqlUtils.toDataKey(key);
-                    orderBySql.append("CASE WHEN (").append(dataKey).append(")::numeric = -0.0 THEN '0' ELSE ").append(dataKey).append(" END");
+                    orderBySql.append(PostgresqlUtils.toNormalizedDataKey(key));
                 }
                 if (sortValue == 1) {
                     orderBySql.append(" ASC NULLS FIRST");

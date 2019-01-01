@@ -139,7 +139,16 @@ public class PostgresUniqueIndex extends Index<Long> {
             keyValues.entrySet().stream()
                 .map(entry -> {
                     String dataKey = PostgresqlUtils.toDataKey(entry.getKey());
-                    return dataKey + (!isSparse() && entry.getValue() == null ? " IS NULL" : " = ?");
+                    if (!isSparse() && entry.getValue() == null) {
+                        return dataKey + " IS NULL";
+                    } else if (entry.getValue() instanceof Number) {
+                        return "CASE json_typeof(" + dataKey.replace("->>", "->") + ")"
+                            + " WHEN 'number' THEN (" + dataKey + ")::numeric = ?::numeric"
+                            + " ELSE FALSE"
+                            + " END";
+                    } else {
+                        return dataKey + " = ?";
+                    }
                 })
                 .collect(Collectors.joining(" AND "));
     }

@@ -52,7 +52,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         }
         List<Object> key = getKeyValue(document);
         if (containsKey(key)) {
-            throw new DuplicateKeyError(this, collection, key);
+            throw new DuplicateKeyError(this, collection, getKeyValue(document, false));
         }
     }
 

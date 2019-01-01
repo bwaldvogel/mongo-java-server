@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.MongoCollection;
@@ -49,9 +50,13 @@ public abstract class Index<P> {
     }
 
     List<Object> getKeyValue(Document document) {
+        return getKeyValue(document, true);
+    }
+
+    List<Object> getKeyValue(Document document, boolean normalize) {
         return keys().stream()
             .map(key -> Utils.getSubdocumentValue(document, key))
-            .map(Utils::normalizeValue)
+            .map(normalize ? Utils::normalizeValue : Function.identity())
             .collect(Collectors.toList());
     }
 

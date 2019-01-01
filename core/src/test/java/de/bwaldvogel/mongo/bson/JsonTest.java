@@ -9,11 +9,14 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.backend.Missing;
+
 public class JsonTest {
 
     @Test
     public void testToJsonValue() throws Exception {
         assertThat(Json.toJsonValue(null)).isEqualTo("null");
+        assertThat(Json.toJsonValue(Missing.getInstance())).isEqualTo("null");
         assertThat(Json.toJsonValue(true)).isEqualTo("true");
         assertThat(Json.toJsonValue(Boolean.TRUE)).isEqualTo("true");
         assertThat(Json.toJsonValue("")).isEqualTo("\"\"");

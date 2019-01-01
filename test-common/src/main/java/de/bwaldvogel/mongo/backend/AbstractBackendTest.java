@@ -3146,6 +3146,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(-0.0, +0.0, -0.0);
     }
 
+    @Test
+    public void testUniqueIndexWithNegativeZero() throws Exception {
+        collection.createIndex(json("value: 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1, value: -0.0"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 2, value: 0.0")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : 0.0 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 3, value: -0.0")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : -0.0 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 4, value: 0")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : 0 }");
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {

@@ -32,11 +32,19 @@ public final class PostgresqlUtils {
         return sb.toString();
     }
 
+    static String toNormalizedDataKey(String key) {
+        String dataKey = toDataKey(key);
+        return "CASE WHEN (" + dataKey + ")::numeric = -0.0 THEN '0' ELSE " + dataKey + " END";
+    }
+
     public static String toQueryValue(Object queryValue) throws IOException {
         Objects.requireNonNull(queryValue);
         if (queryValue instanceof String) {
             return (String) queryValue;
         } else if (queryValue instanceof Number) {
+            if (((Number) queryValue).doubleValue() == -0.0) {
+                return "0";
+            }
             String numberString = queryValue.toString();
             return numberString.replaceAll("^(\\d+)\\.0+$", "$1");
         } else if (queryValue instanceof Document) {
@@ -54,4 +62,5 @@ public final class PostgresqlUtils {
         String valueAsJson = toJson(queryValue);
         return valueAsJson.replaceFirst("\\{", "\\{\"@class\":\"" + queryValue.getClass().getName() + "\",");
     }
+
 }
