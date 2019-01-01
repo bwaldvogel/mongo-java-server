@@ -76,10 +76,7 @@ public class PostgresUniqueIndex extends Index<Long> {
             fillStrings(stmt, keyValues);
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (resultSet.next()) {
-                    List<Object> normalizedValues = keyValues.values().stream()
-                        .map(Utils::normalizeValue)
-                        .collect(Collectors.toList());
-                    throw new DuplicateKeyError(this, collection, normalizedValues);
+                    throw new DuplicateKeyError(this, collection, keyValues.values());
                 }
             }
         } catch (SQLException | IOException e) {
