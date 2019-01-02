@@ -76,6 +76,7 @@ import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.RenameCollectionOptions;
+import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.UpdateManyModel;
@@ -2078,6 +2079,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
         // create a random object id
         Document actual = collection.find().first();
         assertThat(actual).isEqualTo(expected);
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/41
+    @Test
+    public void testBulkUpsert() throws Exception {
+        List<ReplaceOneModel<Document>> models = new ArrayList<>();
+        models.add(new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 1"), new ReplaceOptions().upsert(true)));
+        models.add(new ReplaceOneModel<>(Filters.eq("_id", 2), json("_id: 2, a: 1"), new ReplaceOptions().upsert(true)));
+
+        BulkWriteResult result = collection.bulkWrite(models, new BulkWriteOptions().ordered(false));
+        assertThat(result.getUpserts()).hasSize(2);
+
+        assertThat(toArray(collection.find()))
+            .containsExactlyInAnyOrder(json("_id: 1, a: 1"), json("_id: 2, a: 1"));
     }
 
     @Test

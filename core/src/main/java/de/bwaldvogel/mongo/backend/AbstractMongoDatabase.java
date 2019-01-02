@@ -305,9 +305,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         response.put("n", nMatched + upserts.size());
         response.put("nModified", nModified);
         if (!upserts.isEmpty()) {
-            if (upserts.size() != 1) {
-                throw new IllegalStateException("Unexpected number of upserts: " + upserts.size());
-            }
             response.put("upserted", upserts);
         }
         if (!writeErrors.isEmpty()) {
