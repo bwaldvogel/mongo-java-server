@@ -81,7 +81,7 @@ allprojects {
             groupId        'de.bwaldvogel'
             artifactId     projectName
             name           title
-            description    'Stub implementation of MongoDB in Java that speaks the wire protocol.'
+            description    'Fake implementation of MongoDB in Java that speaks the wire protocol.'
             url            url
             inceptionYear '2012'
 
