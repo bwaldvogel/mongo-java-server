@@ -212,6 +212,30 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithGroupByNumberEdgeCases() throws Exception {
+        String groupBy = "$group: {_id: '$a', count: {$sum: 1}, avg: {$avg: '$a'}, min: {$min: '$a'}, max: {$max: '$a'}}";
+        List<Document> pipeline = Collections.singletonList(json(groupBy));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, a: 1.0"));
+        collection.insertOne(json("_id: 2, a: 1"));
+        collection.insertOne(json("_id: 3, a: -0.0"));
+        collection.insertOne(json("_id: 4, a: 0.0"));
+        collection.insertOne(json("_id: 5, a: 0"));
+        collection.insertOne(json("_id: 6, a: 1.5"));
+        collection.insertOne(json("_id: 7, a: null"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactlyInAnyOrder(
+                json("_id: -0.0, count: 3, avg: 0.0, min: -0.0, max: -0.0"),
+                json("_id: 1.0, count: 2, avg: 1.0, min: 1.0, max: 1.0"),
+                json("_id: 1.5, count: 1, avg: 1.5, min: 1.5, max: 1.5"),
+                json("_id: null, count: 1, avg: null, min: null, max: null")
+            );
+    }
+
+    @Test
     public void testAggregateWithSimpleExpressions() throws Exception {
         Document query = json("$group: {_id: {$abs: '$value'}, count: {$sum: 1}}");
         List<Document> pipeline = Collections.singletonList(query);

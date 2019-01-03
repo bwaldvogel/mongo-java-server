@@ -8,10 +8,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.Accumulator;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.AddToSetAccumulator;
@@ -40,7 +42,7 @@ public class GroupStage implements AggregationStage {
 
     @Override
     public Stream<Document> apply(Stream<Document> stream) {
-        Map<Object, Collection<Accumulator>> accumulatorsPerKey = new LinkedHashMap<>();
+        Map<Object, Collection<Accumulator>> accumulatorsPerKey = new TreeMap<>(new ValueComparator());
         stream.forEach(document -> {
             Object key = Expression.evaluateDocument(idExpression, document);
 
