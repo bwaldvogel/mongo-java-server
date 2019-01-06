@@ -1,9 +1,9 @@
 dependencies {
-    compile project(':mongo-java-server-core')
+    api project(':mongo-java-server-core')
 
-    compile "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
-    compile "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
 
-    testCompile "org.postgresql:postgresql:${postgresDriverVersion}"
-    testCompile project(':mongo-java-server-test-common')
+    testImplementation "org.postgresql:postgresql:${postgresDriverVersion}"
+    testImplementation project(':mongo-java-server-test-common')
 }

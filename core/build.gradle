@@ -1,8 +1,8 @@
 dependencies {
-    compile group: 'io.netty', name: 'netty-transport', version: nettyVersion
-    compile group: 'io.netty', name: 'netty-codec', version: nettyVersion
+    implementation group: 'io.netty', name: 'netty-transport', version: nettyVersion
+    implementation group: 'io.netty', name: 'netty-codec', version: nettyVersion
 
-    testCompile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
-    testCompile "org.mockito:mockito-core:${mockitoVersion}"
-    testCompile "nl.jqno.equalsverifier:equalsverifier:${equalsVerifierVersion}"
+    testImplementation group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "nl.jqno.equalsverifier:equalsverifier:${equalsVerifierVersion}"
 }

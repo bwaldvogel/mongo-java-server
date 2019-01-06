@@ -1,17 +1,17 @@
 dependencies {
-    compile project(':mongo-java-server-core')
-    compile group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
-    compile group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: mongoJavaDriverReactiveStreamsVersion
+    api project(':mongo-java-server-core')
+    api group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
+    api group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: mongoJavaDriverReactiveStreamsVersion
 
-    compile "org.springframework:spring-core:${springVersion}"
-    compile "org.springframework:spring-beans:${springVersion}"
-    compile "org.springframework:spring-context:${springVersion}"
-    compile "org.springframework:spring-test:${springVersion}"
-    compile "org.springframework.data:spring-data-mongodb:${springDataMongoDbVersion}"
+    api "org.springframework:spring-core:${springVersion}"
+    api "org.springframework:spring-beans:${springVersion}"
+    api "org.springframework:spring-context:${springVersion}"
+    api "org.springframework:spring-test:${springVersion}"
+    api "org.springframework.data:spring-data-mongodb:${springDataMongoDbVersion}"
 
-    compile group: 'junit', name: 'junit', version: junitVersion
-    compile group: 'org.assertj', name: 'assertj-core', version: assertjVersion
-    runtime group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+    api group: 'junit', name: 'junit', version: junitVersion
+    api group: 'org.assertj', name: 'assertj-core', version: assertjVersion
+    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
 
-    testCompile group: 'de.flapdoodle.embed', name: 'de.flapdoodle.embed.mongo', version: flapdoodleVersion
+    testImplementation group: 'de.flapdoodle.embed', name: 'de.flapdoodle.embed.mongo', version: flapdoodleVersion
 }
