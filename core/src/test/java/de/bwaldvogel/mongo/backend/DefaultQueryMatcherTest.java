@@ -206,9 +206,14 @@ public class DefaultQueryMatcherTest {
     public void testMatchesEmbeddedDocument() throws Exception {
         assertThat(matcher.matches(json("b: {c: 1, d: 2}"), json("b: {c: 1}"))).isFalse();
         assertThat(matcher.matches(json("b: {c: 1}"), json("b: {c: 1, d: 1}"))).isFalse();
+        assertThat(matcher.matches(json("b: {c: 0}"), json("b: {c: 0}"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: 0}"), json("b: {c: 0.0}"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: 0}"), json("b: {c: -0.0}"))).isTrue();
         assertThat(matcher.matches(json("b: {c: 1, d: 2}"), json("'b.c': 1"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: 1, d: 2}"), json("'b.c': 1.0"))).isTrue();
 
         assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("'b.c': 1"))).isTrue();
+        assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("'b.c': 1.0"))).isTrue();
         assertThat(matcher.matches(json("b: {c: [1, 2, 3]}"), json("b: {c: 1}"))).isFalse();
     }
 

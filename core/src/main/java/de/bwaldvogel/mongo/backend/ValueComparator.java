@@ -31,34 +31,37 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(BsonRegularExpression.class);
     }
 
+    private static int compareTypes(Object value1, Object value2) {
+        if (Missing.isNullOrMissing(value1) && Missing.isNullOrMissing(value2)) {
+            return 0;
+        } else if (Missing.isNullOrMissing(value1)) {
+            return -1;
+        } else if (Missing.isNullOrMissing(value2)) {
+            return 1;
+        }
+
+        int t1 = getTypeOrder(value1);
+        int t2 = getTypeOrder(value2);
+        return Integer.compare(t1, t2);
+    }
+
     @Override
     public int compare(Object value1, Object value2) {
         return compareValues(value1, value2);
     }
 
     static int compareValues(Object value1, Object value2) {
-        if (value1 instanceof Missing) {
-            value1 = null;
-        }
-
-        if (value2 instanceof Missing) {
-            value2 = null;
-        }
-
-        // also catches null/null case
-        if (value1 == value2)
+        if (value1 == value2) {
             return 0;
-
-        if (value1 == null) {
-            return -1;
-        } else if (value2 == null) {
-            return 1;
         }
 
-        int t1 = getTypeOrder(value1);
-        int t2 = getTypeOrder(value2);
-        if (t1 != t2) {
-            return t1 < t2 ? -1 : +1;
+        if (Missing.isNullOrMissing(value1) && Missing.isNullOrMissing(value2)) {
+            return 0;
+        }
+
+        int typeComparision = compareTypes(value1, value2);
+        if (typeComparision != 0) {
+            return typeComparision;
         }
 
         Class<?> clazz = value1.getClass();
@@ -108,17 +111,39 @@ public class ValueComparator implements Comparator<Object> {
         }
 
         if (Document.class.isAssignableFrom(clazz)) {
-            for (String key : ((Document) value1).keySet()) {
-                int cmp = compareValues(((Document) value1).get(key), ((Document) value2).get(key));
-                if (cmp != 0) {
-                    return cmp;
-                }
-            }
-            return 0;
+            return compareDocuments((Document) value1, (Document) value2);
         }
 
         throw new UnsupportedOperationException("can't compare " + clazz);
+    }
 
+    private static int compareDocuments(Document document1, Document document2) {
+        List<String> keys1 = new ArrayList<>(document1.keySet());
+        List<String> keys2 = new ArrayList<>(document2.keySet());
+        for (int i = 0; i < Math.max(keys1.size(), keys2.size()); i++) {
+            String key1 = i >= keys1.size() ? null : keys1.get(i);
+            String key2 = i >= keys2.size() ? null : keys2.get(i);
+
+            Object value1 = document1.getOrMissing(key1);
+            Object value2 = document2.getOrMissing(key2);
+
+            int typeComparison = compareTypes(value1, value2);
+            if (typeComparison != 0) {
+                return typeComparison;
+            }
+
+            int keyComparison = compareValues(key1, key2);
+            if (keyComparison != 0) {
+                return keyComparison;
+            }
+
+            int valueComparison = compareValues(value1, value2);
+            if (valueComparison != 0) {
+                return valueComparison;
+            }
+        }
+
+        return 0;
     }
 
     private static int compareUnsigned(byte b1, byte b2) {

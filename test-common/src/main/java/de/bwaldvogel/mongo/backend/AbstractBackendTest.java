@@ -3197,6 +3197,128 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testQueryWithEquivalentEmbeddedDocument() throws Exception {
+        collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));
+        collection.insertOne(json("_id:  2, a: {b: 1, c: 0.0}"));
+        collection.insertOne(json("_id:  3, a: {b: 1.0, c: 0.0}"));
+        collection.insertOne(json("_id:  4, a: {b: 1.0, c: 0}"));
+        collection.insertOne(json("_id:  5, a: {b: {c: 1.0}}"));
+        collection.insertOne(json("_id:  6, a: {b: {c: 1}}"));
+        collection.insertOne(json("_id:  7, a: {b: {c: 1, d: 1.0}}"));
+        collection.insertOne(json("_id:  8, a: {c: 0, b: 1.0}"));
+        collection.insertOne(json("_id:  9, a: {c: 0}"));
+        collection.insertOne(json("_id: 10, a: {b: 1}"));
+
+        assertThat(toArray(collection.find(json("a: {b: 1.0, c: -0.0}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1, c: 0}"),
+                json("_id: 2, a: {b: 1, c: 0.0}"),
+                json("_id: 3, a: {b: 1.0, c: 0.0}"),
+                json("_id: 4, a: {b: 1.0, c: 0}")
+            );
+
+        assertThat(toArray(collection.find(json("a: {b: {c: 1}}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 5, a: {b: {c: 1.0}}"),
+                json("_id: 6, a: {b: {c: 1}}")
+            );
+    }
+
+    @Test
+    public void testOrderByMissingAndNull() throws Exception {
+        collection.insertOne(json("_id:  1, a: null"));
+        collection.insertOne(json("_id:  2"));
+        collection.insertOne(json("_id:  3, a: {b: 1}"));
+        collection.insertOne(json("_id:  4, a: null"));
+        collection.insertOne(json("_id:  5"));
+
+        assertThat(toArray(collection.find(json("")).sort(json("a: 1, _id: 1"))))
+            .containsExactly(
+                json("_id: 1, a: null"),
+                json("_id: 2"),
+                json("_id: 4, a: null"),
+                json("_id: 5"),
+                json("_id: 3, a: {b: 1}")
+            );
+    }
+
+    @Test
+    public void testOrderByEmbeddedDocument() throws Exception {
+        collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));
+        collection.insertOne(json("_id:  2, a: {b: 1, c: 0.0}"));
+        collection.insertOne(json("_id:  3, a: {b: 1, c: null}"));
+        collection.insertOne(json("_id:  4, a: {b: 1.0, c: 0}"));
+        collection.insertOne(json("_id:  5, a: {b: 1.0, c: 0.0}"));
+        collection.insertOne(json("_id:  6, a: {b: 1.0, c: 0}"));
+        collection.insertOne(json("_id:  7, a: {b: {c: 1.0}}"));
+        collection.insertOne(json("_id:  8, a: {c: 0, b: 1.0}"));
+        collection.insertOne(json("_id:  9, a: {c: 0}"));
+        collection.insertOne(json("_id: 10, a: {b: 1}"));
+        collection.insertOne(json("_id: 11, a: {b: {c: 0.0}}"));
+        collection.insertOne(json("_id: 12, a: {c: 2}"));
+        collection.insertOne(json("_id: 13, a: {b: null, c: 0}"));
+        collection.insertOne(json("_id: 14, a: {b: 'abc'}"));
+        collection.insertOne(json("_id: 15, a: null, b: 123"));
+        collection.insertOne(json("_id: 16, b: 123"));
+        collection.insertOne(json("_id: 17, a: null, b: 123"));
+
+        assertThat(toArray(collection.find(json("")).sort(json("a: 1, _id: 1"))))
+            .containsExactly(
+                json("_id: 15, a: null, b: 123"),
+                json("_id: 16, b: 123"),
+                json("_id: 17, a: null, b: 123"),
+                json("_id: 13, a: {b: null, c: 0}"),
+                json("_id: 10, a: {b: 1}"),
+                json("_id:  3, a: {b: 1, c: null}"),
+                json("_id:  1, a: {b: 1, c: 0}"),
+                json("_id:  2, a: {b: 1, c: 0.0}"),
+                json("_id:  4, a: {b: 1.0, c: 0}"),
+                json("_id:  5, a: {b: 1.0, c: 0.0}"),
+                json("_id:  6, a: {b: 1.0, c: 0}"),
+                json("_id:  9, a: {c: 0}"),
+                json("_id:  8, a: {c: 0, b: 1.0}"),
+                json("_id: 12, a: {c: 2}"),
+                json("_id: 14, a: {b: 'abc'}"),
+                json("_id: 11, a: {b: {c: 0.0}}"),
+                json("_id:  7, a: {b: {c: 1.0}}")
+            );
+    }
+
+    @Test
+    public void testDistinctEmbeddedDocument() throws Exception {
+        collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));
+        collection.insertOne(json("_id:  2, a: {b: null}"));
+        collection.insertOne(json("_id:  3, a: {b: 1, c: null}"));
+        collection.insertOne(json("_id:  4, a: {b: 1.0, c: 0}"));
+        collection.insertOne(json("_id:  5, a: {b: 1.0, c: 0.0}"));
+        collection.insertOne(json("_id:  6, a: {b: 1.0, c: null}"));
+        collection.insertOne(json("_id:  7, a: {b: {c: 1.0}}"));
+        collection.insertOne(json("_id:  8, a: {c: 0, b: 1.0}"));
+        collection.insertOne(json("_id:  9, a: {c: 0, b: null}"));
+        collection.insertOne(json("_id: 10, a: {b: 1}"));
+        collection.insertOne(json("_id: 11, a: {b: {c: 0.0}}"));
+        collection.insertOne(json("_id: 12"));
+        collection.insertOne(json("_id: 13, a: {c: 0}"));
+        collection.insertOne(json("_id: 14, a: {c: null}"));
+        collection.insertOne(json("_id: 15, a: null"));
+
+        assertThat(toArray(collection.distinct("a", Document.class)))
+            .containsExactlyInAnyOrder(
+                json("b: 1, c: 0"),
+                json("b: null"),
+                json("b: 1, c: null"),
+                json("b: {c: 1.0}"),
+                json("b: 1.0, c: 0"),
+                json("b: null, c: 0"),
+                json("b: 1"),
+                json("b: {c: 0.0}"),
+                json("c: 0"),
+                json("c: null"),
+                null
+            );
+    }
+
+    @Test
     public void testEmptyArrayQuery() throws Exception {
         collection.insertOne(json("_id: 1"));
 

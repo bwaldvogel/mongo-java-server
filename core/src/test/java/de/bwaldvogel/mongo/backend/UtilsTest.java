@@ -70,6 +70,12 @@ public class UtilsTest {
         assertThat(Utils.normalizeValue(0.0)).isEqualTo(0.0);
         assertThat(Utils.normalizeValue(Missing.getInstance())).isNull();
         assertThat(Utils.normalizeValue(new Date())).isInstanceOf(Date.class);
+        assertThat(Utils.normalizeValue(json("a: {b: 1}"))).isEqualTo(json("a: {b: 1.0}"));
+        assertThat(Utils.normalizeValue(json("a: {b: -0.0, c: -1}"))).isEqualTo(json("a: {b: 0.0, c: -1.0}"));
+        assertThat(Utils.normalizeValue(json("a: {c: 1, b: 0}")))
+            .isNotEqualTo(json("a: {b: 0.0, c: 1.0}"))
+            .isEqualTo(json("a: {c: 1.0, b: 0.0}"))
+        ;
     }
 
     @Test
@@ -100,6 +106,12 @@ public class UtilsTest {
         assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new byte[] { 0x01, 0x02 })).isFalse();
         assertThat(Utils.nullAwareEquals(new byte[] { 0x01, 0x02, 0x03 }, new byte[] { 0x01, 0x02 })).isFalse();
         assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new int[] { 0x01 })).isFalse();
+        assertThat(Utils.nullAwareEquals(json("a: 1"), json("a: 1"))).isTrue();
+        assertThat(Utils.nullAwareEquals(json("a: 1"), json("a: 1.0"))).isTrue();
+        assertThat(Utils.nullAwareEquals(json("a: 0"), json("a: -0.0"))).isTrue();
+        assertThat(Utils.nullAwareEquals(json("a: 0, b: 1"), json("a: 0, b: 1"))).isTrue();
+        assertThat(Utils.nullAwareEquals(json("a: 0, b: 1"), json("a: 0, b: 0"))).isFalse();
+        assertThat(Utils.nullAwareEquals(json("a: 0, b: 1"), json("b: 1, a: 0"))).isFalse();
     }
 
     @Test

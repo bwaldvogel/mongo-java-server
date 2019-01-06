@@ -236,6 +236,39 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithGroupByDocuments() throws Exception {
+        String groupBy = "$group: {_id: '$a', count: {$sum: 1}}";
+        String sort = "$sort: {_id: 1}";
+        List<Document> pipeline = Arrays.asList(json(groupBy), json(sort));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id:  1, a: 1.0"));
+        collection.insertOne(json("_id:  2, a: {b: 1}"));
+        collection.insertOne(json("_id:  3, a: {b: 1.0}"));
+        collection.insertOne(json("_id:  4, a: {b: 1, c: 1}"));
+        collection.insertOne(json("_id:  5, a: {b: {c: 1}}"));
+        collection.insertOne(json("_id:  6, a: {b: {c: 1.0}}"));
+        collection.insertOne(json("_id:  7, a: {b: {c: 1.0, d: 1}}"));
+        collection.insertOne(json("_id:  8, a: {b: {d: 1, c: 1.0}}"));
+        collection.insertOne(json("_id:  9, a: {c: 1, b: 1}"));
+        collection.insertOne(json("_id: 10, a: null"));
+        collection.insertOne(json("_id: 11, a: {b: 1, c: 1}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: null, count: 1"),
+                json("_id: 1.0, count: 1"),
+                json("_id: {b: 1}, count: 2"),
+                json("_id: {b: 1, c: 1}, count: 2"),
+                json("_id: {c: 1, b: 1}, count: 1"),
+                json("_id: {b: {c: 1}}, count: 2"),
+                json("_id: {b: {c: 1.0, d: 1}}, count: 1"),
+                json("_id: {b: {d: 1, c: 1.0}}, count: 1")
+            );
+    }
+
+    @Test
     public void testAggregateWithSimpleExpressions() throws Exception {
         Document query = json("$group: {_id: {$abs: '$value'}, count: {$sum: 1}}");
         List<Document> pipeline = Collections.singletonList(query);

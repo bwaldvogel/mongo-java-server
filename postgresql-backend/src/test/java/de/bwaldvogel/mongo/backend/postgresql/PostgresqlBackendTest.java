@@ -71,6 +71,18 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testUniqueIndexWithDeepDocuments();
     }
 
+    @Override
+    public void testOrderByEmbeddedDocument() throws Exception {
+        assumeStrictTests();
+        super.testOrderByEmbeddedDocument();
+    }
+
+    @Override
+    public void testOrderByMissingAndNull() throws Exception {
+        assumeStrictTests();
+        super.testOrderByMissingAndNull();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
