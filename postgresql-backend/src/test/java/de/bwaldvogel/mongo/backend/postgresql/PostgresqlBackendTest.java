@@ -43,29 +43,36 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Override
     public void testCompoundSparseUniqueIndex() throws Exception {
-        assumeSparseIndicesSupportedInPostgresBackend();
+        assumeStrictTests();
         super.testCompoundSparseUniqueIndex();
     }
 
     @Override
     public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() throws Exception {
-        assumeSparseIndicesSupportedInPostgresBackend();
+        assumeStrictTests();
         super.testCompoundSparseUniqueIndexOnEmbeddedDocuments();
     }
 
     @Override
     public void testSparseUniqueIndexOnEmbeddedDocument() throws Exception {
-        assumeSparseIndicesSupportedInPostgresBackend();
+        assumeStrictTests();
         super.testSparseUniqueIndexOnEmbeddedDocument();
     }
 
     @Override
     public void testSecondarySparseUniqueIndex() throws Exception {
-        assumeSparseIndicesSupportedInPostgresBackend();
+        assumeStrictTests();
         super.testSecondarySparseUniqueIndex();
     }
 
-    private void assumeSparseIndicesSupportedInPostgresBackend() {
-        Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictSparseIndexTest"));
+    @Override
+    public void testUniqueIndexWithDeepDocuments() throws Exception {
+        assumeStrictTests();
+        super.testUniqueIndexWithDeepDocuments();
     }
+
+    private void assumeStrictTests() {
+        Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
+    }
+
 }

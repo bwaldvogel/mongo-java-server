@@ -28,6 +28,8 @@ public class DocumentTest {
         assertThat(new Document()).isNotEqualTo(Collections.emptyMap());
         assertThat(new Document()).isNotEqualTo(null);
         assertThat(new Document()).isEqualTo(new Document());
+        assertThat(new Document().append("a", 1). append("b", 1)).isEqualTo(new Document().append("a", 1).append("b", 1));
+        assertThat(new Document().append("a", 1). append("b", 1)).isNotEqualTo(new Document().append("b", 1).append("a", 1));
     }
 
     @Test

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -110,7 +112,7 @@ public class Utils {
         return true;
     }
 
-    public static Object normalizeValue(Object value) {
+    static Object normalizeValue(Object value) {
         if (Missing.isNullOrMissing(value)) {
             return null;
         }
@@ -120,6 +122,13 @@ public class Utils {
                 doubleValue = 0.0;
             }
             return Double.valueOf(doubleValue);
+        } else if (value instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) value;
+            Document result = new Document();
+            for (Entry<String, Object> entry : map.entrySet()) {
+                result.put(entry.getKey(), normalizeValue(entry.getValue()));
+            }
+            return result;
         } else {
             return value;
         }

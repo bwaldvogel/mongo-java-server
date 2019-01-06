@@ -2226,6 +2226,36 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(toArray(collection.find(json("'action.actionId.subKey': 23")))).isEmpty();
     }
 
+    @Test
+    public void testUniqueIndexWithDeepDocuments() throws Exception {
+        collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, a: 1"));
+        collection.insertOne(json("_id: 3, a: {b: 0}"));
+        collection.insertOne(json("_id: 4, a: {b: {c: 1}}"));
+        collection.insertOne(json("_id: 5, a: {b: {c: 1, d: 1}}"));
+        collection.insertOne(json("_id: 6, a: {b: {d: 1, c: 1}}"));
+        collection.insertOne(json("_id: 7, a: {b: 1, c: 1}"));
+        collection.insertOne(json("_id: 8, a: {c: 1, d: 1}"));
+        collection.insertOne(json("_id: 9, a: {c: 1}"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: 0}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: 0 } }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: 0.00}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: 0.0 } }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: -0.0}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: -0.0 } }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1.0}}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: { c: 1.0 } } }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1, d: 1.0}}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: { c: 1, d: 1.0 } } }");
+    }
+
     // see https://github.com/bwaldvogel/mongo-java-server/issues/39
     @Test
     public void testSecondaryUniqueIndexUpdate() throws Exception {

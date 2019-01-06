@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -158,6 +159,11 @@ public final class Document implements Map<String, Object>, Bson {
         if (!(o instanceof Document)) {
             return false;
         }
+        List<String> keys = new ArrayList<>(keySet());
+        List<String> otherKeys = new ArrayList<>(((Document) o).keySet());
+        if (!keys.equals(otherKeys)) {
+            return false;
+        }
         return documentAsMap.equals(o);
     }
 
@@ -177,7 +183,7 @@ public final class Document implements Map<String, Object>, Bson {
 
     public String toString(boolean compactKey, String prefix, String suffix) {
         return documentAsMap.entrySet().stream()
-            .map(entry -> writeKey(entry.getKey(), compactKey) + " " + Json.toJsonValue(entry.getValue()))
+            .map(entry -> writeKey(entry.getKey(), compactKey) + " " + Json.toJsonValue(entry.getValue(), compactKey, prefix, suffix))
             .collect(Collectors.joining(", ", prefix, suffix));
     }
 
