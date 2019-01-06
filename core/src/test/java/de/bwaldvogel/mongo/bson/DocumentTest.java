@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
@@ -92,6 +93,13 @@ public class DocumentTest {
         assertThat(new Document("key", "value")).hasToString("{\"key\" : \"value\"}");
         assertThat(new Document("key", new Document("value", 12345L))).hasToString("{\"key\" : {\"value\" : 12345}}");
         assertThat(json("array: [{'123a': {name: 'old'}}]")).hasToString("{\"array\" : [{\"123a\" : {\"name\" : \"old\"}}]}");
+    }
+
+    @Test
+    public void testGetOrMissing() throws Exception {
+        Document document = new Document().append("a", 1);
+        assertThat(document.getOrMissing("b")).isInstanceOf(Missing.class);
+        assertThat(document.getOrMissing("a")).isEqualTo(1);
     }
 
 }

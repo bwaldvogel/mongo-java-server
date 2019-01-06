@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.backend.Missing;
+
 public final class Document implements Map<String, Object>, Bson {
 
     private static final long serialVersionUID = 1L;
@@ -77,6 +79,10 @@ public final class Document implements Map<String, Object>, Bson {
     @Override
     public Object get(Object key) {
         return documentAsMap.get(key);
+    }
+
+    public Object getOrMissing(Object key) {
+        return getOrDefault(key, Missing.getInstance());
     }
 
     @Override
