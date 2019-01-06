@@ -2,15 +2,23 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-class LinkedTreeSet<E> extends AbstractSet<E> {
+public class LinkedTreeSet<E> extends AbstractSet<E> {
 
     private final Set<E> elements = new TreeSet<>(new ValueComparator());
     private final List<E> orderedElements = new ArrayList<>();
+
+    public LinkedTreeSet() {
+    }
+
+    public LinkedTreeSet(Collection<? extends E> other) {
+        addAll(other);
+    }
 
     @Override
     public boolean add(E e) {
@@ -28,6 +36,27 @@ class LinkedTreeSet<E> extends AbstractSet<E> {
         }
         removeFromOrderedElements(o);
         return true;
+    }
+
+    @Override
+    public boolean removeAll(Collection<?> c) {
+        return super.removeAll(new LinkedTreeSet<>(c));
+    }
+
+    @Override
+    public boolean retainAll(Collection<?> c) {
+        return super.retainAll(new LinkedTreeSet<>(c));
+    }
+
+    @Override
+    public void clear() {
+        elements.clear();
+        orderedElements.clear();
+    }
+
+    @Override
+    public boolean contains(Object o) {
+        return elements.contains(o);
     }
 
     private void removeFromOrderedElements(Object o) {

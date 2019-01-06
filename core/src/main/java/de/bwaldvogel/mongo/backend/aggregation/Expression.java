@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -22,6 +20,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import de.bwaldvogel.mongo.backend.LinkedTreeSet;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
@@ -794,7 +793,7 @@ public enum Expression implements ExpressionTraits {
                     "both operands of " + name() + " must be arrays. First argument is of type: " + describeType(second));
             }
 
-            Set<Object> result = new LinkedHashSet<>((Collection<?>) first);
+            Set<Object> result = new LinkedTreeSet<>((Collection<?>) first);
             result.removeAll((Collection<?>) second);
             return result;
         }
@@ -808,14 +807,21 @@ public enum Expression implements ExpressionTraits {
                 throw new MongoServerError(17045, name() + " needs at least two arguments had: " + expressionValue.size());
             }
 
-            final Set<Set<?>> result = new HashSet<>();
+            Set<?> objects = null;
             for (Object value : expressionValue) {
                 if (!(value instanceof Collection)) {
                     throw new MongoServerError(17044, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(value));
                 }
-                result.add(new HashSet<>((Collection<?>) value));
+                Set<?> setValue = new LinkedTreeSet<>((Collection<?>) value);
+                if (objects == null) {
+                    objects = setValue;
+                } else {
+                    if (!objects.containsAll(setValue) || !setValue.containsAll(objects)) {
+                        return false;
+                    }
+                }
             }
-            return result.size() == 1;
+            return true;
         }
     },
 
@@ -830,10 +836,11 @@ public enum Expression implements ExpressionTraits {
                 if (!(value instanceof Collection)) {
                     throw new MongoServerError(17047, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(value));
                 }
+                Collection<?> values = (Collection<?>) value;
                 if (result == null) {
-                    result = new LinkedHashSet<>((Collection<?>) value);
+                    result = new LinkedTreeSet<>(values);
                 } else {
-                    result.retainAll((Collection<?>) value);
+                    result.retainAll(values);
                 }
             }
             if (result == null) {
@@ -858,8 +865,8 @@ public enum Expression implements ExpressionTraits {
                 throw new MongoServerError(17042, "both operands of " + name() + " must be arrays. Second argument is of type: " + describeType(second));
             }
 
-            Set<?> one = new HashSet<>((Collection<?>) first);
-            Set<?> other = new HashSet<>((Collection<?>) second);
+            Set<?> one = new LinkedTreeSet<>((Collection<?>) first);
+            Set<?> other = new LinkedTreeSet<>((Collection<?>) second);
             return other.containsAll(one);
         }
     },

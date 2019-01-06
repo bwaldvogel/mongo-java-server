@@ -573,19 +573,21 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
-    public void testAggregateWithSetUnion() throws Exception {
-        Document project = json("$project: {all: {$setUnion: ['$a', '$b']}}");
+    public void testAggregateWithSetOperations() throws Exception {
+        Document project = json("$project: {union: {$setUnion: ['$a', '$b']}, diff: {$setDifference: ['$a', '$b']}, intersection: {$setIntersection: ['$a', '$b']}}");
         List<Document> pipeline = Collections.singletonList(project);
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
         collection.insertOne(json("_id: 1, a: [3, 2, 1]"));
-        collection.insertOne(json("_id: 2, a: [1], b: [3, 2]"));
+        collection.insertOne(json("_id: 2, a: [1.0, -0.0], b: [3, 2, 0]"));
+        collection.insertOne(json("_id: 3, a: [{a: 0}, {a: 1}], b: [{a: 0.0}, {a: 0.5}]"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactlyInAnyOrder(
-                json("_id: 1, all: null"),
-                json("_id: 2, all: [1, 2, 3]")
+                json("_id: 1, diff: null, intersection: null, union: null"),
+                json("_id: 2, diff: [1.0], intersection: [-0.0], union: [-0.0, 1.0, 2, 3]"),
+                json("_id: 3, diff: [{a: 1}], intersection: [{a: 0}], union: [{a: 0}, {a: 0.5}, {a: 1}]")
             );
     }
 

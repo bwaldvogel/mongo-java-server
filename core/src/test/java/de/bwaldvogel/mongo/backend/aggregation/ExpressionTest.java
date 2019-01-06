@@ -720,6 +720,12 @@ public class ExpressionTest {
         assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [['a', 'b'], [['a', 'b']]]"), json("")))
             .containsExactly("a", "b");
 
+        assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [[1.0, 0, 2], [-0.0]]"), json("")))
+            .containsExactly(1.0, 2);
+
+        assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [[1.0, -0.0, 2], [1, 0]]"), json("")))
+            .containsExactly(2);
+
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$setDifference: '$a'"), json("a: 'abc'")))
             .withMessage("[Error 16020] Expression $setDifference takes exactly 2 arguments. 1 were passed in.");
@@ -744,6 +750,9 @@ public class ExpressionTest {
             .isEqualTo(false);
 
         assertThat(Expression.evaluate(json("$setEquals: ['$one', '$other', [2, 2, 1]]"), json("one: [1, 2], other: [2, 1]")))
+            .isEqualTo(true);
+
+        assertThat(Expression.evaluate(json("$setEquals: ['$one', '$other']"), json("one: [0, 2.0], other: [2, -0.0]")))
             .isEqualTo(true);
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -789,6 +798,9 @@ public class ExpressionTest {
         assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: ['$one', '$other', [2]]"), json("one: [1, 2], other: [2, 1]")))
             .containsExactly(2);
 
+        assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: ['$one', '$other']"), json("one: [1, 2.0], other: [2, 1]")))
+            .containsExactly(1, 2.0);
+
         assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: ['$one', '$other', [2, 2, 1]]"), json("one: [], other: [2, 1]")))
             .isEmpty();
 
@@ -802,6 +814,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$setIsSubset: [['a', 'b', 'a'], ['b', 'a']]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$setIsSubset: [['a', 'b'], [['a', 'b']]]"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$setIsSubset: ['$a', '$b']"), json("a: [1, 2], b: [1, 2, 3, 4]"))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$setIsSubset: ['$a', '$b']"), json("a: [1.0, 2.0], b: [1, 2, 3, 4]"))).isEqualTo(true);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$setIsSubset: null"), json("")))
@@ -840,7 +853,7 @@ public class ExpressionTest {
         assertThat((Collection<Object>) Expression.evaluate(json("$setUnion: [['a', 1], ['c', 'a']]"), json("")))
             .containsExactly(1, "a", "c");
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setUnion: ['$a', '$b']"), json("a: [1, 2, 3], b: [3, 4]")))
+        assertThat((Collection<Object>) Expression.evaluate(json("$setUnion: ['$a', '$b']"), json("a: [1, 2, 3], b: [3.0, 4]")))
             .containsExactly(1, 2, 3, 4);
 
         assertThatExceptionOfType(MongoServerError.class)
