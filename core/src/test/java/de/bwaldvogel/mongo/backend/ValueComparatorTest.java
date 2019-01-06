@@ -4,6 +4,7 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.Date;
 
 import org.junit.Test;
@@ -27,6 +28,15 @@ public class ValueComparatorTest {
     @Test
     public void testCompareNullWithValue() throws Exception {
         assertFirstValueBeforeSecondValue(null, 1.0);
+    }
+
+    @Test
+    public void testCompareList() throws Exception {
+        assertFirstValueBeforeSecondValue(1, Arrays.asList(1, 2));
+        assertFirstValueBeforeSecondValue("abc", Arrays.asList(1, 2));
+        assertFirstValueBeforeSecondValue(json("a: 1"), Arrays.asList(1, 2));
+        assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), true);
+        assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), new ObjectId());
     }
 
     @Test

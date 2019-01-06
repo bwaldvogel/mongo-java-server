@@ -15,15 +15,12 @@ public class ValueComparator implements Comparator<Object> {
 
     static {
         /*
-         * http://docs.mongodb.org/manual/faq/developers/#what-is-the-compare-order-for-bson-types
-         *
-         * Null Numbers (ints, longs, doubles) Symbol, String Object Array
-         * BinData ObjectID Boolean Date, Timestamp Regular Expression
+         * https://docs.mongodb.com/manual/reference/bson-type-comparison-order/
          */
-
         SORT_PRIORITY.add(Number.class);
         SORT_PRIORITY.add(String.class);
         SORT_PRIORITY.add(Document.class);
+        SORT_PRIORITY.add(List.class);
         SORT_PRIORITY.add(byte[].class);
         SORT_PRIORITY.add(ObjectId.class);
         SORT_PRIORITY.add(Boolean.class);
