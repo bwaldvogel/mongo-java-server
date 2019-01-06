@@ -13,8 +13,6 @@ public class ValueComparator implements Comparator<Object> {
 
     private static final List<Class<?>> SORT_PRIORITY = new ArrayList<>();
 
-    private final boolean nullsLast;
-
     static {
         /*
          * http://docs.mongodb.org/manual/faq/developers/#what-is-the-compare-order-for-bson-types
@@ -33,17 +31,12 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(BsonRegularExpression.class);
     }
 
-    public ValueComparator() {
-        this(false);
-    }
-
-    public ValueComparator(boolean nullsLast) {
-        this.nullsLast = nullsLast;
-    }
-
     @Override
     public int compare(Object value1, Object value2) {
+        return compareValues(value1, value2);
+    }
 
+    static int compareValues(Object value1, Object value2) {
         if (value1 instanceof Missing) {
             value1 = null;
         }
@@ -57,9 +50,9 @@ public class ValueComparator implements Comparator<Object> {
             return 0;
 
         if (value1 == null) {
-            return nullsLast ? 1 : -1;
+            return -1;
         } else if (value2 == null) {
-            return nullsLast ? -1 : 1;
+            return 1;
         }
 
         int t1 = getTypeOrder(value1);
@@ -116,7 +109,7 @@ public class ValueComparator implements Comparator<Object> {
 
         if (Document.class.isAssignableFrom(clazz)) {
             for (String key : ((Document) value1).keySet()) {
-                int cmp = compare(((Document) value1).get(key), ((Document) value2).get(key));
+                int cmp = compareValues(((Document) value1).get(key), ((Document) value2).get(key));
                 if (cmp != 0) {
                     return cmp;
                 }
@@ -128,11 +121,11 @@ public class ValueComparator implements Comparator<Object> {
 
     }
 
-    private int compareUnsigned(byte b1, byte b2) {
+    private static int compareUnsigned(byte b1, byte b2) {
         return Integer.compare(b1 + Integer.MIN_VALUE, b2 + Integer.MIN_VALUE);
     }
 
-    private int getTypeOrder(Object obj) {
+    private static int getTypeOrder(Object obj) {
         for (int idx = 0; idx < SORT_PRIORITY.size(); idx++) {
             if (SORT_PRIORITY.get(idx).isAssignableFrom(obj.getClass())) {
                 return idx;

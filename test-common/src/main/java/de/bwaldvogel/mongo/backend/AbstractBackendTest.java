@@ -441,15 +441,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testDistinctQuery() {
-        collection.insertOne(json("n: 3"));
-        collection.insertOne(json("n: 1"));
-        collection.insertOne(json("n: 2"));
-        collection.insertOne(json("n: 1"));
-        collection.insertOne(json("n: 1"));
-        assertThat(toArray(collection.distinct("n", Integer.class))).containsExactlyInAnyOrder(1, 2, 3);
-        assertThat(toArray(collection.distinct("n", json("n: {$gt: 1}"), Integer.class))).containsExactlyInAnyOrder(2, 3);
+        collection.insertOne(json("_id: 1, n: null"));
+        collection.insertOne(json("_id: 2, n: 3"));
+        collection.insertOne(json("_id: 3, n: 1"));
+        collection.insertOne(json("_id: 4, n: 2"));
+        collection.insertOne(json("_id: 5, n: 1.0"));
+        collection.insertOne(json("_id: 6, n: 1"));
+        collection.insertOne(json("_id: 7, n: -0.0"));
+        collection.insertOne(json("_id: 8, n: 0"));
+
+        assertThat(toArray(collection.distinct("n", Integer.class)))
+            .containsExactly(null, 3, 1, 2, 0);
+
+        assertThat(toArray(collection.distinct("n", json("n: {$gt: 1}"), Integer.class)))
+            .containsExactly(3, 2);
+
         assertThat(collection.distinct("foobar", String.class)).isEmpty();
-        assertThat(collection.distinct("_id", ObjectId.class)).hasSize((int) collection.countDocuments());
+
+        assertThat(collection.distinct("_id", Integer.class))
+            .hasSize((int) collection.countDocuments());
     }
 
     @Test
@@ -461,7 +471,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("a: {b: 3}"));
         collection.insertOne(json("a: {b: null}"));
         collection.insertOne(json("a: null"));
-        assertThat(toArray(collection.distinct("a.b", Integer.class))).containsExactly(1, 2, 3, null);
+
+        assertThat(toArray(collection.distinct("a.b", Integer.class)))
+            .containsExactly(1, 2, 3, null);
+
         assertThat(collection.distinct("a.c", Integer.class)).isEmpty();
     }
 

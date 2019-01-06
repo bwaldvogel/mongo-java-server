@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Date;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.ObjectId;
@@ -14,12 +13,7 @@ import io.netty.buffer.Unpooled;
 
 public class ValueComparatorTest {
 
-    private ValueComparator comparator;
-
-    @Before
-    public void setUp() {
-        comparator = new ValueComparator();
-    }
+    private ValueComparator comparator = new ValueComparator();
 
     @Test
     public void testCompareNullsAndMissings() {
@@ -62,16 +56,6 @@ public class ValueComparatorTest {
         assertThat(comparator.compare("zzz", "abc")).isGreaterThan(0);
         assertThat(comparator.compare(null, "abc")).isLessThan(0);
         assertThat(comparator.compare("abc", null)).isGreaterThan(0);
-    }
-
-    @Test
-    public void testCompareNullsLast() throws Exception {
-        ValueComparator nullsLastComparator = new ValueComparator(true);
-        assertThat(nullsLastComparator.compare("abc", "abc")).isEqualTo(0);
-        assertThat(nullsLastComparator.compare("abc", "zzz")).isLessThan(0);
-        assertThat(nullsLastComparator.compare("zzz", "abc")).isGreaterThan(0);
-        assertThat(nullsLastComparator.compare(null, "abc")).isGreaterThan(0);
-        assertThat(nullsLastComparator.compare("abc", null)).isLessThan(0);
     }
 
     @Test
