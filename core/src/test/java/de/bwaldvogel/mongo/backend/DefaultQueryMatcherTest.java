@@ -150,6 +150,14 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchesLists() throws Exception {
+        assertThat(matcher.matches(json("a: [2, 1]"), json("a: [2, 1]"))).isTrue();
+        assertThat(matcher.matches(json("a: [2, 1]"), json("a: [2, 1.0]"))).isTrue();
+        assertThat(matcher.matches(json("a: [2.0, 1]"), json("a: [2, 1.0]"))).isTrue();
+        assertThat(matcher.matches(json("a: [1, 2]"), json("a: [2, 1]"))).isFalse();
+    }
+
+    @Test
     public void testMatchesDocumentList() throws Exception {
         Document document = json("_id: 1, c: [{a: 1, b: 2}, {a: 3, b: 4}]");
 

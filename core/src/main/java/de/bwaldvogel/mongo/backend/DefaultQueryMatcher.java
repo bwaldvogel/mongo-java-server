@@ -149,6 +149,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
             Collection<?> documentValues = (Collection<?>) documentValue;
             if (queryValue instanceof Document) {
                 return checkMatchesAnyValue((Document) queryValue, keys, document, documentValues);
+            } else if (queryValue instanceof Collection<?>) {
+                return checkMatchesValue(queryValue, documentValues);
             } else if (checkMatchesAnyValue(queryValue, documentValues)) {
                 return true;
             }

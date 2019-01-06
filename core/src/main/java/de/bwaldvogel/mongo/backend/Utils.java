@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -129,6 +130,11 @@ public class Utils {
                 result.put(entry.getKey(), normalizeValue(entry.getValue()));
             }
             return result;
+        } else if (value instanceof Collection<?>) {
+            Collection<?> collection = (Collection<?>) value;
+            return collection.stream()
+                .map(Utils::normalizeValue)
+                .collect(Collectors.toList());
         } else {
             return value;
         }

@@ -3330,6 +3330,26 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testFindByListValue() throws Exception {
+        collection.insertOne(json("_id: 1, a: [2, 1]"));
+        collection.insertOne(json("_id: 2, a: [2, 1.0]"));
+        collection.insertOne(json("_id: 3, a: [1, 2]"));
+        collection.insertOne(json("_id: 4, a: [1, 2, 3]"));
+        collection.insertOne(json("_id: 5, a: [3, 2]"));
+        collection.insertOne(json("_id: 6, a: [2, 3]"));
+        collection.insertOne(json("_id: 7, a: [3]"));
+        collection.insertOne(json("_id: 8, a: [3, 2]"));
+
+        assertThat(toArray(collection.find(json("a: [2, 1]"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: [2, 1]"),
+                json("_id: 2, a: [2, 1.0]")
+            );
+
+        assertThat(toArray(collection.find(json("a: [1, 2]"))))
+            .containsExactly(json("_id: 3, a: [1, 2]"));
+    }
+    @Test
     public void testDistinctEmbeddedDocument() throws Exception {
         collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));
         collection.insertOne(json("_id:  2, a: {b: null}"));
