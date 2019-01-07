@@ -690,12 +690,12 @@ public class DefaultQueryMatcherTest {
         Document document2 = json("_id: 2, results: [{product: 'abc', score:  9}, {product: 'xyz', score: 7}]");
         Document document3 = json("_id: 3, results: [{product: 'abc', score:  7}, {product: 'xyz', score: 8}]");
 
-        Document query = map("results", elemMatch(json("product: 'xyz'").append("score", gte(8))));
+        Document query = json("results: {$elemMatch: {product: 'xyz', score: {$gte: 8}}}");
         assertThat(matcher.matches(document1, query)).isFalse();
         assertThat(matcher.matches(document2, query)).isFalse();
         assertThat(matcher.matches(document3, query)).isTrue();
 
-        Document hasProductXyzElement = map("results", elemMatch(json("product: 'xyz'")));
+        Document hasProductXyzElement = json("results: {$elemMatch: {product: 'xyz'}}");
         assertThat(matcher.matches(document1, hasProductXyzElement)).isTrue();
         assertThat(matcher.matches(document2, hasProductXyzElement)).isTrue();
         assertThat(matcher.matches(document3, hasProductXyzElement)).isTrue();

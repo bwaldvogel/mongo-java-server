@@ -63,6 +63,7 @@ import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.bulk.BulkWriteUpsert;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -2097,15 +2098,36 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/41
     @Test
     public void testBulkUpsert() throws Exception {
-        List<ReplaceOneModel<Document>> models = new ArrayList<>();
-        models.add(new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 1"), new ReplaceOptions().upsert(true)));
-        models.add(new ReplaceOneModel<>(Filters.eq("_id", 2), json("_id: 2, a: 1"), new ReplaceOptions().upsert(true)));
+        List<ReplaceOneModel<Document>> models = Arrays.asList(
+            new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 1"), new ReplaceOptions().upsert(true)),
+            new ReplaceOneModel<>(Filters.eq("_id", 2), json("_id: 2, a: 1"), new ReplaceOptions().upsert(true))
+        );
 
         BulkWriteResult result = collection.bulkWrite(models, new BulkWriteOptions().ordered(false));
-        assertThat(result.getUpserts()).hasSize(2);
+        assertThat(result.getUpserts())
+            .extracting(BulkWriteUpsert::getId)
+            .containsExactly(new BsonInt32(1), new BsonInt32(2));
 
         assertThat(toArray(collection.find()))
             .containsExactlyInAnyOrder(json("_id: 1, a: 1"), json("_id: 2, a: 1"));
+
+        models = Arrays.asList(
+            new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 2"), new ReplaceOptions().upsert(true)),
+            new ReplaceOneModel<>(Filters.eq("_id", 3), json("_id: 3, a: 2"), new ReplaceOptions().upsert(true)),
+            new ReplaceOneModel<>(Filters.eq("_id", 2), json("_id: 2, a: 2"), new ReplaceOptions().upsert(true))
+        );
+
+        result = collection.bulkWrite(models, new BulkWriteOptions().ordered(false));
+        assertThat(result.getUpserts())
+            .extracting(BulkWriteUpsert::getId)
+            .containsExactly(new BsonInt32(3));
+
+        assertThat(toArray(collection.find()))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: 2"),
+                json("_id: 2, a: 2"),
+                json("_id: 3, a: 2")
+            );
     }
 
     @Test
@@ -2958,19 +2980,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
             )));
 
         List<Document> documents = toArray(collection.find(json("tags: {$all: ['appliance', 'school', 'book']}")));
-        assertThat(documents).hasSize(2);
-        assertThat(documents.get(0).get("_id")).isEqualTo(new ObjectId("5234cc89687ea597eabee675"));
-        assertThat(documents.get(1).get("_id")).isEqualTo(new ObjectId("5234cc8a687ea597eabee676"));
+        assertThat(documents)
+            .extracting(d -> d.get("_id"))
+            .containsExactly(new ObjectId("5234cc89687ea597eabee675"), new ObjectId("5234cc8a687ea597eabee676"));
     }
 
     @Test
     public void testMatchesElementQuery() throws Exception {
-        collection.insertOne(json("_id: 1, results: [ 82, 85, 88 ]"));
-        collection.insertOne(json("_id: 2, results: [ 75, 88, 89 ]"));
+        collection.insertOne(json("_id: 1, results: [82, 85, 88]"));
+        collection.insertOne(json("_id: 2, results: [75, 88, 89]"));
 
-        List<Document> results = toArray(collection.find(json("results: {$elemMatch: {$gte: 80, $lt: 85}}")));
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0)).isEqualTo(json("_id: 1, results: [82, 85, 88]"));
+        assertThat(toArray(collection.find(json("results: {$elemMatch: {$gte: 80, $lt: 85}}"))))
+            .containsExactly(
+                json("_id: 1, results: [82, 85, 88]")
+            );
     }
 
     @Test
@@ -3040,9 +3063,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 3, x: 4"));
 
         List<Document> documents = toArray(collection.find(json("x: {$mod: [2, 0 ]}, $comment: \"Find even values.\"")));
-        assertThat(documents).hasSize(2);
-        assertThat(documents.get(0).get("_id")).isEqualTo(1);
-        assertThat(documents.get(1).get("_id")).isEqualTo(3);
+        assertThat(documents).extracting(d -> d.get("_id")).containsExactly(1, 3);
     }
 
     @Test
