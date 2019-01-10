@@ -3015,6 +3015,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/42
+    @Test
+    public void testElemMatchWithExpression() throws Exception {
+        collection.insertOne(json("_id: 1, languages: [{key: 'C'}, {key: 'Java'}]"));
+        collection.insertOne(json("_id: 2, languages: [{key: 'Python'}]"));
+        collection.insertOne(json("_id: 3, languages: [{key: 'C++'}, {key: 'C'}]"));
+
+        assertThat(collection.find(json("languages: {$elemMatch: {$or: [{key: 'C'}, {key: 'C++'}]}}")))
+            .containsExactly(
+                json("_id: 1, languages: [{key: 'C'}, {key: 'Java'}]"),
+                json("_id: 3, languages: [{key: 'C++'}, {key: 'C'}]")
+            );
+
+        assertThat(collection.find(json("languages: {$elemMatch: {$and: [{key: 'Java'}, {key: {$ne: 'Python'}}]}}")))
+            .containsExactly(
+                json("_id: 1, languages: [{key: 'C'}, {key: 'Java'}]")
+            );
+
+        assertThat(collection.find(json("languages: {$elemMatch: {$nor: [{key: 'C'}, {key: 'C++'}, {key: 'Java'}]}}")))
+            .containsExactly(
+                json("_id: 2, languages: [{key: 'Python'}]")
+            );
+    }
+
     @Test
     public void testMatchesNullOrMissing() throws Exception {
         collection.insertOne(json("_id: 1, x: null"));

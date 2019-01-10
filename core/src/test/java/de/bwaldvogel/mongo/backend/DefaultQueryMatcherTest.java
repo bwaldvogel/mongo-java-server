@@ -702,6 +702,21 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchesElementWithQueryFilter() throws Exception {
+        Document document1 = json("a: [{v: 'X'}, {v: 'Y'}]");
+        Document document2 = json("a: [{v: 'Z'}]");
+
+        assertThat(matcher.matches(document1, json("a: {$elemMatch: {$or: [{v: 'X'}, {v: 'Y'}]}}"))).isTrue();
+        assertThat(matcher.matches(document2, json("a: {$elemMatch: {$or: [{v: 'X'}, {v: 'Y'}]}}"))).isFalse();
+
+        assertThat(matcher.matches(document1, json("a: {$elemMatch: {$and: [{v: 'Y'}, {v: {$ne: 'Z'}}]}}"))).isTrue();
+        assertThat(matcher.matches(document2, json("a: {$elemMatch: {$and: [{v: 'Y'}, {v: {$ne: 'Z'}}]}}"))).isFalse();
+
+        assertThat(matcher.matches(document1, json("a: {$elemMatch: {$nor: [{v: 'X'}, {v: 'Y'}]}}"))).isFalse();
+        assertThat(matcher.matches(document2, json("a: {$elemMatch: {$nor: [{v: 'X'}, {v: 'Y'}]}}"))).isTrue();
+    }
+
+    @Test
     public void testEmptyMatchesElementQuery() throws Exception {
         Document document = json("_id: 1, results: [{product: 'xyz', score: 5}]");
         assertThat(matcher.matches(document, map("results", elemMatch(json(""))))).isTrue();

@@ -374,6 +374,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     private boolean checkExpressionMatch(Object value, Object expressionValue, String operator) {
 
+        if (QueryFilter.isQueryFilter(operator)) {
+            QueryFilter filter = QueryFilter.fromValue(operator);
+            return checkMatch(expressionValue, filter, value);
+        }
+
         QueryOperator queryOperator = QueryOperator.fromValue(operator);
 
         switch (queryOperator) {
