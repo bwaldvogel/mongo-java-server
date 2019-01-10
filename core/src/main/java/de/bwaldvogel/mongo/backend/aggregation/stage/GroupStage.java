@@ -42,7 +42,7 @@ public class GroupStage implements AggregationStage {
 
     @Override
     public Stream<Document> apply(Stream<Document> stream) {
-        Map<Object, Collection<Accumulator>> accumulatorsPerKey = new TreeMap<>(new ValueComparator());
+        Map<Object, Collection<Accumulator>> accumulatorsPerKey = new TreeMap<>(ValueComparator.asc());
         stream.forEach(document -> {
             Object key = Expression.evaluateDocument(idExpression, document);
 

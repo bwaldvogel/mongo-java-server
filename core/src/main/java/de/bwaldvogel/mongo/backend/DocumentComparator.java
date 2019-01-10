@@ -6,7 +6,6 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public class DocumentComparator implements Comparator<Document> {
 
-    private ValueComparator valueComparator = new ValueComparator();
     private Document orderBy;
 
     public DocumentComparator(Document orderBy) {
@@ -21,11 +20,15 @@ public class DocumentComparator implements Comparator<Document> {
         for (String sortKey : orderBy.keySet()) {
             Object value1 = Utils.getSubdocumentValue(document1, sortKey);
             Object value2 = Utils.getSubdocumentValue(document2, sortKey);
-            int cmp = valueComparator.compare(value1, value2);
+
+            final ValueComparator comparator;
+            if (((Number) orderBy.get(sortKey)).intValue() > 0) {
+                comparator = ValueComparator.asc();
+            } else {
+                comparator = ValueComparator.desc();
+            }
+            int cmp = comparator.compare(value1, value2);
             if (cmp != 0) {
-                if (((Number) orderBy.get(sortKey)).intValue() < 0) {
-                    cmp = -cmp;
-                }
                 return cmp;
             }
         }

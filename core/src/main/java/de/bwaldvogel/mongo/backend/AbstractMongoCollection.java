@@ -6,7 +6,6 @@ import static de.bwaldvogel.mongo.backend.Utils.describeType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -301,27 +300,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         case MIN:
         case MAX:
-            Comparator<Object> comparator = new ValueComparator();
             for (String key : change.keySet()) {
                 assertNotKeyField(key);
 
                 Object newValue = change.get(key);
                 Object oldValue = getSubdocumentValue(document, key, matchPos);
 
-                int valueComparison = comparator.compare(newValue, oldValue);
-
-                final boolean shouldChange;
-                if (oldValue instanceof Missing) {
-                    shouldChange = true;
-                } else if (op == UpdateOperator.MAX) {
-                    shouldChange = valueComparison > 0;
-                } else if (op == UpdateOperator.MIN) {
-                    shouldChange = valueComparison < 0;
-                } else {
-                    throw new RuntimeException();
-                }
-
-                if (shouldChange) {
+                if (shouldChangeValue(op, oldValue, newValue)) {
                     Utils.changeSubdocumentValue(document, key, newValue, matchPos);
                 }
             }
@@ -394,6 +379,31 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         default:
             throw new MongoServerError(10147, "Unsupported modifier: " + modifier);
         }
+    }
+
+    private boolean shouldChangeValue(UpdateOperator op, Object oldValue, Object newValue) {
+        if (oldValue instanceof Missing) {
+            return true;
+        }
+
+        int typeComparison = ValueComparator.compareTypes(newValue, oldValue);
+        if (typeComparison != 0) {
+            if (op == UpdateOperator.MAX) {
+                return typeComparison > 0;
+            } else {
+                return typeComparison < 0;
+            }
+        }
+
+        final ValueComparator valueComparator;
+        if (op == UpdateOperator.MIN) {
+            valueComparator = ValueComparator.asc();
+        } else {
+            valueComparator = ValueComparator.desc();
+        }
+
+        int valueComparison = valueComparator.compare(newValue, oldValue);
+        return valueComparison < 0;
     }
 
     private UpdateOperator getUpdateOperator(String modifier, Document change) {

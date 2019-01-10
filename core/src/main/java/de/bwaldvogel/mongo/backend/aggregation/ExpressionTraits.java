@@ -46,7 +46,7 @@ interface ExpressionTraits {
 
     default int evaluateComparison(List<?> expressionValue) {
         TwoParameters parameters = requireTwoParameters(expressionValue);
-        return new ValueComparator().compare(parameters.getFirst(), parameters.getSecond());
+        return ValueComparator.asc().compare(parameters.getFirst(), parameters.getSecond());
     }
 
     default boolean evaluateComparison(List<?> expressionValue, IntPredicate comparison) {

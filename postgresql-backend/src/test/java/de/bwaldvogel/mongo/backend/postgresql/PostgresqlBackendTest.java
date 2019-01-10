@@ -84,6 +84,18 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     @Override
+    public void testSortDocuments() throws Exception {
+        assumeStrictTests();
+        super.testSortDocuments();
+    }
+
+    @Override
+    public void testFindAndOrderByWithListValues() throws Exception {
+        assumeStrictTests();
+        super.testFindAndOrderByWithListValues();
+    }
+
+    @Override
     public void testSort() {
         assumeStrictTests();
         super.testSort();

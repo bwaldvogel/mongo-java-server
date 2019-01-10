@@ -1316,6 +1316,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testSortDocuments() throws Exception {
+        collection.insertOne(json("_id: 1, a: {b: 1}"));
+        collection.insertOne(json("_id: 2, a: {b: 2}"));
+        collection.insertOne(json("_id: 3, a: 3"));
+        collection.insertOne(json("_id: 4, a: {c: 1}"));
+
+        assertThat(toArray(collection.find().sort(json("a: 1"))))
+            .containsExactly(
+                json("_id: 3, a: 3"),
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 2, a: {b: 2}"),
+                json("_id: 4, a: {c: 1}")
+            );
+
+        assertThat(toArray(collection.find().sort(json("a: -1"))))
+            .containsExactly(
+                json("_id: 4, a: {c: 1}"),
+                json("_id: 2, a: {b: 2}"),
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 3, a: 3")
+            );
+    }
+
+    @Test
     public void testSort() {
         collection.insertOne(json("_id: 1, a: null"));
         collection.insertOne(json("_id: 2, a: 1"));
@@ -1779,6 +1803,37 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(object, json("$min: {'foo.bar': 'a'}"));
         assertThat(collection.find(object).first()).isEqualTo(json("_id: 1, foo : {bar : null}"));
+    }
+
+    @Test
+    public void testUpdateMinMaxWithLists() throws Exception {
+        collection.insertOne(json("_id: 1, a: [1, 2], b: [3, 4]"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3, a: null, b: null"));
+        collection.insertOne(json("_id: 4, a: 'abc', b: 'xyz'"));
+        collection.insertOne(json("_id: 5, a: 1, b: 2"));
+
+        collection.updateMany(json(""), json("$min: {a: [2, 3], b: [1, 2]}"));
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: [1, 2], b: [1, 2]"),
+                json("_id: 2, a: [2, 3], b: [1, 2]"),
+                json("_id: 3, a: null, b: null"),
+                json("_id: 4, a: 'abc', b: 'xyz'"),
+                json("_id: 5, a: 1, b: 2")
+            );
+
+        collection.updateMany(json(""), json("$max: {a: [1, 3], b: [2, 3]}"));
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: [1, 3], b: [2, 3]"),
+                json("_id: 2, a: [2, 3], b: [2, 3]"),
+                json("_id: 3, a: [1, 3], b: [2, 3]"),
+                json("_id: 4, a: [1, 3], b: [2, 3]"),
+                json("_id: 5, a: [1, 3], b: [2, 3]")
+            );
     }
 
     // see http://docs.mongodb.org/manual/reference/operator/update/max
@@ -3358,6 +3413,87 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(toArray(collection.find(json("a: [1, 2]"))))
             .containsExactly(json("_id: 3, a: [1, 2]"));
     }
+
+    @Test
+    public void testFindAndOrderByWithListValues() throws Exception {
+        collection.insertOne(json("_id:  1, a: []"));
+        collection.insertOne(json("_id:  2, a: null"));
+        collection.insertOne(json("_id:  3, a: [2, 1]"));
+        collection.insertOne(json("_id:  4, a: [2, 1.0]"));
+        collection.insertOne(json("_id:  5, a: [1, 2]"));
+        collection.insertOne(json("_id:  6, a: [1, 2, 3]"));
+        collection.insertOne(json("_id:  7, a: [3, 2]"));
+        collection.insertOne(json("_id:  8, a: [2, 3]"));
+        collection.insertOne(json("_id:  9, a: [3]"));
+        collection.insertOne(json("_id: 10, a: [3, 2]"));
+        collection.insertOne(json("_id: 11, a: [null, 1, 2]"));
+        collection.insertOne(json("_id: 12, a: [1, 'abc', 2]"));
+        collection.insertOne(json("_id: 13"));
+        collection.insertOne(json("_id: 14, a: 'xyz'"));
+        collection.insertOne(json("_id: 15, a: {b: 5}"));
+        collection.insertOne(json("_id: 16, a: 1"));
+
+        assertThat(toArray(collection.find(json("")).sort(json("a: 1, _id: -1"))))
+            .containsExactly(
+                json("_id:  1, a: []"),
+                json("_id: 13"),
+                json("_id: 11, a: [null, 1, 2]"),
+                json("_id:  2, a: null"),
+                json("_id: 16, a: 1"),
+                json("_id: 12, a: [1, 'abc', 2]"),
+                json("_id:  6, a: [1, 2, 3]"),
+                json("_id:  5, a: [1, 2]"),
+                json("_id:  4, a: [2, 1.0]"),
+                json("_id:  3, a: [2, 1]"),
+                json("_id: 10, a: [3, 2]"),
+                json("_id:  8, a: [2, 3]"),
+                json("_id:  7, a: [3, 2]"),
+                json("_id:  9, a: [3]"),
+                json("_id: 14, a: 'xyz'"),
+                json("_id: 15, a: {b: 5}")
+            );
+
+        assertThat(toArray(collection.find(json("")).sort(json("a: 1, _id: 1"))))
+            .containsExactly(
+                json("_id:  1, a: []"),
+                json("_id:  2, a: null"),
+                json("_id: 11, a: [null, 1, 2]"),
+                json("_id: 13"),
+                json("_id:  3, a: [2, 1]"),
+                json("_id:  4, a: [2, 1.0]"),
+                json("_id:  5, a: [1, 2]"),
+                json("_id:  6, a: [1, 2, 3]"),
+                json("_id: 12, a: [1, 'abc', 2]"),
+                json("_id: 16, a: 1"),
+                json("_id:  7, a: [3, 2]"),
+                json("_id:  8, a: [2, 3]"),
+                json("_id: 10, a: [3, 2]"),
+                json("_id:  9, a: [3]"),
+                json("_id: 14, a: 'xyz'"),
+                json("_id: 15, a: {b: 5}")
+            );
+
+        assertThat(toArray(collection.find(json("")).sort(json("a: -1, _id: -1"))))
+            .containsExactly(
+                json("_id: 15, a: {b: 5}"),
+                json("_id: 14, a: 'xyz'"),
+                json("_id: 12, a: [1, 'abc', 2]"),
+                json("_id: 10, a: [3, 2]"),
+                json("_id:  9, a: [3]"),
+                json("_id:  8, a: [2, 3]"),
+                json("_id:  7, a: [3, 2]"),
+                json("_id:  6, a: [1, 2, 3]"),
+                json("_id: 11, a: [null, 1, 2]"),
+                json("_id:  5, a: [1, 2]"),
+                json("_id:  4, a: [2, 1.0]"),
+                json("_id:  3, a: [2, 1]"),
+                json("_id: 16, a: 1"),
+                json("_id: 13"),
+                json("_id:  2, a: null"),
+                json("_id:  1, a: []")
+            );
+    }
+
     @Test
     public void testDistinctEmbeddedDocument() throws Exception {
         collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));

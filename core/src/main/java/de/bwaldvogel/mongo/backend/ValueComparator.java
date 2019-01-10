@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -12,6 +13,25 @@ import de.bwaldvogel.mongo.bson.ObjectId;
 public class ValueComparator implements Comparator<Object> {
 
     private static final List<Class<?>> SORT_PRIORITY = new ArrayList<>();
+
+    private static final ValueComparator ASCENDING = new ValueComparator(true);
+    private static final ValueComparator DESCENDING = new ValueComparator(false);
+    private static final ValueComparator ASCENDING_NO_LIST_HANDLING = new ValueComparator(true, false);
+
+    private final boolean ascending;
+    private final boolean handleLists;
+
+    public static ValueComparator asc() {
+        return ASCENDING;
+    }
+
+    static ValueComparator ascWithoutListHandling() {
+        return ASCENDING_NO_LIST_HANDLING;
+    }
+
+    public static ValueComparator desc() {
+        return DESCENDING;
+    }
 
     static {
         /*
@@ -28,7 +48,21 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(BsonRegularExpression.class);
     }
 
-    private static int compareTypes(Object value1, Object value2) {
+    private ValueComparator(boolean ascending) {
+        this(ascending, true);
+    }
+
+    private ValueComparator(boolean ascending, boolean handleLists) {
+        this.ascending = ascending;
+        this.handleLists = handleLists;
+    }
+
+    @Override
+    public ValueComparator reversed() {
+        return ascending ? desc() : asc();
+    }
+
+    public static int compareTypes(Object value1, Object value2) {
         if (Missing.isNullOrMissing(value1) && Missing.isNullOrMissing(value2)) {
             return 0;
         } else if (Missing.isNullOrMissing(value1)) {
@@ -43,13 +77,22 @@ public class ValueComparator implements Comparator<Object> {
     }
 
     @Override
-    public int compare(Object value1, Object value2) {
-        return compareValues(value1, value2);
+    public int compare(Object o1, Object o2) {
+        int cmp = doCompare(o1, o2);
+        return ascending ? cmp : -cmp;
     }
 
-    static int compareValues(Object value1, Object value2) {
+    private static int compareAsc(Object value1, Object value2) {
+        return asc().compare(value1, value2);
+    }
+
+    private int doCompare(Object value1, Object value2) {
         if (value1 == value2) {
             return 0;
+        }
+
+        if (handleLists && (value1 instanceof Collection || value2 instanceof Collection)) {
+            return compareLists(value1, value2);
         }
 
         if (Missing.isNullOrMissing(value1) && Missing.isNullOrMissing(value2)) {
@@ -89,6 +132,10 @@ public class ValueComparator implements Comparator<Object> {
             return (!b1 && b2) ? -1 : (b1 && !b2) ? +1 : 0;
         }
 
+        if (List.class.isAssignableFrom(clazz)) {
+            return compareListsForEquality((Collection<?>) value1, (Collection<?>) value2);
+        }
+
         // lexicographic byte comparison 0x00 < 0xFF
         if (clazz.isArray()) {
             Class<?> componentType = clazz.getComponentType();
@@ -114,7 +161,57 @@ public class ValueComparator implements Comparator<Object> {
         throw new UnsupportedOperationException("can't compare " + clazz);
     }
 
-    private static int compareDocuments(Document document1, Document document2) {
+    private int compareListsForEquality(Collection<?> value1, Collection<?> value2) {
+        if (handleLists) {
+            throw new IllegalStateException("Unexpected state");
+        }
+
+        List<?> collection1 = new ArrayList<>(value1);
+        List<?> collection2 = new ArrayList<>(value2);
+
+        for (int i = 0; i < Math.max(collection1.size(), collection2.size()); i++) {
+            Object v1 = i >= collection1.size() ? Missing.getInstance() : collection1.get(i);
+            Object v2 = i >= collection2.size() ? Missing.getInstance() : collection2.get(i);
+            int cmp = compare(v1, v2);
+            if (cmp != 0) {
+                return cmp;
+            }
+        }
+        return 0;
+    }
+
+    private static boolean isEmptyList(Object value1) {
+        return value1 instanceof Collection && ((Collection<?>) value1).isEmpty();
+    }
+
+    private int compareLists(Object value1, Object value2) {
+        Object valueForComparison1 = getListValueForComparison(value1);
+        Object valueForComparison2 = getListValueForComparison(value2);
+
+        if (isEmptyList(value1) && Missing.isNullOrMissing(valueForComparison2)) {
+            return -1;
+        }
+        if (isEmptyList(value2) && Missing.isNullOrMissing(valueForComparison1)) {
+            return 1;
+        }
+
+        return compareAsc(valueForComparison1, valueForComparison2);
+    }
+
+    private Object getListValueForComparison(Object value) {
+        if (value instanceof Collection) {
+            List<Object> values = new ArrayList<> ((Collection<Object>) value);
+            if (values.isEmpty()) {
+                return Missing.getInstance();
+            }
+            values.sort(this);
+            return values.get(0);
+        } else {
+            return value;
+        }
+    }
+
+    private int compareDocuments(Document document1, Document document2) {
         List<String> keys1 = new ArrayList<>(document1.keySet());
         List<String> keys2 = new ArrayList<>(document2.keySet());
         for (int i = 0; i < Math.max(keys1.size(), keys2.size()); i++) {
@@ -129,12 +226,12 @@ public class ValueComparator implements Comparator<Object> {
                 return typeComparison;
             }
 
-            int keyComparison = compareValues(key1, key2);
+            int keyComparison = compareAsc(key1, key2);
             if (keyComparison != 0) {
                 return keyComparison;
             }
 
-            int valueComparison = compareValues(value1, value2);
+            int valueComparison = compareAsc(value1, value2);
             if (valueComparison != 0) {
                 return valueComparison;
             }

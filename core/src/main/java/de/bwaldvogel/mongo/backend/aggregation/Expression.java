@@ -874,7 +874,7 @@ public enum Expression implements ExpressionTraits {
     $setUnion {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            Set<Object> result = new TreeSet<>(new ValueComparator());
+            Set<Object> result = new TreeSet<>(ValueComparator.asc());
             for (Object value : expressionValue) {
                 if (isNullOrMissing(value)) {
                     return null;

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -114,6 +115,21 @@ public class LinkedTreeSetTest {
         assertThat(set).isEmpty();
 
         assertThat(iterator.hasNext()).isFalse();
+    }
+
+    @Test
+    public void testListValues() throws Exception {
+        Set<Object> set = new LinkedTreeSet<>();
+        assertThat(set.add(Arrays.asList(1, 2, 3))).isTrue();
+        assertThat(set.add(Arrays.asList(2, 3))).isTrue();
+        assertThat(set.add(Collections.singletonList(1))).isTrue();
+
+        assertThat(set).hasSize(3);
+
+        assertThat(set.remove(Arrays.asList(1, 2))).isFalse();
+        assertThat(set.remove(Arrays.asList(1, 2, 3.0))).isTrue();
+
+        assertThat(set).containsExactlyInAnyOrder(Arrays.asList(2, 3), Arrays.asList(1));
     }
 
     @Test

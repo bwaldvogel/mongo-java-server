@@ -10,7 +10,7 @@ import java.util.TreeSet;
 
 public class LinkedTreeSet<E> extends AbstractSet<E> {
 
-    private final Set<E> elements = new TreeSet<>(new ValueComparator());
+    private final Set<E> elements = new TreeSet<>(ValueComparator.ascWithoutListHandling());
     private final List<E> orderedElements = new ArrayList<>();
 
     public LinkedTreeSet() {
@@ -60,7 +60,7 @@ public class LinkedTreeSet<E> extends AbstractSet<E> {
     }
 
     private void removeFromOrderedElements(Object o) {
-        orderedElements.removeIf(value -> ValueComparator.compareValues(value, o) == 0);
+        orderedElements.removeIf(value -> Utils.nullAwareEquals(value, o));
     }
 
     @Override

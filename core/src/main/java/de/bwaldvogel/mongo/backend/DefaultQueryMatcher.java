@@ -21,7 +21,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultQueryMatcher.class);
 
-    private ValueComparator comparator = new ValueComparator();
     private Integer lastPosition;
 
     @Override
@@ -411,22 +410,22 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 if (!comparableTypes(value, expressionValue)) {
                     return false;
                 }
-                return comparator.compare(value, expressionValue) > 0;
+                return ValueComparator.desc().compare(value, expressionValue) < 0;
             case GREATER_THAN_OR_EQUAL:
                 if (!comparableTypes(value, expressionValue)) {
                     return false;
                 }
-                return comparator.compare(value, expressionValue) >= 0;
+                return ValueComparator.desc().compare(value, expressionValue) <= 0;
             case LESS_THAN:
                 if (!comparableTypes(value, expressionValue)) {
                     return false;
                 }
-                return comparator.compare(value, expressionValue) < 0;
+                return ValueComparator.asc().compare(value, expressionValue) < 0;
             case LESS_THAN_OR_EQUAL:
                 if (!comparableTypes(value, expressionValue)) {
                     return false;
                 }
-                return comparator.compare(value, expressionValue) <= 0;
+                return ValueComparator.asc().compare(value, expressionValue) <= 0;
             case MOD: {
                 if (!(value instanceof Number)) {
                     return false;
