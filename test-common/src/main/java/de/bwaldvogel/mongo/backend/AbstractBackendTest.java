@@ -1317,32 +1317,41 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testSort() {
-        collection.insertOne(json("a: null, _id: 1"));
-        collection.insertOne(json("a: 1, _id: 2"));
-        collection.insertOne(json("a: 2, _id: 3"));
+        collection.insertOne(json("_id: 1, a: null"));
+        collection.insertOne(json("_id: 2, a: 1"));
+        collection.insertOne(json("_id: 3, a: 2"));
         collection.insertOne(json("_id: 4"));
-        collection.insertOne(json("a: 3, _id: 5"));
-        collection.insertOne(json("a: 4, _id: 6"));
+        collection.insertOne(json("_id: 5, a: 3"));
+        collection.insertOne(json("_id: 6, a: 4"));
+        collection.insertOne(json("_id: 7, a: 'abc'"));
+        collection.insertOne(json("_id: 8, a: 'zzz'"));
+        collection.insertOne(json("_id: 9, a: 1.0"));
 
-        List<Document> ascending = toArray(collection.find().sort(json("a: 1")));
-        assertThat(ascending).containsExactly(
-            json("a: null, _id: 1"),
-            json("_id: 4"),
-            json("a: 1, _id: 2"),
-            json("a: 2, _id: 3"),
-            json("a: 3, _id: 5"),
-            json("a: 4, _id: 6")
-        );
+        assertThat(toArray(collection.find().sort(json("a: 1, _id: 1"))))
+            .containsExactly(
+                json("_id: 1, a: null"),
+                json("_id: 4"),
+                json("_id: 2, a: 1"),
+                json("_id: 9, a: 1.0"),
+                json("_id: 3, a: 2"),
+                json("_id: 5, a: 3"),
+                json("_id: 6, a: 4"),
+                json("_id: 7, a: 'abc'"),
+                json("_id: 8, a: 'zzz'")
+            );
 
-        List<Document> descending = toArray(collection.find().sort(json("a: -1")));
-        assertThat(descending).containsExactly(
-            json("a: 4, _id: 6"),
-            json("a: 3, _id: 5"),
-            json("a: 2, _id: 3"),
-            json("a: 1, _id: 2"),
-            json("a: null, _id: 1"),
-            json("_id: 4")
-        );
+        assertThat(toArray(collection.find().sort(json("a: -1, _id: 1"))))
+            .containsExactly(
+                json("_id: 8, a: 'zzz'"),
+                json("_id: 7, a: 'abc'"),
+                json("_id: 6, a: 4"),
+                json("_id: 5, a: 3"),
+                json("_id: 3, a: 2"),
+                json("_id: 2, a: 1"),
+                json("_id: 9, a: 1.0"),
+                json("_id: 1, a: null"),
+                json("_id: 4")
+            );
     }
 
     @Test

@@ -83,6 +83,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testOrderByMissingAndNull();
     }
 
+    @Override
+    public void testSort() {
+        assumeStrictTests();
+        super.testSort();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
