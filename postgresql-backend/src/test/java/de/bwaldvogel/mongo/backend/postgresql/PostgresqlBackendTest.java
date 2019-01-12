@@ -5,7 +5,9 @@ import java.util.Arrays;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
-import org.postgresql.jdbc3.Jdbc3PoolingDataSource;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
@@ -13,17 +15,18 @@ import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 
 public class PostgresqlBackendTest extends AbstractBackendTest {
 
-    private static Jdbc3PoolingDataSource dataSource;
+    private static HikariDataSource dataSource;
 
     @BeforeClass
     public static void initializeDataSource() {
-        dataSource = new Jdbc3PoolingDataSource();
-        dataSource.setDataSourceName(PostgresqlBackendTest.class.getSimpleName());
-        dataSource.setApplicationName(PostgresqlBackendTest.class.getSimpleName());
-        dataSource.setDatabaseName("mongo-java-server-test");
-        dataSource.setUser("mongo-java-server-test");
-        dataSource.setPassword("mongo-java-server-test");
-        dataSource.setMaxConnections(5);
+        HikariConfig config = new HikariConfig();
+
+        config.setJdbcUrl("jdbc:postgresql://localhost/mongo-java-server-test");
+        config.setUsername("mongo-java-server-test");
+        config.setPassword("mongo-java-server-test");
+        config.setMaximumPoolSize(5);
+
+        dataSource = new HikariDataSource(config);
     }
 
     @AfterClass
