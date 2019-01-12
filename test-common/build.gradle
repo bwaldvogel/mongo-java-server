@@ -1,17 +1,17 @@
 dependencies {
     api project(':mongo-java-server-core')
-    api group: 'org.mongodb', name: 'mongo-java-driver', version: mongoJavaDriverVersion
-    api group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: mongoJavaDriverReactiveStreamsVersion
+    api group: 'org.mongodb', name: 'mongo-java-driver', version: 'latest.release'
+    api group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: 'latest.release'
 
-    api "org.springframework:spring-core:${springVersion}"
-    api "org.springframework:spring-beans:${springVersion}"
-    api "org.springframework:spring-context:${springVersion}"
-    api "org.springframework:spring-test:${springVersion}"
-    api "org.springframework.data:spring-data-mongodb:${springDataMongoDbVersion}"
+    api "org.springframework:spring-core:latest.release"
+    api "org.springframework:spring-beans:latest.release"
+    api "org.springframework:spring-context:latest.release"
+    api "org.springframework:spring-test:latest.release"
+    api "org.springframework.data:spring-data-mongodb:latest.release"
 
-    api group: 'junit', name: 'junit', version: junitVersion
-    api group: 'org.assertj', name: 'assertj-core', version: assertjVersion
-    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
+    api group: 'junit', name: 'junit', version: 'latest.release'
+    api group: 'org.assertj', name: 'assertj-core', version: 'latest.release'
+    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
 
-    testImplementation group: 'de.flapdoodle.embed', name: 'de.flapdoodle.embed.mongo', version: flapdoodleVersion
+    testImplementation group: 'de.flapdoodle.embed', name: 'de.flapdoodle.embed.mongo', version: 'latest.release'
 }

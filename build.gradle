@@ -22,35 +22,26 @@ allprojects {
 
     compileJava.options.encoding = 'UTF-8'
 
-    ext {
-        nettyVersion = '4.1.31.Final'
-        mongoJavaDriverVersion = '3.9.0'
-        mongoJavaDriverReactiveStreamsVersion = '1.10.0'
-        h2Version = '1.4.197'
-        springVersion = '5.1.2.RELEASE'
-        springDataMongoDbVersion = '2.1.2.RELEASE'
-        slf4jVersion = '1.7.25'
-        jacksonVersion = '2.9.7'
-        junitVersion = '4.12'
-        assertjVersion = '3.11.1'
-        logbackVersion = '1.2.3'
-        postgresDriverVersion = '42.2.5'
-        mockitoVersion = '2.23.0'
-        equalsVerifierVersion = '3.0.2'
-        flapdoodleVersion = '2.2.0'
-    }
-
     repositories {
         mavenCentral()
     }
 
     dependencies {
-        implementation group: 'org.slf4j', name: 'slf4j-api', version: slf4jVersion
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.release'
 
-        testImplementation group: 'junit', name: 'junit', version: junitVersion
-        testImplementation group: 'org.assertj', name: 'assertj-core', version: assertjVersion
-        testRuntimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: logbackVersion
-        testRuntimeOnly group: 'org.slf4j', name: 'jcl-over-slf4j', version: slf4jVersion
+        testImplementation group: 'junit', name: 'junit', version: 'latest.release'
+        testImplementation group: 'org.assertj', name: 'assertj-core', version: 'latest.release'
+        testRuntimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
+        testRuntimeOnly group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.release'
+
+        components.all { ComponentMetadataDetails details ->
+            details.statusScheme = ['candidate', 'release']
+            if (details.id.version =~ /(?i).+(-|\.)(CANDIDATE|RC|BETA|ALPHA).*/) {
+                details.status = 'candidate'
+            } else {
+                details.status = 'release'
+            }
+        }
     }
 
     test {

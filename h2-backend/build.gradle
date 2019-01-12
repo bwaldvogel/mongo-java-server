@@ -1,7 +1,7 @@
 dependencies {
     api project(':mongo-java-server-core')
 
-    api group: 'com.h2database', name: 'h2', version: h2Version
+    api group: 'com.h2database', name: 'h2', version: 'latest.release'
 
     testImplementation project(':mongo-java-server-test-common')
 }

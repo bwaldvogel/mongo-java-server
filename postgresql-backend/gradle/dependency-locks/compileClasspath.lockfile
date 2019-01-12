@@ -2,6 +2,6 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 com.fasterxml.jackson.core:jackson-annotations:2.9.0
-com.fasterxml.jackson.core:jackson-core:2.9.7
-com.fasterxml.jackson.core:jackson-databind:2.9.7
+com.fasterxml.jackson.core:jackson-core:2.9.8
+com.fasterxml.jackson.core:jackson-databind:2.9.8
 org.slf4j:slf4j-api:1.7.25
