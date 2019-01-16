@@ -25,7 +25,7 @@ public class ValueComparator implements Comparator<Object> {
         return ASCENDING;
     }
 
-    static ValueComparator ascWithoutListHandling() {
+    public static ValueComparator ascWithoutListHandling() {
         return ASCENDING_NO_LIST_HANDLING;
     }
 

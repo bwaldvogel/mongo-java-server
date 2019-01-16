@@ -592,6 +592,59 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithComparisonOperations() throws Exception {
+        collection.insertOne(json("_id: 1, v: 'abc'"));
+        collection.insertOne(json("_id: 2, v: null"));
+        collection.insertOne(json("_id: 3, v: 10"));
+        collection.insertOne(json("_id: 4, v: [10, 20, 30]"));
+        collection.insertOne(json("_id: 5, v: ['abc']"));
+        collection.insertOne(json("_id: 6, v: [30, 40]"));
+        collection.insertOne(json("_id: 7, v: [5]"));
+
+        Document project = json("$project: {cmp1: {$cmp: ['$v', 10]}, cmp2: {$cmp: ['$v', [10]]}}");
+        List<Document> pipeline = Collections.singletonList(project);
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, cmp1:  1, cmp2: -1"),
+                json("_id: 2, cmp1: -1, cmp2: -1"),
+                json("_id: 3, cmp1:  0, cmp2: -1"),
+                json("_id: 4, cmp1:  1, cmp2:  1"),
+                json("_id: 5, cmp1:  1, cmp2:  1"),
+                json("_id: 6, cmp1:  1, cmp2:  1"),
+                json("_id: 7, cmp1:  1, cmp2: -1")
+            );
+
+        project = json("$project: {gt1: {$gt: ['$v', 10]}, gt2: {$gt: ['$v', [10]]}}");
+        pipeline = Collections.singletonList(project);
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, gt1: true, gt2: false"),
+                json("_id: 2, gt1: false, gt2: false"),
+                json("_id: 3, gt1: false, gt2: false"),
+                json("_id: 4, gt1: true, gt2: true"),
+                json("_id: 5, gt1: true, gt2: true"),
+                json("_id: 6, gt1: true, gt2: true"),
+                json("_id: 7, gt1: true, gt2: false")
+            );
+
+        project = json("$project: {lt1: {$lt: ['$v', 10]}, lt2: {$lt: ['$v', [10]]}}");
+        pipeline = Collections.singletonList(project);
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, lt1: false, lt2: true"),
+                json("_id: 2, lt1: true, lt2: true"),
+                json("_id: 3, lt1: false, lt2: true"),
+                json("_id: 4, lt1: false, lt2: false"),
+                json("_id: 5, lt1: false, lt2: false"),
+                json("_id: 6, lt1: false, lt2: false"),
+                json("_id: 7, lt1: false, lt2: true")
+            );
+    }
+
+    @Test
     public void testAggregateWithSplit() throws Exception {
         Document project = json("$project: {_id: 1, names: {$split: ['$name', ' ']}}");
         List<Document> pipeline = Collections.singletonList(project);
