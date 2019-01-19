@@ -4,8 +4,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +30,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     public boolean matches(Document document, Document query) {
         for (String key : query.keySet()) {
             Object queryValue = query.get(key);
-            validateQueryValue(queryValue);
+            validateQueryValue(queryValue, key);
             if (!checkMatch(queryValue, key, document)) {
                 return false;
             }
@@ -36,7 +39,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return true;
     }
 
-    private void validateQueryValue(Object queryValue) {
+    private void validateQueryValue(Object queryValue, String key) {
         if (!(queryValue instanceof Document)) {
             return;
         }
@@ -49,7 +52,16 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 if (Constants.REFERENCE_KEYS.contains(operator)) {
                     continue;
                 }
-                QueryOperator.fromValue(operator);
+                QueryOperator queryOperator = QueryOperator.fromValue(operator);
+                if (queryOperator == QueryOperator.TYPE) {
+                    Object value = queryObject.get(operator);
+                    if (value instanceof Collection) {
+                        Collection<?> values = (Collection<?>) value;
+                        if (values.isEmpty()) {
+                            throw new MongoServerError(9, key + " must match at least one type");
+                        }
+                    }
+                }
             }
         }
     }
@@ -448,10 +460,36 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
             case ALL:
                 return false;
-
+            case TYPE:
+                return matchTypes(value, expressionValue);
             default:
                 throw new IllegalArgumentException("unhandled query operator: " + queryOperator);
         }
+    }
+
+    static boolean matchTypes(Object value, Object expressionValue) {
+        if (Objects.equals(expressionValue, "number")) {
+            List<String> types = Stream.of(BsonType.INT, BsonType.LONG, BsonType.DOUBLE).map(BsonType::getAlias).collect(Collectors.toList());
+            return matchTypes(value, types);
+        } else if (expressionValue instanceof String) {
+            return matchTypes(value, BsonType.forString((String) expressionValue));
+        } else if (expressionValue instanceof Number) {
+            return matchTypes(value, BsonType.forNumber((Number) expressionValue));
+        } else if (expressionValue instanceof Collection) {
+            Collection<?> values = (Collection<?>) expressionValue;
+            for (Object type : values) {
+                if (matchTypes(value, type)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            throw new MongoServerError(14, "type must be represented as a number or a string");
+        }
+    }
+
+    private static boolean matchTypes(Object value, BsonType type) {
+        return type.matches(value);
     }
 
     private boolean comparableTypes(Object value1, Object value2) {

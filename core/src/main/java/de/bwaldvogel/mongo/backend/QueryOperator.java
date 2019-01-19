@@ -21,6 +21,7 @@ enum QueryOperator {
     SIZE("$size"), //
     ALL("$all"), //
     ELEM_MATCH("$elemMatch"), //
+    TYPE("$type"), //
     ;
 
     private String value;

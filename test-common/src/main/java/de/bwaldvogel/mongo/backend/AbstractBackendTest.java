@@ -464,6 +464,44 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testTypeMatching() throws Exception {
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 'abc'"));
+        collection.insertOne(json("a: {b: {c: 123}}"));
+
+        assertThat(toArray(collection.find(json("_id: {$type: 2.0}"))))
+            .containsExactly(json("_id: 'abc'"));
+
+        assertThat(toArray(collection.find(json("_id: {$type: [16, 'string']}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1"),
+                json("_id: 'abc'")
+            );
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("n: {$type: []}")).first())
+            .withMessageContaining("Query failed with error code 9 and error message 'n must match at least one type'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("'a.b.c': {$type: []}")).first())
+            .withMessageContaining("Query failed with error code 9 and error message 'a.b.c must match at least one type'");
+
+        assertThat(toArray(collection.find(json("a: {b: {$type: []}}")))).isEmpty();
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("n: {$type: 'abc'}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message 'Unknown type name alias: abc'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("n: {$type: null}")).first())
+            .withMessageContaining("Query failed with error code 14 and error message 'type must be represented as a number or a string'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: {$type: 16.3}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message 'Invalid numerical type code: 16.3'");
+    }
+
+    @Test
     public void testDistinctQueryWithDot() {
         collection.insertOne(json("a: {b: 1}"));
         collection.insertOne(json("a: {b: 1}"));

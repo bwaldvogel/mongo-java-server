@@ -23,11 +23,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.MaxKey;
+import de.bwaldvogel.mongo.bson.MinKey;
+import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class DefaultQueryMatcherTest {
@@ -747,6 +755,56 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("v: -0.0"), json("v: 0"))).isTrue();
         assertThat(matcher.matches(json("v: -0.0"), json("v: -0.0"))).isTrue();
         assertThat(matcher.matches(json("v: 0.0"), json("v: -0.0"))).isTrue();
+    }
+
+    @Test
+    public void testMatchesType() throws Exception {
+        assertThat(matcher.matches(json("v: 0"), json("v: {$type: 16}"))).isTrue();
+        assertThat(matcher.matches(json("v: 'abc'"), json("v: {$type: 16}"))).isFalse();
+        assertThat(matcher.matches(json("v: 0"), json("v: {$type: 16.0}"))).isTrue();
+
+        assertThat(matcher.matches(json("v: 0"), json("v: {$type: [2, 16]}"))).isTrue();
+        assertThat(matcher.matches(json("v: 'abc'"), json("v: {$type: ['int', 'long']}"))).isFalse();
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> matcher.matches(json("v: 0"), json("v: {$type: []}")))
+            .withMessage("[Error 9] v must match at least one type");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> matcher.matches(json("a: 0"), json("'a.b.c': {$type: []}")))
+            .withMessage("[Error 9] a.b.c must match at least one type");
+
+        assertThat(matcher.matches(json("v: 0"), json("v: {$type: 'number'}"))).isTrue();
+        assertThat(matcher.matches(json("v: 0.0"), json("v: {$type: 'number'}"))).isTrue();
+
+        assertThatExceptionOfType(BadValueException.class)
+            .isThrownBy(() -> DefaultQueryMatcher.matchTypes("abc", "abc"))
+            .withMessage("[Error 2] Unknown type name alias: abc");
+
+        assertThatExceptionOfType(BadValueException.class)
+            .isThrownBy(() -> DefaultQueryMatcher.matchTypes("abc", 16.3))
+            .withMessage("[Error 2] Invalid numerical type code: 16.3");
+
+        assertThat(DefaultQueryMatcher.matchTypes(1.0, 1)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(1, 1)).isFalse();
+        assertThat(DefaultQueryMatcher.matchTypes("abc", 2)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(new Document(), 3)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(Arrays.asList(1, 2, 3), 4)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(UUID.randomUUID(), 5)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(new byte[] { 1, 2, 3 }, 5)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(new ObjectId(), 7)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(true, 8)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(Boolean.FALSE, 8)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(new Date(), 9)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(null, 10)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(Pattern.compile(".*"), 11)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(123, 16)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(new BsonTimestamp(123), 17)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(123L, 16)).isFalse();
+        assertThat(DefaultQueryMatcher.matchTypes(123, 18)).isFalse();
+        assertThat(DefaultQueryMatcher.matchTypes(123L, 18)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(MinKey.getInstance(), -1)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(MaxKey.getInstance(), 127)).isTrue();
     }
 
 }
