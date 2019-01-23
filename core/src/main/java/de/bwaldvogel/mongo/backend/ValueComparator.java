@@ -62,7 +62,7 @@ public class ValueComparator implements Comparator<Object> {
         return ascending ? desc() : asc();
     }
 
-    public static int compareTypes(Object value1, Object value2) {
+    static int compareTypes(Object value1, Object value2) {
         if (Missing.isNullOrMissing(value1) && Missing.isNullOrMissing(value2)) {
             return 0;
         } else if (Missing.isNullOrMissing(value1)) {
@@ -241,7 +241,9 @@ public class ValueComparator implements Comparator<Object> {
     }
 
     private static int compareUnsigned(byte b1, byte b2) {
-        return Integer.compare(b1 + Integer.MIN_VALUE, b2 + Integer.MIN_VALUE);
+        int v1 = (int) b1 & 0xFF;
+        int v2 = (int) b2 & 0xFF;
+        return Integer.compare(v1, v2);
     }
 
     private static int getTypeOrder(Object obj) {
