@@ -47,6 +47,7 @@ import org.bson.BsonObjectId;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.Binary;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.reactivestreams.Subscriber;
@@ -461,6 +462,92 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.distinct("_id", Integer.class))
             .hasSize((int) collection.countDocuments());
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/44
+    @Test
+    public void testDistinctUuids() throws Exception {
+        collection.insertOne(json("_id: 1, n: null"));
+        collection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
+        collection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
+        collection.insertOne(json("_id: 4").append("n", new UUID(0, 2)));
+        collection.insertOne(json("_id: 5").append("n", new UUID(1, 1)));
+        collection.insertOne(json("_id: 6").append("n", new UUID(1, 0)));
+
+        assertThat(toArray(collection.distinct("n", UUID.class)))
+            .containsExactly(
+                null,
+                new UUID(0, 1),
+                new UUID(1, 0),
+                new UUID(0, 2),
+                new UUID(1, 1)
+            );
+    }
+
+    @Test
+    public void testInsertQueryAndSortBinaryTypes() throws Exception {
+        byte[] highBytes = new byte[16];
+        for (int i = 0; i < highBytes.length; i++) {
+            highBytes[i] = (byte) 0xFF;
+        }
+
+        collection.insertOne(json("_id: 1, n: null"));
+        collection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
+        collection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
+        collection.insertOne(json("_id: 4, n: 'abc'"));
+        collection.insertOne(json("_id: 5, n: 17"));
+        collection.insertOne(json("_id: 6, n: [1, 2, 3]"));
+        collection.insertOne(json("_id: 7").append("n", new byte[] { 0, 0, 0, 1 }));
+        collection.insertOne(json("_id: 8").append("n", highBytes));
+        collection.insertOne(json("_id: 9").append("n", new byte[0]));
+
+        assertThat(toArray(collection.find(json("n: {$type: 5}")).sort(json("n: 1"))))
+            .containsExactly(
+                json("_id: 9").append("n", new Binary(new byte[0])),
+                json("_id: 7").append("n", new Binary(new byte[] { 0, 0, 0, 1 })),
+                json("_id: 8").append("n", new Binary(highBytes)),
+                json("_id: 2").append("n", new UUID(0, 1)),
+                json("_id: 3").append("n", new UUID(1, 0))
+            );
+
+        assertThat(toArray(collection.find(new Document("n", new UUID(1, 0)))))
+            .containsExactly(
+                json("_id: 3").append("n", new UUID(1, 0))
+            );
+
+        assertThat(toArray(collection.find(json("")).sort(json("n: 1"))))
+            .containsExactly(
+                json("_id: 1, n: null"),
+                json("_id: 6, n: [1, 2, 3]"),
+                json("_id: 5, n: 17"),
+                json("_id: 4, n: 'abc'"),
+                json("_id: 9").append("n", new Binary(new byte[0])),
+                json("_id: 7").append("n", new Binary(new byte[] { 0, 0, 0, 1 })),
+                json("_id: 8").append("n", new Binary(highBytes)),
+                json("_id: 2").append("n", new UUID(0, 1)),
+                json("_id: 3").append("n", new UUID(1, 0))
+            );
+    }
+
+    @Test
+    public void testUuidAsId() throws Exception {
+        collection.insertOne(new Document("_id", new UUID(0, 1)));
+        collection.insertOne(new Document("_id", new UUID(0, 2)));
+        collection.insertOne(new Document("_id", new UUID(999999, 128)));
+
+        assertMongoWriteException(() -> collection.insertOne(new Document("_id", new UUID(0, 1))),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : BinData(3, 00000000000000000100000000000000) }");
+
+        assertMongoWriteException(() -> collection.insertOne(new Document("_id", new UUID(999999, 128))),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : BinData(3, 3F420F00000000008000000000000000) }");
+
+        collection.deleteOne(new Document("_id", new UUID(0, 2)));
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactlyInAnyOrder(
+                new Document("_id", new UUID(0, 1)),
+                new Document("_id", new UUID(999999, 128))
+            );
     }
 
     @Test

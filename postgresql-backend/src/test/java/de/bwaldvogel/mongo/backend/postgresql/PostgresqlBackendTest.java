@@ -104,6 +104,18 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testSort();
     }
 
+    @Override
+    public void testInsertQueryAndSortBinaryTypes() throws Exception {
+        assumeStrictTests();
+        super.testInsertQueryAndSortBinaryTypes();
+    }
+
+    @Override
+    public void testUuidAsId() throws Exception {
+        assumeStrictTests();
+        super.testUuidAsId();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }

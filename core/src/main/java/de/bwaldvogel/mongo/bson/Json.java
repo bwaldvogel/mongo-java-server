@@ -1,7 +1,9 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Date;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.backend.Missing;
@@ -46,6 +48,10 @@ public final class Json {
             ObjectId objectId = (ObjectId) value;
             return objectId.getHexData();
         }
+        if (value instanceof UUID) {
+            UUID uuid = (UUID) value;
+            return "BinData(3, " + toHex(uuid) + ")";
+        }
         return toJsonValue(value.toString());
     }
 
@@ -60,4 +66,21 @@ public final class Json {
         escaped = escaped.replace("\t", "\\t");
         return escaped;
     }
+
+    private static StringBuilder toHex(UUID uuid) {
+        StringBuilder hex = new StringBuilder();
+        byte[] bytes = toBytes(uuid);
+        for (int i = bytes.length; i > 0; i--) {
+            hex.append(String.format("%02X", bytes[i - 1]));
+        }
+        return hex;
+    }
+
+    private static byte[] toBytes(UUID uuid) {
+        ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[16]);
+        byteBuffer.putLong(uuid.getLeastSignificantBits());
+        byteBuffer.putLong(uuid.getMostSignificantBits());
+        return byteBuffer.array();
+    }
+
 }

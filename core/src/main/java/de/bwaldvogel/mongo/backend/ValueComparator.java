@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
@@ -42,6 +43,7 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(Document.class);
         SORT_PRIORITY.add(List.class);
         SORT_PRIORITY.add(byte[].class);
+        SORT_PRIORITY.add(UUID.class);
         SORT_PRIORITY.add(ObjectId.class);
         SORT_PRIORITY.add(Boolean.class);
         SORT_PRIORITY.add(Date.class);
@@ -156,6 +158,12 @@ public class ValueComparator implements Comparator<Object> {
 
         if (Document.class.isAssignableFrom(clazz)) {
             return compareDocuments((Document) value1, (Document) value2);
+        }
+
+        if (UUID.class.isAssignableFrom(clazz)) {
+            UUID uuid1 = (UUID) value1;
+            UUID uuid2 = (UUID) value2;
+            return uuid1.compareTo(uuid2);
         }
 
         throw new UnsupportedOperationException("can't compare " + clazz);

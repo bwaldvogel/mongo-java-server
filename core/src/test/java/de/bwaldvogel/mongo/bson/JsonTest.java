@@ -29,7 +29,9 @@ public class JsonTest {
         assertThat(Json.toJsonValue(Collections.emptyList())).isEqualTo("[]");
         assertThat(Json.toJsonValue(Collections.emptySet())).isEqualTo("[]");
         assertThat(Json.toJsonValue(new Date(1234567890000L))).isEqualTo("\"2009-02-13T23:31:30Z\"");
-        assertThat(Json.toJsonValue(UUID.fromString("a2963378-b9cb-4255-80bc-e16a3bf156b4"))).isEqualTo("\"a2963378-b9cb-4255-80bc-e16a3bf156b4\"");
+        assertThat(Json.toJsonValue(UUID.fromString("a2963378-b9cb-4255-80bc-e16a3bf156b4"))).isEqualTo("BinData(3, 5542CBB9783396A2B456F13B6AE1BC80)");
+        assertThat(Json.toJsonValue(new UUID(1, 2))).isEqualTo("BinData(3, 01000000000000000200000000000000)");
+        assertThat(Json.toJsonValue(new UUID(999999, 128))).isEqualTo("BinData(3, 3F420F00000000008000000000000000)");
         assertThat(Json.toJsonValue(new Document())).isEqualTo("{}");
         assertThat(Json.toJsonValue(new Document().append("a", 1))).isEqualTo("{\"a\" : 1}");
     }

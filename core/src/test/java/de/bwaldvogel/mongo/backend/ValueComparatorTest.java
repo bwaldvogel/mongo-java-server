@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.UUID;
 
 import org.junit.Test;
 
@@ -134,6 +135,22 @@ public class ValueComparatorTest {
         assertDocumentComparison("a: {b: null, c: 0}", "a: {b: {c: 0}}");
         assertDocumentComparison("a: {c: 0}", "a: {b: 'abc'}");
         assertDocumentComparison("a: {c: 0}", "a: {b: {c: 0}}");
+    }
+
+    @Test
+    public void testCompareUuids() throws Exception {
+        assertComparesTheSame(new UUID(1, 1), new UUID(1, 1));
+        assertFirstValueBeforeSecondValue(null, new UUID(1, 2));
+        assertFirstValueBeforeSecondValue(new UUID(0, 1), new UUID(1, 1));
+        assertFirstValueBeforeSecondValue(new byte[0], new UUID(0, 1));
+
+        byte[] highBytes = new byte[16];
+        for (int i = 0; i < highBytes.length; i++) {
+            highBytes[i] = (byte) 0xFF;
+        }
+
+        assertFirstValueBeforeSecondValue(new byte[0], highBytes);
+        assertFirstValueBeforeSecondValue(highBytes, new UUID(0, 1));
     }
 
     private void assertDocumentComparison(String document1, String document2) {
