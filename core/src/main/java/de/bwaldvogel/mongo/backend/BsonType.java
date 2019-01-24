@@ -9,6 +9,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
+import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
@@ -35,6 +36,7 @@ enum BsonType {
     INT(16, "int", Integer.class),
     TIMESTAMP(17, "timestamp", BsonTimestamp.class),
     LONG(18, "long", Long.class),
+    DECIMAL128(19, "decimal", Decimal128.class),
     MIN_KEY(-1, "minKey", MinKey.class),
     MAX_KEY(127, "maxKey", MaxKey.class),
     ;

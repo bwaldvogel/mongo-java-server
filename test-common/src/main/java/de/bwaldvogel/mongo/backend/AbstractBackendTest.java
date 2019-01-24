@@ -555,6 +555,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 'abc'"));
         collection.insertOne(json("a: {b: {c: 123}}"));
+        collection.insertOne(json("_id: {'$numberDecimal': '2'}"));
 
         assertThat(toArray(collection.find(json("_id: {$type: 2.0}"))))
             .containsExactly(json("_id: 'abc'"));
@@ -563,6 +564,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactlyInAnyOrder(
                 json("_id: 1"),
                 json("_id: 'abc'")
+            );
+
+        assertThat(toArray(collection.find(json("_id: {$type: 'number'}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1"),
+                json("_id: {'$numberDecimal': '2'}")
             );
 
         assertThatExceptionOfType(MongoQueryException.class)
@@ -3709,6 +3716,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 4, value: 0")),
             11000, "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : 0 }");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/45
+    @Test
+    public void testDecimal128() throws Exception {
+        collection.insertOne(json("_id: {'$numberDecimal': '1'}"));
+        collection.insertOne(json("_id: {'$numberDecimal': '2'}"));
+        collection.insertOne(json("_id: {'$numberDecimal': '3.0'}"));
+        collection.insertOne(json("_id: {'$numberDecimal': '200000000000000000000000000000000.5'}"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: {'$numberDecimal': '1'}")),
+            11000, "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1 }");
+
+        assertThat(toArray(collection.find(json("_id: {$eq: {'$numberDecimal': '3'}}"))))
+            .containsExactly(
+                json("_id: {'$numberDecimal': '3.0'}")
+            );
+
+        assertThat(toArray(collection.find(json("_id: {$gt: {'$numberDecimal': '100000'}}"))))
+            .containsExactly(
+                json("_id: {'$numberDecimal': '200000000000000000000000000000000.5'}")
+            );
     }
 
     private void insertAndFindLargeDocument(int numKeyValues, int id) {

@@ -31,6 +31,7 @@ public interface BsonConstants {
     byte TYPE_INT32 = 0x10;
     byte TYPE_TIMESTAMP = 0x11;
     byte TYPE_INT64 = 0x12;
+    byte TYPE_DECIMAL128 = 0x13;
     byte TYPE_MIN_KEY = (byte) 0xFF;
     byte TYPE_MAX_KEY = 0x7F;
 

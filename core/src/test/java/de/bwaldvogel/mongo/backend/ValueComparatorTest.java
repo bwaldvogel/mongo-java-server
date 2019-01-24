@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -151,6 +152,22 @@ public class ValueComparatorTest {
 
         assertFirstValueBeforeSecondValue(new byte[0], highBytes);
         assertFirstValueBeforeSecondValue(highBytes, new UUID(0, 1));
+    }
+
+    @Test
+    public void testCompareDecimal128() throws Exception {
+        assertComparesTheSame(Decimal128.ONE, Decimal128.ONE);
+        assertComparesTheSame(Decimal128.ONE, 1);
+        assertComparesTheSame(Decimal128.ONE, 1L);
+        assertComparesTheSame(Decimal128.ONE, 1.0F);
+        assertComparesTheSame(Decimal128.ONE, 1.0);
+        assertComparesTheSame(Decimal128.POSITIVE_ZERO, 0.0);
+        assertComparesTheSame(Decimal128.NEGATIVE_ZERO, 0.0);
+        assertComparesTheSame(Decimal128.NEGATIVE_ZERO, Decimal128.POSITIVE_ZERO);
+        assertComparesTheSame(Decimal128.NaN, Double.NaN);
+        assertComparesTheSame(Decimal128.POSITIVE_INFINITY, Double.POSITIVE_INFINITY);
+        assertComparesTheSame(Decimal128.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY);
+        assertFirstValueBeforeSecondValue(Decimal128.ONE, Decimal128.TWO);
     }
 
     private void assertDocumentComparison(String document1, String document2) {

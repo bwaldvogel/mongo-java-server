@@ -116,6 +116,18 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testUuidAsId();
     }
 
+    @Override
+    public void testTypeMatching() throws Exception {
+        assumeStrictTests();
+        super.testTypeMatching();
+    }
+
+    @Override
+    public void testDecimal128() throws Exception {
+        assumeStrictTests();
+        super.testDecimal128();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }

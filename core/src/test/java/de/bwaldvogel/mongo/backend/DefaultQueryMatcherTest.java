@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
+import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
@@ -776,6 +777,9 @@ public class DefaultQueryMatcherTest {
 
         assertThat(matcher.matches(json("v: 0"), json("v: {$type: 'number'}"))).isTrue();
         assertThat(matcher.matches(json("v: 0.0"), json("v: {$type: 'number'}"))).isTrue();
+        assertThat(matcher.matches(new Document("v", Decimal128.ONE), json("v: {$type: 'number'}"))).isTrue();
+        assertThat(matcher.matches(json("v: 0"), json("v: {$type: 'decimal'}"))).isFalse();
+        assertThat(matcher.matches(new Document("v", Decimal128.ONE), json("v: {$type: 'decimal'}"))).isTrue();
 
         assertThatExceptionOfType(BadValueException.class)
             .isThrownBy(() -> DefaultQueryMatcher.matchTypes("abc", "abc"))

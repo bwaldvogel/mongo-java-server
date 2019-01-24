@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
+import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
@@ -121,6 +122,11 @@ public class BsonEncoder {
             case BsonConstants.TYPE_INT64:
                 buffer.writeLongLE(((Long) value).longValue());
                 break;
+            case BsonConstants.TYPE_DECIMAL128:
+                Decimal128 decimal128 = (Decimal128) value;
+                buffer.writeLongLE(decimal128.getLow());
+                buffer.writeLongLE(decimal128.getHigh());
+                break;
             case BsonConstants.TYPE_MAX_KEY:
             case BsonConstants.TYPE_MIN_KEY:
             case BsonConstants.TYPE_UNDEFINED:
@@ -146,6 +152,8 @@ public class BsonEncoder {
             return BsonConstants.TYPE_INT32;
         } else if (value instanceof Long) {
             return BsonConstants.TYPE_INT64;
+        } else if (value instanceof Decimal128) {
+            return BsonConstants.TYPE_DECIMAL128;
         } else if (value instanceof Double) {
             return BsonConstants.TYPE_DOUBLE;
         } else if (value instanceof String) {

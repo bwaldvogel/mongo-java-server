@@ -143,12 +143,17 @@ public class Utils {
     public static Number normalizeNumber(Number value) {
         if (value == null) {
             return null;
-        } else if (value.intValue() == value.doubleValue()) {
+        }
+
+        double doubleValue = value.doubleValue();
+        if (Double.isNaN(doubleValue) || Double.isInfinite(doubleValue)) {
+            return Double.valueOf(doubleValue);
+        } else if (value.intValue() == doubleValue) {
             return value.intValue();
-        } else if (value.longValue() == value.doubleValue()) {
+        } else if (value.longValue() == doubleValue) {
             return value.longValue();
         } else {
-            return Double.valueOf(value.doubleValue());
+            return Double.valueOf(doubleValue);
         }
     }
 

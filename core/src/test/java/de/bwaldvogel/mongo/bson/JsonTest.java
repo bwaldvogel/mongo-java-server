@@ -34,6 +34,13 @@ public class JsonTest {
         assertThat(Json.toJsonValue(new UUID(999999, 128))).isEqualTo("BinData(3, 3F420F00000000008000000000000000)");
         assertThat(Json.toJsonValue(new Document())).isEqualTo("{}");
         assertThat(Json.toJsonValue(new Document().append("a", 1))).isEqualTo("{\"a\" : 1}");
+        assertThat(Json.toJsonValue(Decimal128.ONE)).isEqualTo("1");
+        assertThat(Json.toJsonValue(new Decimal128(1, 1))).isEqualTo("1.8446744073709551617E-6157");
+        assertThat(Json.toJsonValue(new Decimal128(5, 3476215962376601600L))).isEqualTo("0.5");
+        assertThat(Json.toJsonValue(Decimal128.NaN)).isEqualTo("NaN");
+        assertThat(Json.toJsonValue(Decimal128.NEGATIVE_ZERO)).isEqualTo("-0");
+        assertThat(Json.toJsonValue(Decimal128.POSITIVE_INFINITY)).isEqualTo("Infinity");
+        assertThat(Json.toJsonValue(Decimal128.NEGATIVE_INFINITY)).isEqualTo("-Infinity");
     }
 
     @Test

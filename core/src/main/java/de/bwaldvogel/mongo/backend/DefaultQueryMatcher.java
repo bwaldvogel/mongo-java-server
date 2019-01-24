@@ -469,7 +469,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
     static boolean matchTypes(Object value, Object expressionValue) {
         if (Objects.equals(expressionValue, "number")) {
-            List<String> types = Stream.of(BsonType.INT, BsonType.LONG, BsonType.DOUBLE).map(BsonType::getAlias).collect(Collectors.toList());
+            List<String> types = Stream.of(BsonType.INT, BsonType.LONG, BsonType.DOUBLE, BsonType.DECIMAL128)
+                .map(BsonType::getAlias)
+                .collect(Collectors.toList());
             return matchTypes(value, types);
         } else if (expressionValue instanceof String) {
             return matchTypes(value, BsonType.forString((String) expressionValue));

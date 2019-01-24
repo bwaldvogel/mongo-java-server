@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
+import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
@@ -85,6 +86,9 @@ class BsonDecoder {
                 break;
             case BsonConstants.TYPE_INT64:
                 value = Long.valueOf(buffer.readLongLE());
+                break;
+            case BsonConstants.TYPE_DECIMAL128:
+                value = new Decimal128(buffer.readLongLE(), buffer.readLongLE());
                 break;
             case BsonConstants.TYPE_MAX_KEY:
                 value = MaxKey.getInstance();
