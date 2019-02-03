@@ -85,7 +85,7 @@ public class LookupStageTest {
 
         Stream<Document> result = lookupStage.apply(Stream.of(document));
 
-        assertThat(result).containsOnly(
+        assertThat(result).containsExactly(
             json("title: 'Clean Code', authorId: 3, author: [{_id: 3, name: 'Uncle Bob'}]")
         );
     }
@@ -100,7 +100,7 @@ public class LookupStageTest {
 
         Stream<Document> result = lookupStage.apply(Stream.of(document));
 
-        assertThat(result).containsOnly(
+        assertThat(result).containsExactly(
             json("_id: 1, title: 'Developing for dummies', job: 'Developer', " +
                 "seeAuthors: [{_id: 3, name: 'Uncle Bob', job: 'Developer'}, {_id: 5, name: 'Alice', job: 'Developer'}]")
         );
@@ -127,7 +127,7 @@ public class LookupStageTest {
 
         Stream<Document> result = lookupStage.apply(Stream.of(document1, document2));
 
-        assertThat(result).containsOnly(
+        assertThat(result).containsExactly(
             json("title: 'Agile Manifesto', authorsIds: [3, 20, 22], authors: [{_id: 3, name: 'Uncle Bob'}, {_id: 20, name: 'Martin Fowler'}]"),
             json("title: 'Clean Code', authorsIds: [3], authors: [{_id: 3, name: 'Uncle Bob'}]")
         );

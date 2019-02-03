@@ -52,7 +52,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
         restart();
 
-        assertThat(toArray(collection.find())).containsOnly(json("_id: 1"), json("_id: 2"));
+        assertThat(toArray(collection.find())).containsExactly(json("_id: 1"), json("_id: 2"));
     }
 
     @Test

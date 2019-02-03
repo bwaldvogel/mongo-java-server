@@ -111,11 +111,11 @@ public abstract class AbstractBackendSpringDataTest {
         assertThat(updatedPerson.getAccounts()).hasSize(2);
 
         List<String> databaseNames = toArray(mongoClient.listDatabaseNames());
-        assertThat(databaseNames).containsOnly(DATABASE_NAME);
+        assertThat(databaseNames).containsExactly(DATABASE_NAME);
 
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
         List<String> collectionNames = toArray(database.listCollectionNames());
-        assertThat(collectionNames).containsOnly("person", "account", "test");
+        assertThat(collectionNames).containsExactlyInAnyOrder("person", "account", "test");
 
         assertThat(toArray(personRepository.findAll())).hasSize(2);
         assertThat(personRepository.count()).isEqualTo(2);

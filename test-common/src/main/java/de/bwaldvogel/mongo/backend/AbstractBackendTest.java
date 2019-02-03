@@ -222,7 +222,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             collection.replaceOne(dbo, new Document(dbo).append("foo", "bar"), new ReplaceOptions().upsert(true));
         }
         List<Document> results = toArray(collection.find(query));
-        assertThat(results).containsOnly(
+        assertThat(results).containsExactly(
             json("_id: {n: 'a', t: 1}, foo: 'bar'"),
             json("_id: {n: 'a', t: 2}, foo: 'bar'"),
             json("_id: {n: 'a', t: 3}, foo: 'bar'"));
@@ -300,7 +300,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));
         List<Document> indexes = toArray(getCollection("system.indexes").find());
-        assertThat(indexes).containsOnly(
+        assertThat(indexes).containsExactlyInAnyOrder(
             json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_"),
             json("key: {n: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "n_1"),
             json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1"));
@@ -318,7 +318,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document result = db.runCommand(json("listCollections: 1"));
         assertThat(result.getDouble("ok")).isEqualTo(1.0);
         Document cursor = (Document) result.get("cursor");
-        assertThat(cursor.keySet()).containsOnly("id", "ns", "firstBatch");
+        assertThat(cursor.keySet()).containsExactly("id", "ns", "firstBatch");
         assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
         assertThat(cursor.get("ns")).isEqualTo(db.getName() + ".$cmd.listCollections");
         List<?> firstBatch = (List<?>) cursor.get("firstBatch");
@@ -335,7 +335,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document result = db.runCommand(json("listCollections: 1"));
         assertThat(result.getDouble("ok")).isEqualTo(1.0);
         Document cursor = (Document) result.get("cursor");
-        assertThat(cursor.keySet()).containsOnly("id", "ns", "firstBatch");
+        assertThat(cursor.keySet()).containsExactly("id", "ns", "firstBatch");
         assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
         assertThat(cursor.get("ns")).isEqualTo(db.getName() + ".$cmd.listCollections");
         assertThat(cursor.get("firstBatch")).isInstanceOf(List.class);
@@ -346,7 +346,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         Set<String> collectionNames = new HashSet<>();
         for (Document collection : firstBatch) {
-            assertThat(collection.keySet()).containsOnly("name", "options", "type", "idIndex", "info");
+            assertThat(collection.keySet()).containsExactlyInAnyOrder("name", "options", "type", "idIndex", "info");
             String name = (String) collection.get("name");
             assertThat(collection.get("options")).isEqualTo(json(""));
             assertThat(collection.get("name")).isInstanceOf(String.class);
@@ -365,7 +365,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         getCollection("bar").insertOne(json(""));
 
         List<String> collectionNames = toArray(db.listCollectionNames());
-        assertThat(collectionNames).containsOnly("foo", "bar");
+        assertThat(collectionNames).containsExactlyInAnyOrder("foo", "bar");
     }
 
     @Test
@@ -374,8 +374,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         getCollection("bar").insertOne(json(""));
 
         MongoCollection<Document> systemIndexes = db.getCollection("system.indexes");
-        assertThat(toArray(systemIndexes.find())).containsOnly(json("name: '_id_', ns: 'testdb.foo', key: {_id: 1}"),
-            json("name: '_id_', ns: 'testdb.bar', key: {_id: 1}"));
+        assertThat(toArray(systemIndexes.find())).containsExactlyInAnyOrder(
+            json("name: '_id_', ns: 'testdb.foo', key: {_id: 1}"),
+            json("name: '_id_', ns: 'testdb.bar', key: {_id: 1}")
+        );
     }
 
     @Test
@@ -880,7 +882,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 2"));
 
         List<Document> actual = toArray(collection.find().sort(json("$natural: -1")));
-        assertThat(actual).containsOnly(json("_id: 1"), json("_id: 2"));
+        assertThat(actual).containsExactly(
+            json("_id: 2"),
+            json("_id: 1")
+        );
     }
 
     @Test
@@ -891,13 +896,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 'jo'"));
 
         assertThat(toArray(collection.find(new Document("_id", Pattern.compile("mart")))))
-            .containsOnly(json("_id: 'marta'"));
+            .containsExactly(json("_id: 'marta'"));
 
         assertThat(toArray(collection.find(new Document("foo", Pattern.compile("ba")))))
-            .containsOnly(json("_id: 'john', foo: 'bar'"), json("_id: 'jon', foo: 'ba'"));
+            .containsExactly(json("_id: 'john', foo: 'bar'"), json("_id: 'jon', foo: 'ba'"));
 
         assertThat(toArray(collection.find(new Document("foo", Pattern.compile("ba$")))))
-            .containsOnly(json("_id: 'jon', foo: 'ba'"));
+            .containsExactly(json("_id: 'jon', foo: 'ba'"));
     }
 
     @Test
@@ -1249,13 +1254,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testQueryWithFieldSelector() throws Exception {
         collection.insertOne(json("foo: 'bar'"));
         Document obj = collection.find(json("")).projection(json("foo: 1")).first();
-        assertThat(obj.keySet()).containsOnly("_id", "foo");
+        assertThat(obj.keySet()).containsExactlyInAnyOrder("_id", "foo");
 
         obj = collection.find(json("foo:'bar'")).projection(json("_id: 1")).first();
-        assertThat(obj.keySet()).containsOnly("_id");
+        assertThat(obj.keySet()).containsExactly("_id");
 
         obj = collection.find(json("foo: 'bar'")).projection(json("_id: 0, foo: 1")).first();
-        assertThat(obj.keySet()).containsOnly("foo");
+        assertThat(obj.keySet()).containsExactly("foo");
     }
 
     @Test
@@ -2130,7 +2135,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertMany(Arrays.asList(json("_id: 1"), json("_id: 2")));
         collection.updateMany(json("_id: {$in: [1, 2]}"), json("$set: {n: 1}"));
         List<Document> results = toArray(collection.find());
-        assertThat(results).containsOnly(json("_id: 1, n: 1"), json("_id: 2, n: 1"));
+        assertThat(results).containsExactly(json("_id: 1, n: 1"), json("_id: 2, n: 1"));
     }
 
     @Test
@@ -2145,7 +2150,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertMany(Arrays.asList(json("_id: 1"), json("_id: 2")));
         collection.updateMany(json("_id: {$gt:1}"), json("$set: {n: 1}"));
         List<Document> results = toArray(collection.find());
-        assertThat(results).containsOnly(json("_id: 1"), json("_id: 2, n: 1"));
+        assertThat(results).containsExactly(json("_id: 1"), json("_id: 2, n: 1"));
     }
 
     @Test
@@ -2816,7 +2821,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.renameCollection(new MongoNamespace(collection.getNamespace().getDatabaseName(), "other-collection-name"));
 
         Collection<String> collectionNames = toArray(db.listCollectionNames());
-        assertThat(collectionNames).containsOnly("other-collection-name");
+        assertThat(collectionNames).containsExactly("other-collection-name");
 
         assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(3);
     }
@@ -2876,7 +2881,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.createIndex(new Document("a", 1).append("b", -1.0), new IndexOptions().unique(true));
 
         List<Document> indexInfo = toArray(collection.listIndexes());
-        assertThat(indexInfo).containsOnly(
+        assertThat(indexInfo).containsExactlyInAnyOrder(
             json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}"),
             json("name: '_id_', ns: 'testdb.other', key: {_id: 1}"),
             json("name: 'bla_1', ns: 'testdb.testcoll', key: {bla: 1}"),
@@ -2978,7 +2983,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             or(exists("expiration", false), gt("expiration", now))
         );
         List<Document> documents = toArray(collection.find(query).projection(json("_id: 1")));
-        assertThat(documents).containsOnly(json("_id: 1"), json("_id: 2"), json("_id: 3"));
+        assertThat(documents).containsExactly(json("_id: 1"), json("_id: 2"), json("_id: 3"));
     }
 
     @Test
