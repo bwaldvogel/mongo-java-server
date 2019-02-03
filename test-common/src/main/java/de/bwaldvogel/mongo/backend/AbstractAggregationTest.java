@@ -682,6 +682,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         MongoCollection<Document> authorsCollection = db.getCollection("authors");
         authorsCollection.insertOne(json("_id: 1, name: 'Uncle Bob'"));
         authorsCollection.insertOne(json("_id: 2, name: 'Martin Fowler'"));
+        authorsCollection.insertOne(json("_id: null, name: 'Null Author'"));
 
         Document lookup = json("$lookup: {from: 'authors', localField: 'authorId', foreignField: '_id', as: 'author'}");
         List<Document> pipeline = Collections.singletonList(lookup);
@@ -692,15 +693,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, title: 'Clean Code', authorId: 1"));
         collection.insertOne(json("_id: 3, title: 'Clean Coder', authorId: 1"));
         collection.insertOne(json("_id: 4, title: 'Unknown author', authorId: 3"));
-        collection.insertOne(json("_id: 5, title: 'No author'"));
+        collection.insertOne(json("_id: 5, title: 'No author', authorId: null"));
+        collection.insertOne(json("_id: 6, title: 'Missing author'"));
 
-        assertThat(collection.aggregate(pipeline))
+        assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
                 json("_id: 1, title: 'Refactoring', authorId: 2, author: [{_id: 2, name: 'Martin Fowler'}]"),
                 json("_id: 2, title: 'Clean Code', authorId: 1, author: [{_id: 1, name: 'Uncle Bob'}]"),
                 json("_id: 3, title: 'Clean Coder', authorId: 1, author: [{_id: 1, name: 'Uncle Bob'}]"),
                 json("_id: 4, title: 'Unknown author', authorId: 3, author: []"),
-                json("_id: 5, title: 'No author', author: []")
+                json("_id: 5, title: 'No author', authorId: null, author: [{_id: null, name: 'Null Author'}]"),
+                json("_id: 6, title: 'Missing author', author: [{_id: null, name: 'Null Author'}]")
             );
     }
 
