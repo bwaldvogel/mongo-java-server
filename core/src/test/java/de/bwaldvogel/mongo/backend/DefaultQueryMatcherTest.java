@@ -381,6 +381,19 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document5, query)).isTrue();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/45
+    @Test
+    public void testMatchesNotEqualArrayValue() throws Exception {
+        assertThat(matcher.matches(json("a: [-1]"), json("a: {$ne: 0}"))).isTrue();
+        assertThat(matcher.matches(json("a: -1"), json("a: {$ne: 0}"))).isTrue();
+
+        assertThat(matcher.matches(json("a: [0]"), json("a: {$ne: 0}"))).isFalse();
+        assertThat(matcher.matches(json("a: [0.0]"), json("a: {$ne: 0}"))).isFalse();
+        assertThat(matcher.matches(json("a: [0, 1]"), json("a: {$ne: 0}"))).isFalse();
+        assertThat(matcher.matches(json("a: [-0.0]"), json("a: {$ne: 0}"))).isFalse();
+        assertThat(matcher.matches(json("a: 0"), json("a: {$ne: 0}"))).isFalse();
+    }
+
     @Test
     public void testMatchesNot() throws Exception {
 

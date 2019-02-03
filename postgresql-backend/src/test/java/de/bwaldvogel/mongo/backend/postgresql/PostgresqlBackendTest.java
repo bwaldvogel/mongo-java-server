@@ -128,6 +128,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testDecimal128();
     }
 
+    @Override
+    public void testArrayNe() throws Exception {
+        assumeStrictTests();
+        super.testArrayNe();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }

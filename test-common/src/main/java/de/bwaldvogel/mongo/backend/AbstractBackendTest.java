@@ -3740,6 +3740,26 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/45
+    @Test
+    public void testArrayNe() throws Exception {
+        collection.insertOne(json("_id: 'a', values: [-1]"));
+        collection.insertOne(json("_id: 'b', values: [0]"));
+        collection.insertOne(json("_id: 'c', values: 1.0"));
+        collection.insertOne(json("_id: 'd', values: {'$numberDecimal': '1.0'}"));
+        collection.insertOne(json("_id: 'e', values: {'$numberDecimal': '0.0'}"));
+        collection.insertOne(json("_id: 'f', values: [-0.0]"));
+        collection.insertOne(json("_id: 'g', values: [0, 1]"));
+        collection.insertOne(json("_id: 'h', values: 0.0"));
+
+        assertThat(toArray(collection.find(json("values: {$ne: 0}"))))
+            .containsExactly(
+                json("_id: 'a', values: [-1]"),
+                json("_id: 'c', values: 1.0"),
+                json("_id: 'd', values: {'$numberDecimal': '1.0'}")
+            );
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {
