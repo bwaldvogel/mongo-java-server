@@ -4,7 +4,6 @@ import static java.util.stream.Collectors.toList;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -69,16 +68,12 @@ public class LookupStage implements AggregationStage {
 
     @Override
     public Stream<Document> apply(Stream<Document> stream) {
-        return stream.map(this::resolveRemoteField)
-            .filter(Objects::nonNull);
+        return stream.map(this::resolveRemoteField);
     }
 
     private Document resolveRemoteField(Document document) {
         Object value = document.get(localField);
         List<Document> documents = lookupValue(value);
-        if (documents.isEmpty()) {
-            return null;
-        }
         Document result = document.clone();
         result.put(as, documents);
         return result;

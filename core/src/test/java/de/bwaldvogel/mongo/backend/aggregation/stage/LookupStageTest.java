@@ -114,7 +114,9 @@ public class LookupStageTest {
 
         Stream<Document> result = lookupStage.apply(Stream.of(document));
 
-        assertThat(result).isEmpty();
+        assertThat(result).containsExactly(
+            json("_id: 1, title: 'Developing for dummies', job: 'Developer', seeAuthors: []")
+        );
     }
 
     @Test
