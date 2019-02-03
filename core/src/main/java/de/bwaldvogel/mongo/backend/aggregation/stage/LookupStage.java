@@ -90,7 +90,7 @@ public class LookupStage implements AggregationStage {
                 .flatMap(item -> lookupValue(item).stream())
                 .collect(toList());
         }
-        Document query = new Document().append(foreignField, value);
+        Document query = new Document(foreignField, value);
         Iterable<Document> queryResult = collection.handleQuery(query);
         return StreamSupport.stream(queryResult.spliterator(), false)
             .collect(toList());
