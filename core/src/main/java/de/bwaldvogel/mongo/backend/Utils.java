@@ -231,10 +231,7 @@ public class Utils {
             }
         } else if (value instanceof Document) {
             Document document = (Document) value;
-            if (!document.containsKey(field)) {
-                return Missing.getInstance();
-            }
-            return document.get(field);
+            return document.getOrMissing(field);
         } else {
             return Missing.getInstance();
         }
