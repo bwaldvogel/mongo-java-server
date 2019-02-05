@@ -138,9 +138,11 @@ public class UtilsTest {
 
     @Test
     public void testGetFieldValueListSafe() throws Exception {
-        assertThat(Utils.getFieldValueListSafe(null, "foo")).isNull();
-        Document document = json("foo: 25");
-        assertThat(Utils.getFieldValueListSafe(document, "foo")).isEqualTo(25);
+        assertThat(Utils.getFieldValueListSafe(Missing.getInstance(), "foo")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(null, "foo")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(json(""), "foo")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(json("foo: null"), "foo")).isNull();
+        assertThat(Utils.getFieldValueListSafe(json("foo: 25"), "foo")).isEqualTo(25);
         assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isEqualTo("b");
     }
 

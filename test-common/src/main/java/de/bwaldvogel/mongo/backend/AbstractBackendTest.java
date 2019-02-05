@@ -3765,6 +3765,29 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/48
+    @Test
+    public void testExistsQuery() throws Exception {
+        collection.insertOne(json("_id: 1, a: {b: 1}"));
+        collection.insertOne(json("_id: 2, a: null"));
+        collection.insertOne(json("_id: 3, a: {b: null}"));
+        collection.insertOne(json("_id: 4"));
+
+        assertThat(toArray(collection.find(json("'a.b': {$exists: false}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, a: null"),
+                json("_id: 4")
+            );
+
+        assertThat(toArray(collection.find(json("'a.b': {$exists: true}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 3, a: {b: null}")
+            );
+
+        assertThat(toArray(collection.find(json("a: {b: {$exists: true}}")))).isEmpty();
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {

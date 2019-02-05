@@ -282,16 +282,15 @@ public class DefaultQueryMatcherTest {
 
     @Test
     public void testMatchesExists() throws Exception {
-        Document document = json("");
-        Document query = map("qty", exists().appendAll(notIn(5, 15)));
+        Document query = json("qty: {$exists: true, $nin: [5, 15]}");
+        assertThat(matcher.matches(json(""), query)).isFalse();
+        assertThat(matcher.matches(json("qty: 17"), query)).isTrue();
+        assertThat(matcher.matches(json("qty: 15"), query)).isFalse();
 
-        assertThat(matcher.matches(document, query)).isFalse();
-
-        document.put("qty", 17);
-        assertThat(matcher.matches(document, query)).isTrue();
-
-        document.put("qty", 15);
-        assertThat(matcher.matches(document, query)).isFalse();
+        assertThat(matcher.matches(json("a: {b: 1}"), json("'a.b': {$exists: true}"))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), json("'a.b': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: null"), json("'a.b': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: null"), json("'a.b': {$exists: false}"))).isTrue();
     }
 
     @Test

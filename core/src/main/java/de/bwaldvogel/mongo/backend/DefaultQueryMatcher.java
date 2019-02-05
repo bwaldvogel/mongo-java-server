@@ -97,10 +97,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
             throw new MongoServerException("illegal keys: " + keys);
         }
 
-        if (Missing.isNullOrMissing(value)) {
-            return queryValue == null;
-        }
-
         String firstKey = keys.get(0);
 
         if (firstKey.equals("$comment")) {
@@ -149,12 +145,17 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return checkMatch(queryValue, subKeys, subObject);
         }
 
-        if (!(value instanceof Document)) {
+        final Document document;
+        final Object documentValue;
+        if (Missing.isNullOrMissing(value)) {
+            document = null;
+            documentValue = Missing.getInstance();
+        } else if (value instanceof Document) {
+            document = (Document) value;
+            documentValue = document.getOrMissing(firstKey);
+        } else {
             return false;
         }
-
-        Document document = (Document) value;
-        Object documentValue = document.getOrMissing(firstKey);
 
         if (documentValue instanceof Collection<?>) {
             Collection<?> documentValues = (Collection<?>) documentValue;
