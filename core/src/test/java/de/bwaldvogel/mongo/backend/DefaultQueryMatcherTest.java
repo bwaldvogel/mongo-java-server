@@ -66,7 +66,7 @@ public class DefaultQueryMatcherTest {
             json("x: {y: {z: 23}}"),
             json("a: 123, x: {y: {z: 23}}")
         );
-        for(Document document : documents) {
+        for (Document document : documents) {
             assertThat(matcher.matches(document, json("x: {y: 23, $lt: 10}"))).isFalse();
             assertThat(matcher.matches(document, json("x: {y: {$lt: 100, z: 23}}"))).isFalse();
             assertThat(matcher.matches(document, json("a: 123, x: {y: {$lt: 100, z: 23}}"))).isFalse();
