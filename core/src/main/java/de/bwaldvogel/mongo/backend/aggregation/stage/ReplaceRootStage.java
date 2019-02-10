@@ -27,22 +27,18 @@ public class ReplaceRootStage implements AggregationStage {
     }
 
     Document replaceRoot(Document document) {
-        Object result = Expression.evaluateDocument(newRoot, document);
+        Object evaluatedNewRoot = Expression.evaluateDocument(newRoot, document);
 
-        if (!(result instanceof Document)) {
-            throw typeMismatchError(result, document);
+        if (!(evaluatedNewRoot instanceof Document)) {
+            throw new MongoServerError(40228, "'newRoot' expression must evaluate to an object, but resulting value was: " + toString(evaluatedNewRoot)
+                + ". Type of resulting value: '" + describeType(evaluatedNewRoot)
+                + "'. Input document: " + document.toString(true)); // TODO: Mongo will only show the matched element (if any). How to get it?
         }
 
-        return (Document) result;
+        return (Document) evaluatedNewRoot;
     }
 
-    private static MongoServerError typeMismatchError(Object subject, Document document) {
-        return new MongoServerError(40228, "'newRoot' expression must evaluate to an object, but resulting value was: " + serializeType(subject)
-            + ". Type of resulting value: '" + describeType(subject)
-            + "'. Input document: " + document.toString(true)); // TODO: Mongo will only show the matched element (if any). How to get it?
-    }
-
-    private static String serializeType(Object subject) {
+    private static String toString(Object subject) {
         if (Missing.class.isAssignableFrom(subject.getClass())) {
             return "MISSING";
         }
