@@ -11,6 +11,12 @@ import org.junit.Test;
 public class BsonRegularExpressionTest {
 
     @Test
+    public void testToString() throws Exception {
+        assertThat(new BsonRegularExpression(".*")).hasToString("{\"$regex\" : \".*\"}");
+        assertThat(new BsonRegularExpression(".*", "im")).hasToString("{\"$regex\" : \".*\", \"$options\" : \"im\"}");
+    }
+
+    @Test
     public void testConvertToRegularExpressionWithoutOptions() throws Exception {
         BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(json("$regex: 'a.*z'"));
         assertThat(regularExpression.getPattern()).isEqualTo("a.*z");

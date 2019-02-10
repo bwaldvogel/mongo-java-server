@@ -110,6 +110,15 @@ public class BsonRegularExpression implements Bson {
         return Pattern.compile(pattern, flags);
     }
 
+    @Override
+    public String toString() {
+        Document representative = new Document("$regex", pattern);
+        if (options != null) {
+            representative.put("$options", options);
+        }
+        return Json.toJsonValue(representative);
+    }
+
     public Matcher matcher(String string) {
         return toPattern().matcher(string);
     }
