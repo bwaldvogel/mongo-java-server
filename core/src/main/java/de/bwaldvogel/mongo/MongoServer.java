@@ -2,7 +2,11 @@ package de.bwaldvogel.mongo;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +25,8 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
 
 public class MongoServer {
 
@@ -36,8 +42,21 @@ public class MongoServer {
 
     private Channel channel;
 
+    private SslContext sslContext;
+
     public MongoServer(MongoBackend backend) {
         this.backend = backend;
+    }
+
+    public void enableSsl(PrivateKey key, String keyPassword, X509Certificate... keyCertChain) {
+        if (channel != null) {
+            throw new IllegalStateException("Server already started");
+        }
+        try {
+            sslContext = SslContextBuilder.forServer(key, keyPassword, keyCertChain).build();
+        } catch (SSLException e) {
+            throw new RuntimeException("Failed to enable SSL", e);
+        }
     }
 
     public void bind(String hostname, int port) {
@@ -51,22 +70,24 @@ public class MongoServer {
         channelGroup = new DefaultChannelGroup("mongodb-channels", workerGroup.next());
 
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap();
-            bootstrap//
-                    .group(bossGroup, workerGroup)//
-                    .channel(NioServerSocketChannel.class)//
-                    .option(ChannelOption.SO_BACKLOG, 100)//
-                    .localAddress(socketAddress)//
-                    .childOption(ChannelOption.TCP_NODELAY, Boolean.TRUE)//
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(new MongoWireEncoder());
-                            ch.pipeline().addLast(new MongoWireProtocolHandler());
-                            ch.pipeline().addLast(new MongoDatabaseHandler(backend, channelGroup));
-                            ch.pipeline().addLast(new MongoExceptionHandler());
+            ServerBootstrap bootstrap = new ServerBootstrap()
+                .group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .option(ChannelOption.SO_BACKLOG, 100)
+                .localAddress(socketAddress)
+                .childOption(ChannelOption.TCP_NODELAY, Boolean.TRUE)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel ch) throws Exception {
+                        if (sslContext != null) {
+                            ch.pipeline().addLast(sslContext.newHandler(ch.alloc()));
                         }
-                    });
+                        ch.pipeline().addLast(new MongoWireEncoder());
+                        ch.pipeline().addLast(new MongoWireProtocolHandler());
+                        ch.pipeline().addLast(new MongoDatabaseHandler(backend, channelGroup));
+                        ch.pipeline().addLast(new MongoExceptionHandler());
+                    }
+                });
 
             channel = bootstrap.bind().syncUninterruptibly().channel();
 
@@ -92,8 +113,9 @@ public class MongoServer {
      *         not listening
      */
     public InetSocketAddress getLocalAddress() {
-        if (channel == null)
+        if (channel == null) {
             return null;
+        }
         return (InetSocketAddress) channel.localAddress();
     }
 
@@ -107,11 +129,19 @@ public class MongoServer {
         stopListenting();
 
         // Shut down all event loops to terminate all threads.
-        bossGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
-        workerGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+        if (bossGroup != null) {
+            bossGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+        }
+        if (workerGroup != null) {
+            workerGroup.shutdownGracefully(0, 5, TimeUnit.SECONDS);
+        }
 
-        bossGroup.terminationFuture().syncUninterruptibly();
-        workerGroup.terminationFuture().syncUninterruptibly();
+        if (bossGroup != null) {
+            bossGroup.terminationFuture().syncUninterruptibly();
+        }
+        if (workerGroup != null) {
+            workerGroup.terminationFuture().syncUninterruptibly();
+        }
 
         backend.close();
 
@@ -141,11 +171,13 @@ public class MongoServer {
     }
 
     private void closeClients() {
-        int numClients = channelGroup.size();
-        if (numClients > 0) {
-            log.warn("Closing {} clients", numClients);
+        if (channelGroup != null) {
+            int numClients = channelGroup.size();
+            if (numClients > 0) {
+                log.warn("Closing {} clients", numClients);
+            }
+            channelGroup.close().syncUninterruptibly();
         }
-        channelGroup.close().syncUninterruptibly();
     }
 
     @Override
@@ -155,6 +187,7 @@ public class MongoServer {
         InetSocketAddress socketAddress = getLocalAddress();
         if (socketAddress != null) {
             sb.append("port: ").append(socketAddress.getPort());
+            sb.append(", ssl: ").append(sslContext != null);
         }
         sb.append(")");
         return sb.toString();
