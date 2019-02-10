@@ -299,11 +299,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testCreateIndexes() {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));
-        List<Document> indexes = toArray(getCollection("system.indexes").find());
-        assertThat(indexes).containsExactlyInAnyOrder(
-            json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_"),
-            json("key: {n: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "n_1"),
-            json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1"));
+
+        assertThat(toArray(collection.listIndexes()))
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {n: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "n_1").append("v", 2),
+                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+            );
     }
 
     @Test
@@ -369,25 +371,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testSystemIndexes() throws Exception {
-        getCollection("foo").insertOne(json(""));
-        getCollection("bar").insertOne(json(""));
-
-        MongoCollection<Document> systemIndexes = db.getCollection("system.indexes");
-        assertThat(toArray(systemIndexes.find())).containsExactlyInAnyOrder(
-            json("name: '_id_', ns: 'testdb.foo', key: {_id: 1}"),
-            json("name: '_id_', ns: 'testdb.bar', key: {_id: 1}")
-        );
-    }
-
-    @Test
     public void testSystemNamespaces() throws Exception {
         getCollection("foo").insertOne(json(""));
         getCollection("bar").insertOne(json(""));
 
         MongoCollection<Document> namespaces = db.getCollection("system.namespaces");
         assertThat(toArray(namespaces.find())).containsExactlyInAnyOrder(
-            json("name: 'testdb.system.indexes'"),
             json("name: 'testdb.foo'"),
             json("name: 'testdb.bar'")
         );
@@ -2873,21 +2862,26 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testListIndexes() throws Exception {
         collection.insertOne(json("_id: 1"));
-        db.getCollection("other").insertOne(json("_id: 1"));
+        MongoCollection<Document> other = db.getCollection("other");
+        other.insertOne(json("_id: 1"));
 
         collection.createIndex(json("bla: 1"));
 
         collection.createIndex(new Document("a", 1), new IndexOptions().unique(true));
         collection.createIndex(new Document("a", 1).append("b", -1.0), new IndexOptions().unique(true));
 
-        List<Document> indexInfo = toArray(collection.listIndexes());
-        assertThat(indexInfo).containsExactlyInAnyOrder(
-            json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}"),
-            json("name: '_id_', ns: 'testdb.other', key: {_id: 1}"),
-            json("name: 'bla_1', ns: 'testdb.testcoll', key: {bla: 1}"),
-            json("name: 'a_1', ns: 'testdb.testcoll', key: {a: 1}, unique: true"),
-            json("name: 'a_1_b_-1', ns: 'testdb.testcoll', key: {a: 1, b: -1.0}, unique: true")
-        );
+        assertThat(toArray(collection.listIndexes()))
+            .containsExactlyInAnyOrder(
+                json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"),
+                json("name: 'bla_1', ns: 'testdb.testcoll', key: {bla: 1}, v: 2"),
+                json("name: 'a_1', ns: 'testdb.testcoll', key: {a: 1}, unique: true, v: 2"),
+                json("name: 'a_1_b_-1', ns: 'testdb.testcoll', key: {a: 1, b: -1.0}, unique: true, v: 2")
+            );
+
+        assertThat(toArray(other.listIndexes()))
+            .containsExactlyInAnyOrder(
+                json("name: '_id_', ns: 'testdb.other', key: {_id: 1}, v: 2")
+            );
     }
 
     @Test

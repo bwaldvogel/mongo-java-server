@@ -76,7 +76,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     public void testShutdownAndRestartOpensIndexes() throws Exception {
         collection.createIndex(json("a: 1"));
         collection.createIndex(json("b: 1"));
-        List<Document> indexes = toArray(getCollection("system.indexes").find());
+        List<Document> indexes = toArray(collection.listIndexes());
         assertThat(indexes).hasSize(3);
 
         collection.insertOne(json("_id: 1"));
@@ -87,8 +87,9 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         restart();
 
         assertThat(toArray(syncClient.listDatabaseNames())).isEqualTo(databaseNames);
+        assertThat(collection.countDocuments()).isEqualTo(2);
 
-        List<Document> indexesAfterRestart = toArray(getCollection("system.indexes").find());
+        List<Document> indexesAfterRestart = toArray(collection.listIndexes());
         assertThat(indexesAfterRestart).isEqualTo(indexes);
     }
 

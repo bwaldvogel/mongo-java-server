@@ -82,7 +82,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
 
             MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
-            indexes.set(indexCollection);
+            collections.put(indexCollection.getCollectionName(), indexCollection);
+            this.indexes.set(indexCollection);
             for (Document indexDescription : indexCollection.queryAll()) {
                 openOrCreateIndex(indexDescription);
             }
@@ -161,7 +162,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("listCollections")) {
             return listCollections();
         } else if (command.equalsIgnoreCase("listIndexes")) {
-            return listIndexes();
+            String collectionName = query.get(command).toString();
+            return listIndexes(collectionName);
         } else {
             log.error("unknown query: {}", query);
         }
@@ -193,9 +195,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return Utils.cursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
     }
 
-    private Document listIndexes() {
+    private Document listIndexes(String collectionName) {
         Iterable<Document> indexes = Optional.ofNullable(resolveCollection(INDEXES_COLLECTION_NAME, false))
-            .map(MongoCollection::queryAll)
+            .map(collection -> collection.handleQuery(new Document("ns", getDatabaseName() + "." + collectionName)))
             .orElse(Collections.emptyList());
         return Utils.cursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
     }
@@ -707,7 +709,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private void addNamespace(MongoCollection<P> collection) {
         collections.put(collection.getCollectionName(), collection);
-        namespaces.addDocument(new Document("name", collection.getFullName()));
+        if (!collection.getCollectionName().startsWith("system.")) {
+            namespaces.addDocument(new Document("name", collection.getFullName()));
+        }
     }
 
     @Override
@@ -744,6 +748,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private void addIndex(Document indexDescription) {
+        if (!indexDescription.containsKey("v")) {
+            indexDescription.put("v", 2);
+        }
         openOrCreateIndex(indexDescription);
         getOrCreateIndexesCollection().addDocument(indexDescription);
     }
@@ -907,7 +914,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Document indexDescription = new Document();
         indexDescription.put("name", "_id_");
         indexDescription.put("ns", collection.getFullName());
-        indexDescription.put("key", new Document(ID_FIELD, Integer.valueOf(1)));
+        indexDescription.put("key", new Document(ID_FIELD, 1));
         addIndex(indexDescription);
 
         log.info("created collection {}", collection.getFullName());

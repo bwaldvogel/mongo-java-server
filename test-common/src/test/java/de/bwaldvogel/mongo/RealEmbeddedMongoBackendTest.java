@@ -126,26 +126,9 @@ public class RealEmbeddedMongoBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    public void testSystemIndexes() throws Exception {
-        assumeStrictMode();
-        super.testSystemIndexes();
-    }
-
-    @Override
-    public void testListIndexes() throws Exception {
-        assumeStrictMode();
-        super.testListIndexes();
-    }
-
-    @Override
     public void testQueryWithSubdocumentIndex() throws Exception {
         assumeStrictMode();
         super.testQueryWithSubdocumentIndex();
     }
 
-    @Override
-    public void testCreateIndexes() {
-        assumeStrictMode();
-        super.testCreateIndexes();
-    }
 }
