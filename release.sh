@@ -1,3 +1,3 @@
-#!/bin/zsh
+#!/bin/bash
 
-./gradlew --no-daemon clean build uploadArchives
+./gradlew clean build publish
