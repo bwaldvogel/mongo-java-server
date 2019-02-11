@@ -707,6 +707,30 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testAggregateWithReplaceRoot() {
+        Document replaceRoot = json("$replaceRoot: { newRoot: '$a.b' }");
+        List<Document> pipeline = Collections.singletonList(replaceRoot);
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+        collection.insertOne(json("_id: 1, a: { b: { c: 10 } }"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("c: 10"));
+    }
+
+    @Test
+    public void testAggregateWithProjectingReplaceRoot() {
+        Document replaceRoot = json("$replaceRoot: { newRoot: { x: '$a.b' } }");
+        List<Document> pipeline = Collections.singletonList(replaceRoot);
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+        collection.insertOne(json("_id: 1, a: { b: { c: 10 } }"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("x: { c: 10 }"));
+    }
+
     private static Date date(String instant) {
         return Date.from(Instant.parse(instant));
     }
