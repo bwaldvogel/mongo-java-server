@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.Json;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ReplaceRootStage implements AggregationStage {
@@ -30,22 +31,11 @@ public class ReplaceRootStage implements AggregationStage {
         Object evaluatedNewRoot = Expression.evaluateDocument(newRoot, document);
 
         if (!(evaluatedNewRoot instanceof Document)) {
-            throw new MongoServerError(40228, "'newRoot' expression must evaluate to an object, but resulting value was: " + toString(evaluatedNewRoot)
+            throw new MongoServerError(40228, "'newRoot' expression must evaluate to an object, but resulting value was: " + Json.toJsonValue(evaluatedNewRoot, true, "{", "}")
                 + ". Type of resulting value: '" + describeType(evaluatedNewRoot)
-                + "'. Input document: " + document.toString(true)); // TODO: Mongo will only show the matched element (if any). How to get it?
+                + "'. Input document: " + document.toString(true));
         }
 
         return (Document) evaluatedNewRoot;
-    }
-
-    private static String toString(Object subject) {
-        if (Missing.class.isAssignableFrom(subject.getClass())) {
-            return "MISSING";
-        }
-        if (String.class.isAssignableFrom(subject.getClass())) {
-            return "\"" + subject + "\"";
-        }
-        // TODO: how to serialize other types e.g. BIN_DATA?
-        return subject.toString();
     }
 }
