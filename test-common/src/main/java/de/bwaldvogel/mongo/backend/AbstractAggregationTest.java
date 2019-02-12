@@ -720,6 +720,21 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithIllegalReplaceRoot() {
+        Document replaceRoot = json("$replaceRoot: { newRoot: '$a.b' }");
+        List<Document> pipeline = Collections.singletonList(replaceRoot);
+
+        collection.insertOne(json("_id: 1, a: { b: 10 }, c: 123"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 40228 (Location40228): " +
+                "''newRoot' expression must evaluate to an object, but resulting value was: 10." +
+                " Type of resulting value: 'int'.")
+            .withMessageContaining("a: {b: 10}");
+    }
+
+    @Test
     public void testAggregateWithProjectingReplaceRoot() {
         Document replaceRoot = json("$replaceRoot: { newRoot: { x: '$a.b' } }");
         List<Document> pipeline = Collections.singletonList(replaceRoot);
