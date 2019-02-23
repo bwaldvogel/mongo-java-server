@@ -933,6 +933,16 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     public void drop() {
         log.debug("dropping {}", this);
         for (String collectionName : collections.keySet()) {
+            if (!isSystemCollection(collectionName)) {
+                dropCollection(collectionName);
+            }
+        }
+        dropCollectionIfExists(INDEXES_COLLECTION_NAME);
+        dropCollectionIfExists(NAMESPACES_COLLECTION_NAME);
+    }
+
+    private void dropCollectionIfExists(String collectionName) {
+        if (collections.containsKey(collectionName)) {
             dropCollection(collectionName);
         }
     }
