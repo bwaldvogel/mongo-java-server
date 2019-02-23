@@ -368,6 +368,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (!(queryValue instanceof Document)) {
             throw new BadValueException(QueryOperator.ELEM_MATCH.getValue() + " needs an Object");
         }
+        if (!(values instanceof Collection)) {
+            return false;
+        }
         Collection<Object> list = (Collection<Object>) values;
         for (Object value : list) {
             if (checkMatchesValue(queryValue, value, false)) {
@@ -468,6 +471,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 return false;
             case TYPE:
                 return matchTypes(value, expressionValue);
+            case ELEM_MATCH:
+                return checkMatchesElemValues(expressionValue, value);
             default:
                 throw new IllegalArgumentException("unhandled query operator: " + queryOperator);
         }

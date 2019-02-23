@@ -3234,6 +3234,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/51
+    @Test
+    public void testQueryWithElemMatch() {
+        collection.insertOne(json("_id: 1, materials: [{materialId: 'A'}, {materialId: 'B'}, {materialId: 'C'}]"));
+        collection.insertOne(json("_id: 2, materials: [{materialId: 'B'}]"));
+        collection.insertOne(json("_id: 3, materials: []"));
+        collection.insertOne(json("_id: 4"));
+        collection.insertOne(json("_id: 5, materials: 'ABC'"));
+        collection.insertOne(json("_id: 6, materials: {materialId: 'A'}"));
+
+        assertThat(toArray(collection.find(json("materials: {$elemMatch: {materialId: 'A'}}"))))
+            .containsExactly(json("_id: 1, materials: [{materialId: 'A'}, {materialId: 'B'}, {materialId: 'C'}]"));
+    }
+
     @Test
     public void testMatchesNullOrMissing() throws Exception {
         collection.insertOne(json("_id: 1, x: null"));

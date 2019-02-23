@@ -711,6 +711,15 @@ public class DefaultQueryMatcherTest {
 
         Document document2 = json("_id: 2, results: [75, 88, 89]");
         assertThat(matcher.matches(document2, map("results", elemMatch(gte(80).appendAll(lt(85)))))).isFalse();
+
+        assertThat(matcher.matches(json("a: [{b: 'c'}]"), json("a: {$elemMatch: {b: 'c'}}"))).isTrue();
+        assertThat(matcher.matches(json("a: [{b: 'c'}, {c: 'd'}]"), json("a: {$elemMatch: {b: 'c'}}"))).isTrue();
+        assertThat(matcher.matches(json("a: [{c: 'd'}, {e: 'f'}]"), json("a: {$elemMatch: {b: 'c'}}"))).isFalse();
+        assertThat(matcher.matches(json("a: {b: 'c'}"), json("a: {$elemMatch: {b: 'c'}}"))).isFalse();
+        assertThat(matcher.matches(json("a: null"), json("a: {$elemMatch: {b: 'c'}}"))).isFalse();
+        assertThat(matcher.matches(json(""), json("a: {$elemMatch: {b: 'c'}}"))).isFalse();
+        assertThat(matcher.matches(json("a: [{b: 'c'}]"), json("a: {$elemMatch: {b: 'd'}}"))).isFalse();
+        assertThat(matcher.matches(json("a: [{b: {c: 'd'}}]"), json("a: {$elemMatch: {b: 'd'}}"))).isFalse();
     }
 
     @Test
