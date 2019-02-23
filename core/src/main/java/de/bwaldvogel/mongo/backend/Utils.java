@@ -69,6 +69,12 @@ public class Utils {
     }
 
     public static Object getSubdocumentValue(Document document, String key) {
+        if (key.endsWith(".")) {
+            throw new MongoServerError(40353, "FieldPath must not end with a '.'.");
+        }
+        if (key.startsWith(".") || key.contains("..")) {
+            throw new MongoServerError(15998, "FieldPath field names may not be empty strings.");
+        }
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);

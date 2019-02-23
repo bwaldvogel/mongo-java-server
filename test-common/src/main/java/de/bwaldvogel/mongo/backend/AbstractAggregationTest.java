@@ -269,6 +269,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithGroupByIllegalKey() throws Exception {
+        collection.insertOne(json("_id:  1, a: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$group: {_id: '$a.'}"))).first())
+            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$group: {_id: '$a..1'}"))).first())
+            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+    }
+
+    @Test
     public void testAggregateWithSimpleExpressions() throws Exception {
         Document query = json("$group: {_id: {$abs: '$value'}, count: {$sum: 1}}");
         List<Document> pipeline = Collections.singletonList(query);
@@ -404,6 +417,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 json("_id: 2, value: 20, other: null"),
                 json("_id: 3, value: 30, n: 7.3, other: null")
             );
+    }
+
+    @Test
+    public void testAggregateWithProjection_IllegalFieldPath() throws Exception {
+        collection.insertOne(json("_id: 1, x: 10"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: 0, v: '$x.1.'}"))).first())
+            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: 0, v: '$x..1'}"))).first())
+            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
@@ -570,6 +596,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(json("doc: {_id: 1, a: {v: 10}}, a: {v: 10}, a_v: 10"));
+    }
+
+    @Test
+    public void testAggregateWithRootVariable_IllegalFieldPath() throws Exception {
+        collection.insertOne(json("_id: 1, x: 10"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: '$$ROOT.a.'}"))).first())
+            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: '$$ROOT.a..1'}"))).first())
+            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test

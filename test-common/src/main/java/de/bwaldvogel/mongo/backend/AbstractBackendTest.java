@@ -3403,6 +3403,26 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(toArray(collection.find(json("_id: {$gt: 3}")))).hasSize(2);
         assertThat(toArray(collection.find(json("_id: {$gt: {$expr: {$literal: 3}}}")))).isEmpty();
+
+        assertThat(toArray(collection.find(json("$expr: {$eq: ['$budget', {$multiply: ['$spent', 2]}]}"))))
+            .containsExactly(json("_id: 3, category: 'clothes', budget: 100, spent: 50"));
+    }
+
+    @Test
+    public void testExprQuery_IllegalFieldPath() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a.', 10]}")).first())
+            .withMessageContaining("Query failed with error code 40353 and error message 'FieldPath must not end with a '.'.'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$.a', 10]}")).first())
+            .withMessageContaining("Query failed with error code 15998 and error message 'FieldPath field names may not be empty strings.'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a..1', 10]}")).first())
+            .withMessageContaining("Query failed with error code 15998 and error message 'FieldPath field names may not be empty strings.'");
     }
 
     @Test

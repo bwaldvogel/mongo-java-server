@@ -11,6 +11,7 @@ import java.util.Date;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class UtilsTest {
 
@@ -134,6 +135,18 @@ public class UtilsTest {
         assertThat(Utils.getSubdocumentValue(document, "foo.b.x")).isEqualTo(29);
         assertThat(Utils.getSubdocumentValue(document, "foo.b.z")).isEqualTo(17);
         assertThat(Utils.getSubdocumentValue(document, "foo.c")).isInstanceOf(Missing.class);
+
+        assertThatExceptionOfType(MongoServerException.class)
+            .isThrownBy(() -> Utils.getSubdocumentValue(document, "a."))
+            .withMessageContaining("[Error 40353] FieldPath must not end with a '.'.");
+
+        assertThatExceptionOfType(MongoServerException.class)
+            .isThrownBy(() -> Utils.getSubdocumentValue(document, "a..1"))
+            .withMessageContaining("[Error 15998] FieldPath field names may not be empty strings.");
+
+        assertThatExceptionOfType(MongoServerException.class)
+            .isThrownBy(() -> Utils.getSubdocumentValue(document, ".a"))
+            .withMessageContaining("[Error 15998] FieldPath field names may not be empty strings.");
     }
 
     @Test
