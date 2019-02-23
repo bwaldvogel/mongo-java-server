@@ -396,7 +396,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Collection<MongoCollection<P>> collections() {
         return collections.values().stream()
-            .filter(collection -> !collection.getCollectionName().startsWith("system."))
+            .filter(collection -> !isSystemCollection(collection.getCollectionName()))
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -714,7 +714,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private void addNamespace(MongoCollection<P> collection) {
         collections.put(collection.getCollectionName(), collection);
-        if (!collection.getCollectionName().startsWith("system.")) {
+        if (!isSystemCollection(collection.getCollectionName())) {
             namespaces.addDocument(new Document("name", collection.getFullName()));
         }
     }
@@ -820,7 +820,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private void insertDocuments(Channel channel, String collectionName, List<Document> documents) {
         clearLastStatus(channel);
         try {
-            if (collectionName.startsWith("system.")) {
+            if (isSystemCollection(collectionName)) {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
             MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
@@ -837,7 +837,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document deleteDocuments(Channel channel, String collectionName, Document selector, int limit) {
         clearLastStatus(channel);
         try {
-            if (collectionName.startsWith("system.")) {
+            if (isSystemCollection(collectionName)) {
                 throw new MongoServerError(73, "InvalidNamespace",
                     "cannot write to '" + getDatabaseName() + "." + collectionName + "'");
             }
@@ -860,7 +860,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document updateDocuments(String collectionName, Document selector,
                                      Document update, boolean multi, boolean upsert) {
 
-        if (collectionName.startsWith("system.")) {
+        if (isSystemCollection(collectionName)) {
             throw new MongoServerError(10156, "cannot update system collection");
         }
 
@@ -960,6 +960,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         List<Document> newDocuments = new ArrayList<>();
         newDocuments.add(new Document("name", collection.getFullName()));
         namespaces.insertDocuments(newDocuments);
+    }
+
+    private static boolean isSystemCollection(String collectionName) {
+        return collectionName.startsWith("system.");
     }
 
 }
