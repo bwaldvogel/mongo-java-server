@@ -1123,12 +1123,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testMaxBsonSize() throws Exception {
-        int maxBsonObjectSize = syncClient.getMaxBsonObjectSize();
-        assertThat(maxBsonObjectSize).isEqualTo(16777216);
-    }
-
-    @Test
     public void testQuery() throws Exception {
         Document obj = collection.find(json("_id: 1")).first();
         assertThat(obj).isNull();
@@ -2351,11 +2345,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testIsMaster() throws Exception {
-        Document isMaster = db.runCommand(new Document("isMaster", Integer.valueOf(1)));
+        Document isMaster = runCommand("isMaster");
         assertThat(isMaster.getBoolean("ismaster")).isTrue();
         assertThat(isMaster.getDate("localTime")).isInstanceOf(Date.class);
-        assertThat(isMaster.getInteger("maxBsonObjectSize")).isGreaterThan(1000);
-        assertThat(isMaster.getInteger("maxMessageSizeBytes")).isGreaterThan(isMaster.getInteger("maxBsonObjectSize"));
+        Integer maxBsonObjectSize = isMaster.getInteger("maxBsonObjectSize");
+        assertThat(maxBsonObjectSize).isEqualTo(16777216);
+        assertThat(isMaster.getInteger("maxMessageSizeBytes")).isGreaterThan(maxBsonObjectSize);
     }
 
     // https://github.com/foursquare/fongo/pull/26
@@ -3824,7 +3819,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(document);
 
         Document persistentDocument = collection.find(new Document("_id", id)).first();
-        assertThat(persistentDocument.keySet()).hasSize(numKeyValues + 1);
+        assertThat(persistentDocument).hasSize(numKeyValues + 1);
     }
 
     private void insertUpdateInBulk(boolean ordered) {
@@ -3833,7 +3828,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         ops.add(new InsertOneModel<>(json("_id: 1, field: 'x'")));
         ops.add(new InsertOneModel<>(json("_id: 2, field: 'x'")));
         ops.add(new InsertOneModel<>(json("_id: 3, field: 'x'")));
-        ops.add(new UpdateManyModel<Document>(json("field: 'x'"), set("field", "y")));
+        ops.add(new UpdateManyModel<>(json("field: 'x'"), set("field", "y")));
 
         BulkWriteResult result = collection.bulkWrite(ops, new BulkWriteOptions().ordered(ordered));
 
@@ -3854,7 +3849,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("foo: 'bar'"));
 
         List<WriteModel<Document>> ops = new ArrayList<>();
-        ops.add(new UpdateOneModel<Document>(ne("foo", "bar"), set("field", "y")));
+        ops.add(new UpdateOneModel<>(ne("foo", "bar"), set("field", "y")));
 
         BulkWriteResult result = collection.bulkWrite(ops, new BulkWriteOptions().ordered(ordered));
 
