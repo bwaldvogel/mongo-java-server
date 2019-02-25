@@ -7,6 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
@@ -66,9 +67,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         }
         in = in.readSlice(totalLength - lengthFieldLength);
         int readable = in.readableBytes();
-        if (readable != totalLength - lengthFieldLength) {
-            throw new IllegalStateException();
-        }
+        Assert.equals(readable, totalLength - lengthFieldLength);
 
         final int requestID = in.readIntLE();
         final int responseTo = in.readIntLE();

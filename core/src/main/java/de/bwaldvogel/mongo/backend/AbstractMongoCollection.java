@@ -13,7 +13,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -1015,8 +1014,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                         throw new IllegalStateException("Found no position for " + document + " in " + index);
                     }
                 }
-                if (position != null && !Objects.equals(position, indexPosition)) {
-                    throw new IllegalStateException("Got different positions for " + document);
+                if (position != null) {
+                    Assert.equals(position, indexPosition, () -> "Got different positions for " + document);
                 }
                 position = indexPosition;
             }

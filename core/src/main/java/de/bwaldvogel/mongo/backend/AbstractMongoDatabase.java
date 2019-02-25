@@ -465,9 +465,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document commandGetLastError(Channel channel, String command, Document query) {
         Iterator<String> it = query.keySet().iterator();
         String cmd = it.next();
-        if (!cmd.equals(command)) {
-            throw new IllegalStateException();
-        }
+        Assert.equals(cmd, command);
         if (it.hasNext()) {
             String subCommand = it.next();
             switch (subCommand) {
@@ -772,9 +770,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private String extractCollectionNameFromNamespace(String namespace) {
-        if (!namespace.startsWith(databaseName)) {
-            throw new IllegalArgumentException();
-        }
+        Assert.startsWith(namespace, databaseName);
         return namespace.substring(databaseName.length() + 1);
     }
 
@@ -901,9 +897,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         List<Document> results = lastResults.get(channel);
         // list must not be empty
         Document last = results.get(results.size() - 1);
-        if (last != null) {
-            throw new IllegalStateException("last result already set: " + last);
-        }
+        Assert.isNull(last, () -> "last result already set: " + last);
         results.set(results.size() - 1, result);
     }
 

@@ -39,8 +39,7 @@ enum QueryOperator {
     static {
         for (QueryOperator operator : QueryOperator.values()) {
             QueryOperator old = MAP.put(operator.getValue(), operator);
-            if (old != null)
-                throw new IllegalStateException("Duplicate operator value: " + operator.getValue());
+            Assert.isNull(old, () -> "Duplicate operator value: " + operator.getValue());
         }
     }
 

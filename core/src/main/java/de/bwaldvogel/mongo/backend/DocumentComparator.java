@@ -9,9 +9,8 @@ public class DocumentComparator implements Comparator<Document> {
     private Document orderBy;
 
     public DocumentComparator(Document orderBy) {
-        if (orderBy == null || orderBy.keySet().isEmpty()) {
-            throw new IllegalArgumentException();
-        }
+        Assert.notNull(orderBy);
+        Assert.notEmpty(orderBy.keySet());
         this.orderBy = orderBy;
     }
 

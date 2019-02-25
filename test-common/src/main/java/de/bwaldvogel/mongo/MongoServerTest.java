@@ -131,7 +131,7 @@ public abstract class MongoServerTest {
     public void testEnableSslAfterAlreadyStarted() throws Exception {
         server.bind();
 
-        assertThatExceptionOfType(IllegalStateException.class)
+        assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> server.enableSsl(getPrivateKey(), null, getCertificate()))
             .withMessage("Server already started");
     }

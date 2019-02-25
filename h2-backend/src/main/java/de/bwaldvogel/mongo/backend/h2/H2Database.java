@@ -12,6 +12,7 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.bson.Document;
@@ -53,9 +54,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     static String indexName(List<IndexKey> keys) {
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("No keys");
-        }
+        Assert.notEmpty(keys, () -> "No keys");
         return keys.stream()
             .map(k -> k.getKey() + "." + (k.isAscending() ? "ASC" : "DESC"))
             .collect(Collectors.joining("_"));

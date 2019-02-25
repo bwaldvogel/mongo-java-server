@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.exception;
 
+import de.bwaldvogel.mongo.backend.Assert;
+
 public class MongoServerException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
@@ -13,9 +15,7 @@ public class MongoServerException extends RuntimeException {
     }
 
     private static String validateMessage(String message) {
-        if (message == null || message.isEmpty()) {
-            throw new IllegalArgumentException("illegal error message");
-        }
+        Assert.notNullOrEmpty(message, () -> "Illegal error message");
         return message;
     }
 

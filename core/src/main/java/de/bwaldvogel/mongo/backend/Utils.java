@@ -79,9 +79,7 @@ public class Utils {
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = key.substring(dotPos + 1);
-            if (subKey.startsWith("$.")) {
-                throw new IllegalArgumentException();
-            }
+            Assert.doesNotStartWith(subKey, "$.");
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document) {
                 return getSubdocumentValue((Document) subObject, subKey);

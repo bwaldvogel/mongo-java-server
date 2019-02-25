@@ -327,7 +327,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> Expression.evaluate(json("$map: {input: [1, 2, 3], in: true}"), json("$this: 1")))
-            .withMessage("Document contains $this. This must not happen");
+            .withMessage("Document already contains '$this'");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$map: {input: 'a', in: null}"), json("")))
@@ -1223,7 +1223,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> Expression.evaluate(json("$filter: {input: [1, 2, 3], cond: true}"), json("$this: 1")))
-            .withMessage("Document contains $this. This must not happen");
+            .withMessage("Document already contains '$this'");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$filter: {input: 'a', cond: null}"), json("")))

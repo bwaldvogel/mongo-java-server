@@ -22,9 +22,7 @@ enum QueryFilter {
     static {
         for (QueryFilter filter : QueryFilter.values()) {
             QueryFilter old = MAP.put(filter.getValue(), filter);
-            if (old != null) {
-                throw new IllegalStateException("Duplicate value: " + filter.getValue());
-            }
+            Assert.isNull(old, () -> "Duplicate value: " + filter.getValue());
         }
     }
 
@@ -38,9 +36,7 @@ enum QueryFilter {
 
     static QueryFilter fromValue(String value) throws IllegalArgumentException {
         QueryFilter filter = MAP.get(value);
-        if (filter == null) {
-            throw new IllegalArgumentException("Illegal filter: " + value);
-        }
+        Assert.notNull(filter, () -> "Illegal filter: " + value);
         return filter;
     }
 

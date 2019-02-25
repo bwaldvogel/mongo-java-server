@@ -47,17 +47,13 @@ enum UpdateOperator {
     static {
         for (UpdateOperator operator : UpdateOperator.values()) {
             UpdateOperator old = MAP.put(operator.getValue(), operator);
-            if (old != null) {
-                throw new IllegalStateException("Duplicate operator value: " + operator.getValue());
-            }
+            Assert.isNull(old, () -> "Duplicate operator value: " + operator.getValue());
         }
     }
 
     static UpdateOperator fromValue(String value) throws IllegalArgumentException {
         UpdateOperator op = MAP.get(value);
-        if (op == null) {
-            throw new IllegalArgumentException("Illegal operator: " + value);
-        }
+        Assert.notNull(op, () -> "Illegal operator: " + value);
         return op;
     }
 

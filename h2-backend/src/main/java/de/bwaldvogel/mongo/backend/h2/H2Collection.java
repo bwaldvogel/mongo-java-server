@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
@@ -63,10 +64,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         }
 
         Document previous = dataMap.put(Missing.ofNullable(key), document);
-        if (previous != null) {
-            throw new IllegalArgumentException("Document with key '" + key + "' already existed in " + this + ": "
-                    + previous);
-        }
+        Assert.isNull(previous, () -> "Document with key '" + key + "' already existed in " + this + ": " + previous);
         return key;
     }
 

@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.Missing;
@@ -55,9 +56,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     private static String indexName(List<IndexKey> keys) {
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("No keys");
-        }
+        Assert.notEmpty(keys, () -> "No keys");
         return keys.stream()
             .map(k -> k.getKey() + "_" + (k.isAscending() ? "ASC" : "DESC"))
             .collect(Collectors.joining("_"));

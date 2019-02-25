@@ -5,6 +5,8 @@ import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
+import de.bwaldvogel.mongo.backend.Assert;
+
 public class ObjectId implements Bson, Comparable<ObjectId> {
 
     private static final long serialVersionUID = 1L;
@@ -17,9 +19,7 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
     }
 
     public ObjectId(byte[] data) {
-        if (data.length != LENGTH_OBJECTID) {
-            throw new IllegalArgumentException("Illegal data. Length must be " + LENGTH_OBJECTID + " but was " + data.length);
-        }
+        Assert.equals(data.length, LENGTH_OBJECTID, () -> "Length must be " + LENGTH_OBJECTID + " but was " + data.length);
         System.arraycopy(data, 0, this.data, 0, this.data.length);
     }
 

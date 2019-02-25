@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import de.bwaldvogel.mongo.backend.Assert;
+
 public final class Decimal128 extends Number implements Serializable, Comparable<Decimal128> {
 
     private static final long serialVersionUID = 1L;
@@ -39,9 +41,7 @@ public final class Decimal128 extends Number implements Serializable, Comparable
     }
 
     private BigDecimal toBigDecimal() {
-        if (isSpecial()) {
-            throw new IllegalArgumentException(this + " cannot be converted to BigDecimal");
-        }
+        Assert.isFalse(isSpecial(), () -> this + " cannot be converted to BigDecimal");
         return toBigDecimalValue();
     }
 

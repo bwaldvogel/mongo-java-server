@@ -64,9 +64,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         }
         List<Object> key = getKeyValue(document);
         boolean added = putKeyPosition(key, position);
-        if (!added) {
-            throw new IllegalStateException("Key " + key + " already exists. Concurrency issue?");
-        }
+        Assert.isTrue(added, () -> "Key " + key + " already exists. Concurrency issue?");
     }
 
     @Override

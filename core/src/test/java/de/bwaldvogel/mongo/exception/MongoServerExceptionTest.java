@@ -10,11 +10,11 @@ public class MongoServerExceptionTest {
     public void testIllegalMessage() throws Exception {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> new MongoServerException(null))
-            .withMessage("illegal error message");
+            .withMessage("Illegal error message");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> new MongoServerException(""))
-            .withMessage("illegal error message");
+            .withMessage("Illegal error message");
     }
 
 }

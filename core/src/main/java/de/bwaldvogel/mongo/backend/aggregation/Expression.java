@@ -20,6 +20,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.LinkedTreeSet;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
@@ -320,9 +321,7 @@ public enum Expression implements ExpressionTraits {
 
             String key = "$" + as;
             Document documentForCondition = document.clone();
-            if (documentForCondition.containsKey(key)) {
-                throw new IllegalArgumentException("Document contains " + key + ". This must not happen");
-            }
+            Assert.isFalse(documentForCondition.containsKey(key), () -> "Document already contains '" + key + "'");
             List<Object> result = new ArrayList<>();
             for (Object inputValue : inputCollection) {
                 Object evaluatedInputValue = evaluate(inputValue, document);
@@ -561,9 +560,7 @@ public enum Expression implements ExpressionTraits {
 
             String key = "$" + as;
             Document documentForCondition = document.clone();
-            if (documentForCondition.containsKey(key)) {
-                throw new IllegalArgumentException("Document contains " + key + ". This must not happen");
-            }
+            Assert.isFalse(documentForCondition.containsKey(key), () -> "Document already contains '" + key + "'");
             List<Object> result = new ArrayList<>();
             for (Object inputValue : inputCollection) {
                 Object evaluatedInputValue = evaluate(inputValue, document);

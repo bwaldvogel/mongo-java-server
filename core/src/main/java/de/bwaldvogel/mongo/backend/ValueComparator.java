@@ -177,9 +177,7 @@ public class ValueComparator implements Comparator<Object> {
     }
 
     private int compareListsForEquality(Collection<?> value1, Collection<?> value2) {
-        if (handleLists) {
-            throw new IllegalStateException("Unexpected state");
-        }
+        Assert.isFalse(handleLists, () -> "Unexpected state");
 
         List<?> collection1 = new ArrayList<>(value1);
         List<?> collection2 = new ArrayList<>(value2);

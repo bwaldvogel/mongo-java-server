@@ -11,6 +11,7 @@ import javax.net.ssl.SSLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.wire.MongoDatabaseHandler;
 import de.bwaldvogel.mongo.wire.MongoExceptionHandler;
 import de.bwaldvogel.mongo.wire.MongoWireEncoder;
@@ -49,9 +50,7 @@ public class MongoServer {
     }
 
     public void enableSsl(PrivateKey key, String keyPassword, X509Certificate... keyCertChain) {
-        if (channel != null) {
-            throw new IllegalStateException("Server already started");
-        }
+        Assert.isNull(channel, () -> "Server already started");
         try {
             sslContext = SslContextBuilder.forServer(key, keyPassword, keyCertChain).build();
         } catch (SSLException e) {

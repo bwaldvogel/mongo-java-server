@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.bwaldvogel.mongo.backend.Assert;
+
 public class BsonRegularExpression implements Bson {
 
     private static final long serialVersionUID = 1L;
@@ -52,9 +54,7 @@ public class BsonRegularExpression implements Bson {
     }
 
     public static BsonRegularExpression convertToRegularExpression(Object pattern) {
-        if (!isRegularExpression(pattern)) {
-            throw new IllegalArgumentException("'" + pattern + "' is not a regular expression");
-        }
+        Assert.isTrue(isRegularExpression(pattern), () -> "'" + pattern + "' is not a regular expression");
         if (pattern instanceof BsonRegularExpression) {
             return (BsonRegularExpression) pattern;
         } else {
