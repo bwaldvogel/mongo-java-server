@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
 import org.junit.Test;
@@ -157,6 +158,8 @@ public class UtilsTest {
         assertThat(Utils.getFieldValueListSafe(json("foo: null"), "foo")).isNull();
         assertThat(Utils.getFieldValueListSafe(json("foo: 25"), "foo")).isEqualTo(25);
         assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isEqualTo("b");
+        assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "10")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(Collections.emptyList(), "0")).isInstanceOf(Missing.class);
     }
 
     @Test

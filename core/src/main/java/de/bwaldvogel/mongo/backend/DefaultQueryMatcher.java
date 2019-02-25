@@ -154,7 +154,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             document = (Document) value;
             documentValue = document.getOrMissing(firstKey);
         } else {
-            return false;
+            return checkMatchesValue(queryValue, Missing.getInstance());
         }
 
         if (documentValue instanceof Collection<?>) {

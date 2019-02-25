@@ -230,7 +230,7 @@ public class Utils {
                 if (pos >= 0 && pos < list.size()) {
                     return list.get(pos);
                 } else {
-                    return null;
+                    return Missing.getInstance();
                 }
             } else {
                 throw new IllegalArgumentException("illegal field: " + field);

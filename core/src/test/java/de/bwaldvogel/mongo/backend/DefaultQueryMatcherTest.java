@@ -294,6 +294,27 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchesExistsArray() throws Exception {
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.1': {$exists: true}"))).isTrue();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.5': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.5': {$exists: false}"))).isTrue();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.0.1': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.0.1': {$exists: false}"))).isTrue();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.0.b': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.0.b': {$exists: false}"))).isTrue();
+        assertThat(matcher.matches(json("a: [[1, 2], [3, 4]]"), json("'a.0.1': {$exists: true}"))).isTrue();
+        assertThat(matcher.matches(json("a: [[1, 2], [3, 4]]"), json("'a.0.1': {$exists: false}"))).isFalse();
+        assertThat(matcher.matches(json("a: [{b: 'c'}]"), json("'a.0.b': {$exists: true}"))).isTrue();
+        assertThat(matcher.matches(json("a: [{b: 'c'}]"), json("'a.0.c': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: [{c: 'd'}]"), json("'a.0.b': {$exists: false}"))).isTrue();
+        assertThat(matcher.matches(json("a: [{c: 'd'}]"), json("'a.0.c': {$exists: false}"))).isFalse();
+        assertThat(matcher.matches(json("a: null"), json("'a.1': {$exists: false}"))).isTrue();
+        assertThat(matcher.matches(json("a: null"), json("'a.1': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json(""), json("'a.1': {$exists: false}"))).isTrue();
+        assertThat(matcher.matches(json(""), json("'a.1': {$exists: true}"))).isFalse();
+    }
+
+    @Test
     public void testMatchesNotEqual() throws Exception {
         Document document = json("");
 

@@ -3809,6 +3809,55 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
 
         assertThat(toArray(collection.find(json("a: {b: {$exists: true}}")))).isEmpty();
+
+        assertThat(toArray(collection.find(json("a: {$exists: true}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 2, a: null"),
+                json("_id: 3, a: {b: null}")
+            );
+
+        assertThat(toArray(collection.find(json("b: {$exists: true}")))).isEmpty();
+    }
+
+    @Test
+    public void testExistsQueryWithArray() throws Exception {
+        collection.insertOne(json("_id: 1, a: {b: 1}"));
+        collection.insertOne(json("_id: 2, a: ['X', 'Y', 'Z']"));
+        collection.insertOne(json("_id: 3, a: [[1, 2], [3, 4]]"));
+        collection.insertOne(json("_id: 4, a: ['x']"));
+        collection.insertOne(json("_id: 5, a: []"));
+        collection.insertOne(json("_id: 6, a: null"));
+        collection.insertOne(json("_id: 7"));
+
+        assertThat(toArray(collection.find(json("'a.1': {$exists: true}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, a: ['X', 'Y', 'Z']"),
+                json("_id: 3, a: [[1, 2], [3, 4]]")
+            );
+
+        assertThat(toArray(collection.find(json("'a.0': {$exists: false}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 5, a: []"),
+                json("_id: 6, a: null"),
+                json("_id: 7")
+            );
+
+        assertThat(toArray(collection.find(json("'a.0.1': {$exists: true}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 3, a: [[1, 2], [3, 4]]")
+            );
+
+        assertThat(toArray(collection.find(json("'a.0.1': {$exists: false}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 2, a: ['X', 'Y', 'Z']"),
+                json("_id: 4, a: ['x']"),
+                json("_id: 5, a: []"),
+                json("_id: 6, a: null"),
+                json("_id: 7")
+            );
     }
 
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
