@@ -1585,6 +1585,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testInsertWithIllegalFieldNames() throws Exception {
+        for (String illegalFieldName : Arrays.asList("a.", "a.b.", "a.....111", "a.b")) {
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> collection.insertOne(new Document(illegalFieldName, 1)))
+                .withMessage("Invalid BSON field name " + illegalFieldName);
+        }
+    }
+
+    @Test
     public void testUpdateIdNoChange() {
         collection.insertOne(json("_id: 1"));
         collection.replaceOne(json("_id: 1"), json("_id: 1, a: 5"));
@@ -3857,6 +3866,68 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 5, a: []"),
                 json("_id: 6, a: null"),
                 json("_id: 7")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/53
+    @Test
+    public void testExistsQueryWithTrailingDot() throws Exception {
+        collection.insertOne(json("_id: 1, a: {b: 1}"));
+        collection.insertOne(json("_id: 2, a: ['X', 'Y', 'Z']"));
+        collection.insertOne(json("_id: 3, a: [[1, 2], [3, 4]]"));
+        collection.insertOne(json("_id: 4, a: ['x']"));
+        collection.insertOne(json("_id: 5, a: []"));
+        collection.insertOne(json("_id: 6, a: null"));
+        collection.insertOne(json("_id: 7"));
+        collection.insertOne(json("_id: 8, a: {b: {c: 'd'}}"));
+
+        assertThat(toArray(collection.find(json("'a.': {$exists: true}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, a: ['X', 'Y', 'Z']"),
+                json("_id: 3, a: [[1, 2], [3, 4]]"),
+                json("_id: 4, a: ['x']"),
+                json("_id: 5, a: []")
+            );
+
+        assertThat(toArray(collection.find(json("'a.1.': {$exists: true}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 3, a: [[1, 2], [3, 4]]")
+            );
+
+        assertThat(toArray(collection.find(json("'.a': {$exists: true}")))).isEmpty();
+        assertThat(toArray(collection.find(json("'a.b.': {$exists: true}")))).isEmpty();
+        assertThat(toArray(collection.find(json("'a..': {$exists: true}")))).isEmpty();
+        assertThat(toArray(collection.find(json("'a.....111': {$exists: true}")))).isEmpty();
+
+        assertThat(toArray(collection.find(json("'a.': {$exists: false}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 6, a: null"),
+                json("_id: 7"),
+                json("_id: 8, a: {b: {c: 'd'}}")
+            );
+
+        assertThat(toArray(collection.find(json("'a.1.': {$exists: false}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 2, a: ['X', 'Y', 'Z']"),
+                json("_id: 4, a: ['x']"),
+                json("_id: 5, a: []"),
+                json("_id: 6, a: null"),
+                json("_id: 7"),
+                json("_id: 8, a: {b: {c: 'd'}}")
+            );
+
+        assertThat(toArray(collection.find(json("'a..': {$exists: false}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, a: {b: 1}"),
+                json("_id: 2, a: ['X', 'Y', 'Z']"),
+                json("_id: 3, a: [[1, 2], [3, 4]]"),
+                json("_id: 4, a: ['x']"),
+                json("_id: 5, a: []"),
+                json("_id: 6, a: null"),
+                json("_id: 7"),
+                json("_id: 8, a: {b: {c: 'd'}}")
             );
     }
 

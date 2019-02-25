@@ -79,10 +79,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private List<String> splitKey(String key) {
-        List<String> keys = Arrays.asList(key.split("\\."));
-        for (String subKey : keys) {
-            if (subKey.isEmpty()) {
-                throw new MongoServerException("illegal key: " + key);
+        List<String> keys = Arrays.asList(key.split("\\.", -1));
+        for (int i = 0; i < keys.size(); i++) {
+            if (keys.get(i).isEmpty() && i != keys.size() - 1) {
+                log.warn("Illegal key: '{}'", key);
+                return Collections.singletonList(key);
             }
         }
         return keys;
@@ -124,6 +125,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 } else {
                     return checkMatch(queryValue, subKeys, listValue);
                 }
+            } else if (firstKey.isEmpty()) {
+                Assert.isEmpty(subKeys);
+                return checkMatchesValue(queryValue, value);
             }
 
             // handle $all

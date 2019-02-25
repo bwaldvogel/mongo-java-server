@@ -289,6 +289,10 @@ public class DefaultQueryMatcherTest {
 
         assertThat(matcher.matches(json("a: {b: 1}"), json("'a.b': {$exists: true}"))).isTrue();
         assertThat(matcher.matches(json("a: 1"), json("'a.b': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("b: {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("'a.': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("'.a': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: {b: 1}"), json("b: {$exists: true}"))).isFalse();
         assertThat(matcher.matches(json("a: null"), json("'a.b': {$exists: true}"))).isFalse();
         assertThat(matcher.matches(json("a: null"), json("'a.b': {$exists: false}"))).isTrue();
     }
@@ -312,6 +316,18 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("a: null"), json("'a.1': {$exists: true}"))).isFalse();
         assertThat(matcher.matches(json(""), json("'a.1': {$exists: false}"))).isTrue();
         assertThat(matcher.matches(json(""), json("'a.1': {$exists: true}"))).isFalse();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/53
+    @Test
+    public void testMatchesExistsTrailingDot() throws Exception {
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a.': {$exists: true}"))).isTrue();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a..': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: 123"), json("'a.': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: []"), json("'a.': {$exists: true}"))).isTrue();
+        assertThat(matcher.matches(json("a: [[1, 2, 3]]"), json("'a.0.': {$exists: true}"))).isTrue();
+        assertThat(matcher.matches(json("a: [[1, 2, 3]]"), json("'a.1.': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: ['X', 'Y', 'Z']"), json("'a..': {$exists: true}"))).isFalse();
     }
 
     @Test
