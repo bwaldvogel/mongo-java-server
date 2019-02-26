@@ -14,7 +14,7 @@ allprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
 
-    version = '1.12.0'
+    version = '1.13.0-SNAPSHOT'
 
     group = 'de.bwaldvogel'
 
@@ -73,6 +73,7 @@ subprojects {
 
 ext {
     title = 'mongo-java-server'
+    isReleaseVersion = !version.endsWith('SNAPSHOT')
 }
 
 jar {
@@ -142,7 +143,7 @@ allprojects {
         }
         repositories {
             maven {
-                url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+                url isReleaseVersion ? 'https://oss.sonatype.org/service/local/staging/deploy/maven2' : 'https://oss.sonatype.org/content/repositories/snapshots/'
                 credentials {
                     username = project.hasProperty('nexusUsername') ? project.property('nexusUsername') : System.getenv('NEXUS_USERNAME')
                     password = project.hasProperty('nexusPassword') ? project.property('nexusPassword') : System.getenv('NEXUS_PASSWORD')
@@ -155,6 +156,11 @@ allprojects {
         useGpgCmd()
         sign publishing.publications.mavenJava
     }
+
+    tasks.withType(Sign) {
+        onlyIf { isReleaseVersion }
+    }
+
 }
 
 wrapper {
