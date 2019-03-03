@@ -17,6 +17,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.backend.projection.ProjectingIterable;
+import de.bwaldvogel.mongo.backend.projection.Projection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.Json;
@@ -614,7 +616,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (query.get("fields") != null) {
             Document fields = (Document) query.get("fields");
-            returnDocument = projectDocument(returnDocument, fields, idField);
+            returnDocument = Projection.projectDocument(returnDocument, fields, idField);
         }
 
         Document result = new Document();
@@ -624,68 +626,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         result.put("value", returnDocument);
         Utils.markOkay(result);
         return result;
-    }
-
-    private static Document projectDocument(Document document, Document fields, String idField) {
-
-        if (document == null) {
-            return null;
-        }
-
-        Document newDocument = new Document();
-        if (onlyExclusions(fields)) {
-            newDocument.putAll(document);
-            for (String excludedField : fields.keySet()) {
-                newDocument.remove(excludedField);
-            }
-        } else {
-            for (String key : fields.keySet()) {
-                if (Utils.isTrue(fields.get(key))) {
-                    projectField(document, newDocument, key);
-                }
-            }
-        }
-
-        // implicitly add _id if not mentioned
-        // http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-the-specified-fields-and-the-id-field-only
-        if (!fields.containsKey(idField)) {
-            newDocument.put(idField, document.get(idField));
-        }
-
-        return newDocument;
-    }
-
-    private static boolean onlyExclusions(Document fields) {
-        for (String key : fields.keySet()) {
-            if (Utils.isTrue(fields.get(key))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static void projectField(Document document, Document newDocument, String key) {
-
-        if (document == null) {
-            return;
-        }
-
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = key.substring(dotPos + 1);
-
-            Object object = document.get(mainKey);
-            // do not project the subdocument if it is not of type Document
-            if (object instanceof Document) {
-                if (!newDocument.containsKey(mainKey)) {
-                    newDocument.put(mainKey, new Document());
-                }
-                projectField((Document) object, (Document) newDocument.get(mainKey), subKey);
-            }
-        } else {
-            newDocument.put(key, document.get(key));
-        }
     }
 
     @Override
@@ -722,54 +662,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         return objs;
-    }
-
-    private static class ProjectingIterator implements Iterator<Document> {
-
-        private Iterator<Document> iterator;
-        private Document fieldSelector;
-        private String idField;
-
-        ProjectingIterator(Iterator<Document> iterator, Document fieldSelector, String idField) {
-            this.iterator = iterator;
-            this.fieldSelector = fieldSelector;
-            this.idField = idField;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return this.iterator.hasNext();
-        }
-
-        @Override
-        public Document next() {
-            Document document = this.iterator.next();
-            return projectDocument(document, fieldSelector, idField);
-        }
-
-        @Override
-        public void remove() {
-            this.iterator.remove();
-        }
-
-    }
-
-    private static class ProjectingIterable implements Iterable<Document> {
-
-        private Iterable<Document> iterable;
-        private Document fieldSelector;
-        private String idField;
-
-        ProjectingIterable(Iterable<Document> iterable, Document fieldSelector, String idField) {
-            this.iterable = iterable;
-            this.fieldSelector = fieldSelector;
-            this.idField = idField;
-        }
-
-        @Override
-        public Iterator<Document> iterator() {
-            return new ProjectingIterator(iterable.iterator(), fieldSelector, idField);
-        }
     }
 
     @Override
