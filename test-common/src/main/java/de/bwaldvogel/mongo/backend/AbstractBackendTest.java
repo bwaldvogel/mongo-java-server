@@ -1236,11 +1236,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testQueryWithFieldSelector() throws Exception {
         collection.insertOne(json("foo: 'bar'"));
+        collection.insertOne(json("foo: null"));
+
         Document obj = collection.find(json("")).projection(json("foo: 1")).first();
         assertThat(obj).containsOnlyKeys("_id", "foo");
 
-        obj = collection.find(json("foo:'bar'")).projection(json("_id: 1")).first();
+        obj = collection.find(json("foo: 'bar'")).projection(json("_id: 1")).first();
         assertThat(obj).containsOnlyKeys("_id");
+
+        obj = collection.find(json("foo: null")).projection(json("_id: 0, foo: 1")).first();
+        assertThat(obj).isEqualTo(json("foo: null"));
 
         obj = collection.find(json("foo: 'bar'")).projection(json("_id: 0, foo: 1")).first();
         assertThat(obj).containsOnlyKeys("foo");
@@ -1249,23 +1254,33 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testQueryWithDotNotationFieldSelector() throws Exception {
         collection.insertOne(json("_id: 123, index: false, foo: {a: 'a1', b: 0}"));
-        Document obj = collection.find(json("")).projection(json("'foo.a': 1, 'foo.b': 1")).first();
+        collection.insertOne(json("_id: 456, foo: {a: null, b: null}"));
+        Document obj = collection.find(json("_id: 123")).projection(json("'foo.a': 1, 'foo.b': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 123, foo: {a: 'a1', b: 0}"));
 
-        obj = collection.find(json("")).projection(json("'foo.a': 1")).first();
+        obj = collection.find(json("_id: 123")).projection(json("'foo.a': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 123, foo: {a: 'a1'}"));
 
-        obj = collection.find(json("")).projection(json("'foo.a': 1, index: 1, _id: 0")).first();
+        obj = collection.find(json("_id: 123")).projection(json("'foo.a': 1, index: 1, _id: 0")).first();
         assertThat(obj).isEqualTo(json("foo: {a: 'a1'}, index: false"));
 
-        obj = collection.find(json("")).projection(json("foo: 1, _id: 0")).first();
+        obj = collection.find(json("_id: 123")).projection(json("foo: 1, _id: 0")).first();
         assertThat(obj).isEqualTo(json("foo: {a: 'a1', b: 0}"));
 
-        obj = collection.find(json("")).projection(json("'foo.a.b.c.d': 1")).first();
+        obj = collection.find(json("_id: 123")).projection(json("'foo.a.b.c.d': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 123, foo: {}"));
 
-        obj = collection.find(json("")).projection(json("'foo..': 1")).first();
+        obj = collection.find(json("_id: 123")).projection(json("'foo..': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 123, foo: {}"));
+
+        obj = collection.find(json("_id: 456")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c': 1, 'foo.c.d': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 456, foo: {b: null}"));
+
+        obj = collection.find(json("_id: 456")).projection(json("'foo.a': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 456, foo: {a: null}"));
+
+        obj = collection.find(json("_id: 456")).projection(json("'foo.c': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 456, foo: {}"));
     }
 
     @Test

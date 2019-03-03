@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.projection;
 
 import java.util.Map.Entry;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -61,7 +62,10 @@ public class Projection {
                 projectField((Document) object, subDocument, subKey);
             }
         } else {
-            newDocument.put(key, document.get(key));
+            Object value = document.getOrMissing(key);
+            if (!(value instanceof Missing)) {
+                newDocument.put(key, value);
+            }
         }
     }
 }

@@ -39,4 +39,19 @@ public class ProjectionTest {
             .isEqualTo(json("_id: 1, foo: {a: 'x', c: 'z'}"));
     }
 
+    @Test
+    public void testProjectMissingValue() throws Exception {
+        assertThat(Projection.projectDocument(json("_id: 1"), json("'a.b': 1"), "_id"))
+            .isEqualTo(json("_id: 1"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, a: null"), json("'a.b': 1"), "_id"))
+            .isEqualTo(json("_id: 1"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, a: {b: null}"), json("'a.b': 1"), "_id"))
+            .isEqualTo(json("_id: 1, a: {b: null}"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, a: {b: null}"), json("'a.c': 1"), "_id"))
+            .isEqualTo(json("_id: 1, a: {}"));
+    }
+
 }
