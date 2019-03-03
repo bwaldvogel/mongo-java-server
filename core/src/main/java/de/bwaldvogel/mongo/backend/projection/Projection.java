@@ -12,6 +12,13 @@ public class Projection {
         }
 
         Document newDocument = new Document();
+
+        // implicitly add _id if not mentioned
+        // http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-the-specified-fields-and-the-id-field-only
+        if (!fields.containsKey(idField)) {
+            newDocument.put(idField, document.get(idField));
+        }
+
         if (onlyExclusions(fields)) {
             newDocument.putAll(document);
             for (String excludedField : fields.keySet()) {
@@ -23,12 +30,6 @@ public class Projection {
                     projectField(document, newDocument, key);
                 }
             }
-        }
-
-        // implicitly add _id if not mentioned
-        // http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#return-the-specified-fields-and-the-id-field-only
-        if (!fields.containsKey(idField)) {
-            newDocument.put(idField, document.get(idField));
         }
 
         return newDocument;

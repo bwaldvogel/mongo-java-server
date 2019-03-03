@@ -15,7 +15,7 @@ public class ProjectionTest {
             .isEqualTo(json("_id: 100"));
 
         assertThat(Projection.projectDocument(json("_id: 100, foo: 123"), json("foo: 1"), "_id"))
-            .isEqualTo(json("foo: 123, _id: 100"));
+            .isEqualTo(json("_id: 100, foo: 123"));
 
         assertThat(Projection.projectDocument(json("_id: 100, foo: 123"), json("_id: 1"), "_id"))
             .isEqualTo(json("_id: 100"));
@@ -30,7 +30,7 @@ public class ProjectionTest {
             .isEqualTo(json("_id: 100, bar: 456"));
 
         assertThat(Projection.projectDocument(json("_id: 1, foo: {bar: 123, bla: 'x'}"), json("'foo.bar': 1"), "_id"))
-            .isEqualTo(json("foo: {bar: 123}, _id: 1"));
+            .isEqualTo(json("_id: 1, foo: {bar: 123}"));
 
         assertThat(Projection.projectDocument(json("_id: 1"), json("'foo.bar': 1"), "_id"))
             .isEqualTo(json("_id: 1"));
