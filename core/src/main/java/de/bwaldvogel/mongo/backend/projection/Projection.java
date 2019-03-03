@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.projection;
 
+import java.util.Map.Entry;
+
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -25,8 +27,10 @@ public class Projection {
                 newDocument.remove(excludedField);
             }
         } else {
-            for (String key : fields.keySet()) {
-                if (Utils.isTrue(fields.get(key))) {
+            for (Entry<String, Object> entry : fields.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (Utils.isTrue(value)) {
                     projectField(document, newDocument, key);
                 }
             }
@@ -45,11 +49,6 @@ public class Projection {
     }
 
     private static void projectField(Document document, Document newDocument, String key) {
-
-        if (document == null) {
-            return;
-        }
-
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -58,10 +57,8 @@ public class Projection {
             Object object = document.get(mainKey);
             // do not project the subdocument if it is not of type Document
             if (object instanceof Document) {
-                if (!newDocument.containsKey(mainKey)) {
-                    newDocument.put(mainKey, new Document());
-                }
-                projectField((Document) object, (Document) newDocument.get(mainKey), subKey);
+                Document subDocument = (Document) newDocument.computeIfAbsent(mainKey, k -> new Document());
+                projectField((Document) object, subDocument, subKey);
             }
         } else {
             newDocument.put(key, document.get(key));
