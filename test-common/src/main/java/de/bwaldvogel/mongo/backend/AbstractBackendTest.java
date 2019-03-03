@@ -3316,6 +3316,41 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testProjectionWithElemMatch_BigSubdocument() {
+        collection.insertOne(json("_id: 1, zipcode: 63109," +
+            " students: [" +
+            "              {name: 'john', school: 102, age: 10}," +
+            "              {name: 'jess', school: 102, age: 11}," +
+            "              {name: 'jeff', school: 108, age: 15}" +
+            "           ]"));
+
+        collection.insertOne(json("_id: 2, zipcode: 63110," +
+            " students: [" +
+            "              {name: 'ajax', school: 100, age: 7}," +
+            "              {name: 'achilles', school: 100, age: 8 }" +
+            "           ]"));
+
+        collection.insertOne(json("_id: 3, zipcode: 63109," +
+            " students: [" +
+            "              {name: 'ajax', school: 100, age: 7}," +
+            "              {name: 'achilles', school: 100, age: 8}" +
+            "           ]"));
+
+        collection.insertOne(json("_id: 4, zipcode: 63109," +
+            " students: [" +
+            "              {name: 'barney', school: 102, age: 7}" +
+            "           ]"));
+
+        assertThat(toArray(collection.find(json("zipcode: 63109")).projection(json("students: {$elemMatch: {school: 102}}}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, students: [{name: 'john', school: 102, age: 10}]"),
+                json("_id: 3"),
+                json("_id: 4, students: [{name: 'barney', school: 102, age: 7}]")
+            );
+    }
+
+
+    @Test
     public void testMatchesNullOrMissing() throws Exception {
         collection.insertOne(json("_id: 1, x: null"));
         collection.insertOne(json("_id: 2"));

@@ -93,6 +93,9 @@ public class ProjectionTest {
 
         assertThat(Projection.projectDocument(json("_id: 1, students: {school: 'C'}"), json("students: {$elemMatch: {school: 'C'}}"), "_id"))
             .isEqualTo(json("_id: 1"));
+
+        assertThat(Projection.projectDocument(document, json("students: {$elemMatch: {school: 'A'}}"), "_id"))
+            .isEqualTo(json("_id: 1, students: [{name: 'john', school: 'A', age: 10}]"));
     }
 
 }

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
 import de.bwaldvogel.mongo.backend.Missing;
@@ -121,14 +120,11 @@ public class Projection {
     private static void projectElemMatch(Document newDocument, Document elemMatch, String key, Object value) {
         QueryMatcher queryMatcher = new DefaultQueryMatcher();
         if (value instanceof List) {
-            List<?> sourceObjects = (List<?>) value;
-            List<Object> projectedValues = sourceObjects.stream()
+            ((List<?>) value).stream()
                 .filter(sourceObject -> sourceObject instanceof Document)
                 .filter(sourceObject -> queryMatcher.matches((Document) sourceObject, elemMatch))
-                .collect(Collectors.toList());
-            if (!projectedValues.isEmpty()) {
-                newDocument.put(key, projectedValues);
-            }
+                .findFirst()
+                .ifPresent(v -> newDocument.put(key, Collections.singletonList(v)));
         }
     }
 }
