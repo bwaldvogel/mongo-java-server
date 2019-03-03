@@ -7,10 +7,12 @@ import java.util.Map.Entry;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.BadValueException;
 
 public class Projection {
 
     public static Document projectDocument(Document document, Document fields, String idField) {
+        validateFields(fields);
 
         if (document == null) {
             return null;
@@ -40,6 +42,18 @@ public class Projection {
         }
 
         return newDocument;
+    }
+
+    private static void validateFields(Document fields) {
+        for (Entry<String, Object> entry : fields.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Document) {
+                Document document = (Document) value;
+                if (document.size() > 1) {
+                    throw new BadValueException(">1 field in obj: " + document.toString(true, "{ ", " }"));
+                }
+            }
+        }
     }
 
     private static boolean onlyExclusions(Document fields) {

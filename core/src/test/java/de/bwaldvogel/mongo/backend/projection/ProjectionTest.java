@@ -5,11 +5,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.Document;
+
 public class ProjectionTest {
 
     @Test
     public void testProjectDocument() throws Exception {
-        assertThat(Projection.projectDocument(null, null, null)).isNull();
+        assertThat(Projection.projectDocument(null, new Document(), null)).isNull();
 
         assertThat(Projection.projectDocument(json("_id: 100"), json("_id: 1"), "_id"))
             .isEqualTo(json("_id: 100"));

@@ -1298,6 +1298,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testQueryWithIllegalFieldSelection() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {x: 1, y: 1}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '>1 field in obj: { x: 1, y: 1 }'");
+    }
+
+    @Test
     public void testQuerySystemNamespace() throws Exception {
         assertThat(getCollection("system.foobar").find().first()).isNull();
         assertThat(db.listCollectionNames()).isEmpty();
