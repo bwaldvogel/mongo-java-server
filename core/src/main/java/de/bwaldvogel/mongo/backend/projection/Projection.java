@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.projection;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import de.bwaldvogel.mongo.backend.Missing;
@@ -60,6 +62,25 @@ public class Projection {
             if (object instanceof Document) {
                 Document subDocument = (Document) newDocument.computeIfAbsent(mainKey, k -> new Document());
                 projectField((Document) object, subDocument, subKey);
+            } else if (object instanceof List) {
+                List<?> values = (List<?>) object;
+                List<Document> projectedValues = (List<Document>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
+                boolean wasEmpty = projectedValues.isEmpty();
+                int idx = 0;
+
+                for (Object value : values) {
+                    if (value instanceof Document) {
+                        final Document projectedDocument;
+                        if (wasEmpty) {
+                            projectedDocument = new Document();
+                            projectedValues.add(projectedDocument);
+                        } else {
+                            projectedDocument = projectedValues.get(idx);
+                        }
+                        projectField((Document) value, projectedDocument, subKey);
+                        idx++;
+                    }
+                }
             }
         } else {
             Object value = document.getOrMissing(key);

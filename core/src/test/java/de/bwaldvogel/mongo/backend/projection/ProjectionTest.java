@@ -54,4 +54,19 @@ public class ProjectionTest {
             .isEqualTo(json("_id: 1, a: {}"));
     }
 
+    @Test
+    public void testProjectListValues() throws Exception {
+        assertThat(Projection.projectDocument(json("_id: 1, a: [1, 2, 3]"), json("'a.c': 1"), "_id"))
+            .isEqualTo(json("_id: 1, a: []"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, a: [{x: 1}, 500, {y: 2}, {x: 3}]"), json("'a.x': 1"), "_id"))
+            .isEqualTo(json("_id: 1, a: [{x: 1}, {}, {x: 3}]"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, a: [{x: 10, y: 100}, 100, {x: 20, y: 200}, {x: 3}, {z: 4}]"), json("'a.x': 1, 'a.y': 1"), "_id"))
+            .isEqualTo(json("_id: 1, a: [{x: 10, y: 100}, {x: 20, y: 200}, {x: 3}, {}]"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, a: [100, {z: 4}, {y: 3}, {x: 1, y: 4}]"), json("'a.x': 1, 'a.y': 1"), "_id"))
+            .isEqualTo(json("_id: 1, a: [{}, {y: 3}, {x: 1, y: 4}]"));
+    }
+
 }

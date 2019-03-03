@@ -1253,34 +1253,48 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testQueryWithDotNotationFieldSelector() throws Exception {
-        collection.insertOne(json("_id: 123, index: false, foo: {a: 'a1', b: 0}"));
-        collection.insertOne(json("_id: 456, foo: {a: null, b: null}"));
-        Document obj = collection.find(json("_id: 123")).projection(json("'foo.a': 1, 'foo.b': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 123, foo: {a: 'a1', b: 0}"));
+        collection.insertOne(json("_id: 1, index: false, foo: {a: 'a1', b: 0}"));
+        collection.insertOne(json("_id: 2, foo: {a: null, b: null}"));
+        Document obj = collection.find(json("_id: 1")).projection(json("'foo.a': 1, 'foo.b': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 1, foo: {a: 'a1', b: 0}"));
 
-        obj = collection.find(json("_id: 123")).projection(json("'foo.a': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 123, foo: {a: 'a1'}"));
+        obj = collection.find(json("_id: 1")).projection(json("'foo.a': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 1, foo: {a: 'a1'}"));
 
-        obj = collection.find(json("_id: 123")).projection(json("'foo.a': 1, index: 1, _id: 0")).first();
+        obj = collection.find(json("_id: 1")).projection(json("'foo.a': 1, index: 1, _id: 0")).first();
         assertThat(obj).isEqualTo(json("foo: {a: 'a1'}, index: false"));
 
-        obj = collection.find(json("_id: 123")).projection(json("foo: 1, _id: 0")).first();
+        obj = collection.find(json("_id: 1")).projection(json("foo: 1, _id: 0")).first();
         assertThat(obj).isEqualTo(json("foo: {a: 'a1', b: 0}"));
 
-        obj = collection.find(json("_id: 123")).projection(json("'foo.a.b.c.d': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 123, foo: {}"));
+        obj = collection.find(json("_id: 1")).projection(json("'foo.a.b.c.d': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 1, foo: {}"));
 
-        obj = collection.find(json("_id: 123")).projection(json("'foo..': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 123, foo: {}"));
+        obj = collection.find(json("_id: 1")).projection(json("'foo..': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 1, foo: {}"));
 
-        obj = collection.find(json("_id: 456")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c': 1, 'foo.c.d': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 456, foo: {b: null}"));
+        obj = collection.find(json("_id: 2")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c': 1, 'foo.c.d': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 2, foo: {b: null}"));
 
-        obj = collection.find(json("_id: 456")).projection(json("'foo.a': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 456, foo: {a: null}"));
+        obj = collection.find(json("_id: 2")).projection(json("'foo.a': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 2, foo: {a: null}"));
 
-        obj = collection.find(json("_id: 456")).projection(json("'foo.c': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 456, foo: {}"));
+        obj = collection.find(json("_id: 2")).projection(json("'foo.c': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 2, foo: {}"));
+    }
+
+    @Test
+    public void testQueryWithDotNotationFieldSelector_Array() throws Exception {
+        collection.insertOne(json("_id: 1, values: [1, 2, {x: 100, y: 10}, {x: 200}]"));
+
+        Document obj = collection.find(json("_id: 1")).projection(json("'values.0': 1, 'values.x': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 1, values: [{x: 100}, {x: 200}]"));
+
+        obj = collection.find(json("_id: 1")).projection(json("'values.y': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 1, values: [{y: 10}, {}]"));
+
+        obj = collection.find(json("_id: 1")).projection(json("'values.x': 1, 'values.y': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 1, values: [{x: 100, y: 10}, {x: 200}]"));
     }
 
     @Test
