@@ -1,10 +1,15 @@
 package de.bwaldvogel.mongo.backend.projection;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
 import de.bwaldvogel.mongo.backend.Missing;
+import de.bwaldvogel.mongo.backend.QueryMatcher;
+import de.bwaldvogel.mongo.backend.QueryOperator;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
@@ -36,7 +41,7 @@ public class Projection {
                 String key = entry.getKey();
                 Object value = entry.getValue();
                 if (Utils.isTrue(value)) {
-                    projectField(document, newDocument, key);
+                    projectField(document, newDocument, key, value);
                 }
             }
         }
@@ -65,7 +70,7 @@ public class Projection {
         return true;
     }
 
-    private static void projectField(Document document, Document newDocument, String key) {
+    private static void projectField(Document document, Document newDocument, String key, Object projectionValue) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -75,7 +80,7 @@ public class Projection {
             // do not project the subdocument if it is not of type Document
             if (object instanceof Document) {
                 Document subDocument = (Document) newDocument.computeIfAbsent(mainKey, k -> new Document());
-                projectField((Document) object, subDocument, subKey);
+                projectField((Document) object, subDocument, subKey, projectionValue);
             } else if (object instanceof List) {
                 List<?> values = (List<?>) object;
                 List<Document> projectedValues = (List<Document>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
@@ -91,15 +96,38 @@ public class Projection {
                         } else {
                             projectedDocument = projectedValues.get(idx);
                         }
-                        projectField((Document) value, projectedDocument, subKey);
+                        projectField((Document) value, projectedDocument, subKey, projectionValue);
                         idx++;
                     }
                 }
             }
         } else {
             Object value = document.getOrMissing(key);
-            if (!(value instanceof Missing)) {
+
+            if (projectionValue instanceof Document) {
+                Document projectionDocument = (Document) projectionValue;
+                if (projectionDocument.keySet().equals(Collections.singleton(QueryOperator.ELEM_MATCH.getValue()))) {
+                    Document elemMatch = (Document) projectionDocument.get(QueryOperator.ELEM_MATCH.getValue());
+                    projectElemMatch(newDocument, elemMatch, key, value);
+                } else {
+                    throw new IllegalArgumentException("Unsupported projection: " + projectionValue);
+                }
+            } else if (!(value instanceof Missing)) {
                 newDocument.put(key, value);
+            }
+        }
+    }
+
+    private static void projectElemMatch(Document newDocument, Document elemMatch, String key, Object value) {
+        QueryMatcher queryMatcher = new DefaultQueryMatcher();
+        if (value instanceof List) {
+            List<?> sourceObjects = (List<?>) value;
+            List<Object> projectedValues = sourceObjects.stream()
+                .filter(sourceObject -> sourceObject instanceof Document)
+                .filter(sourceObject -> queryMatcher.matches((Document) sourceObject, elemMatch))
+                .collect(Collectors.toList());
+            if (!projectedValues.isEmpty()) {
+                newDocument.put(key, projectedValues);
             }
         }
     }

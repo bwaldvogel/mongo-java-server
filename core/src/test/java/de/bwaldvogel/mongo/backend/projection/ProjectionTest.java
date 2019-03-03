@@ -71,4 +71,28 @@ public class ProjectionTest {
             .isEqualTo(json("_id: 1, a: [{}, {y: 3}, {x: 1, y: 4}]"));
     }
 
+    @Test
+    public void testProjectWithElemMatch() throws Exception {
+        Document document = json("_id: 1, students: [" +
+            "{name: 'john', school: 'A', age: 10}, " +
+            "{name: 'jess', school: 'B', age: 12}, " +
+            "{name: 'jeff', school: 'A', age: 12}" +
+            "]");
+
+        assertThat(Projection.projectDocument(document, json("students: {$elemMatch: {school: 'B'}}"), "_id"))
+            .isEqualTo(json("_id: 1, students: [{name: 'jess', school: 'B', age: 12}]"));
+
+        assertThat(Projection.projectDocument(document, json("students: {$elemMatch: {school: 'A', age: {$gt: 10}}}"), "_id"))
+            .isEqualTo(json("_id: 1, students: [{name: 'jeff', school: 'A', age: 12}]"));
+
+        assertThat(Projection.projectDocument(document, json("students: {$elemMatch: {school: 'C'}}"), "_id"))
+            .isEqualTo(json("_id: 1"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, students: [1, 2, 3]"), json("students: {$elemMatch: {school: 'C'}}"), "_id"))
+            .isEqualTo(json("_id: 1"));
+
+        assertThat(Projection.projectDocument(json("_id: 1, students: {school: 'C'}"), json("students: {$elemMatch: {school: 'C'}}"), "_id"))
+            .isEqualTo(json("_id: 1"));
+    }
+
 }

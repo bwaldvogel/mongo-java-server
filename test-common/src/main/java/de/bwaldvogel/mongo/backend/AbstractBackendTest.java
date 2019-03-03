@@ -3294,6 +3294,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testProjectionWithElemMatch() {
+        collection.insertOne(json("_id: 1, zipcode: 63109, students: [{name: 'john'}, {name: 'jess'}, {name: 'jeff'}]"));
+        collection.insertOne(json("_id: 2, zipcode: 63110, students: [{name: 'ajax'}, {name: 'achilles'}]"));
+        collection.insertOne(json("_id: 3, zipcode: 63109, students: [{name: 'ajax'}, {name: 'achilles'}]"));
+        collection.insertOne(json("_id: 4, zipcode: 63109, students: [{name: 'barney'}]"));
+        collection.insertOne(json("_id: 5, zipcode: 63109, students: [1, 2, 3]"));
+        collection.insertOne(json("_id: 6, zipcode: 63109, students: {name: 'achilles'}"));
+
+        Document query = json("zipcode: 63109");
+        Document projection = json("students: {$elemMatch: {name: 'achilles'}}");
+
+        assertThat(toArray(collection.find(query).projection(projection)))
+            .containsExactlyInAnyOrder(
+                json("_id: 1"),
+                json("_id: 3, students: [{name: 'achilles'}]"),
+                json("_id: 4"),
+                json("_id: 5"),
+                json("_id: 6")
+            );
+    }
+
+    @Test
     public void testMatchesNullOrMissing() throws Exception {
         collection.insertOne(json("_id: 1, x: null"));
         collection.insertOne(json("_id: 2"));

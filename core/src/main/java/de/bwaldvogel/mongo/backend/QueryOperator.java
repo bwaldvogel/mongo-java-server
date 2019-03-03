@@ -5,7 +5,7 @@ import java.util.Map;
 
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-enum QueryOperator {
+public enum QueryOperator {
 
     IN("$in"), //
     NOT_IN("$nin"), //
@@ -30,7 +30,7 @@ enum QueryOperator {
         this.value = value;
     }
 
-    String getValue() {
+    public String getValue() {
         return value;
     }
 
