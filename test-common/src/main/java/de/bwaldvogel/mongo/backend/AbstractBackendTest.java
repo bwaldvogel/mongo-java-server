@@ -348,7 +348,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         Set<String> collectionNames = new HashSet<>();
         for (Document collection : firstBatch) {
-            assertThat(collection.keySet()).containsExactlyInAnyOrder("name", "options", "type", "idIndex", "info");
+            assertThat(collection).containsOnlyKeys("name", "options", "type", "idIndex", "info");
             String name = (String) collection.get("name");
             assertThat(collection.get("options")).isEqualTo(json(""));
             assertThat(collection.get("name")).isInstanceOf(String.class);
@@ -1237,13 +1237,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testQueryWithFieldSelector() throws Exception {
         collection.insertOne(json("foo: 'bar'"));
         Document obj = collection.find(json("")).projection(json("foo: 1")).first();
-        assertThat(obj.keySet()).containsExactlyInAnyOrder("_id", "foo");
+        assertThat(obj).containsOnlyKeys("_id", "foo");
 
         obj = collection.find(json("foo:'bar'")).projection(json("_id: 1")).first();
-        assertThat(obj.keySet()).containsExactly("_id");
+        assertThat(obj).containsOnlyKeys("_id");
 
         obj = collection.find(json("foo: 'bar'")).projection(json("_id: 0, foo: 1")).first();
-        assertThat(obj.keySet()).containsExactly("foo");
+        assertThat(obj).containsOnlyKeys("foo");
     }
 
     @Test
