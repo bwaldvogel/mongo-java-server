@@ -1263,6 +1263,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         obj = collection.find(json("")).projection(json("'foo.a.b.c.d': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 123, foo: {}"));
+
+        obj = collection.find(json("")).projection(json("'foo..': 1")).first();
+        assertThat(obj).isEqualTo(json("_id: 123, foo: {}"));
     }
 
     @Test
