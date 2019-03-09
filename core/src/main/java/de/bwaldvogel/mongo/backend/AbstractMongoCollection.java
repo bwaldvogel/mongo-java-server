@@ -228,7 +228,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     }
                     @SuppressWarnings("unchecked")
                     Collection<Object> valueList = (Collection<Object>) pullValue;
-                    list.removeIf(valueList::contains);
+                    list.removeIf(obj -> valueList.stream().anyMatch(v -> matcher.matchesValue(obj, v)));
                 } else {
                     list.removeIf(obj -> matcher.matchesValue(pullValue, obj));
                 }

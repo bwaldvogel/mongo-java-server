@@ -1834,6 +1834,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testUpdatePullAll_Documents() throws Exception {
+        collection.insertOne(json("_id: 1, persons: [{id: 1}, {id: 2}, {id: 5}, {id: 5}, {id: 1}, {id: 0}]"));
+
+        collection.updateOne(json("_id: 1"), json("$pullAll: {persons: [{id: 0.0}, {id: 5}]}"));
+
+        assertThat(toArray(collection.find(json(""))))
+           .containsExactly(json("_id: 1, persons: [{id: 1}, {id: 2}, {id: 1}]"));
+    }
+
+    @Test
     public void testUpdateSet() throws Exception {
         Document object = json("_id: 1");
 
