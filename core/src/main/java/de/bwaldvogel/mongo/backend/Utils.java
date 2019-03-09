@@ -365,7 +365,7 @@ public class Utils {
                 changeSubdocumentValue(subObject, subKey, newValue, matchPos);
             } else if (!Missing.isNullOrMissing(subObject)) {
                 String element = new Document(mainKey, subObject).toString(true);
-                throw new MongoServerError(28, "Cannot create field 'bar' in element " + element);
+                throw new MongoServerError(28, "Cannot create field '" + subKey + "' in element " + element);
             } else {
                 Document obj = new Document();
                 changeSubdocumentValue(obj, subKey, newValue, matchPos);
