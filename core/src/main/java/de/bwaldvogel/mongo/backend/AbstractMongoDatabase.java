@@ -612,8 +612,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     aggregation.addStage(new AddFieldsStage(addFieldsDetails));
                     break;
                 case "$unwind":
-                    String unwindField = (String) stage.get(stageOperation);
-                    aggregation.addStage(new UnwindStage(unwindField));
+                    Object unwind = stage.get(stageOperation);
+                    aggregation.addStage(new UnwindStage(unwind));
                     break;
                 case "$lookup":
                     Document lookup = (Document) stage.get(stageOperation);

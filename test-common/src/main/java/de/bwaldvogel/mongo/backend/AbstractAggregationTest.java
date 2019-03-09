@@ -702,17 +702,142 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithUnwind() throws Exception {
-        Document unwind = json("$unwind: '$sizes'");
+        testAggregateWithUnwind(json("$unwind: '$sizes'"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/54
+    @Test
+    public void testAggregateWithUnwind_Path() throws Exception {
+        testAggregateWithUnwind(json("$unwind: {path: '$sizes'}"));
+    }
+
+    private void testAggregateWithUnwind(Document unwind) throws Exception {
         List<Document> pipeline = Collections.singletonList(unwind);
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
-        collection.insertOne(json("_id: 1, item: 'ABC1', sizes: ['S', 'M', 'L']"));
+        collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
+        collection.insertOne(json("_id: 2, item: 'EFG', sizes: []"));
+        collection.insertOne(json("_id: 3, item: 'IJK', sizes: 'M'"));
+        collection.insertOne(json("_id: 4, item: 'LMN'"));
+        collection.insertOne(json("_id: 5, item: 'XYZ', sizes: null"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
-                json("_id: 1, item: 'ABC1', sizes: 'S'"),
-                json("_id: 1, item: 'ABC1', sizes: 'M'"),
-                json("_id: 1, item: 'ABC1', sizes: 'L'")
+                json("_id: 1, item: 'ABC', sizes: 'S'"),
+                json("_id: 1, item: 'ABC', sizes: 'M'"),
+                json("_id: 1, item: 'ABC', sizes: 'L'"),
+                json("_id: 3, item: 'IJK', sizes: 'M'")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/54
+    @Test
+    public void testAggregateWithUnwind_preserveNullAndEmptyArrays() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', preserveNullAndEmptyArrays: true}"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+        collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
+        collection.insertOne(json("_id: 2, item: 'EFG', sizes: []"));
+        collection.insertOne(json("_id: 3, item: 'IJK', sizes: 'M'"));
+        collection.insertOne(json("_id: 4, item: 'LMN'"));
+        collection.insertOne(json("_id: 5, item: 'XYZ', sizes: null"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, item: 'ABC', sizes: 'S'"),
+                json("_id: 1, item: 'ABC', sizes: 'M'"),
+                json("_id: 1, item: 'ABC', sizes: 'L'"),
+                json("_id: 2, item: 'EFG'"),
+                json("_id: 3, item: 'IJK', sizes: 'M'"),
+                json("_id: 4, item: 'LMN'"),
+                json("_id: 5, item: 'XYZ', sizes: null")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/54
+    @Test
+    public void testAggregateWithUnwind_IncludeArrayIndex() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', includeArrayIndex: 'idx'}"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+        collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
+        collection.insertOne(json("_id: 2, item: 'EFG', sizes: []"));
+        collection.insertOne(json("_id: 3, item: 'IJK', sizes: 'M'"));
+        collection.insertOne(json("_id: 4, item: 'LMN'"));
+        collection.insertOne(json("_id: 5, item: 'XYZ', sizes: null"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, item: 'ABC', sizes: 'S'").append("idx", 0L),
+                json("_id: 1, item: 'ABC', sizes: 'M'").append("idx", 1L),
+                json("_id: 1, item: 'ABC', sizes: 'L'").append("idx", 2L),
+                json("_id: 3, item: 'IJK', sizes: 'M'").append("idx", null)
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/54
+    @Test
+    public void testAggregateWithUnwind_IncludeArrayIndex_OverwriteExistingField() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', includeArrayIndex: 'item'}"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+        collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
+        collection.insertOne(json("_id: 2, item: 'EFG', sizes: []"));
+        collection.insertOne(json("_id: 3, item: 'IJK', sizes: 'M'"));
+        collection.insertOne(json("_id: 4, item: 'LMN'"));
+        collection.insertOne(json("_id: 5, item: 'XYZ', sizes: null"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, sizes: 'S'").append("item", 0L),
+                json("_id: 1, sizes: 'M'").append("item", 1L),
+                json("_id: 1, sizes: 'L'").append("item", 2L),
+                json("_id: 3, sizes: 'M'").append("item", null)
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/54
+    @Test
+    public void testAggregateWithUnwind_IncludeArrayIndex_NestedIndexField() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', includeArrayIndex: 'item.idx'}"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+        collection.insertOne(json("_id: 1, item: {value: 'ABC'}, sizes: ['S', 'M', 'L']"));
+        collection.insertOne(json("_id: 2, item: {value: 'EFG'}, sizes: []"));
+        collection.insertOne(json("_id: 3, item: {value: 'IJK'}, sizes: 'M'"));
+        collection.insertOne(json("_id: 4, item: {value: 'LMN'}"));
+        collection.insertOne(json("_id: 5, item: {value: 'XYZ'}, sizes: null"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, sizes: 'S'").append("item", json("value: 'ABC'").append("idx", 0L)),
+                json("_id: 1, sizes: 'M'").append("item", json("value: 'ABC'").append("idx", 1L)),
+                json("_id: 1, sizes: 'L'").append("item", json("value: 'ABC'").append("idx", 2L)),
+                json("_id: 3, sizes: 'M'").append("item", json("value: 'IJK'").append("idx", null))
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/54
+    @Test
+    public void testAggregateWithUnwind_preserveNullAndEmptyArraysAndIncludeArrayIndex() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', preserveNullAndEmptyArrays: true, includeArrayIndex: 'idx'}"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+        collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
+        collection.insertOne(json("_id: 2, item: 'EFG', sizes: []"));
+        collection.insertOne(json("_id: 3, item: 'IJK', sizes: 'M'"));
+        collection.insertOne(json("_id: 4, item: 'LMN'"));
+        collection.insertOne(json("_id: 5, item: 'XYZ', sizes: null"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, item: 'ABC', sizes: 'S'").append("idx", 0L),
+                json("_id: 1, item: 'ABC', sizes: 'M'").append("idx", 1L),
+                json("_id: 1, item: 'ABC', sizes: 'L'").append("idx", 2L),
+                json("_id: 2, item: 'EFG'").append("idx", null),
+                json("_id: 3, item: 'IJK', sizes: 'M'").append("idx", null),
+                json("_id: 4, item: 'LMN'").append("idx", null),
+                json("_id: 5, item: 'XYZ', sizes: null").append("idx", null)
             );
     }
 

@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
 
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.backend.Missing;
@@ -13,6 +14,8 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class UnwindStage implements AggregationStage {
 
     private final String path;
+    private boolean preserveNullAndEmptyArrays;
+    private String includeArrayIndex;
 
     public UnwindStage(Object input) {
         if (!(input instanceof String) && !(input instanceof Document)) {
@@ -27,11 +30,14 @@ public class UnwindStage implements AggregationStage {
                 throw new MongoServerError(28812, "no path specified to $unwind stage");
             }
 
-            Object path= inputDocument.get("path");
+            Object path = inputDocument.get("path");
             if (!(path instanceof String)) {
                 throw new MongoServerError(28808, "expected a string as the path for $unwind stage, got " + describeType(path));
             }
             fieldPath = (String) path;
+
+            preserveNullAndEmptyArrays = Utils.isTrue(inputDocument.get("preserveNullAndEmptyArrays"));
+            includeArrayIndex = (String) inputDocument.get("includeArrayIndex");
         } else {
             fieldPath = (String) input;
         }
@@ -46,16 +52,52 @@ public class UnwindStage implements AggregationStage {
         return stream.flatMap(document -> {
             Object values = Utils.getSubdocumentValue(document, path);
             if (Missing.isNullOrMissing(values)) {
-                return Stream.empty();
-            }
-            Collection<?> collection = (Collection<?>) values;
-            return collection.stream()
-                .map(collectionValue -> {
+                if (preserveNullAndEmptyArrays) {
+                    return streamWithoutIndex(document);
+                } else {
+                    return streamWithoutIndex();
+                }
+            } else if (values instanceof Collection) {
+                Collection<?> collection = (Collection<?>) values;
+                if (collection.isEmpty() && preserveNullAndEmptyArrays) {
                     Document documentClone = document.cloneDeeply();
-                    Utils.changeSubdocumentValue(documentClone, path, collectionValue);
-                    return documentClone;
-                });
+                    Utils.removeSubdocumentValue(documentClone, path);
+                    return streamWithoutIndex(documentClone);
+                }
+                return streamWithIndex(collection.stream()
+                    .map(collectionValue -> {
+                        Document documentClone = document.cloneDeeply();
+                        Utils.changeSubdocumentValue(documentClone, path, collectionValue);
+                        return documentClone;
+                    }));
+            } else {
+                return streamWithoutIndex(document);
+            }
         });
+    }
+
+    private Stream<Document> streamWithoutIndex(Document... documents) {
+        if (includeArrayIndex == null) {
+            return Stream.of(documents);
+        } else {
+            return Stream.of(documents).map(document -> {
+                Document documentClone = document.cloneDeeply();
+                Utils.changeSubdocumentValue(documentClone, includeArrayIndex, null);
+                return documentClone;
+            });
+        }
+    }
+
+    private Stream<Document> streamWithIndex(Stream<Document> documents) {
+        if (includeArrayIndex == null) {
+            return documents;
+        } else {
+            AtomicLong counter = new AtomicLong();
+            return documents.peek(document -> {
+                long index = counter.getAndIncrement();
+                Utils.changeSubdocumentValue(document, includeArrayIndex, index);
+            });
+        }
     }
 
 }
