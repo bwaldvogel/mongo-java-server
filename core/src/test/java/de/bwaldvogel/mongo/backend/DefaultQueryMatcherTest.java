@@ -431,6 +431,28 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchNotEqualArray() throws Exception {
+        assertThat(matcher.matches(json("a: []"), json("a: {$ne: []}"))).isFalse();
+        assertThat(matcher.matches(json("a: null"), json("a: {$ne: []}"))).isTrue();
+        assertThat(matcher.matches(json(""), json("a: {$ne: []}"))).isTrue();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$ne: []}"))).isTrue();
+        assertThat(matcher.matches(json("a: [1, 2, 3]"), json("a: {$ne: []}"))).isTrue();
+        assertThat(matcher.matches(json("a: [1, 2, 3]"), json("a: {$ne: [1, 2, 3]}"))).isFalse();
+        assertThat(matcher.matches(json("a: [1, 2]"), json("a: {$ne: [1, 2, 3]}"))).isTrue();
+    }
+
+    @Test
+    public void testMatchEqualArray() throws Exception {
+        assertThat(matcher.matches(json("a: []"), json("a: {$eq: []}"))).isTrue();
+        assertThat(matcher.matches(json("a: null"), json("a: {$eq: []}"))).isFalse();
+        assertThat(matcher.matches(json(""), json("a: {$eq: []}"))).isFalse();
+        assertThat(matcher.matches(json("a: 1"), json("a: {$eq: []}"))).isFalse();
+        assertThat(matcher.matches(json("a: [1, 2, 3]"), json("a: {$eq: []}"))).isFalse();
+        assertThat(matcher.matches(json("a: [1, 2, 3]"), json("a: {$eq: [1, 2, 3]}"))).isTrue();
+        assertThat(matcher.matches(json("a: [1, 2]"), json("a: {$eq: [1, 2, 3]}"))).isFalse();
+    }
+
+    @Test
     public void testMatchesNot() throws Exception {
 
         Document query = map("price", not(gt(1.99)));

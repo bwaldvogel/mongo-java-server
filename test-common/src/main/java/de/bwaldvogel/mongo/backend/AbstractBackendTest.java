@@ -3886,12 +3886,32 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 'f', values: [-0.0]"));
         collection.insertOne(json("_id: 'g', values: [0, 1]"));
         collection.insertOne(json("_id: 'h', values: 0.0"));
+        collection.insertOne(json("_id: 'i', values: []"));
+        collection.insertOne(json("_id: 'j', values: null"));
+        collection.insertOne(json("_id: 'k'"));
 
         assertThat(toArray(collection.find(json("values: {$ne: 0}"))))
             .containsExactly(
                 json("_id: 'a', values: [-1]"),
                 json("_id: 'c', values: 1.0"),
-                json("_id: 'd', values: {'$numberDecimal': '1.0'}")
+                json("_id: 'd', values: {'$numberDecimal': '1.0'}"),
+                json("_id: 'i', values: []"),
+                json("_id: 'j', values: null"),
+                json("_id: 'k'")
+            );
+
+        assertThat(toArray(collection.find(json("values: {$ne: []}"))))
+            .containsExactly(
+                json("_id: 'a', values: [-1]"),
+                json("_id: 'b', values: [0]"),
+                json("_id: 'c', values: 1.0"),
+                json("_id: 'd', values: {'$numberDecimal': '1.0'}"),
+                json("_id: 'e', values: {'$numberDecimal': '0.0'}"),
+                json("_id: 'f', values: [-0.0]"),
+                json("_id: 'g', values: [0, 1]"),
+                json("_id: 'h', values: 0.0"),
+                json("_id: 'j', values: null"),
+                json("_id: 'k'")
             );
     }
 
