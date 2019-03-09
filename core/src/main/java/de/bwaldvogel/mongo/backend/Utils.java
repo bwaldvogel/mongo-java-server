@@ -380,6 +380,10 @@ public class Utils {
         return removeSubdocumentValue(document, key, new AtomicReference<>(matchPos));
     }
 
+    static Object removeSubdocumentValue(Object document, String key) {
+        return removeSubdocumentValue(document, key, new AtomicReference<>());
+    }
+
     private static Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {

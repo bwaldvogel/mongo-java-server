@@ -186,4 +186,40 @@ public class UtilsTest {
         assertThat(Utils.getCollectionNameFromFullName("foo.bar.bla")).isEqualTo("bar.bla");
     }
 
+    @Test
+    public void testChangeSubdocumentValue() throws Exception {
+        Document document = json("_id: 1, foo: {bar: 1, bla: 2}");
+
+        Utils.changeSubdocumentValue(document, "foo.bar", 3);
+        assertThat(document).isEqualTo(json("_id: 1, foo: {bar: 3, bla: 2}"));
+
+        Utils.changeSubdocumentValue(document, "foo.z", "value");
+        assertThat(document).isEqualTo(json("_id: 1, foo: {bar: 3, bla: 2, z: 'value'}"));
+
+        Utils.changeSubdocumentValue(document, "foo", json("x: [1, 2, 3]"));
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 2, 3]}"));
+
+        Utils.changeSubdocumentValue(document, "foo.x.1", "new-value");
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 'new-value', 3]}"));
+    }
+
+    @Test
+    public void testRemoveSubdocumentValue() throws Exception {
+        Document document = json("_id: 1, foo: {bar: 1, bla: 2}");
+
+        Object removedValue = Utils.removeSubdocumentValue(document, "foo.bar");
+        assertThat(removedValue).isEqualTo(1);
+        assertThat(document).isEqualTo(json("_id: 1, foo: {bla: 2}"));
+
+        removedValue = Utils.removeSubdocumentValue(document, "foo.bla");
+        assertThat(removedValue).isEqualTo(2);
+        assertThat(document).isEqualTo(json("_id: 1, foo: {}"));
+
+        Utils.changeSubdocumentValue(document, "foo", json("x: [1, 2, 3]"));
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 2, 3]}"));
+
+        Utils.removeSubdocumentValue(document, "foo.x.1");
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, null, 3]}"));
+    }
+
 }
