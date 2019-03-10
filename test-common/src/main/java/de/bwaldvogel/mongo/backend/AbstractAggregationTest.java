@@ -670,6 +670,26 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithSlice() throws Exception {
+        List<Document> pipeline = jsonList("$project: {name: 1, threeFavorites: {$slice: ['$favorites', 3]}}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, name: 'dave123', favorites: ['chocolate', 'cake', 'butter', 'apples']"));
+        collection.insertOne(json("_id: 2, name: 'li', favorites: ['apples', 'pudding', 'pie']"));
+        collection.insertOne(json("_id: 3, name: 'ahn', favorites: ['pears', 'pecans', 'chocolate', 'cherries']"));
+        collection.insertOne(json("_id: 4, name: 'ty', favorites: ['ice cream']"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, name: 'dave123', threeFavorites: ['chocolate', 'cake', 'butter']"),
+                json("_id: 2, name: 'li', threeFavorites: ['apples', 'pudding', 'pie']"),
+                json("_id: 3, name: 'ahn', threeFavorites: ['pears', 'pecans', 'chocolate']"),
+                json("_id: 4, name: 'ty', threeFavorites: ['ice cream']")
+            );
+    }
+
+    @Test
     public void testAggregateWithSplit() throws Exception {
         List<Document> pipeline = jsonList("$project: {_id: 1, names: {$split: ['$name', ' ']}}");
 
