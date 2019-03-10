@@ -652,6 +652,24 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $objectToArray {
+        @Override
+        List<Document> apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            if (!(value instanceof Document)) {
+                throw new MongoServerError(40390, name() + " requires a document input, found: " + describeType(value));
+            }
+            List<Document> result = new ArrayList<>();
+            for (Entry<String, Object> entry : ((Document) value).entrySet()) {
+                Document keyValue = new Document();
+                keyValue.append("k", entry.getKey());
+                keyValue.append("v", entry.getValue());
+                result.add(keyValue);
+            }
+            return result;
+        }
+    },
+
     $or {
         @Override
         Object apply(List<?> expressionValue, Document document) {
@@ -663,7 +681,6 @@ public enum Expression implements ExpressionTraits {
             return false;
         }
     },
-
 
     $pow {
         @Override

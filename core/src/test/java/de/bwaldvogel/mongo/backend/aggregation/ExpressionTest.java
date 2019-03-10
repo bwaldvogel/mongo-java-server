@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import org.assertj.core.data.Offset;
 import org.junit.Test;
@@ -499,6 +500,23 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$or: [0, true]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$or: [0, false]"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$or: [0, 0]"), json(""))).isEqualTo(false);
+    }
+
+    @Test
+    public void testEvaluateObjectToArray() throws Exception {
+        assertThat((List<Document>) Expression.evaluate(json("$objectToArray: '$v'"), json("v: {a: 1, b: 2}")))
+            .containsExactly(
+                json("{k: 'a', v: 1}"),
+                json("{k: 'b', v: 2}")
+            );
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$objectToArray: 1"), json("")))
+            .withMessage("[Error 40390] $objectToArray requires a document input, found: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$objectToArray: [1, 2]"), json("")))
+            .withMessage("[Error 16020] Expression $objectToArray takes exactly 1 arguments. 2 were passed in.");
     }
 
     @Test

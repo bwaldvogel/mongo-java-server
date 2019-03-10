@@ -960,6 +960,32 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testObjectToArrayExpression() throws Exception {
+        Document query = json("$project: {_id: 1, a: {$objectToArray: '$value'}}");
+        List<Document> pipeline = Collections.singletonList(query);
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, value: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 40390 (Location40390): '$objectToArray requires a document input, found: int'");
+
+        collection.replaceOne(json("_id: 1"), json("_id: 1, value: {a: 1, b: 'foo', c: {x: 10}}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, a: [{k: 'a', v: 1}, {k: 'b', v: 'foo'}, {k: 'c', v: {x: 10}}]")
+            );
+
+        Document illegalQuery = json("$project: {_id: 1, a: {$objectToArray: ['$value', 1]}}");
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(Collections.singletonList(illegalQuery)).first())
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
+    }
+
     private static Date date(String instant) {
         return Date.from(Instant.parse(instant));
     }
