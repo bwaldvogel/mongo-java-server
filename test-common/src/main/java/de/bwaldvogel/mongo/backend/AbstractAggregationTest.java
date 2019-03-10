@@ -964,4 +964,53 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
     }
 
+    @Test
+    public void testArrayToObjectExpression() throws Exception {
+        collection.insertOne(TestUtils.json("_id: 1, a: 1, b: 'xyz', kv: [['a', 'b'], ['c', 'd']]"));
+
+        assertThat(toArray(collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [['a', 'foo']]}}}"))))
+            .containsExactly(json("_id: 1, x: {a: 'foo'}"));
+
+        assertThat(toArray(collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: '$kv'}}"))))
+            .containsExactly(json("_id: 1, x: {a: 'b', c: 'd'}"));
+
+        assertThat(toArray(collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 'k1', v: 'v1'}, {k: 'k2', v: 'v2'}]}}}"))))
+            .containsExactly(json("_id: 1, x: {k1: 'v1', k2: 'v2'}"));
+
+        assertThat(toArray(collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 'k1', v: 'v1'}, {k: 'k1', v: 'v2'}]}}}"))))
+            .containsExactly(json("_id: 1, x: {k1: 'v2'}"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: 'illegal-type'}}")).first())
+            .withMessageContaining("Command failed with error 40386 (Location40386): '$arrayToObject requires an array input, found: string'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: []}}")).first())
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $arrayToObject takes exactly 1 arguments. 0 were passed in.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [['foo']]}}}}")).first())
+            .withMessageContaining("Command failed with error 40397 (Location40397): '$arrayToObject requires an array of size 2 arrays,found array of size: 1'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [123, 456]}}}}")).first())
+            .withMessageContaining("Command failed with error 40398 (Location40398): 'Unrecognised input type format for $arrayToObject: int'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [[123, 456]]}}}}")).first())
+            .withMessageContaining("Command failed with error 40395 (Location40395): '$arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{}]}}}}")).first())
+            .withMessageContaining("Command failed with error 40392 (Location40392): '$arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 123, v: 'value'}]}}}}")).first())
+            .withMessageContaining("Command failed with error 40394 (Location40394): '$arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 'key', z: 'value'}]}}}}")).first())
+            .withMessageContaining("Command failed with error 40393 (Location40393): '$arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: \"value\"}'");
+    }
+
 }

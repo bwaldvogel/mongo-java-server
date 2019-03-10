@@ -144,6 +144,50 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $arrayToObject {
+        @Override
+        Object apply(List<?> expressionValues, Document document) {
+            Object values = requireSingleValue(expressionValues);
+            if ((!(values instanceof Collection))) {
+                throw new MongoServerError(40386, name() + " requires an array input, found: " + describeType(values));
+            }
+            Document result = new Document();
+            for (Object keyValueObject : (Collection<?>) values) {
+                if (keyValueObject instanceof List) {
+                    List<?> keyValue = (List<?>) keyValueObject;
+                    if (keyValue.size() != 2) {
+                        throw new MongoServerError(40397, name() + " requires an array of size 2 arrays,found array of size: " + keyValue.size());
+                    }
+                    Object keyObject = keyValue.get(0);
+                    if (!(keyObject instanceof String)) {
+                        throw new MongoServerError(40395, name() + " requires an array of key-value pairs, where the key must be of type string. Found key type: " + describeType(keyObject));
+                    }
+                    String key = (String) keyObject;
+                    Object value = keyValue.get(1);
+                    result.put(key, value);
+                } else if (keyValueObject instanceof Document) {
+                    Document keyValue = (Document) keyValueObject;
+                    if (keyValue.size() != 2) {
+                        throw new MongoServerError(40392, name() + " requires an object keys of 'k' and 'v'. Found incorrect number of keys:" + keyValue.size());
+                    }
+                    if (!(keyValue.containsKey("k") && keyValue.containsKey("v"))) {
+                        throw new MongoServerError(40393, name() + " requires an object with keys 'k' and 'v'. Missing either or both keys from: " + keyValue.toString(true));
+                    }
+                    Object keyObject = keyValue.get("k");
+                    if (!(keyObject instanceof String)) {
+                        throw new MongoServerError(40394, name() + " requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: " + describeType(keyObject));
+                    }
+                    String key = (String) keyObject;
+                    Object value = keyValue.get("v");
+                    result.put(key, value);
+                } else {
+                    throw new MongoServerError(40398, "Unrecognised input type format for " + name() + ": " + describeType(keyValueObject));
+                }
+            }
+            return result;
+        }
+    },
+
     $ceil {
         @Override
         Object apply(List<?> expressionValue, Document document) {

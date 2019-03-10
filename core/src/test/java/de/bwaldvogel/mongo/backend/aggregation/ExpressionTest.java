@@ -163,6 +163,50 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateArrayToObject() throws Exception {
+        assertThat(Expression.evaluate(json("$arrayToObject: {$literal: [['item', 'abc123'], ['qty', 25]]}"), json("")))
+            .isEqualTo(json("item: 'abc123', qty: 25"));
+
+        assertThat(Expression.evaluate(json("$arrayToObject: {$literal: [{k: 'item', v: 'abc123'}, {k: 'qty', v: 25}]}"), json("")))
+            .isEqualTo(json("item: 'abc123', qty: 25"));
+
+        assertThat(Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [['k', 'v']]")))
+            .isEqualTo(json("k: 'v'"));
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: 'str'"), json("")))
+            .withMessage("[Error 40386] $arrayToObject requires an array input, found: string");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [1, 2]")))
+            .withMessage("[Error 40398] Unrecognised input type format for $arrayToObject: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [[1, 2, 3]]")))
+            .withMessage("[Error 40397] $arrayToObject requires an array of size 2 arrays,found array of size: 3");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [[1, 2]]")))
+            .withMessage("[Error 40395] $arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: 1")))
+            .withMessage("[Error 40386] $arrayToObject requires an array input, found: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [{}]")))
+            .withMessage("[Error 40392] $arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [{k: 1, v: 2}]")))
+            .withMessage("[Error 40394] $arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [{k: 'key', z: 2}]")))
+            .withMessage("[Error 40393] $arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: 2}");
+    }
+
+    @Test
     public void testEvaluateCeil() throws Exception {
         assertThat(Expression.evaluate(json("$ceil: '$a'"), json("a: 2.5"))).isEqualTo(3.0);
         assertThat(Expression.evaluate(json("$ceil: 42"), json(""))).isEqualTo(42.0);
