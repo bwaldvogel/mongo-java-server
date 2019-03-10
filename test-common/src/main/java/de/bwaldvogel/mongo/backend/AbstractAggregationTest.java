@@ -910,6 +910,31 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsExactly(json("x: { c: 10 }"));
     }
 
+    @Test
+    public void testAggregateWithMergeObjects() throws Exception {
+        MongoCollection<Document> orders = db.getCollection("orders");
+
+        orders.insertOne(json("_id: 1, item: 'abc', 'price': 12, ordered: 2"));
+        orders.insertOne(json("_id: 2, item: 'jkl', 'price': 20, ordered: 1"));
+
+        MongoCollection<Document> items = db.getCollection("items");
+
+        items.insertOne(json("_id: 1, item: 'abc', description: 'product 1', instock: 120"));
+        items.insertOne(json("_id: 2, item: 'def', description: 'product 2', instock: 80"));
+        items.insertOne(json("_id: 3, item: 'jkl', description: 'product 3', instock: 60"));
+
+        Document lookup = json("$lookup: {from: 'items', localField: 'item', foreignField: 'item', as: 'fromItems'}");
+        Document replaceRoot = json("$replaceRoot: {newRoot: {$mergeObjects: [{$arrayElemAt: ['$fromItems', 0 ]}, '$$ROOT']}}");
+        Document project = json("$project: { fromItems: 0 }");
+        List<Document> pipeline = Arrays.asList(lookup, replaceRoot, project);
+
+        assertThat(toArray(orders.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, description: 'product 1', instock: 120, item: 'abc', ordered: 2, price: 12"),
+                json("_id: 2, description: 'product 3', instock: 60, item: 'jkl', ordered: 1, price: 20")
+            );
+    }
+
     private static Date date(String instant) {
         return Date.from(Instant.parse(instant));
     }
