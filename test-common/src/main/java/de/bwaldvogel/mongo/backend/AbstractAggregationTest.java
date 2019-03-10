@@ -201,13 +201,15 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 4, a: 2, b: 4"));
         collection.insertOne(json("_id: 5, a: 5, b: 10"));
         collection.insertOne(json("_id: 6, a: 7, c: 'a'"));
+        collection.insertOne(json("_id: 7"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactlyInAnyOrder(
                 json("_id: 1, count: 2, avg: null"),
                 json("_id: 2, count: 2, avg: 3.5"),
                 json("_id: 5, count: 1, avg: 10.0"),
-                json("_id: 7, count: 1, avg: null")
+                json("_id: 7, count: 1, avg: null"),
+                json("_id: null, count: 1, avg: null")
             );
     }
 

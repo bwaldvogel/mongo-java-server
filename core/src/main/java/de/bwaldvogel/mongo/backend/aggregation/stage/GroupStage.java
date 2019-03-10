@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.backend.aggregation.accumulator.Accumulator;
@@ -45,6 +46,9 @@ public class GroupStage implements AggregationStage {
         Map<Object, Collection<Accumulator>> accumulatorsPerKey = new TreeMap<>(ValueComparator.asc());
         stream.forEach(document -> {
             Object key = Expression.evaluateDocument(idExpression, document);
+            if (key instanceof Missing) {
+                key = null;
+            }
 
             Collection<Accumulator> accumulators = accumulatorsPerKey.computeIfAbsent(key, k -> accumulatorSuppliers.values()
                 .stream()
