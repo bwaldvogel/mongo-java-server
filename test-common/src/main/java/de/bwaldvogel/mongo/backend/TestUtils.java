@@ -1,7 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.bson.Document;
 
@@ -28,8 +32,18 @@ public class TestUtils {
         return Document.parse(string);
     }
 
+    static List<Document> jsonList(String... json) {
+        return Stream.of(json)
+            .map(TestUtils::json)
+            .collect(Collectors.toList());
+    }
+
     public static Document getCollectionStatistics(MongoDatabase database, String collectionName) {
         Document collStats = new Document("collStats", collectionName);
         return database.runCommand(collStats);
+    }
+
+    static Date date(String instant) {
+        return Date.from(Instant.parse(instant));
     }
 }

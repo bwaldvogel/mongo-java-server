@@ -1,14 +1,13 @@
 package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.bson.Document;
@@ -22,7 +21,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testUnrecognizedAggregatePipelineStage() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unknown: {}"));
+        List<Document> pipeline = jsonList("$unknown: {}");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
@@ -31,7 +30,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testIllegalAggregatePipelineStage() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unknown: {}, bar: 1"));
+        List<Document> pipeline = jsonList("$unknown: {}, bar: 1");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
@@ -191,7 +190,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithGroupByKey() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$group: {_id: '$a', count: {$sum: 1}, avg: {$avg: '$b'}}"));
+        List<Document> pipeline = jsonList("$group: {_id: '$a', count: {$sum: 1}, avg: {$avg: '$b'}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -216,7 +215,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     public void testAggregateWithGroupByNumberEdgeCases() throws Exception {
         String groupBy = "$group: {_id: '$a', count: {$sum: 1}, avg: {$avg: '$a'}, min: {$min: '$a'}, max: {$max: '$a'}}";
-        List<Document> pipeline = Collections.singletonList(json(groupBy));
+        List<Document> pipeline = jsonList(groupBy);
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -275,18 +274,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id:  1, a: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$group: {_id: '$a.'}"))).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$group: {_id: '$a.'}")).first())
             .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$group: {_id: '$a..1'}"))).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$group: {_id: '$a..1'}")).first())
             .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
     public void testAggregateWithSimpleExpressions() throws Exception {
-        Document query = json("$group: {_id: {$abs: '$value'}, count: {$sum: 1}}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$group: {_id: {$abs: '$value'}, count: {$sum: 1}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -306,8 +304,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithMultipleExpressionsInKey() throws Exception {
-        Document query = json("$group: {_id: {abs: {$abs: '$value'}, sum: {$subtract: ['$end', '$start']}}, count: {$sum: 1}}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$group: {_id: {abs: {$abs: '$value'}, sum: {$subtract: ['$end', '$start']}}, count: {$sum: 1}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -329,17 +326,16 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithAddToSet() throws Exception {
-        Document query = json("$group: {_id: { day: { $dayOfYear: '$date'}, year: { $year: '$date' } }, itemsSold: { $addToSet: '$item' }}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$group: {_id: { day: { $dayOfYear: '$date'}, year: { $year: '$date' } }, itemsSold: { $addToSet: '$item' }}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, item: 'zzz', price:  5, quantity: 10").append("date", date("2014-02-15T09:12:00Z")));
-        collection.insertOne(json("_id: 2, item: 'abc', price: 10, quantity:  2").append("date", date("2014-01-01T08:00:00Z")));
-        collection.insertOne(json("_id: 3, item: 'jkl', price: 20, quantity:  1").append("date", date("2014-02-03T09:00:00Z")));
-        collection.insertOne(json("_id: 4, item: 'xyz', price:  5, quantity:  5").append("date", date("2014-02-03T09:05:00Z")));
-        collection.insertOne(json("_id: 5, item: 'abc', price: 10, quantity: 10").append("date", date("2014-02-15T08:00:00Z")));
-        collection.insertOne(json("_id: 6, item: 'xyz', price:  5, quantity: 10").append("date", date("2014-02-15T09:12:00Z")));
+        collection.insertOne(json("_id: 1, item: 'zzz', price:  5, quantity: 10").append("date", TestUtils.date("2014-02-15T09:12:00Z")));
+        collection.insertOne(json("_id: 2, item: 'abc', price: 10, quantity:  2").append("date", TestUtils.date("2014-01-01T08:00:00Z")));
+        collection.insertOne(json("_id: 3, item: 'jkl', price: 20, quantity:  1").append("date", TestUtils.date("2014-02-03T09:00:00Z")));
+        collection.insertOne(json("_id: 4, item: 'xyz', price:  5, quantity:  5").append("date", TestUtils.date("2014-02-03T09:05:00Z")));
+        collection.insertOne(json("_id: 5, item: 'abc', price: 10, quantity: 10").append("date", TestUtils.date("2014-02-15T08:00:00Z")));
+        collection.insertOne(json("_id: 6, item: 'xyz', price:  5, quantity: 10").append("date", TestUtils.date("2014-02-15T09:12:00Z")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactlyInAnyOrder(
@@ -351,8 +347,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithEmptyAddToSet() throws Exception {
-        Document query = json("$group: {_id: 1, set: { $addToSet: '$foo' }}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$group: {_id: 1, set: { $addToSet: '$foo' }}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -366,8 +361,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithAdd() throws Exception {
-        Document query = json("$project: { item: 1, total: { $add: [ '$price', '$fee' ] } }");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$project: { item: 1, total: { $add: [ '$price', '$fee' ] } }");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -385,8 +379,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithSort() throws Exception {
-        Document query = json("$sort: { price: -1, fee: 1 }");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$sort: { price: -1, fee: 1 }");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -404,8 +397,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithProjection() throws Exception {
-        Document query = json("$project: {_id: 1, value: '$x', n: '$foo.bar', other: null}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$project: {_id: 1, value: '$x', n: '$foo.bar', other: null}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -426,18 +418,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1, x: 10"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: 0, v: '$x.1.'}"))).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 0, v: '$x.1.'}")).first())
             .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: 0, v: '$x..1'}"))).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 0, v: '$x..1'}")).first())
             .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
     public void testAggregateWithExpressionProjection() throws Exception {
-        Document query = json("$project: {_id: 0, idHex: {$toString: '$_id'}}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$project: {_id: 0, idHex: {$toString: '$_id'}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -449,8 +440,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithAddFields() throws Exception {
-        Document addFields = json("$addFields: {value: '$x'}");
-        List<Document> pipeline = Collections.singletonList(addFields);
+        List<Document> pipeline = jsonList("$addFields: {value: '$x'}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -488,8 +478,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithCeil() throws Exception {
-        Document query = json("$project: {a: 1, ceil: {$ceil: '$a'}}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$project: {a: 1, ceil: {$ceil: '$a'}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -509,8 +498,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithNumericOperators() throws Exception {
-        Document query = json("$project: {a: 1, exp: {$exp: '$a'}, ln: {$ln: '$a'}, log10: {$log10: '$a'}, sqrt: {$sqrt: '$a'}}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$project: {a: 1, exp: {$exp: '$a'}, ln: {$ln: '$a'}, log10: {$log10: '$a'}, sqrt: {$sqrt: '$a'}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -546,24 +534,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", date("2014-01-01T08:00:00Z")));
-        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", date("2014-02-03T09:00:00Z")));
-        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", date("2014-02-03T09:05:00Z")));
-        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", date("2014-02-15T08:00:00Z")));
-        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", date("2014-02-15T09:12:00Z")));
+        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", TestUtils.date("2014-01-01T08:00:00Z")));
+        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", TestUtils.date("2014-02-03T09:00:00Z")));
+        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", TestUtils.date("2014-02-03T09:05:00Z")));
+        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", TestUtils.date("2014-02-15T08:00:00Z")));
+        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", TestUtils.date("2014-02-15T09:12:00Z")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactlyInAnyOrder(
-                json("_id: 'abc'").append("firstSale", date("2014-01-01T08:00:00Z")).append("lastSale", date("2014-02-15T08:00:00Z")),
-                json("_id: 'jkl'").append("firstSale", date("2014-02-03T09:00:00Z")).append("lastSale", date("2014-02-03T09:00:00Z")),
-                json("_id: 'xyz'").append("firstSale", date("2014-02-03T09:05:00Z")).append("lastSale", date("2014-02-15T09:12:00Z"))
+                json("_id: 'abc'").append("firstSale", TestUtils.date("2014-01-01T08:00:00Z")).append("lastSale", TestUtils.date("2014-02-15T08:00:00Z")),
+                json("_id: 'jkl'").append("firstSale", TestUtils.date("2014-02-03T09:00:00Z")).append("lastSale", TestUtils.date("2014-02-03T09:00:00Z")),
+                json("_id: 'xyz'").append("firstSale", TestUtils.date("2014-02-03T09:05:00Z")).append("lastSale", TestUtils.date("2014-02-15T09:12:00Z"))
             );
     }
 
     @Test
     public void testAggregateWithPush() throws Exception {
-        Document group = json("$group: {_id: null, a: {$push: '$a'}, b: {$push: {v: '$b'}}, c: {$push: '$c'}}");
-        List<Document> pipeline = Collections.singletonList(group);
+        List<Document> pipeline = jsonList("$group: {_id: null, a: {$push: '$a'}, b: {$push: {v: '$b'}}, c: {$push: '$c'}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -576,8 +563,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithUndefinedVariable() throws Exception {
-        Document project = json("$project: {result: '$$UNDEFINED'}");
-        List<Document> pipeline = Collections.singletonList(project);
+        List<Document> pipeline = jsonList("$project: {result: '$$UNDEFINED'}");
 
         collection.insertOne(json("_id: 1"));
 
@@ -589,8 +575,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/31
     @Test
     public void testAggregateWithRootVariable() throws Exception {
-        Document project = json("$project: {_id: 0, doc: '$$ROOT', a: '$$ROOT.a', a_v: '$$ROOT.a.v'}");
-        List<Document> pipeline = Collections.singletonList(project);
+        List<Document> pipeline = jsonList("$project: {_id: 0, doc: '$$ROOT', a: '$$ROOT.a', a_v: '$$ROOT.a.v'}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -605,18 +590,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1, x: 10"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: '$$ROOT.a.'}"))).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: '$$ROOT.a.'}")).first())
             .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(Collections.singletonList(json("$project: {_id: '$$ROOT.a..1'}"))).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: '$$ROOT.a..1'}")).first())
             .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
     public void testAggregateWithSetOperations() throws Exception {
-        Document project = json("$project: {union: {$setUnion: ['$a', '$b']}, diff: {$setDifference: ['$a', '$b']}, intersection: {$setIntersection: ['$a', '$b']}}");
-        List<Document> pipeline = Collections.singletonList(project);
+        List<Document> pipeline = jsonList("$project: {union: {$setUnion: ['$a', '$b']}, diff: {$setDifference: ['$a', '$b']}, intersection: {$setIntersection: ['$a', '$b']}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -642,8 +626,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 6, v: [30, 40]"));
         collection.insertOne(json("_id: 7, v: [5]"));
 
-        Document project = json("$project: {cmp1: {$cmp: ['$v', 10]}, cmp2: {$cmp: ['$v', [10]]}}");
-        List<Document> pipeline = Collections.singletonList(project);
+        List<Document> pipeline = jsonList("$project: {cmp1: {$cmp: ['$v', 10]}, cmp2: {$cmp: ['$v', [10]]}}");
+        Document project;
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactlyInAnyOrder(
@@ -687,8 +671,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithSplit() throws Exception {
-        Document project = json("$project: {_id: 1, names: {$split: ['$name', ' ']}}");
-        List<Document> pipeline = Collections.singletonList(project);
+        List<Document> pipeline = jsonList("$project: {_id: 1, names: {$split: ['$name', ' ']}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -735,7 +718,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/54
     @Test
     public void testAggregateWithUnwind_preserveNullAndEmptyArrays() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', preserveNullAndEmptyArrays: true}"));
+        List<Document> pipeline = jsonList("$unwind: {path: '$sizes', preserveNullAndEmptyArrays: true}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
         collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
@@ -759,7 +742,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/54
     @Test
     public void testAggregateWithUnwind_IncludeArrayIndex() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', includeArrayIndex: 'idx'}"));
+        List<Document> pipeline = jsonList("$unwind: {path: '$sizes', includeArrayIndex: 'idx'}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
         collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
@@ -780,7 +763,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/54
     @Test
     public void testAggregateWithUnwind_IncludeArrayIndex_OverwriteExistingField() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', includeArrayIndex: 'item'}"));
+        List<Document> pipeline = jsonList("$unwind: {path: '$sizes', includeArrayIndex: 'item'}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
         collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
@@ -801,7 +784,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/54
     @Test
     public void testAggregateWithUnwind_IncludeArrayIndex_NestedIndexField() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', includeArrayIndex: 'item.idx'}"));
+        List<Document> pipeline = jsonList("$unwind: {path: '$sizes', includeArrayIndex: 'item.idx'}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
         collection.insertOne(json("_id: 1, item: {value: 'ABC'}, sizes: ['S', 'M', 'L']"));
@@ -822,7 +805,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/54
     @Test
     public void testAggregateWithUnwind_preserveNullAndEmptyArraysAndIncludeArrayIndex() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$sizes', preserveNullAndEmptyArrays: true, includeArrayIndex: 'idx'}"));
+        List<Document> pipeline = jsonList("$unwind: {path: '$sizes', preserveNullAndEmptyArrays: true, includeArrayIndex: 'idx'}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
         collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
@@ -850,8 +833,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         authorsCollection.insertOne(json("_id: 2, name: 'Martin Fowler'"));
         authorsCollection.insertOne(json("_id: null, name: 'Null Author'"));
 
-        Document lookup = json("$lookup: {from: 'authors', localField: 'authorId', foreignField: '_id', as: 'author'}");
-        List<Document> pipeline = Collections.singletonList(lookup);
+        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: 'authorId', foreignField: '_id', as: 'author'}");
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -875,8 +857,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithReplaceRoot() {
-        Document replaceRoot = json("$replaceRoot: { newRoot: '$a.b' }");
-        List<Document> pipeline = Collections.singletonList(replaceRoot);
+        List<Document> pipeline = jsonList("$replaceRoot: { newRoot: '$a.b' }");
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
         collection.insertOne(json("_id: 1, a: { b: { c: 10 } }"));
@@ -887,8 +868,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithIllegalReplaceRoot() {
-        Document replaceRoot = json("$replaceRoot: { newRoot: '$a.b' }");
-        List<Document> pipeline = Collections.singletonList(replaceRoot);
+        List<Document> pipeline = jsonList("$replaceRoot: { newRoot: '$a.b' }");
 
         collection.insertOne(json("_id: 1, a: { b: 10 }, c: 123"));
 
@@ -902,8 +882,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithProjectingReplaceRoot() {
-        Document replaceRoot = json("$replaceRoot: { newRoot: { x: '$a.b' } }");
-        List<Document> pipeline = Collections.singletonList(replaceRoot);
+        List<Document> pipeline = jsonList("$replaceRoot: { newRoot: { x: '$a.b' } }");
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
         collection.insertOne(json("_id: 1, a: { b: { c: 10 } }"));
@@ -925,10 +904,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         items.insertOne(json("_id: 2, item: 'def', description: 'product 2', instock: 80"));
         items.insertOne(json("_id: 3, item: 'jkl', description: 'product 3', instock: 60"));
 
-        Document lookup = json("$lookup: {from: 'items', localField: 'item', foreignField: 'item', as: 'fromItems'}");
-        Document replaceRoot = json("$replaceRoot: {newRoot: {$mergeObjects: [{$arrayElemAt: ['$fromItems', 0 ]}, '$$ROOT']}}");
-        Document project = json("$project: { fromItems: 0 }");
-        List<Document> pipeline = Arrays.asList(lookup, replaceRoot, project);
+        List<Document> pipeline = jsonList(
+            "$lookup: {from: 'items', localField: 'item', foreignField: 'item', as: 'fromItems'}",
+            "$replaceRoot: {newRoot: {$mergeObjects: [{$arrayElemAt: ['$fromItems', 0 ]}, '$$ROOT']}}",
+            "$project: { fromItems: 0 }"
+        );
 
         assertThat(toArray(orders.aggregate(pipeline)))
             .containsExactly(
@@ -948,8 +928,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 7"));
         collection.insertOne(json("_id: 8, item: null"));
 
-        Document sortByCount = json("$sortByCount: '$item'");
-        List<Document> pipeline = Collections.singletonList(sortByCount);
+        List<Document> pipeline = jsonList("$sortByCount: '$item'");
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
@@ -962,8 +941,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testObjectToArrayExpression() throws Exception {
-        Document query = json("$project: {_id: 1, a: {$objectToArray: '$value'}}");
-        List<Document> pipeline = Collections.singletonList(query);
+        List<Document> pipeline = jsonList("$project: {_id: 1, a: {$objectToArray: '$value'}}");
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -984,10 +962,6 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(Collections.singletonList(illegalQuery)).first())
             .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
-    }
-
-    private static Date date(String instant) {
-        return Date.from(Instant.parse(instant));
     }
 
 }
