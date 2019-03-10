@@ -623,6 +623,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     Document replaceRoot = (Document) stage.get(stageOperation);
                     aggregation.addStage(new ReplaceRootStage(replaceRoot));
                     break;
+                case "$sortByCount":
+                    Object expression = stage.get(stageOperation);
+                    aggregation.addStage(new GroupStage(new Document(ID_FIELD, expression).append("count", new Document("$sum", 1))));
+                    aggregation.addStage(new OrderByStage(new Document("count", -1)));
+                    break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
             }

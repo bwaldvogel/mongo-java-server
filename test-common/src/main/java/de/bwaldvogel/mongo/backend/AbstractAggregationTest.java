@@ -937,6 +937,29 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testAggregateWithSortByCount() throws Exception {
+        collection.insertOne(json("_id: 1, item: 'abc', 'price': 12, ordered: 2"));
+        collection.insertOne(json("_id: 2, item: 'jkl', 'price': 20, ordered: 1"));
+        collection.insertOne(json("_id: 3, item: 'jkl', 'price': 20, ordered: 7"));
+        collection.insertOne(json("_id: 4, item: 'jkl', 'price': 40, ordered: 3"));
+        collection.insertOne(json("_id: 5, item: 'abc', 'price': 90, ordered: 5"));
+        collection.insertOne(json("_id: 6, item: 'zzz'"));
+        collection.insertOne(json("_id: 7"));
+        collection.insertOne(json("_id: 8, item: null"));
+
+        Document sortByCount = json("$sortByCount: '$item'");
+        List<Document> pipeline = Collections.singletonList(sortByCount);
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 'jkl', count: 3"),
+                json("_id: null, count: 2"),
+                json("_id: 'abc', count: 2"),
+                json("_id: 'zzz', count: 1")
+            );
+    }
+
     private static Date date(String instant) {
         return Date.from(Instant.parse(instant));
     }
