@@ -1840,7 +1840,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(json("_id: 1"), json("$pullAll: {persons: [{id: 0.0}, {id: 5}]}"));
 
         assertThat(toArray(collection.find(json(""))))
-           .containsExactly(json("_id: 1, persons: [{id: 1}, {id: 2}, {id: 1}]"));
+            .containsExactly(json("_id: 1, persons: [{id: 1}, {id: 2}, {id: 1}]"));
     }
 
     @Test
@@ -3359,6 +3359,43 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testProjectionWithSlice() throws Exception {
+        collection.insertOne(json("_id: 1, values: ['a', 'b', 'c', 'd', 'e']"));
+        collection.insertOne(json("_id: 2, values: 'xyz'"));
+
+        assertThat(toArray(collection.find(json("_id: 1")).projection(json("values: {$slice: 1}"))))
+            .containsExactly(json("_id: 1, values: ['a']"));
+
+        assertThat(toArray(collection.find(json("_id: 1")).projection(json("values: {$slice: ['xyz', 2]}"))))
+            .containsExactly(json("_id: 1, values: ['a', 'b']"));
+
+        assertThat(toArray(collection.find(json("_id: 1")).projection(json("values: {$slice: [-3, 2]}"))))
+            .containsExactly(json("_id: 1, values: ['c', 'd']"));
+
+        assertThat(toArray(collection.find(json("_id: 2")).projection(json("values: {$slice: 1}"))))
+            .containsExactly(json("_id: 2, values: 'xyz'"));
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['$_id', '$_id']}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '$slice limit must be positive'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 0]}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '$slice limit must be positive'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 'xyz']}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '$slice limit must be positive'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 2, 3]}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '$slice array wrong size'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: 'abc'}")).first())
+            .withMessageContaining("Query failed with error code 2 and error message '$slice only supports numbers and [skip, limit] arrays'");
+    }
 
     @Test
     public void testMatchesNullOrMissing() throws Exception {

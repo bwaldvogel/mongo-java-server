@@ -108,6 +108,9 @@ public class Projection {
                 if (projectionDocument.keySet().equals(Collections.singleton(QueryOperator.ELEM_MATCH.getValue()))) {
                     Document elemMatch = (Document) projectionDocument.get(QueryOperator.ELEM_MATCH.getValue());
                     projectElemMatch(newDocument, elemMatch, key, value);
+                } else if (projectionDocument.keySet().equals(Collections.singleton("$slice"))) {
+                    Object slice = projectionDocument.get("$slice");
+                    projectSlice(newDocument, slice, key, value);
                 } else {
                     throw new IllegalArgumentException("Unsupported projection: " + projectionValue);
                 }
@@ -126,5 +129,46 @@ public class Projection {
                 .findFirst()
                 .ifPresent(v -> newDocument.put(key, Collections.singletonList(v)));
         }
+    }
+
+    private static void projectSlice(Document newDocument, Object slice, String key, Object value) {
+        if (!(value instanceof List)) {
+            newDocument.put(key, value);
+            return;
+        }
+        List<?> values = (List<?>) value;
+        int fromIndex = 0;
+        int toIndex = values.size();
+        if (slice instanceof Integer) {
+            int num = ((Integer) slice).intValue();
+            if (num < 0) {
+                fromIndex = values.size() + num;
+            } else {
+                toIndex = num;
+            }
+        } else if (slice instanceof List) {
+            List<?> sliceParams = (List<?>) slice;
+            if (sliceParams.size() != 2) {
+                throw new BadValueException("$slice array wrong size");
+            }
+            if (sliceParams.get(0) instanceof Number) {
+                fromIndex = ((Number) sliceParams.get(0)).intValue();
+            }
+            if (fromIndex < 0) {
+                fromIndex += values.size();
+            }
+            int limit = 0;
+            if (sliceParams.get(1) instanceof Number) {
+                limit = ((Number) sliceParams.get(1)).intValue();
+            }
+            if (limit <= 0) {
+                throw new BadValueException("$slice limit must be positive");
+            }
+            toIndex = fromIndex + limit;
+        } else {
+            throw new BadValueException("$slice only supports numbers and [skip, limit] arrays");
+        }
+        List<?> slicedValue = values.subList(Math.max(0, fromIndex), Math.min(values.size(), toIndex));
+        newDocument.put(key, slicedValue);
     }
 }

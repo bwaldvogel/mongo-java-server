@@ -98,4 +98,27 @@ public class ProjectionTest {
             .isEqualTo(json("_id: 1, students: [{name: 'john', school: 'A', age: 10}]"));
     }
 
+    @Test
+    public void testProjectWithSlice() throws Exception {
+        Document document = json("_id: 1, values: [1, 2, 3, 4], value: 'other'");
+
+        assertThat(Projection.projectDocument(document, json("values: {$slice: 2}"), "_id"))
+            .isEqualTo(json("_id: 1, values: [1, 2]"));
+
+        assertThat(Projection.projectDocument(document, json("values: {$slice: 20}"), "_id"))
+            .isEqualTo(json("_id: 1, values: [1, 2, 3, 4]"));
+
+        assertThat(Projection.projectDocument(document, json("values: {$slice: -2}"), "_id"))
+            .isEqualTo(json("_id: 1, values: [3, 4]"));
+
+        assertThat(Projection.projectDocument(document, json("values: {$slice: -10}"), "_id"))
+            .isEqualTo(json("_id: 1, values: [1, 2, 3, 4]"));
+
+        assertThat(Projection.projectDocument(document, json("values: {$slice: [-2, 1]}"), "_id"))
+            .isEqualTo(json("_id: 1, values: [3]"));
+
+        assertThat(Projection.projectDocument(document, json("value: {$slice: 2}"), "_id"))
+            .isEqualTo(json("_id: 1, value: 'other'"));
+    }
+
 }
