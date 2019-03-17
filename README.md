@@ -166,6 +166,7 @@ For integration tests, a PostgreSQL instance can be created in a docker containe
 ```
 docker run --name postgres-mongo-java-server-test \
            -p 5432:5432 \
+           --tmpfs /var/lib/postgresql/data:rw \
            -e POSTGRES_USER=mongo-java-server-test \
            -e POSTGRES_PASSWORD=mongo-java-server-test \
            -e POSTGRES_DB=mongo-java-server-test \
