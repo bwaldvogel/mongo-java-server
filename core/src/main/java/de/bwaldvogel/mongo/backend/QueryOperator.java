@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public enum QueryOperator {
@@ -46,7 +47,7 @@ public enum QueryOperator {
     static QueryOperator fromValue(String value) throws MongoServerError {
         QueryOperator op = MAP.get(value);
         if (op == null) {
-            throw new MongoServerError(2, "unknown operator: " + value);
+            throw new BadValueException("unknown operator: " + value);
         }
         return op;
     }

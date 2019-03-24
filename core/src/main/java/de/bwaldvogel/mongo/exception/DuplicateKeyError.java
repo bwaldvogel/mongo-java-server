@@ -12,8 +12,9 @@ public class DuplicateKeyError extends KeyConstraintError {
     private static final long serialVersionUID = 1L;
 
     public DuplicateKeyError(Index<?> index, MongoCollection<?> collection, Collection<?> values) {
-        super(11000, "E11000 duplicate key error collection: " + collection.getFullName()
-            + " index: " + index.getName() + " dup key: " + valuesToString(values));
+        super(11000, "DuplicateKey",
+            "E11000 duplicate key error collection: " + collection.getFullName()
+                + " index: " + index.getName() + " dup key: " + valuesToString(values));
     }
 
     private static String valuesToString(Collection<?> values) {

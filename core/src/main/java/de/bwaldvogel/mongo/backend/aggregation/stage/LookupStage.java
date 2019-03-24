@@ -11,7 +11,7 @@ import java.util.stream.StreamSupport;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.FailedToParseException;
 
 public class LookupStage implements AggregationStage {
     private static final String FROM = "from";
@@ -44,12 +44,12 @@ public class LookupStage implements AggregationStage {
     private String readConfigurationProperty(Document configuration, String name) {
         Object value = configuration.get(name);
         if (value == null) {
-            throw buildConfigurationError("missing '" + name + "' option to $lookup stage specification: " + configuration);
+            throw new FailedToParseException("missing '" + name + "' option to $lookup stage specification: " + configuration);
         }
         if (value instanceof String) {
             return (String) value;
         }
-        throw buildConfigurationError("'" + name + "' option to $lookup must be a string, but was type " +
+        throw new FailedToParseException("'" + name + "' option to $lookup must be a string, but was type " +
             value.getClass().getName());
     }
 
@@ -57,13 +57,9 @@ public class LookupStage implements AggregationStage {
         for (String name : configuration.keySet()) {
             if (!CONFIGURATION_KEYS.contains(name)) {
                 String message = "unknown argument to $lookup: " + name;
-                throw buildConfigurationError(message);
+                throw new FailedToParseException(message);
             }
         }
-    }
-
-    private MongoServerError buildConfigurationError(String message) {
-        return new MongoServerError(9, "FailedToParse", message);
     }
 
     @Override

@@ -17,6 +17,7 @@ import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -58,7 +59,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                     if (value instanceof Collection) {
                         Collection<?> values = (Collection<?>) value;
                         if (values.isEmpty()) {
-                            throw new MongoServerError(9, key + " must match at least one type");
+                            throw new FailedToParseException(key + " must match at least one type");
                         }
                     }
                 }
@@ -230,13 +231,13 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         if (!(queryValue instanceof List<?>)) {
-            throw new MongoServerError(2, "$and/$or/$nor must be a nonempty array");
+            throw new BadValueException("$and/$or/$nor must be a nonempty array");
         }
 
         @SuppressWarnings("unchecked")
         List<Object> list = (List<Object>) queryValue;
         if (list.isEmpty()) {
-            throw new MongoServerError(2, "$and/$or/$nor must be a nonempty array");
+            throw new BadValueException("$and/$or/$nor must be a nonempty array");
         }
 
         for (Object subqueryValue : list) {

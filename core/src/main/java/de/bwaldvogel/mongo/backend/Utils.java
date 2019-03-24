@@ -12,8 +12,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.PathNotViableException;
 import de.bwaldvogel.mongo.wire.BsonEncoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -261,14 +263,12 @@ public class Utils {
         String subKey = key.substring(dotPos + 1);
 
         if (key.matches(".*\\$(\\.).+\\$(\\.).*")) {
-            throw new MongoServerError(2,
-                "Too many positional (i.e. '$') elements found in path '" + key + "'");
+            throw new BadValueException("Too many positional (i.e. '$') elements found in path '" + key + "'");
         }
 
         if (subKey.matches("\\$(\\..+)?")) {
             if (matchPos == null || matchPos.get() == null) {
-                throw new MongoServerError(2,
-                    "The positional operator did not find the match needed from the query.");
+                throw new BadValueException("The positional operator did not find the match needed from the query.");
             }
             Integer pos = matchPos.getAndSet(null);
             return subKey.replaceFirst("\\$", String.valueOf(pos));
@@ -365,7 +365,7 @@ public class Utils {
                 changeSubdocumentValue(subObject, subKey, newValue, matchPos);
             } else if (!Missing.isNullOrMissing(subObject)) {
                 String element = new Document(mainKey, subObject).toString(true);
-                throw new MongoServerError(28, "Cannot create field '" + subKey + "' in element " + element);
+                throw new PathNotViableException("Cannot create field '" + subKey + "' in element " + element);
             } else {
                 Document obj = new Document();
                 changeSubdocumentValue(obj, subKey, newValue, matchPos);

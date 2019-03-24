@@ -34,6 +34,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -493,6 +494,14 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             result.put("err", null);
             result.put("n", 0);
         }
+        if (result.containsKey("writeErrors")) {
+            @SuppressWarnings("unchecked")
+            List<Document> writeErrors = (List<Document>) result.get("writeErrors");
+            if (writeErrors.size() == 1) {
+                result.putAll(writeErrors.get(0));
+                result.remove("writeErrors");
+            }
+        }
         Utils.markOkay(result);
         return result;
     }
@@ -560,8 +569,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         String collectionName = query.get(command).toString();
         Document cursor = (Document) query.get("cursor");
         if (cursor == null) {
-            throw new MongoServerError(9, "FailedToParse",
-                "The 'cursor' option is required, except for aggregate with the explain argument");
+            throw new FailedToParseException("The 'cursor' option is required, except for aggregate with the explain argument");
         }
         if (!cursor.isEmpty()) {
             throw new MongoServerException("Non-empty cursor is not yet implemented");
