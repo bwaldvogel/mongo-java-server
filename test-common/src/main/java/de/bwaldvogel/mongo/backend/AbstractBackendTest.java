@@ -4096,6 +4096,40 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/56
+    @Test
+    public void testRegExQuery() throws Exception {
+        collection.insertOne(json("_id: 'one', name: 'karl'"));
+        collection.insertOne(json("_id: 'two', name: 'Karl'"));
+        collection.insertOne(json("_id: 'Three', name: 'KARL'"));
+        collection.insertOne(json("_id: null"));
+        collection.insertOne(json("_id: 123, name: ['karl', 'john']"));
+
+        assertThat(toArray(collection.find(json("_id: {$regex: '^T.+$', $options: 'i'}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 'two', name: 'Karl'"),
+                json("_id: 'Three', name: 'KARL'")
+            );
+
+        assertThat(toArray(collection.find(json("_id: {$regex: 't.+'}"))))
+            .containsExactly(
+                json("_id: 'two', name: 'Karl'")
+            );
+
+        assertThat(toArray(collection.find(json("_id: {$regex: '^(one|1.+)$'}"))))
+            .containsExactly(
+                json("_id: 'one', name: 'karl'")
+            );
+
+        assertThat(toArray(collection.find(json("name: {$regex: 'arl', $options: 'i'}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 'one', name: 'karl'"),
+                json("_id: 'two', name: 'Karl'"),
+                json("_id: 'Three', name: 'KARL'"),
+                json("_id: 123, name: ['karl', 'john']")
+            );
+    }
+
     private void insertAndFindLargeDocument(int numKeyValues, int id) {
         Document document = new Document("_id", id);
         for (int i = 0; i < numKeyValues; i++) {

@@ -97,6 +97,9 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         for (String key : keys()) {
             Object queryValue = query.get(key);
             if (queryValue instanceof Document) {
+                if (BsonRegularExpression.isRegularExpression(queryValue)) {
+                    return true;
+                }
                 for (String queriedKeys : ((Document) queryValue).keySet()) {
                     if (isInQuery(queriedKeys)) {
                         // okay
@@ -120,7 +123,26 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         List<Object> queriedKeys = getQueriedKeys(query);
 
         for (Object queriedKey : queriedKeys) {
-            if (queriedKey instanceof Document) {
+            if (BsonRegularExpression.isRegularExpression(queriedKey)) {
+                if (isCompoundIndex()) {
+                    throw new UnsupportedOperationException("Not yet implemented");
+                }
+                List<P> positions = new ArrayList<>();
+                for (Entry<List<Object>, P> entry : getIterable()) {
+                    List<Object> obj = entry.getKey();
+                    if (obj.size() == 1) {
+                        Object o = obj.get(0);
+                        if (o instanceof String) {
+                            BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(queriedKey);
+                            Matcher matcher = regularExpression.matcher(o.toString());
+                            if (matcher.find()) {
+                                positions.add(entry.getValue());
+                            }
+                        }
+                    }
+                }
+                return positions;
+            } else if (queriedKey instanceof Document) {
                 if (isCompoundIndex()) {
                     throw new UnsupportedOperationException("Not yet implemented");
                 }
@@ -135,19 +157,6 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                         return getPositionsForExpression(keyObj, expression);
                     }
                 }
-            } else if (queriedKey instanceof BsonRegularExpression) {
-                if (isCompoundIndex()) {
-                    throw new UnsupportedOperationException("Not yet implemented");
-                }
-                List<P> positions = new ArrayList<>();
-                for (Entry<List<Object>, P> entry : getIterable()) {
-                    Object obj = entry.getKey();
-                    Matcher matcher = ((BsonRegularExpression) queriedKey).matcher(obj.toString());
-                    if (matcher.find()) {
-                        positions.add(entry.getValue());
-                    }
-                }
-                return positions;
             }
         }
 

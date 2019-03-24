@@ -5,6 +5,7 @@ import java.util.Arrays;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -132,6 +133,13 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     public void testArrayNe() throws Exception {
         assumeStrictTests();
         super.testArrayNe();
+    }
+
+    @Override
+    @Test
+    public void testRegExQuery() throws Exception {
+        assumeStrictTests();
+        super.testRegExQuery();
     }
 
     private void assumeStrictTests() {
