@@ -572,7 +572,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             throw new FailedToParseException("The 'cursor' option is required, except for aggregate with the explain argument");
         }
         if (!cursor.isEmpty()) {
-            throw new MongoServerException("Non-empty cursor is not yet implemented");
+            log.warn("Non-empty cursor is not yet implemented. Ignoring.");
         }
 
         MongoCollection<P> collection = resolveCollection(collectionName, false);
