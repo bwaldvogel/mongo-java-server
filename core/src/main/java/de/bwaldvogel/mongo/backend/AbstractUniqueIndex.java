@@ -176,7 +176,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     private Iterable<P> getPositionsForExpression(Document keyObj, String operator) {
         if (isInQuery(operator)) {
-            Collection<?> queriedObjects = new TreeSet<Object>((Collection<?>) keyObj.get(operator));
+            @SuppressWarnings("unchecked")
+            Collection<Object> objects = (Collection<Object>) keyObj.get(operator);
+            Collection<Object> queriedObjects = new TreeSet<>(ValueComparator.asc());
+            queriedObjects.addAll(objects);
+
             List<P> allKeys = new ArrayList<>();
             for (Object object : queriedObjects) {
                 Object keyValue = Utils.normalizeValue(object);

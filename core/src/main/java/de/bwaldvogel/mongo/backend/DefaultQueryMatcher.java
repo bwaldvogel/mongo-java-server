@@ -165,7 +165,16 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (documentValue instanceof Collection<?>) {
             Collection<?> documentValues = (Collection<?>) documentValue;
             if (queryValue instanceof Document) {
-                return checkMatchesAnyValue((Document) queryValue, keys, document, documentValues);
+                Document queryDocument = (Document) queryValue;
+                boolean matches = checkMatchesAnyValue(queryDocument, keys, document, documentValues);
+                if (matches) {
+                    return true;
+                }
+                if (isInQuery(queryDocument)) {
+                    return checkMatchesValue(queryValue, documentValue);
+                } else {
+                    return false;
+                }
             } else if (queryValue instanceof Collection<?>) {
                 return checkMatchesValue(queryValue, documentValues);
             } else if (checkMatchesAnyValue(queryValue, documentValues)) {
@@ -174,6 +183,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
         }
 
         return checkMatchesValue(queryValue, documentValue);
+    }
+
+    private static boolean isInQuery(Document queryDocument) {
+        return queryDocument.keySet().equals(Collections.singleton(QueryOperator.IN.getValue()));
     }
 
     private boolean checkMatchesAnyValue(Document queryValue, List<String> keys, Document document, Collection<?> value) {
@@ -419,6 +432,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
                         if (pattern.matcher((String) value).find()) {
                             return true;
                         }
+                    } else if (value instanceof Collection && !(o instanceof Collection)) {
+                        Collection<?> values = (Collection<?>) value;
+                        return values.stream().anyMatch(v -> Utils.nullAwareEquals(o, v));
                     } else if (Utils.nullAwareEquals(o, value)) {
                         return true;
                     }

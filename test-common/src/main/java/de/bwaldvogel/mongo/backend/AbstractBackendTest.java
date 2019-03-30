@@ -988,8 +988,49 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
 
-        List<Document> docs = toArray(collection.find(json("_id: {$in: [3, 2, 1]}")));
-        assertThat(docs).containsExactlyInAnyOrder(json("_id: 1"), json("_id: 2"), json("_id: 3"));
+        assertThat(toArray(collection.find(json("_id: {$in: [3, 2, 1]}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1"),
+                json("_id: 2"),
+                json("_id: 3")
+            );
+
+        // https://github.com/bwaldvogel/mongo-java-server/issues/57
+        assertThat(toArray(collection.find(json("_id: {$in: [[1, 2, 3]]}"))))
+            .isEmpty();
+    }
+
+    @Test
+    public void testInQuery_Arrays() throws Exception {
+        collection.insertOne(json("_id: 1, v: [1, 2, 3]"));
+        collection.insertOne(json("_id: 2, v: [1, 2]"));
+        collection.insertOne(json("_id: 3, v: 50"));
+        collection.insertOne(json("_id: 4, v: null"));
+        collection.insertOne(json("_id: 5"));
+
+        assertThat(toArray(collection.find(json("v: {$in: [[1, 2, 3], 50]}"))))
+            .containsExactly(
+                json("_id: 1, v: [1, 2, 3]"),
+                json("_id: 3, v: 50")
+            );
+
+        assertThat(toArray(collection.find(json("v: {$not: {$in: [[1, 2, 3], 50]}}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, v: [1, 2]"),
+                json("_id: 4, v: null"),
+                json("_id: 5")
+            );
+
+        assertThat(toArray(collection.find(json("v: {$not: {$in: [2, 50]}}"))))
+            .containsExactlyInAnyOrder(
+                json("_id: 4, v: null"),
+                json("_id: 5")
+            );
+
+        assertThat(toArray(collection.find(json("v: {$not: {$in: [[1, 2], 50, null]}}"))))
+            .containsExactly(
+                json("_id: 1, v: [1, 2, 3]")
+            );
     }
 
     @Test
