@@ -187,7 +187,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     continue;
                 }
 
-                assertNotKeyField(key);
+                if (!isUpsert) {
+                    assertNotKeyField(key);
+                }
 
                 Utils.changeSubdocumentValue(document, key, newValue, matchPos);
             }
