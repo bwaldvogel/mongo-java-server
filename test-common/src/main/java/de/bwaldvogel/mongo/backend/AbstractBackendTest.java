@@ -44,6 +44,7 @@ import java.util.regex.Pattern;
 
 import org.bson.BsonInt32;
 import org.bson.BsonObjectId;
+import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -2380,6 +2381,33 @@ public abstract class AbstractBackendTest extends AbstractTest {
         // create a random object id
         Document actual = collection.find().first();
         assertThat(actual).isEqualTo(expected);
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/62
+    @Test
+    public void testUpsertWithId() throws Exception {
+        Document query = json("somekey: 'somevalue'");
+        Document update = json("$set: { _id: 'someid', somekey: 'some value' }");
+
+        UpdateResult updateResult = collection.updateOne(query, update, new UpdateOptions().upsert(true));
+        assertThat(updateResult.getModifiedCount()).isZero();
+        assertThat(updateResult.getMatchedCount()).isZero();
+        assertThat(updateResult.getUpsertedId()).isEqualTo(new BsonString("someid"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactly(json("_id: 'someid', somekey: 'some value' "));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/62
+    @Test
+    public void testUpsertWithId_duplicateKey() throws Exception {
+        collection.insertOne(json("_id: 'someid', somekey: 'other value'"));
+
+        Document query = json("somekey: 'some value'");
+        Document update = json("$set: { _id: 'someid', somekey: 'some value' }");
+
+        assertMongoWriteException(() -> collection.updateOne(query, update, new UpdateOptions().upsert(true)),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : \"someid\" }");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/41
