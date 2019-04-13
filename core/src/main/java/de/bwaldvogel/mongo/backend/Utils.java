@@ -130,6 +130,7 @@ public class Utils {
             }
             return Double.valueOf(doubleValue);
         } else if (value instanceof Map) {
+            @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) value;
             Document result = new Document();
             for (Entry<String, Object> entry : map.entrySet()) {
@@ -304,7 +305,7 @@ public class Utils {
         result.put("ok", 1.0);
     }
 
-    static void setListSafe(Object document, String key, Object obj) {
+    private static void setListSafe(Object document, String key, Object obj) {
         if (document instanceof List<?>) {
             int pos = Integer.parseInt(key);
             @SuppressWarnings("unchecked")
@@ -318,7 +319,7 @@ public class Utils {
         }
     }
 
-    static Object removeListSafe(Object document, String key) {
+    private static Object removeListSafe(Object document, String key) {
         if (document instanceof Document) {
             return ((Document) document).remove(key);
         } else if (document instanceof List<?>) {
@@ -341,7 +342,7 @@ public class Utils {
             if (sb.length() > 0) {
                 sb.append(c);
             }
-            sb.append(Integer.toString(value));
+            sb.append(value);
         }
         return sb.toString();
     }
