@@ -148,8 +148,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return getSubdocumentValue(document, key, new AtomicReference<>(matchPos));
     }
 
-    private Object getSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos)
-            {
+    private Object getSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos) {
         int dotPos = key.indexOf('.');
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
@@ -165,8 +164,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private void modifyField(Document document, String modifier, Document change, Integer matchPos,
-            boolean isUpsert) {
+    private void modifyField(Document document, String modifier, Document change, Integer matchPos, boolean isUpsert) {
 
         UpdateOperator op = getUpdateOperator(modifier, change);
 
@@ -535,7 +533,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     private Document calculateUpdateDocument(Document oldDocument, Document update, Integer matchPos,
-            boolean isUpsert) {
+                                             boolean isUpsert, List<Document> arrayFilters) {
 
         int numStartsWithDollar = 0;
         for (String key : update.keySet()) {
