@@ -292,7 +292,7 @@ public class Utils {
                 List<?> list = (List<?>) document;
                 return (pos >= 0 && pos < list.size());
             } else {
-                throw new IllegalArgumentException("illegal field: " + field);
+                return false;
             }
         } else if (document instanceof Document) {
             return ((Document) document).containsKey(field);

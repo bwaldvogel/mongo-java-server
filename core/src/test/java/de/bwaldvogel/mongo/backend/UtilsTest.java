@@ -172,6 +172,8 @@ public class UtilsTest {
         assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isTrue();
         assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "2")).isTrue();
         assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "3")).isFalse();
+        // https://github.com/bwaldvogel/mongo-java-server/issues/61
+        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "foo")).isFalse();
     }
 
     @Test

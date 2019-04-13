@@ -316,6 +316,7 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("a: null"), json("'a.1': {$exists: true}"))).isFalse();
         assertThat(matcher.matches(json(""), json("'a.1': {$exists: false}"))).isTrue();
         assertThat(matcher.matches(json(""), json("'a.1': {$exists: true}"))).isFalse();
+        assertThat(matcher.matches(json("a: [1, 2, 3]"), json("'a.b': {$exists: false}"))).isTrue();
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/53

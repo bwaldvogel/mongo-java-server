@@ -2772,6 +2772,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("someField: 'abc'"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/61
+    @Test
+    public void testDeleteAllDocumentsWithUniqueSparseIndex() {
+        collection.createIndex(new Document("someField.values", 1), new IndexOptions().unique(true).sparse(true));
+
+        collection.insertOne(json("_id: 1, someField: {values: ['abc']}"));
+        collection.insertOne(json("_id: 2, someField: {values: ['other']}"));
+        collection.insertOne(json("_id: 3"));
+        collection.insertOne(json("_id: 4, someField: ['abc']"));
+        collection.insertOne(json("_id: 5, someField: 'abc'"));
+        collection.insertOne(json("_id: 6, someField: null"));
+
+        collection.deleteMany(json(""));
+
+        assertThat(collection.countDocuments()).isZero();
+    }
+
     @Test
     public void testAddPartialIndexOnNonIdField() {
         collection.insertOne(json("someField: 'abc'"));
