@@ -903,6 +903,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/60
+    @Test
+    public void testUpdateWithMultipleArrayFilters() throws Exception {
+        collection.insertOne(json("_id: 1, values: [9, 102, 90, 150]"));
+        collection.insertOne(json("_id: 2, values: [1, 2, 30, 50]"));
+
+        collection.updateMany(
+            json(""),
+            json("$set: {'values.$[tooLow]': 10, 'values.$[tooHigh]': 40}"),
+            new UpdateOptions().arrayFilters(Arrays.asList(
+                json("tooLow: {$lte: 10}"),
+                json("tooHigh: {$gt: 40}")
+            ))
+        );
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactly(
+                json("_id: 1, values: [10, 40, 40, 40]"),
+                json("_id: 2, values: [10, 10, 30, 40]")
+            );
+    }
+
     @Test
     public void testFindOneAndUpdate_IllegalArrayFilters() {
         collection.insertOne(json("_id: 1, grades: 'abc', a: {b: 123}"));
