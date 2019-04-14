@@ -129,10 +129,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         indexes.add(index);
     }
 
-    private void modifyField(Document document, String modifier, Document change, Integer matchPos, boolean isUpsert) {
-        UpdateOperator op = getUpdateOperator(modifier, change);
-        FieldUpdates fieldUpdates = new FieldUpdates(document, op, idField, isUpsert, matchPos);
-        fieldUpdates.apply(change, modifier);
+    private void modifyField(Document document, String modifier, Document update, ArrayFilters arrayFilters,
+                             Integer matchPos, boolean isUpsert) {
+        Document change = (Document) update.get(modifier);
+        UpdateOperator updateOperator = getUpdateOperator(modifier, change);
+        FieldUpdates updates = new FieldUpdates(document, updateOperator, idField, isUpsert, matchPos, arrayFilters);
+        updates.apply(change, modifier);
     }
 
     private UpdateOperator getUpdateOperator(String modifier, Document change) {
@@ -145,7 +147,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (op != UpdateOperator.UNSET) {
             for (String key : change.keySet()) {
-                if (key.startsWith("$")) {
+                if (key.startsWith("$") && !key.startsWith("$[")) {
                     throw new MongoServerError(15896, "Modified field name may not start with $");
                 }
             }
@@ -200,7 +202,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return new ObjectId();
     }
 
-    private Document calculateUpdateDocument(Document oldDocument, Document update, Integer matchPos, boolean isUpsert) {
+    private Document calculateUpdateDocument(Document oldDocument, Document update, ArrayFilters arrayFilters,
+                                             Integer matchPos, boolean isUpsert) {
 
         int numStartsWithDollar = 0;
         for (String key : update.keySet()) {
@@ -214,7 +217,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         if (numStartsWithDollar == update.keySet().size()) {
             cloneInto(newDocument, oldDocument);
             for (String key : update.keySet()) {
-                modifyField(newDocument, key, (Document) update.get(key), matchPos, isUpsert);
+                modifyField(newDocument, key, update, arrayFilters, matchPos, isUpsert);
             }
         } else if (numStartsWithDollar == 0) {
             applyUpdate(newDocument, update);
@@ -259,7 +262,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
                 Integer matchPos = matcher.matchPosition(document, (Document) queryObject.get("query"));
 
-                Document oldDocument = updateDocument(document, updateQuery, matchPos);
+                ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
+                Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
                 if (returnNew) {
                     returnDocument = document;
                 } else {
@@ -272,7 +276,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         if (num == 0 && Utils.isTrue(query.get("upsert"))) {
             Document selector = (Document) query.get("query");
             Document updateQuery = (Document) query.get("update");
-            Document newDocument = handleUpsert(updateQuery, selector);
+            ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
+            Document newDocument = handleUpsert(updateQuery, selector, arrayFilters);
             if (returnNew) {
                 returnDocument = newDocument;
             } else {
@@ -370,8 +375,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized Document updateDocuments(Document selector, Document updateQuery, boolean isMulti,
-            boolean isUpsert) {
+    public synchronized Document updateDocuments(Document selector, Document updateQuery, ArrayFilters arrayFilters,
+                                                 boolean isMulti, boolean isUpsert) {
 
         if (isMulti) {
             for (String key : updateQuery.keySet()) {
@@ -385,7 +390,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         int nModified = 0;
         for (Document document : queryDocuments(selector, null, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
-            Document oldDocument = updateDocument(document, updateQuery, matchPos);
+            Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
             if (!Utils.nullAwareEquals(oldDocument, document)) {
                 nModified++;
             }
@@ -400,7 +405,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         // insert?
         if (nMatched == 0 && isUpsert) {
-            Document newDocument = handleUpsert(updateQuery, selector);
+            Document newDocument = handleUpsert(updateQuery, selector, arrayFilters);
             result.put("upserted", newDocument.get(idField));
         }
 
@@ -409,13 +414,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return result;
     }
 
-    private Document updateDocument(Document document, Document updateQuery, Integer matchPos) {
+    private Document updateDocument(Document document, Document updateQuery,
+                                    ArrayFilters arrayFilters, Integer matchPos) {
         synchronized (document) {
             // copy document
             Document oldDocument = new Document();
             cloneInto(oldDocument, document);
 
-            Document newDocument = calculateUpdateDocument(document, updateQuery, matchPos, false);
+            Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, matchPos, false);
 
             if (!newDocument.equals(oldDocument)) {
                 for (Index<P> index : indexes) {
@@ -476,10 +482,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    private Document handleUpsert(Document updateQuery, Document selector) {
+    private Document handleUpsert(Document updateQuery, Document selector, ArrayFilters arrayFilters) {
         Document document = convertSelectorToDocument(selector);
 
-        Document newDocument = calculateUpdateDocument(document, updateQuery, null, true);
+        Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, null, true);
         if (newDocument.get(idField) == null) {
             newDocument.put(idField, deriveDocumentId(selector));
         }

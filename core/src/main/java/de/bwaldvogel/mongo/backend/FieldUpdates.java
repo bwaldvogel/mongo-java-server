@@ -33,24 +33,35 @@ class FieldUpdates {
     private final UpdateOperator updateOperator;
     private final boolean upsert;
     private final Integer matchPos;
+    private final ArrayFilters arrayFilters;
 
-    FieldUpdates(Document document, UpdateOperator updateOperator, String idField, boolean upsert, Integer matchPos) {
+    FieldUpdates(Document document, UpdateOperator updateOperator, String idField,
+                 boolean upsert, Integer matchPos, ArrayFilters arrayFilters) {
         this.document = document;
         this.idField = idField;
         this.updateOperator = updateOperator;
         this.upsert = upsert;
         this.matchPos = matchPos;
+        this.arrayFilters = arrayFilters;
     }
 
     void apply(Document change, String modifier) {
         for (String key : change.keySet()) {
-            apply(change, modifier, key);
+            Object value = change.get(key);
+            if (arrayFilters.contains(key)) {
+                List<String> arrayKeys = arrayFilters.calculateKeys(document, key);
+                for (String arrayKey : arrayKeys) {
+                    apply(change, modifier, arrayKey, value);
+                }
+            } else {
+                apply(change, modifier, key, value);
+            }
         }
 
         applyRenames();
     }
 
-    private void apply(Document change, String modifier, String key) {
+    private void apply(Document change, String modifier, String key, Object value) {
         switch (updateOperator) {
             case SET_ON_INSERT:
                 if (!isUpsert()) {
@@ -59,7 +70,7 @@ class FieldUpdates {
                 }
                 //$FALL-THROUGH$
             case SET:
-                handleSet(change, key);
+                handleSet(key, value);
                 break;
 
             case UNSET:
@@ -69,34 +80,34 @@ class FieldUpdates {
             case PUSH:
             case PUSH_ALL:
             case ADD_TO_SET:
-                handlePushAllAddToSet(change, key);
+                handlePushAllAddToSet(key, value);
                 break;
 
             case PULL:
             case PULL_ALL:
-                handlePull(change, modifier, key);
+                handlePull(modifier, key, value);
                 break;
 
             case POP:
-                handlePop(change, modifier, key);
+                handlePop(modifier, key, value);
                 break;
 
             case INC:
             case MUL:
-                handleIncMul(change, key);
+                handleIncMul(change, key, value);
                 break;
 
             case MIN:
             case MAX:
-                handleMinMax(change, key);
+                handleMinMax(key, value);
                 break;
 
             case CURRENT_DATE:
-                handleCurrentDate(change, key);
+                handleCurrentDate(key, value);
                 break;
 
             case RENAME:
-                handleRename(change, key);
+                handleRename(key, value);
                 break;
 
             default:
@@ -104,7 +115,7 @@ class FieldUpdates {
         }
     }
 
-    private void handlePushAllAddToSet(Document change, String key) {
+    private void handlePushAllAddToSet(String key, Object changeValue) {
         // http://docs.mongodb.org/manual/reference/operator/push/
         Object value = getSubdocumentValue(document, key);
         final List<Object> list;
@@ -124,7 +135,6 @@ class FieldUpdates {
             }
         }
 
-        Object changeValue = change.get(key);
         if (updateOperator == UpdateOperator.PUSH_ALL) {
             if (!(changeValue instanceof Collection<?>)) {
                 throw new MongoServerError(10153, "Modifier " + updateOperator + " allowed for arrays only");
@@ -170,8 +180,7 @@ class FieldUpdates {
         Utils.removeSubdocumentValue(document, key, matchPos);
     }
 
-    private void handleSet(Document change, String key) {
-        Object newValue = change.get(key);
+    private void handleSet(String key, Object newValue) {
         Object oldValue = getSubdocumentValue(document, key);
 
         if (Utils.nullAwareEquals(newValue, oldValue)) {
@@ -186,7 +195,7 @@ class FieldUpdates {
         changeSubdocumentValue(document, key, newValue);
     }
 
-    private void handlePull(Document change, String modifier, String key) {
+    private void handlePull(String modifier, String key, Object pullValue) {
         Object value = getSubdocumentValue(document, key);
         final List<Object> list;
         if (Missing.isNullOrMissing(value)) {
@@ -201,7 +210,6 @@ class FieldUpdates {
             }
         }
 
-        Object pullValue = change.get(key);
         if (modifier.equals("$pullAll")) {
             if (!(pullValue instanceof Collection<?>)) {
                 throw new BadValueException(modifier + " requires an array argument but was given a " + describeType(pullValue));
@@ -214,7 +222,7 @@ class FieldUpdates {
         }
     }
 
-    private void handlePop(Document change, String modifier, String key) {
+    private void handlePop(String modifier, String key, Object popValue) {
         Object value = getSubdocumentValue(document, key);
         final List<Object> list;
         if (Missing.isNullOrMissing(value)) {
@@ -225,7 +233,6 @@ class FieldUpdates {
             throw new MongoServerError(10143, modifier + " requires an array argument but was given a " + describeType(value));
         }
 
-        Object popValue = change.get(key);
         if (popValue == null) {
             throw new FailedToParseException("Expected a number in: " + key + ": null");
         }
@@ -240,7 +247,7 @@ class FieldUpdates {
         }
     }
 
-    private void handleIncMul(Document change, String key) {
+    private void handleIncMul(Document change, String key, Object changeObject) {
         assertNotKeyField(key);
 
         Object value = getSubdocumentValue(document, key);
@@ -255,7 +262,6 @@ class FieldUpdates {
                 " of non-numeric type " + describeType(value));
         }
 
-        Object changeObject = change.get(key);
         if (!(changeObject instanceof Number)) {
             String operation = (updateOperator == UpdateOperator.INC) ? "increment" : "multiply";
             throw new TypeMismatchException("Cannot " + operation + " with non-numeric argument: " + change.toString(true));
@@ -273,10 +279,9 @@ class FieldUpdates {
         changeSubdocumentValue(document, key, newValue);
     }
 
-    private void handleMinMax(Document change, String key) {
+    private void handleMinMax(String key, Object newValue) {
         assertNotKeyField(key);
 
-        Object newValue = change.get(key);
         Object oldValue = getSubdocumentValue(document, key);
 
         if (shouldChangeValue(oldValue, newValue)) {
@@ -284,10 +289,8 @@ class FieldUpdates {
         }
     }
 
-    private void handleCurrentDate(Document change, String key) {
+    private void handleCurrentDate(String key, Object typeSpecification) {
         assertNotKeyField(key);
-
-        Object typeSpecification = change.get(key);
 
         final boolean useDate;
         if (typeSpecification instanceof Boolean && Utils.isTrue(typeSpecification)) {
@@ -318,9 +321,8 @@ class FieldUpdates {
         changeSubdocumentValue(document, key, newValue);
     }
 
-    private void handleRename(Document change, String key) {
+    private void handleRename(String key, Object toField) {
         assertNotKeyField(key);
-        Object toField = change.get(key);
         if (!(toField instanceof String)) {
             throw new BadValueException("The 'to' field for $rename must be a string: " + key + ": " + toField);
         }

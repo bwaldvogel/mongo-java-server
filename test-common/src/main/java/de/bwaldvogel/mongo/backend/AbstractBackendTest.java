@@ -822,6 +822,144 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/60
+    @Test
+    public void testFindOneAndUpdateWithArrayFilters() {
+        collection.insertOne(json("_id: 1, grades: [95, 102, 90, 150]"));
+        collection.insertOne(json("_id: 2, values: [[1, 2, 3], 'other']"));
+        collection.insertOne(json("_id: 3, a: {b: [1, 2, 3]}"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$set: {'grades.$[element]': 'abc'}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}"))));
+
+        assertThat(collection.find(json("_id: 1")).first()).isEqualTo(json("_id: 1, grades: [95, 'abc', 90, 'abc']"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$unset: {'grades.$[element]': 1}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 'abc'"))));
+
+        assertThat(collection.find(json("_id: 1")).first()).isEqualTo(json("_id: 1, grades: [95, null, 90, null]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$inc: {'grades.$[element]': 1}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 90"))));
+
+        assertThat(collection.find(json("_id: 1")).first()).isEqualTo(json("_id: 1, grades: [95, null, 91, null]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 2"),
+            json("$pull: {'values.$[element]': 2}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$type: 'array'}"))));
+
+        assertThat(collection.find(json("_id: 2")).first())
+            .isEqualTo(json("_id: 2, values: [[1, 3], 'other']"));
+
+        collection.findOneAndUpdate(
+            json("_id: 3"),
+            json("$mul: {'a.b.$[element]': 10}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 2"))));
+
+        assertThat(collection.find(json("_id: 3")).first())
+            .isEqualTo(json("_id: 3, a: {b: [1, 20, 3]}"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/60
+    @Test
+    public void testUpdateManyWithArrayFilters() {
+        collection.insertOne(json("_id: 1, values: [9, 102, 90, 150]"));
+        collection.insertOne(json("_id: 2, values: [1, 2, 3, 50]"));
+
+        collection.updateMany(
+            json(""),
+            json("$set: {'values.$[x]': 20}"),
+            new UpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 20}")))
+        );
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactly(
+                json("_id: 1, values: [9, 20, 20, 20]"),
+                json("_id: 2, values: [1, 2, 3, 20]")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/60
+    @Test
+    public void testUpsertWithArrayFilters() {
+        collection.updateOne(
+            json("_id: 1, values: [0, 1]"),
+            json("$set: {'values.$[x]': 20}"),
+            new UpdateOptions()
+                .upsert(true)
+                .arrayFilters(Arrays.asList(json("x: 0")))
+        );
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactly(
+                json("_id: 1, values: [20, 1]")
+            );
+    }
+
+    @Test
+    public void testFindOneAndUpdate_IllegalArrayFilters() {
+        collection.insertOne(json("_id: 1, grades: 'abc', a: {b: 123}"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'The array filter for identifier 'element' was not used in the update { $set: { grades: \"abc\" } }'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(
+                    json("element: {$gte: 100}"),
+                    json("element: {$lt: 100}")
+                ))))
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Found multiple array filters with the same top-level field name element'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades.$[element]': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("a: {$gte: 100}, b: {$gte: 100}, c: {$gte: 10}")))))
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades.$[element]': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("")))))
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Cannot use an expression without a top-level field name in arrayFilters'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades.$[element]': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element grades: \"abc\"'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'$[element]': 10}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 2")))))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '$[element]'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades.subGrades.$[element]': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'The path 'grades.subGrades' must exist in the document in order to apply array updates.'");
+    }
+
     @Test
     public void testFindAndRemoveFromEmbeddedList() {
         collection.insertOne(json("_id: 1, a: [1]"));

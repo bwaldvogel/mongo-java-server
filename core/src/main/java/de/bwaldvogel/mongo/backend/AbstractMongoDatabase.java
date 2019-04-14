@@ -287,11 +287,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             Document updateObj = updates.get(i);
             Document selector = (Document) updateObj.get("q");
             Document update = (Document) updateObj.get("u");
+            ArrayFilters arrayFilters = ArrayFilters.parse(updateObj, update);
             boolean multi = Utils.isTrue(updateObj.get("multi"));
             boolean upsert = Utils.isTrue(updateObj.get("upsert"));
-            Document result;
+            final Document result;
             try {
-                result = updateDocuments(collectionName, selector, update, multi, upsert);
+                result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert);
             } catch (MongoServerException e) {
                 writeErrors.add(toWriteError(i, e));
                 continue;
@@ -752,10 +753,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Document update = updateCommand.getUpdate();
         boolean multi = updateCommand.isMulti();
         boolean upsert = updateCommand.isUpsert();
+        ArrayFilters arrayFilters = ArrayFilters.empty();
 
         clearLastStatus(channel);
         try {
-            Document result = updateDocuments(collectionName, selector, update, multi, upsert);
+            Document result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert);
             putLastResult(channel, result);
         } catch (MongoServerException e) {
             putLastError(channel, e);
@@ -867,14 +869,15 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document updateDocuments(String collectionName, Document selector,
-                                     Document update, boolean multi, boolean upsert) {
+                                     Document update, ArrayFilters arrayFilters,
+                                     boolean multi, boolean upsert) {
 
         if (isSystemCollection(collectionName)) {
             throw new MongoServerError(10156, "cannot update system collection");
         }
 
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-        return collection.updateDocuments(selector, update, multi, upsert);
+        return collection.updateDocuments(selector, update, arrayFilters, multi, upsert);
     }
 
     private void putLastError(Channel channel, MongoServerException ex) {

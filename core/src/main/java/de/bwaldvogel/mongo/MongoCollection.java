@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo;
 
 import java.util.List;
 
+import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -35,7 +36,8 @@ public interface MongoCollection<P> {
 
     void insertDocuments(List<Document> documents);
 
-    Document updateDocuments(Document selector, Document update, boolean isMulti, boolean isUpsert);
+    Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
+                             boolean isMulti, boolean isUpsert);
 
     int deleteDocuments(Document selector, int limit);
 
