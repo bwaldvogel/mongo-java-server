@@ -958,6 +958,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("$set: {'grades.subGrades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
             .withMessageContaining("Command failed with error 2 (BadValue): 'The path 'grades.subGrades' must exist in the document in order to apply array updates.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades.$[some value]': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'some value': {$gte: 100}")))))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Error parsing array filter :: caused by :: The top-level field name must be an alphanumeric string beginning with a lowercase letter, found 'some value''");
     }
 
     @Test

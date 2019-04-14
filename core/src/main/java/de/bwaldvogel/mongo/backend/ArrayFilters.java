@@ -41,6 +41,11 @@ public class ArrayFilters {
             }
             Entry<String, Object> entry = arrayFilter.entrySet().iterator().next();
             String identifier = entry.getKey();
+
+            if (!identifier.matches("^[a-zA-Z0-9]+$")) {
+                throw new BadValueException("Error parsing array filter :: caused by :: The top-level field name must be an alphanumeric string beginning with a lowercase letter, found '" + identifier + "'");
+            }
+
             Object value = entry.getValue();
             if (arrayFilterMap.put(identifier, value) != null) {
                 throw new FailedToParseException("Found multiple array filters with the same top-level field name " + identifier);
