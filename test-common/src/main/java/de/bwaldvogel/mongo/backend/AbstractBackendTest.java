@@ -3116,8 +3116,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(json("_id: 1"), json("$rename: {'foo.a': 'a', 'bar.x': 'bar.c'}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { b: 2 }, bar: { c: 3, d: 4 }, a: 1}"));
 
-        collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}"));
-        assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { b: 2 }, bar: { c: 3, d: 4 }, a: 1}"));
+        assertThatExceptionOfType(Exception.class).isThrownBy(
+            () -> collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}")
+        ));
     }
 
     @Test

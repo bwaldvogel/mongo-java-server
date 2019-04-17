@@ -343,6 +343,10 @@ class FieldUpdates {
 
     private void applyRenames() {
         for (Entry<String, String> entry : renames.entrySet()) {
+            if (!Utils.canFullyTraverseSubkeyForRename(document, entry.getKey())) {
+                throw new MongoServerException("cannot traverse element");
+            }
+
             Object value = Utils.removeSubdocumentValue(document, entry.getKey(), matchPos);
 
             if (value != Missing.getInstance()) {

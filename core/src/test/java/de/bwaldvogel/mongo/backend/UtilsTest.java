@@ -234,4 +234,36 @@ public class UtilsTest {
         assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, null, 3]}, baz: { bar: { a: 1, b: 2 } }"));
     }
 
+    @Test
+    public void testCanFullyTraverseSubkeyForRename() {
+        Document document = json("_id: 1, foo: {bar: 1, bla: 2}, baz: { bar: [ { a:1, b:2} , 2, 3] }");
+
+        boolean ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "foo.bar");
+        assertThat(ableToTraverse).isTrue();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "foo.bar.missing");
+        assertThat(ableToTraverse).isFalse();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "foo.missing");
+        assertThat(ableToTraverse).isTrue();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "baz.bar");
+        assertThat(ableToTraverse).isTrue();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "baz.bar.0");
+        assertThat(ableToTraverse).isFalse();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "baz.bar.0.a");
+        assertThat(ableToTraverse).isFalse();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "baz.bar.foo");
+        assertThat(ableToTraverse).isFalse();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "missing");
+        assertThat(ableToTraverse).isTrue();
+
+        ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "missing.a");
+        assertThat(ableToTraverse).isTrue();
+    }
+
 }

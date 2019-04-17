@@ -260,6 +260,24 @@ public class Utils {
         }
     }
 
+    static boolean canFullyTraverseSubkeyForRename(Object document, String key) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = getSubkey(key, dotPos, new AtomicReference<>());
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+            if (subObject instanceof Document) {
+                return canFullyTraverseSubkeyForRename(subObject, subKey);
+            } else if (subObject == Missing.getInstance()) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
+    }
+
     static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) {
         String subKey = key.substring(dotPos + 1);
 
