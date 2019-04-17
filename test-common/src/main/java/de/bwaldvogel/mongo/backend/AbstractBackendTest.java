@@ -2335,6 +2335,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertMongoWriteException(() -> collection.updateOne(obj, json("$unset: {_id: ''}")),
             66, "ImmutableField", "Performing an update on the path '_id' would modify the immutable field '_id'");
 
+        collection.updateOne(json("_id: 1"), json("$unset: {'a.b.z':1}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1, b: null, c: 'value'"));
+
         collection.updateOne(obj, json("$unset: {a:'', b:''}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, c: 'value'"));
 
@@ -2344,6 +2347,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.replaceOne(json("_id: 1"), json("a: {b: 'foo', c: 'bar'}"));
 
         collection.updateOne(json("_id: 1"), json("$unset: {'a.b':1}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: {c: 'bar'}"));
+
+        collection.updateOne(json("_id: 1"), json("$unset: {'a.b.z':1}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: {c: 'bar'}"));
     }
 
@@ -3088,6 +3094,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(json("_id: 1"), json("$rename: {'bar2': 'foo', foo2: 'bar'}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, bar: 'x', foo: 'y'"));
+
+        collection.updateOne(json("_id: 1"), json("$rename: {'bar': 'bar2', 'missing': 'foo'}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, bar2: 'x', foo: 'y'"));
+    }
+
+    @Test
+    public void testRenameField_embeddedDocument() {
+        Document object = json("_id: 1, foo: { a: 1, b: 2 }, bar: { c: 3, d: 4 }}");
+        collection.insertOne(object);
+
+        collection.updateOne(json("_id: 1"), json("$rename: {'foo.a': 'foo.z', 'bar.c': 'bar.x'}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { z: 1, b: 2 }, bar: { x: 3, d: 4 }}"));
+
+        collection.updateOne(json("_id: 1"), json("$rename: {'foo.z': 'foo.a', 'bar.a': 'bar.b'}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { a: 1, b: 2 }, bar: { x: 3, d: 4 }}"));
+
+        collection.updateOne(json("_id: 1"), json("$rename: {'missing.a': 'missing.b'}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { a: 1, b: 2 }, bar: { x: 3, d: 4 }}"));
+
+        collection.updateOne(json("_id: 1"), json("$rename: {'foo.a': 'a', 'bar.x': 'bar.c'}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { b: 2 }, bar: { c: 3, d: 4 }, a: 1}"));
+
+        collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}"));
+        assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { b: 2 }, bar: { c: 3, d: 4 }, a: 1}"));
     }
 
     @Test

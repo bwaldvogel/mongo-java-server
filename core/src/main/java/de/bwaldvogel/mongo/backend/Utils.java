@@ -321,9 +321,18 @@ public class Utils {
 
     private static Object removeListSafe(Object document, String key) {
         if (document instanceof Document) {
-            return ((Document) document).remove(key);
+            if (((Document) document).containsKey(key)) {
+                return ((Document) document).remove(key);
+            }
+            return Missing.getInstance();
         } else if (document instanceof List<?>) {
-            int pos = Integer.parseInt(key);
+            int pos;
+            try {
+                pos = Integer.parseInt(key);
+            } catch (final NumberFormatException e) {
+                return Missing.getInstance();
+            }
+
             @SuppressWarnings("unchecked")
             List<Object> list = ((List<Object>) document);
             if (list.size() > pos) {
@@ -393,6 +402,10 @@ public class Utils {
             Object subObject = getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document || subObject instanceof List<?>) {
                 return removeSubdocumentValue(subObject, subKey, matchPos);
+            } else if (!isNullOrEmpty(subKey)) { // not missing, but not a Document or List, so no subdocuments
+                return Missing.getInstance();
+            } else if (subObject == Missing.getInstance()) {
+                return Missing.getInstance();
             } else {
                 throw new MongoServerException("failed to remove subdocument");
             }
@@ -451,5 +464,9 @@ public class Utils {
         response.put("cursor", cursor);
         markOkay(response);
         return response;
+    }
+
+    static boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
     }
 }

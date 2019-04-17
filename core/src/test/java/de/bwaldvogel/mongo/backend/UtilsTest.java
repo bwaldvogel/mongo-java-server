@@ -207,21 +207,31 @@ public class UtilsTest {
 
     @Test
     public void testRemoveSubdocumentValue() throws Exception {
-        Document document = json("_id: 1, foo: {bar: 1, bla: 2}");
+        Document document = json("_id: 1, foo: {bar: 1, bla: 2}, baz: { bar: { a: 1, b: 2 } }");
 
         Object removedValue = Utils.removeSubdocumentValue(document, "foo.bar");
         assertThat(removedValue).isEqualTo(1);
-        assertThat(document).isEqualTo(json("_id: 1, foo: {bla: 2}"));
+        assertThat(document).isEqualTo(json("_id: 1, foo: {bla: 2}, baz: { bar: { a: 1, b: 2 } }"));
 
         removedValue = Utils.removeSubdocumentValue(document, "foo.bla");
         assertThat(removedValue).isEqualTo(2);
-        assertThat(document).isEqualTo(json("_id: 1, foo: {}"));
+        assertThat(document).isEqualTo(json("_id: 1, foo: {}, baz: { bar: { a: 1, b: 2 } }"));
+
+        removedValue = Utils.removeSubdocumentValue(document, "foo.missing.a");
+        assertThat(removedValue).isEqualTo(Missing.getInstance());
+        assertThat(document).isEqualTo(json("_id: 1, foo: {}, baz: { bar: { a: 1, b: 2 } }"));
 
         Utils.changeSubdocumentValue(document, "foo", json("x: [1, 2, 3]"));
-        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 2, 3]}"));
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 2, 3]}, baz: { bar: { a: 1, b: 2 } }"));
 
         Utils.removeSubdocumentValue(document, "foo.x.1");
-        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, null, 3]}"));
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, null, 3]}, baz: { bar: { a: 1, b: 2 } }"));
+
+        Utils.removeSubdocumentValue(document, "foo.x.a");
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, null, 3]}, baz: { bar: { a: 1, b: 2 } }"));
+
+        Utils.removeSubdocumentValue(document, "baz.bar.a.z");
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, null, 3]}, baz: { bar: { a: 1, b: 2 } }"));
     }
 
 }
