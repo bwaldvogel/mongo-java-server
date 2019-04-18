@@ -417,15 +417,14 @@ public class Utils {
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = getSubkey(key, dotPos, matchPos);
+
+            Assert.notNullOrEmpty(subKey);
+
             Object subObject = getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document || subObject instanceof List<?>) {
                 return removeSubdocumentValue(subObject, subKey, matchPos);
-            } else if (!isNullOrEmpty(subKey)) { // not missing, but not a Document or List, so no subdocuments
-                return Missing.getInstance();
-            } else if (subObject instanceof Missing) {
-                return Missing.getInstance();
             } else {
-                throw new MongoServerException("failed to remove subdocument");
+                return Missing.getInstance();
             }
         } else {
             return removeListSafe(document, key);
@@ -482,9 +481,5 @@ public class Utils {
         response.put("cursor", cursor);
         markOkay(response);
         return response;
-    }
-
-    static boolean isNullOrEmpty(String str) {
-        return str == null || str.isEmpty();
     }
 }
