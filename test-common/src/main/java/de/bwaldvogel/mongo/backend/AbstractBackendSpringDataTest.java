@@ -29,6 +29,7 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.entity.Account;
 import de.bwaldvogel.mongo.entity.Person;
+import de.bwaldvogel.mongo.entity.SubEntity;
 import de.bwaldvogel.mongo.entity.TestEntity;
 import de.bwaldvogel.mongo.repository.AccountRepository;
 import de.bwaldvogel.mongo.repository.PersonRepository;
@@ -148,6 +149,23 @@ public abstract class AbstractBackendSpringDataTest {
         assertThat(testRepository.findAll()).isEmpty();
 
         testRepository.save(new TestEntity("DOC_1", "Text1"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/66
+    @Test
+    public void testCountByValueData() throws Exception {
+        testRepository.save(new TestEntity("DOC_1", "Text1")
+            .withValue(new SubEntity("v1")));
+
+        testRepository.save(new TestEntity("DOC_2", "Text2")
+            .withValue(new SubEntity("v1")));
+
+        testRepository.save(new TestEntity("DOC_3", "Text3")
+            .withValue(new SubEntity("v2")));
+
+        assertThat(testRepository.countByValueData("v1")).isEqualTo(2);
+        assertThat(testRepository.countByValueData("v2")).isEqualTo(1);
+        assertThat(testRepository.countByValueData("v3")).isEqualTo(0);
     }
 
 }

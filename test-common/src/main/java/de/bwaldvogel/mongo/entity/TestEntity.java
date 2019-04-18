@@ -13,12 +13,19 @@ public class TestEntity {
     @Indexed(unique = true)
     private String text;
 
+    private SubEntity value;
+
     public TestEntity() {
     }
 
     public TestEntity(String id, String text) {
         this.id = id;
         this.text = text;
+    }
+
+    public TestEntity withValue(SubEntity value) {
+        setValue(value);
+        return this;
     }
 
     public String getId() {
@@ -31,5 +38,13 @@ public class TestEntity {
 
     public void setText(String text) {
         this.text = text;
+    }
+
+    public SubEntity getValue() {
+        return value;
+    }
+
+    public void setValue(SubEntity value) {
+        this.value = value;
     }
 }
