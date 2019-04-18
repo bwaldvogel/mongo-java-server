@@ -268,7 +268,7 @@ public class Utils {
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document) {
                 return canFullyTraverseSubkeyForRename(subObject, subKey);
-            } else if (subObject == Missing.getInstance()) {
+            } else if (subObject instanceof Missing) {
                 return true;
             } else {
                 return false;
@@ -422,7 +422,7 @@ public class Utils {
                 return removeSubdocumentValue(subObject, subKey, matchPos);
             } else if (!isNullOrEmpty(subKey)) { // not missing, but not a Document or List, so no subdocuments
                 return Missing.getInstance();
-            } else if (subObject == Missing.getInstance()) {
+            } else if (subObject instanceof Missing) {
                 return Missing.getInstance();
             } else {
                 throw new MongoServerException("failed to remove subdocument");
