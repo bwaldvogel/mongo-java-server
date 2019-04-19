@@ -260,6 +260,24 @@ public class Utils {
         }
     }
 
+    static boolean canFullyTraverseSubkeyForRename(Object document, String key) {
+        int dotPos = key.indexOf('.');
+        if (dotPos > 0) {
+            String mainKey = key.substring(0, dotPos);
+            String subKey = getSubkey(key, dotPos, new AtomicReference<>());
+            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+            if (subObject instanceof Document) {
+                return canFullyTraverseSubkeyForRename(subObject, subKey);
+            } else if (subObject instanceof Missing) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return true;
+        }
+    }
+
     static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) {
         String subKey = key.substring(dotPos + 1);
 
@@ -321,9 +339,18 @@ public class Utils {
 
     private static Object removeListSafe(Object document, String key) {
         if (document instanceof Document) {
-            return ((Document) document).remove(key);
+            if (((Document) document).containsKey(key)) {
+                return ((Document) document).remove(key);
+            }
+            return Missing.getInstance();
         } else if (document instanceof List<?>) {
-            int pos = Integer.parseInt(key);
+            int pos;
+            try {
+                pos = Integer.parseInt(key);
+            } catch (final NumberFormatException e) {
+                return Missing.getInstance();
+            }
+
             @SuppressWarnings("unchecked")
             List<Object> list = ((List<Object>) document);
             if (list.size() > pos) {
@@ -390,11 +417,14 @@ public class Utils {
         if (dotPos > 0) {
             String mainKey = key.substring(0, dotPos);
             String subKey = getSubkey(key, dotPos, matchPos);
+
+            Assert.notNullOrEmpty(subKey);
+
             Object subObject = getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document || subObject instanceof List<?>) {
                 return removeSubdocumentValue(subObject, subKey, matchPos);
             } else {
-                throw new MongoServerException("failed to remove subdocument");
+                return Missing.getInstance();
             }
         } else {
             return removeListSafe(document, key);
