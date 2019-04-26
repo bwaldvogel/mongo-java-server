@@ -49,13 +49,13 @@ class FieldUpdates {
     void apply(Document change, String modifier) {
         for (String key : change.keySet()) {
             Object value = change.get(key);
-            if (arrayFilters.contains(key)) {
+            if (arrayFilters.isEmpty()) {
+                apply(change, modifier, key, value);
+            } else {
                 List<String> arrayKeys = arrayFilters.calculateKeys(document, key);
                 for (String arrayKey : arrayKeys) {
                     apply(change, modifier, arrayKey, value);
                 }
-            } else {
-                apply(change, modifier, key, value);
             }
         }
 

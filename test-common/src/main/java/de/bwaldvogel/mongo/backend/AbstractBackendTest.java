@@ -888,6 +888,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/60
     @Test
+    public void testUpdateOneWithArrayFilter() throws Exception {
+        collection.insertOne(json("_id: 1, values: [{name: 'A', active: false}, {name: 'B', active: false}]"));
+
+        collection.updateOne(json("_id: 1"),
+            json("$set: {'values.$[elem].active': true}"),
+            new UpdateOptions().arrayFilters(Arrays.asList(json("'elem.name': {$in: ['A']}")))
+        );
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactly(
+                json("_id: 1, values: [{name: 'A', active: true}, {name: 'B', active: false}]")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/60
+    @Test
     public void testUpsertWithArrayFilters() {
         collection.updateOne(
             json("_id: 1, values: [0, 1]"),
@@ -987,6 +1003,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("$set: {'grades.$[some value]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'some value': {$gte: 100}")))))
             .withMessageContaining("Command failed with error 2 (BadValue): 'Error parsing array filter :: caused by :: The top-level field name must be an alphanumeric string beginning with a lowercase letter, found 'some value''");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'a.b.$[x]': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gte: 100}")))))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element b: 123'");
     }
 
     @Test
