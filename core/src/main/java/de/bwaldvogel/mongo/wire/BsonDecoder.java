@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
@@ -97,6 +98,8 @@ class BsonDecoder {
                 value = MinKey.getInstance();
                 break;
             case BsonConstants.TYPE_JAVASCRIPT_CODE:
+                value = new BsonJavaScript(decodeString(buffer));
+                break;
             case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
                 throw new IOException("unhandled type: 0x" + Integer.toHexString(type));
             default:

@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
@@ -890,6 +891,13 @@ public class DefaultQueryMatcherTest {
         assertThat(DefaultQueryMatcher.matchTypes(123L, 18)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(MinKey.getInstance(), -1)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(MaxKey.getInstance(), 127)).isTrue();
+    }
+
+    @Test
+    public void testMatchesJavaScript() throws Exception {
+        Document document = new Document("data", new BsonJavaScript("code 1"));
+        assertThat(matcher.matches(document, new Document("data", new BsonJavaScript("code 1")))).isTrue();
+        assertThat(matcher.matches(document, new Document("data", new BsonJavaScript("code 2")))).isFalse();
     }
 
 }

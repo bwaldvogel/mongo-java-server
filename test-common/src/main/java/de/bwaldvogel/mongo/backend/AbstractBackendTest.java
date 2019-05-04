@@ -43,12 +43,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import org.bson.BsonInt32;
+import org.bson.BsonJavaScript;
 import org.bson.BsonObjectId;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
+import org.bson.types.Code;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.reactivestreams.Subscriber;
@@ -4438,6 +4440,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 'Three', name: 'KARL'"),
                 json("_id: 123, name: ['karl', 'john']")
             );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/67
+    @Test
+    public void testInsertAndFindJavaScriptContent() throws Exception {
+        collection.insertOne(new Document("_id", 1).append("data", new BsonJavaScript("int i = 0")));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .extracting(document -> document.get("data"))
+            .isEqualTo(new Code("int i = 0"));
+
+        assertThat(collection.find(new Document("data", new BsonJavaScript("int i = 0"))).first())
+            .extracting(document -> document.get("_id"))
+            .isEqualTo(1);
     }
 
     private void insertAndFindLargeDocument(int numKeyValues, int id) {

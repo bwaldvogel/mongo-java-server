@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
@@ -134,6 +135,9 @@ public class BsonEncoder {
                 // empty
                 break;
             case BsonConstants.TYPE_JAVASCRIPT_CODE:
+                BsonJavaScript javaScript = (BsonJavaScript) value;
+                encodeString(javaScript.getCode(), buffer);
+                break;
             case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
                 throw new IOException("unhandled type: " + value.getClass());
             default:
@@ -176,6 +180,8 @@ public class BsonEncoder {
             return BsonConstants.TYPE_MIN_KEY;
         } else if (value instanceof UUID) {
             return BsonConstants.TYPE_DATA;
+        } else if (value instanceof BsonJavaScript) {
+            return BsonConstants.TYPE_JAVASCRIPT_CODE;
         } else {
             throw new IOException("Unknown type: " + value.getClass());
         }

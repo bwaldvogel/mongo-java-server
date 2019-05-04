@@ -142,6 +142,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testRegExQuery();
     }
 
+    @Override
+    public void testInsertAndFindJavaScriptContent() throws Exception {
+        assumeStrictTests();
+        super.testInsertAndFindJavaScriptContent();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
