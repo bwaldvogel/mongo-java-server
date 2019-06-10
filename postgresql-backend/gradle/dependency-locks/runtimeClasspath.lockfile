@@ -2,12 +2,12 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 com.fasterxml.jackson.core:jackson-annotations:2.9.0
-com.fasterxml.jackson.core:jackson-core:2.9.8
-com.fasterxml.jackson.core:jackson-databind:2.9.8
-io.netty:netty-buffer:4.1.35.Final
-io.netty:netty-codec:4.1.35.Final
-io.netty:netty-common:4.1.35.Final
-io.netty:netty-handler:4.1.35.Final
-io.netty:netty-resolver:4.1.35.Final
-io.netty:netty-transport:4.1.35.Final
+com.fasterxml.jackson.core:jackson-core:2.9.9
+com.fasterxml.jackson.core:jackson-databind:2.9.9
+io.netty:netty-buffer:4.1.36.Final
+io.netty:netty-codec:4.1.36.Final
+io.netty:netty-common:4.1.36.Final
+io.netty:netty-handler:4.1.36.Final
+io.netty:netty-resolver:4.1.36.Final
+io.netty:netty-transport:4.1.36.Final
 org.slf4j:slf4j-api:1.7.26
