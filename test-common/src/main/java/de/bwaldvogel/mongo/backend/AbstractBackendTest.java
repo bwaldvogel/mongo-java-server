@@ -478,6 +478,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/70
+    @Test
+    public void testDistinctArrayField() throws Exception {
+        collection.insertOne(json("_id: 1, n: null"));
+        collection.insertOne(json("_id: 2").append("n", Arrays.asList(1, 2, 3)));
+        collection.insertOne(json("_id: 3").append("n", Arrays.asList(3, 4, 5)));
+        collection.insertOne(json("_id: 4").append("n", 6));
+
+        assertThat(toArray(collection.distinct("n", Integer.class)))
+            .containsExactly(null, 1, 2, 3, 4, 5, 6);
+    }
+
     @Test
     public void testInsertQueryAndSortBinaryTypes() throws Exception {
         byte[] highBytes = new byte[16];

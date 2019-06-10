@@ -345,7 +345,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         for (Document document : queryDocuments(filter, null, 0, 0)) {
             Object value = Utils.getSubdocumentValue(document, key);
             if (!(value instanceof Missing)) {
-                values.add(value);
+                if (value instanceof Collection) {
+                    values.addAll((Collection<?>) value);
+                } else {
+                    values.add(value);
+                }
             }
         }
 
