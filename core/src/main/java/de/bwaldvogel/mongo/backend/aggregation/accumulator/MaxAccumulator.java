@@ -1,11 +1,14 @@
 package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
-import de.bwaldvogel.mongo.backend.ValueComparator;
-
 public class MaxAccumulator extends ComparingAccumulator {
 
     public MaxAccumulator(String field, Object expression) {
-        super(field, expression, ValueComparator.desc());
+        super(field, expression);
+    }
+
+    @Override
+    protected boolean shouldTakeValue(int comparisonResult) {
+        return comparisonResult > 0;
     }
 
 }

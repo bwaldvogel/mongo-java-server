@@ -51,13 +51,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, a:30, b: {value: 20}"));
-        collection.insertOne(json("_id: 2, a:15, b: {value: 10.5}"));
+        collection.insertOne(json("_id: 1, a: 30, b: {value: 20}"));
+        collection.insertOne(json("_id: 2, a: 15, b: {value: 10.5}"));
         collection.insertOne(json("_id: 3, b: {value: 1}"));
         collection.insertOne(json("_id: 4, a: {value: 5}"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
-            .containsExactly(json("_id: null, n:4, sumOfA: 45, sumOfB: 31.5"));
+            .containsExactly(json("_id: null, n: 4, sumOfA: 45, sumOfB: 31.5"));
     }
 
     @Test
@@ -67,13 +67,48 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, a:30, b: {value: 20}, c: 1.0"));
-        collection.insertOne(json("_id: 2, a:15, b: {value: 10}, c: 2"));
+        collection.insertOne(json("_id: 1, a: 30, b: {value: 20}, c: 1.0"));
+        collection.insertOne(json("_id: 2, a: 15, b: {value: 10}, c: 2"));
         collection.insertOne(json("_id: 3, c: 'zzz'"));
         collection.insertOne(json("_id: 4, c: 'aaa'"));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(json("_id: null, minA: 15, maxB: 20, minC: 1.0, maxC: 'zzz'"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/68
+    @Test
+    public void testAggregateWithGroupByMinAndMaxOnArrayField() throws Exception {
+        Document query = json("_id: null, min: {$min: '$v'}, max: {$max: '$v'}");
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, v: [10, 20, 30]"));
+        collection.insertOne(json("_id: 2, v: [3, 40]"));
+        collection.insertOne(json("_id: 3, v: [11, 25]"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("_id: null, max: [11, 25], min: [3, 40]"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/68
+    @Test
+    public void testAggregateWithGroupByMinAndMaxOnArrayFieldAndNonArrayFields() throws Exception {
+        Document query = json("_id: null, min: {$min: '$v'}, max: {$max: '$v'}");
+        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, v: [10, 20, 30]"));
+        collection.insertOne(json("_id: 2, v: [3, 40]"));
+        collection.insertOne(json("_id: 3, v: [11, 25]"));
+        collection.insertOne(json("_id: 4, v: 50"));
+        collection.insertOne(json("_id: 5, v: null"));
+        collection.insertOne(json("_id: 6"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("_id: null, max: [11, 25], min: 50"));
     }
 
     @Test
