@@ -299,7 +299,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
             if (result.containsKey("upserted")) {
                 final Object id = result.get("upserted");
-                final Document upserted = new Document("index", upserts.size());
+                final Document upserted = new Document("index", i);
                 upserted.put(ID_FIELD, id);
                 upserts.add(upserted);
             }
