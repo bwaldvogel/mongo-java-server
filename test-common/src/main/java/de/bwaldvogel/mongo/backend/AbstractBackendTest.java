@@ -2632,6 +2632,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result.getUpserts())
             .extracting(BulkWriteUpsert::getId)
             .containsExactly(new BsonInt32(1), new BsonInt32(2));
+        assertThat(result.getUpserts())
+            .extracting(BulkWriteUpsert::getIndex)
+            .containsExactly(0, 1);
 
         assertThat(toArray(collection.find()))
             .containsExactlyInAnyOrder(json("_id: 1, a: 1"), json("_id: 2, a: 1"));
@@ -2646,6 +2649,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result.getUpserts())
             .extracting(BulkWriteUpsert::getId)
             .containsExactly(new BsonInt32(3));
+        assertThat(result.getUpserts())
+            .extracting(BulkWriteUpsert::getIndex)
+            .containsExactly(1);
 
         assertThat(toArray(collection.find()))
             .containsExactlyInAnyOrder(
