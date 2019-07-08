@@ -129,7 +129,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
     }
 
-    private Document handleCommand(Channel channel, MongoQuery query) {
+    Document handleCommand(Channel channel, MongoQuery query) {
         String collectionName = query.getCollectionName();
         if (collectionName.equals("$cmd.sys.inprog")) {
             Collection<Document> currentOperations = mongoBackend.getCurrentOperations(query);
