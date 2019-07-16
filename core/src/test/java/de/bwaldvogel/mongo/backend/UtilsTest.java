@@ -266,4 +266,14 @@ public class UtilsTest {
         assertThat(ableToTraverse).isTrue();
     }
 
+    @Test
+    public void testCommonPathPrefix() throws Exception {
+        assertThat(Utils.getCommonPathPrefix("a", "b")).isNull();
+        assertThat(Utils.getCommonPathPrefix("a.b", "b.c")).isNull();
+        assertThat(Utils.getCommonPathPrefix("a.b.c", "a")).isEqualTo("a");
+        assertThat(Utils.getCommonPathPrefix("a.b.c", "a.b")).isEqualTo("a.b");
+        assertThat(Utils.getCommonPathPrefix("a.b.c", "a.b.c")).isEqualTo("a.b.c");
+        assertThat(Utils.getCommonPathPrefix("a.b.c", "a.b.d")).isEqualTo("a.b");
+    }
+
 }

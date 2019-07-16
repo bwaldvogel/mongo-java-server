@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -17,6 +18,7 @@ import de.bwaldvogel.mongo.backend.projection.Projection;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -215,6 +217,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document newDocument = new Document(idField, oldDocument.get(idField));
 
         if (numStartsWithDollar == update.keySet().size()) {
+            validateUpdateQuery(update);
             cloneInto(newDocument, oldDocument);
             for (String key : update.keySet()) {
                 modifyField(newDocument, key, update, arrayFilters, matchPos, isUpsert);
@@ -226,6 +229,22 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         return newDocument;
+    }
+
+    private static void validateUpdateQuery(Document update) {
+        Set<String> allModifiedPaths = new LinkedHashSet<>();
+        for (Object value : update.values()) {
+            Document modification = (Document) value;
+            for (String path : modification.keySet()) {
+                for (String otherPath : allModifiedPaths) {
+                    String commonPathPrefix = Utils.getCommonPathPrefix(path, otherPath);
+                    if (Objects.equals(path, commonPathPrefix) || Objects.equals(otherPath, commonPathPrefix)) {
+                        throw new ConflictingUpdateOperatorsException(path, commonPathPrefix);
+                    }
+                }
+                allModifiedPaths.add(path);
+            }
+        }
     }
 
     @Override

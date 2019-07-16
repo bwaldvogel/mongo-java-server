@@ -42,7 +42,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import com.mongodb.ReadPreference;
 import org.bson.BsonInt32;
 import org.bson.BsonJavaScript;
 import org.bson.BsonObjectId;
@@ -66,6 +65,7 @@ import com.mongodb.MongoNamespace;
 import com.mongodb.MongoQueryException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
+import com.mongodb.ReadPreference;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.bulk.BulkWriteUpsert;
@@ -718,6 +718,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result.getDouble("ok")).isEqualTo(1.0);
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/75
+    @Test
+    public void testFindAndModifyCommand_UpdateSameFields() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$inc: {x: 0, a: 1}, $set: {a: 2}")))
+            .withMessageContaining("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a' would create a conflict at 'a'");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/75
+    @Test
+    public void testFindAndModifyCommand_UpdateFieldAndItsSubfield() throws Exception {
+        collection.insertOne(json("_id: 1, a: {b: {c: 1}}"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'x': 1, 'a.b': {c: 1}}, $inc: {'a.b.c': 1}")))
+            .withMessageContaining("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b.c' would create a conflict at 'a.b'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'x': 1, 'a.b.c': 1}, $unset: {'a.b': 1}")))
+            .withMessageContaining("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b' would create a conflict at 'a.b'");
     }
 
     @Test

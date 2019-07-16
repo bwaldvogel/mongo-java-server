@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,7 +41,7 @@ public class ArrayFilters {
             }
             Entry<String, Object> entry = arrayFilter.entrySet().iterator().next();
 
-            List<String> pathFragments = splitPath(entry.getKey());
+            List<String> pathFragments = Utils.splitPath(entry.getKey());
             String identifier = pathFragments.get(0);
             if (!identifier.matches("^[a-zA-Z0-9]+$")) {
                 throw new BadValueException("Error parsing array filter :: caused by :: The top-level field name must be an alphanumeric string beginning with a lowercase letter, found '" + identifier + "'");
@@ -67,7 +66,7 @@ public class ArrayFilters {
         if (tail.isEmpty()) {
             return query;
         } else {
-            return new Document(joinPath(tail), query);
+            return new Document(Utils.joinPath(tail), query);
         }
     }
 
@@ -123,7 +122,7 @@ public class ArrayFilters {
             throw new BadValueException("Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '" + key + "'");
         }
 
-        List<String> pathFragments = splitPath(key);
+        List<String> pathFragments = Utils.splitPath(key);
         String path = pathFragments.get(0);
         return calculateKeys(document, pathFragments, path);
     }
@@ -147,13 +146,13 @@ public class ArrayFilters {
             for (int i = 0; i < values.size(); i++) {
                 if (queryMatcher.matchesValue(arrayFilterQuery, values.get(i))) {
                     List<String> remaining = pathFragments.subList(2, pathFragments.size());
-                    keys.add(joinPath(path, String.valueOf(i), remaining));
+                    keys.add(Utils.joinPath(path, String.valueOf(i), remaining));
                 }
             }
 
             return keys;
         } else {
-            String nextPath = joinPath(path, nextFragment);
+            String nextPath = Utils.joinPath(path, nextFragment);
             if (!(subObject instanceof Document)) {
                 throw new BadValueException("The path '" + nextPath + "' must exist in the document in order to apply array updates.");
             }
@@ -165,26 +164,6 @@ public class ArrayFilters {
 
     Map<String, Object> getValues() {
         return values;
-    }
-
-    private static String joinPath(String first, String second, List<String> rest) {
-        List<String> fragments = new ArrayList<>();
-        fragments.add(first);
-        fragments.add(second);
-        fragments.addAll(rest);
-        return joinPath(fragments);
-    }
-
-    private static String joinPath(String... fragments) {
-        return joinPath(Arrays.asList(fragments));
-    }
-
-    private static String joinPath(List<String> fragments) {
-        return String.join(".", fragments);
-    }
-
-    private static List<String> splitPath(String input) {
-        return Arrays.asList(input.split("\\."));
     }
 
     private static List<String> getTail(List<String> pathFragments) {

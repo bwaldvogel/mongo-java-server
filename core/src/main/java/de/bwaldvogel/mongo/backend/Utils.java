@@ -482,4 +482,44 @@ public class Utils {
         markOkay(response);
         return response;
     }
+
+    static String joinPath(String first, String second, List<String> rest) {
+        List<String> fragments = new ArrayList<>();
+        fragments.add(first);
+        fragments.add(second);
+        fragments.addAll(rest);
+        return joinPath(fragments);
+    }
+
+    static String joinPath(String... fragments) {
+        return joinPath(Arrays.asList(fragments));
+    }
+
+    static String joinPath(List<String> fragments) {
+        return String.join(".", fragments);
+    }
+
+    static List<String> splitPath(String input) {
+        return Arrays.asList(input.split("\\."));
+    }
+
+    public static String getCommonPathPrefix(String path1, String path2) {
+        List<String> fragments1 = splitPath(path1);
+        List<String> fragments2 = splitPath(path2);
+        List<String> commonFragments = new ArrayList<>();
+        for (int i = 0; i < Math.min(fragments1.size(), fragments2.size()); i++) {
+            String fragment1 = fragments1.get(i);
+            String fragment2 = fragments2.get(i);
+            if (fragment1.equals(fragment2)) {
+                commonFragments.add(fragment1);
+            } else {
+                break;
+            }
+        }
+        if (commonFragments.isEmpty()) {
+            return null;
+        }
+        return joinPath(commonFragments);
+    }
+
 }

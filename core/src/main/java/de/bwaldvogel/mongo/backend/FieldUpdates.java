@@ -331,12 +331,10 @@ class FieldUpdates {
         assertNotKeyField(newKey);
 
         if (renames.containsKey(key) || renames.containsValue(key)) {
-            throw new ConflictingUpdateOperatorsException(
-                "Updating the path '" + key + "' would create a conflict at '" + key + "'");
+            throw new ConflictingUpdateOperatorsException(key, key);
         }
         if (renames.containsKey(newKey) || renames.containsValue(newKey)) {
-            throw new ConflictingUpdateOperatorsException(
-                "Updating the path '" + newKey + "' would create a conflict at '" + newKey + "'");
+            throw new ConflictingUpdateOperatorsException(newKey, newKey);
         }
 
         renames.put(key, newKey);
