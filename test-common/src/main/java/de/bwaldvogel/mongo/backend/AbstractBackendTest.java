@@ -42,6 +42,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import com.mongodb.ReadPreference;
 import org.bson.BsonInt32;
 import org.bson.BsonJavaScript;
 import org.bson.BsonObjectId;
@@ -248,6 +249,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @SuppressWarnings("deprecation")
     public void testCountCommand() {
         assertThat(collection.count()).isZero();
+    }
+
+    @Test
+    public void testNonPrimaryCountCommand() {
+        assertThat(collection.withReadPreference(ReadPreference.nearest()).countDocuments()).isZero();
     }
 
     @Test
