@@ -3084,6 +3084,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/80
+    @Test
+    public void testCompoundUniqueIndicesWithInQuery() {
+        collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, a: 'foo'"));
+        collection.insertOne(json("_id: 3, b: 'foo'"));
+        collection.insertOne(json("_id: 4, a: 'foo', b: 'foo'"));
+        collection.insertOne(json("_id: 5, a: 'foo', b: 'bar'"));
+
+        assertThat(toArray(collection.find(json("a: 'foo', b: { $in: ['bar'] }"))))
+            .hasSize(1);
+    }
+
     @Test
     public void testCursorOptionNoTimeout() throws Exception {
         try (MongoCursor<Document> cursor = collection.find().noCursorTimeout(true).iterator()) {

@@ -97,6 +97,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         for (String key : keys()) {
             Object queryValue = query.get(key);
             if (queryValue instanceof Document) {
+                if (isCompoundIndex()) {
+                    // https://github.com/bwaldvogel/mongo-java-server/issues/80
+                    // Not yet supported. Use some other index, or none:
+                    return false;
+                }
                 if (BsonRegularExpression.isRegularExpression(queryValue)) {
                     return true;
                 }
