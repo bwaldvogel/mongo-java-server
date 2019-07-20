@@ -35,7 +35,7 @@ public class H2Backend extends AbstractMongoBackend {
                 try {
                     resolveDatabase(databaseName);
                 } catch (MongoServerException e) {
-                    log.error("Failed to open {}", e);
+                    log.error("Failed to open '{}'", databaseName, e);
                 }
             }
         }
