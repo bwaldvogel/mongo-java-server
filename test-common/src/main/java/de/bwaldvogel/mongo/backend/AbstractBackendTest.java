@@ -48,17 +48,23 @@ import org.bson.BsonObjectId;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.bson.codecs.DocumentCodec;
+import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.bson.types.Code;
 import org.bson.types.ObjectId;
 import org.junit.Test;
+import org.mockito.AdditionalAnswers;
+import org.mockito.Mockito;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mongodb.DBRef;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
@@ -66,6 +72,7 @@ import com.mongodb.MongoQueryException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.ReadPreference;
+import com.mongodb.ServerAddress;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.bulk.BulkWriteUpsert;
@@ -193,7 +200,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     private Document getCollStats() {
-        String collectionName = collection.getNamespace().getCollectionName();
+        String collectionName = getCollectionName();
         return getCollectionStatistics(db, collectionName);
     }
 
@@ -628,9 +635,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testDropCollection() throws Exception {
         collection.insertOne(json(""));
-        assertThat(toArray(db.listCollectionNames())).contains(collection.getNamespace().getCollectionName());
+        assertThat(toArray(db.listCollectionNames())).contains(getCollectionName());
         collection.drop();
-        assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName());
+        assertThat(toArray(db.listCollectionNames())).doesNotContain(getCollectionName());
     }
 
     @Test
@@ -638,7 +645,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json(""));
         collection.drop();
         assertThat(collection.countDocuments()).isZero();
-        assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName());
+        assertThat(toArray(db.listCollectionNames())).doesNotContain(getCollectionName());
     }
 
     @Test
@@ -657,7 +664,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         syncClient.dropDatabase(db.getName());
         assertThat(listDatabaseNames()).doesNotContain(db.getName());
         assertThat(collection.countDocuments()).isZero();
-        assertThat(toArray(db.listCollectionNames())).doesNotContain(collection.getNamespace().getCollectionName(),
+        assertThat(toArray(db.listCollectionNames())).doesNotContain(getCollectionName(),
             collection2.getNamespace().getCollectionName());
 
         collection.insertOne(json("_id: 1"));
@@ -683,7 +690,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testFindAndModifyCommandEmpty() throws Exception {
-        Document cmd = new Document("findandmodify", collection.getNamespace().getCollectionName());
+        Document cmd = new Document("findandmodify", getCollectionName());
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(cmd))
@@ -694,7 +701,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testFindAndModifyCommandIllegalOp() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        Document cmd = new Document("findAndModify", collection.getNamespace().getCollectionName());
+        Document cmd = new Document("findAndModify", getCollectionName());
         cmd.put("query", json("_id: 1"));
         cmd.put("update", new Document("$inc", json("_id: 1")));
 
@@ -709,7 +716,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testFindAndModifyCommandUpdate() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        Document cmd = new Document("findAndModify", collection.getNamespace().getCollectionName());
+        Document cmd = new Document("findAndModify", getCollectionName());
         cmd.put("query", json("_id: 1"));
         cmd.put("update", json("$inc: {a: 1}"));
 
@@ -3258,7 +3265,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessageContaining("Command failed with error 48 (NamespaceExists): 'target namespace exists'");
 
         List<String> collectionNames = toArray(db.listCollectionNames());
-        assertThat(collectionNames).containsExactlyInAnyOrder(collection.getNamespace().getCollectionName(),
+        assertThat(collectionNames).containsExactlyInAnyOrder(getCollectionName(),
             "other-collection-name");
 
         assertThat(collection.countDocuments()).isEqualTo(3);
@@ -3431,7 +3438,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testQueryWithReference() throws Exception {
         collection.insertOne(json("_id: 1"));
-        String collectionName = collection.getNamespace().getCollectionName();
+        String collectionName = getCollectionName();
         collection.insertOne(new Document("_id", 2).append("ref", new DBRef(collectionName, 1)));
         collection.insertOne(new Document("_id", 3).append("ref", new DBRef(collectionName, 2)));
 
@@ -3442,7 +3449,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testQueryWithIllegalReference() throws Exception {
         collection.insertOne(json("_id: 1"));
-        String collectionName = collection.getNamespace().getCollectionName();
+        String collectionName = getCollectionName();
         collection.insertOne(new Document("_id", 2).append("ref", new DBRef(collectionName, 1)));
         collection.insertOne(new Document("_id", 3).append("ref", new DBRef(collectionName, 2)));
 
@@ -3825,7 +3832,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testValidate() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> db.runCommand(new Document("validate", collection.getNamespace().getCollectionName())))
+            .isThrownBy(() -> db.runCommand(new Document("validate", getCollectionName())))
             .withMessageContaining("Command failed with error 26 (NamespaceNotFound): 'ns not found'");
 
         collection.insertOne(json("_id: 1"));
@@ -3834,7 +3841,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.deleteOne(json("_id: 2"));
 
-        Document result = db.runCommand(new Document("validate", collection.getNamespace().getCollectionName()));
+        Document result = db.runCommand(new Document("validate", getCollectionName()));
         assertThat(result.get("nrecords")).isEqualTo(2);
     }
 
@@ -4597,6 +4604,33 @@ public abstract class AbstractBackendTest extends AbstractTest {
             Document actual = db.runCommand(json("getlasterror: 1"));
             assertThat(actual.getString("codeName")).isEqualTo(expectedCodeName);
         }
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/76
+    @Test
+    public void testInsertWithoutId() throws Exception {
+        DocumentCodec documentCodec = Mockito.spy(new DocumentCodec());
+        Mockito.doAnswer(AdditionalAnswers.returnsFirstArg()).when(documentCodec).generateIdIfAbsentFromDocument(Mockito.any());
+
+        MongoClientOptions mongoClientOptions = MongoClientOptions.builder()
+            .codecRegistry(CodecRegistries.fromCodecs(documentCodec))
+            .build();
+
+        try (MongoClient mongoClient = new MongoClient(new ServerAddress(serverAddress), mongoClientOptions)) {
+            MongoDatabase database = mongoClient.getDatabase(db.getName());
+            MongoCollection<Document> collection = database.getCollection(getCollectionName());
+            collection.insertOne(json("x: 1"));
+
+            assertThat(collection.find(json("x: 1")).first().get("_id"))
+                .isNotNull()
+                .isInstanceOf(ObjectId.class);
+        }
+
+        Mockito.verify(documentCodec).generateIdIfAbsentFromDocument(Mockito.any());
+    }
+
+    private String getCollectionName() {
+        return collection.getNamespace().getCollectionName();
     }
 
 }

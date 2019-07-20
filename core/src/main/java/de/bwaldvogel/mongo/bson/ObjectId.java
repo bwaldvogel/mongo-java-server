@@ -13,8 +13,9 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
 
     private final byte[] data = new byte[LENGTH_OBJECTID];
 
+    private static final SecureRandom random = new SecureRandom();
+
     public ObjectId() {
-        SecureRandom random = new SecureRandom();
         random.nextBytes(data);
     }
 

@@ -982,7 +982,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         namespaces.insertDocuments(newDocuments);
     }
 
-    private static boolean isSystemCollection(String collectionName) {
+    static boolean isSystemCollection(String collectionName) {
         return collectionName.startsWith("system.");
     }
 

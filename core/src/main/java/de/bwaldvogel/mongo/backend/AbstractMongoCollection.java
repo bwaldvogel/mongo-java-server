@@ -12,6 +12,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.projection.ProjectingIterable;
 import de.bwaldvogel.mongo.backend.projection.Projection;
@@ -25,6 +28,8 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractMongoCollection.class);
 
     private String collectionName;
     private String databaseName;
@@ -91,6 +96,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (document.get(ID_FIELD) instanceof Collection) {
             throw new BadValueException("can't use an array for _id");
+        }
+
+        if (!document.containsKey(ID_FIELD) && !isSystemCollection()) {
+            ObjectId generatedObjectId = new ObjectId();
+            log.debug("Generated {} for {} in {}", generatedObjectId, document, this);
+            document.put(ID_FIELD, generatedObjectId);
         }
 
         for (Index<P> index : indexes) {
@@ -650,5 +661,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected abstract void removeDocument(P position);
 
     protected abstract P findDocumentPosition(Document document);
+
+    private boolean isSystemCollection() {
+        return AbstractMongoDatabase.isSystemCollection(getCollectionName());
+    }
 
 }

@@ -11,6 +11,8 @@ dependencies {
 
     api group: 'junit', name: 'junit', version: 'latest.release'
     api group: 'org.assertj', name: 'assertj-core', version: 'latest.release'
+    api "org.mockito:mockito-core:latest.release"
+
     runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
 
     testImplementation group: 'de.flapdoodle.embed', name: 'de.flapdoodle.embed.mongo', version: 'latest.release'

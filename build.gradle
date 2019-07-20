@@ -30,7 +30,7 @@ allprojects {
     dependencies {
         components.all { ComponentMetadataDetails details ->
             details.statusScheme = ['candidate', 'release']
-            if (details.id.version =~ /(?i).+(-|\.)(CANDIDATE|RC|BETA|ALPHA).*/) {
+            if (details.id.version =~ /(?i).+(-|\.)(CANDIDATE|RC|BETA|ALPHA|PR).*/) {
                 details.status = 'candidate'
             } else {
                 details.status = 'release'
