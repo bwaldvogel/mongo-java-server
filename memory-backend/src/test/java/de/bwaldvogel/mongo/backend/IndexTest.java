@@ -35,7 +35,7 @@ public class IndexTest {
     public void testGetKeyValue_Subdocument() throws Exception {
         Index<?> index = new MemoryUniqueIndex(Collections.singletonList(new IndexKey("a.b", true)), false);
 
-        assertThat(index.getKeyValue(new Document("a", 1))).isEqualTo(Collections.singletonList(null));
+        assertThat(index.getKeyValue(new Document("a", 1))).isEqualTo(new KeyValue((Object) null));
         assertThat(index.getKeyValue(new Document("a", new Document("b", 1)))).containsExactly(1.0);
     }
 

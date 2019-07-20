@@ -7,10 +7,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import de.bwaldvogel.mongo.backend.AbstractUniqueIndex;
 import de.bwaldvogel.mongo.backend.IndexKey;
+import de.bwaldvogel.mongo.backend.KeyValue;
 
 public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
 
-    private final Map<List<Object>, Integer> index = new ConcurrentHashMap<>();
+    private final Map<KeyValue, Integer> index = new ConcurrentHashMap<>();
 
     public MemoryUniqueIndex(List<IndexKey> keys, boolean sparse) {
         super(keys, sparse);
@@ -27,28 +28,28 @@ public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
     }
 
     @Override
-    protected Integer removeDocument(List<Object> key) {
-        return index.remove(key);
+    protected Integer removeDocument(KeyValue keyValue) {
+        return index.remove(keyValue);
     }
 
     @Override
-    protected boolean containsKey(List<Object> key) {
-        return index.containsKey(key);
+    protected boolean containsKey(KeyValue keyValue) {
+        return index.containsKey(keyValue);
     }
 
     @Override
-    protected boolean putKeyPosition(List<Object> key, Integer position) {
-        Integer oldValue = index.putIfAbsent(key, position);
+    protected boolean putKeyPosition(KeyValue keyValue, Integer position) {
+        Integer oldValue = index.putIfAbsent(keyValue, position);
         return oldValue == null;
     }
 
     @Override
-    protected Integer getPosition(List<Object> key) {
-        return index.get(key);
+    protected Integer getPosition(KeyValue keyValue) {
+        return index.get(keyValue);
     }
 
     @Override
-    protected Iterable<Entry<List<Object>, Integer>> getIterable() {
+    protected Iterable<Entry<KeyValue, Integer>> getIterable() {
         return index.entrySet();
     }
 

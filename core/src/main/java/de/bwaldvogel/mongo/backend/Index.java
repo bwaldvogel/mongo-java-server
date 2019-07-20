@@ -49,15 +49,15 @@ public abstract class Index<P> {
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    List<Object> getKeyValue(Document document) {
+    KeyValue getKeyValue(Document document) {
         return getKeyValue(document, true);
     }
 
-    List<Object> getKeyValue(Document document, boolean normalize) {
-        return keys().stream()
+    KeyValue getKeyValue(Document document, boolean normalize) {
+        return new KeyValue(keys().stream()
             .map(key -> Utils.getSubdocumentValue(document, key))
             .map(normalize ? Utils::normalizeValue : Function.identity())
-            .collect(Collectors.toList());
+            .collect(Collectors.toList()));
     }
 
     public abstract void checkAdd(Document document, MongoCollection<P> collection);

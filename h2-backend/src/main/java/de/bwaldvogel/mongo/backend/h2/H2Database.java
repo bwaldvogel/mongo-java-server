@@ -15,6 +15,7 @@ import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
+import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class H2Database extends AbstractMongoDatabase<Object> {
@@ -32,7 +33,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
 
     @Override
     protected Index<Object> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys, boolean sparse) {
-        MVMap<List<Object>, Object> mvMap = mvStore.openMap(databaseName + "." + collectionName + "._index_" + indexName(keys));
+        MVMap<KeyValue, Object> mvMap = mvStore.openMap(databaseName + "." + collectionName + "._index_" + indexName(keys));
         return new H2UniqueIndex(mvMap, keys, sparse);
     }
 

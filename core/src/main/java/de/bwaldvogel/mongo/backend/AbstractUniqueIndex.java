@@ -22,15 +22,15 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         super(keys, sparse);
     }
 
-    protected abstract P removeDocument(List<Object> key);
+    protected abstract P removeDocument(KeyValue keyValue);
 
-    protected abstract boolean containsKey(List<Object> key);
+    protected abstract boolean containsKey(KeyValue keyValue);
 
-    protected abstract boolean putKeyPosition(List<Object> key, P position);
+    protected abstract boolean putKeyPosition(KeyValue keyValue, P position);
 
-    protected abstract Iterable<Entry<List<Object>, P>> getIterable();
+    protected abstract Iterable<Entry<KeyValue, P>> getIterable();
 
-    protected abstract P getPosition(List<Object> key);
+    protected abstract P getPosition(KeyValue keyValue);
 
     private boolean hasNoValueForKeys(Document document) {
         return keys().stream().noneMatch(key -> Utils.hasSubdocumentValue(document, key));
@@ -41,8 +41,8 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         if (isSparse() && hasNoValueForKeys(document)) {
             return null;
         }
-        List<Object> key = getKeyValue(document);
-        return removeDocument(key);
+        KeyValue keyValue = getKeyValue(document);
+        return removeDocument(keyValue);
     }
 
     @Override
@@ -50,8 +50,8 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         if (isSparse() && hasNoValueForKeys(document)) {
             return;
         }
-        List<Object> key = getKeyValue(document);
-        if (containsKey(key)) {
+        KeyValue keyValue = getKeyValue(document);
+        if (containsKey(keyValue)) {
             throw new DuplicateKeyError(this, collection, getKeyValue(document, false));
         }
     }
@@ -62,9 +62,9 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         if (isSparse() && hasNoValueForKeys(document)) {
             return;
         }
-        List<Object> key = getKeyValue(document);
-        boolean added = putKeyPosition(key, position);
-        Assert.isTrue(added, () -> "Key " + key + " already exists. Concurrency issue?");
+        KeyValue keyValue = getKeyValue(document);
+        boolean added = putKeyPosition(keyValue, position);
+        Assert.isTrue(added, () -> "Key " + keyValue + " already exists. Concurrency issue?");
     }
 
     @Override
@@ -125,7 +125,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     @Override
     public synchronized Iterable<P> getPositions(Document query) {
-        List<Object> queriedKeys = getQueriedKeys(query);
+        KeyValue queriedKeys = getQueriedKeys(query);
 
         for (Object queriedKey : queriedKeys) {
             if (BsonRegularExpression.isRegularExpression(queriedKey)) {
@@ -133,8 +133,8 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                     throw new UnsupportedOperationException("Not yet implemented");
                 }
                 List<P> positions = new ArrayList<>();
-                for (Entry<List<Object>, P> entry : getIterable()) {
-                    List<Object> obj = entry.getKey();
+                for (Entry<KeyValue, P> entry : getIterable()) {
+                    KeyValue obj = entry.getKey();
                     if (obj.size() == 1) {
                         Object o = obj.get(0);
                         if (o instanceof String) {
@@ -172,11 +172,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         return Collections.singletonList(position);
     }
 
-    private List<Object> getQueriedKeys(Document query) {
-        return keys().stream()
+    private KeyValue getQueriedKeys(Document query) {
+        return new KeyValue(keys().stream()
             .map(query::get)
             .map(Utils::normalizeValue)
-            .collect(Collectors.toList());
+            .collect(Collectors.toList()));
     }
 
     private Iterable<P> getPositionsForExpression(Document keyObj, String operator) {
@@ -189,7 +189,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
             List<P> allKeys = new ArrayList<>();
             for (Object object : queriedObjects) {
                 Object keyValue = Utils.normalizeValue(object);
-                P key = getPosition(new ArrayList<>(Collections.singletonList(keyValue)));
+                P key = getPosition(new KeyValue(keyValue));
                 if (key != null) {
                     allKeys.add(key);
                 }

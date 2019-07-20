@@ -15,6 +15,7 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
+import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.postgresql.PostgresqlBackend;
@@ -75,7 +76,7 @@ public class PostgresUniqueIndex extends Index<Long> {
             fillStrings(stmt, keyValues);
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (resultSet.next()) {
-                    throw new DuplicateKeyError(this, collection, keyValues.values());
+                    throw new DuplicateKeyError(this, collection, new KeyValue(keyValues.values()));
                 }
             }
         } catch (SQLException | IOException e) {
