@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
+import static de.bwaldvogel.mongo.backend.Utils.splitPath;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -368,18 +369,17 @@ class FieldUpdates {
     }
 
     private static Object getSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = Utils.getSubkey(key, dotPos, matchPos);
-            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document || subObject instanceof List<?>) {
-                return getSubdocumentValue(subObject, subKey, matchPos);
-            } else {
-                return Missing.getInstance();
-            }
+        List<String> pathFragments = splitPath(key);
+        String mainKey = pathFragments.get(0);
+        if (pathFragments.size() == 1) {
+            return Utils.getFieldValueListSafe(document, mainKey);
+        }
+        String subKey = Utils.getSubkey(pathFragments, matchPos);
+        Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+        if (subObject instanceof Document || subObject instanceof List<?>) {
+            return getSubdocumentValue(subObject, subKey, matchPos);
         } else {
-            return Utils.getFieldValueListSafe(document, key);
+            return Missing.getInstance();
         }
     }
 

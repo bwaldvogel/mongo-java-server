@@ -70,10 +70,11 @@ public class Projection {
     }
 
     private static void projectField(Document document, Document newDocument, String key, Object projectionValue) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = key.substring(dotPos + 1);
+        if (key.contains(Utils.PATH_DELIMITER)) {
+            List<String> pathFragments = Utils.splitPath(key);
+
+            String mainKey = pathFragments.get(0);
+            String subKey = Utils.joinTail(pathFragments);
 
             Object object = document.get(mainKey);
             // do not project the subdocument if it is not of type Document

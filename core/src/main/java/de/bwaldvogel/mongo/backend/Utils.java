@@ -23,7 +23,8 @@ import io.netty.buffer.Unpooled;
 
 public class Utils {
 
-    private static final String PATH_DELIMITER = ".";
+    public static final String PATH_DELIMITER = ".";
+    private static final Pattern PATH_DELIMITER_PATTERN = Pattern.compile(Pattern.quote(PATH_DELIMITER));
 
     public static Number addNumbers(Number a, Number b) {
         if (a instanceof Double || b instanceof Double) {
@@ -247,46 +248,43 @@ public class Utils {
     }
 
     static boolean hasSubdocumentValue(Object document, String key) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, new AtomicReference<>());
-            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document || subObject instanceof List<?>) {
-                return hasSubdocumentValue(subObject, subKey);
-            } else {
-                return false;
-            }
-        } else {
+        List<String> pathFragments = splitPath(key);
+        String mainKey = pathFragments.get(0);
+        if (pathFragments.size() == 1) {
             return Utils.hasFieldValueListSafe(document, key);
+        }
+        String subKey = Utils.getSubkey(pathFragments, new AtomicReference<>());
+        Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+        if (subObject instanceof Document || subObject instanceof List<?>) {
+            return hasSubdocumentValue(subObject, subKey);
+        } else {
+            return false;
         }
     }
 
     static boolean canFullyTraverseSubkeyForRename(Object document, String key) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, new AtomicReference<>());
-            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document) {
-                return canFullyTraverseSubkeyForRename(subObject, subKey);
-            } else if (subObject instanceof Missing) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
+        List<String> pathFragments = splitPath(key);
+        String mainKey = pathFragments.get(0);
+        if (pathFragments.size() == 1) {
             return true;
+        }
+        String subKey = Utils.getSubkey(pathFragments, new AtomicReference<>());
+
+        Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+        if (subObject instanceof Document) {
+            return canFullyTraverseSubkeyForRename(subObject, subKey);
+        } else {
+            return subObject instanceof Missing;
         }
     }
 
-    static String getSubkey(String key, int dotPos, AtomicReference<Integer> matchPos) {
-        String subKey = key.substring(dotPos + 1);
-
+    static String getSubkey(List<String> pathFragments, AtomicReference<Integer> matchPos) {
+        String key = joinPath(pathFragments);
         if (key.matches(".*\\$(\\.).+\\$(\\.).*")) {
             throw new BadValueException("Too many positional (i.e. '$') elements found in path '" + key + "'");
         }
 
+        String subKey = joinTail(pathFragments);
         if (subKey.matches("\\$(\\..+)?")) {
             if (matchPos == null || matchPos.get() == null) {
                 throw new BadValueException("The positional operator did not find the match needed from the query.");
@@ -380,24 +378,23 @@ public class Utils {
     }
 
     static void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, matchPos);
-
-            Object subObject = getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document || subObject instanceof List<?>) {
-                changeSubdocumentValue(subObject, subKey, newValue, matchPos);
-            } else if (!Missing.isNullOrMissing(subObject)) {
-                String element = new Document(mainKey, subObject).toString(true);
-                throw new PathNotViableException("Cannot create field '" + subKey + "' in element " + element);
-            } else {
-                Document obj = new Document();
-                changeSubdocumentValue(obj, subKey, newValue, matchPos);
-                setListSafe(document, mainKey, obj);
-            }
-        } else {
+        List<String> pathFragments = splitPath(key);
+        String mainKey = pathFragments.get(0);
+        if (pathFragments.size() == 1) {
             setListSafe(document, key, newValue);
+            return;
+        }
+        String subKey = Utils.getSubkey(pathFragments, matchPos);
+        Object subObject = getFieldValueListSafe(document, mainKey);
+        if (subObject instanceof Document || subObject instanceof List<?>) {
+            changeSubdocumentValue(subObject, subKey, newValue, matchPos);
+        } else if (!Missing.isNullOrMissing(subObject)) {
+            String element = new Document(mainKey, subObject).toString(true);
+            throw new PathNotViableException("Cannot create field '" + subKey + "' in element " + element);
+        } else {
+            Document obj = new Document();
+            changeSubdocumentValue(obj, subKey, newValue, matchPos);
+            setListSafe(document, mainKey, obj);
         }
     }
 
@@ -410,21 +407,19 @@ public class Utils {
     }
 
     private static Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos) {
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = getSubkey(key, dotPos, matchPos);
-
-            Assert.notNullOrEmpty(subKey);
-
-            Object subObject = getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document || subObject instanceof List<?>) {
-                return removeSubdocumentValue(subObject, subKey, matchPos);
-            } else {
-                return Missing.getInstance();
-            }
-        } else {
+        List<String> pathFragments = splitPath(key);
+        String mainKey = pathFragments.get(0);
+        if (pathFragments.size() == 1) {
             return removeListSafe(document, key);
+        }
+        String subKey = Utils.getSubkey(pathFragments, matchPos);
+        Assert.notNullOrEmpty(subKey);
+
+        Object subObject = getFieldValueListSafe(document, mainKey);
+        if (subObject instanceof Document || subObject instanceof List<?>) {
+            return removeSubdocumentValue(subObject, subKey, matchPos);
+        } else {
+            return Missing.getInstance();
         }
     }
 
@@ -492,7 +487,7 @@ public class Utils {
         return joinPath(Arrays.asList(fragments));
     }
 
-    static String joinTail(List<String> pathFragments) {
+    public static String joinTail(List<String> pathFragments) {
         return pathFragments.stream()
             .skip(1)
             .collect(Collectors.joining(PATH_DELIMITER));
@@ -502,8 +497,8 @@ public class Utils {
         return String.join(PATH_DELIMITER, fragments);
     }
 
-    static List<String> splitPath(String input) {
-        return Arrays.asList(input.split(Pattern.quote(PATH_DELIMITER)));
+    public static List<String> splitPath(String input) {
+        return PATH_DELIMITER_PATTERN.splitAsStream(input).collect(Collectors.toList());
     }
 
     static List<String> getTail(List<String> pathFragments) {

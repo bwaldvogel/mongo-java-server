@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoBackend;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class H2Backend extends AbstractMongoBackend {
@@ -29,7 +30,7 @@ public class H2Backend extends AbstractMongoBackend {
         for (String mapName : mvStore.getMapNames()) {
             if (mapName.startsWith(H2Database.DATABASES_PREFIX)) {
                 String fullName = mapName.substring(H2Database.DATABASES_PREFIX.length());
-                String databaseName = fullName.substring(0, fullName.indexOf('.'));
+                String databaseName = Utils.splitPath(fullName).get(0);
 
                 log.info("opening database '{}'", databaseName);
                 try {
