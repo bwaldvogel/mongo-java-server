@@ -276,4 +276,13 @@ public class UtilsTest {
         assertThat(Utils.getCommonPathPrefix("a.b.c", "a.b.d")).isEqualTo("a.b");
     }
 
+    @Test
+    public void testJoinTail() throws Exception {
+        assertThat(Utils.joinTail(Collections.singletonList("a"))).isEqualTo("");
+        assertThat(Utils.joinTail(Collections.emptyList())).isEqualTo("");
+        assertThat(Utils.joinTail(Arrays.asList("a", "b"))).isEqualTo("b");
+        assertThat(Utils.joinTail(Arrays.asList("a", "b", "c"))).isEqualTo("b.c");
+        assertThat(Utils.joinTail(Arrays.asList("a", "b", "c", "d"))).isEqualTo("b.c.d");
+    }
+
 }

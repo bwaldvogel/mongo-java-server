@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -21,6 +22,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 public class Utils {
+
+    private static final String PATH_DELIMITER = ".";
 
     public static Number addNumbers(Number a, Number b) {
         if (a instanceof Double || b instanceof Double) {
@@ -71,10 +74,10 @@ public class Utils {
     }
 
     public static Object getSubdocumentValue(Document document, String key) {
-        if (key.endsWith(".")) {
+        if (key.endsWith(PATH_DELIMITER)) {
             throw new MongoServerError(40353, "FieldPath must not end with a '.'.");
         }
-        if (key.startsWith(".") || key.contains("..")) {
+        if (key.startsWith(PATH_DELIMITER) || key.contains("..")) {
             throw new MongoServerError(15998, "FieldPath field names may not be empty strings.");
         }
         List<String> pathFragments = splitPath(key);
@@ -219,7 +222,7 @@ public class Utils {
             return Missing.getInstance();
         }
 
-        if (field.equals("$") || field.contains(".")) {
+        if (field.equals("$") || field.contains(PATH_DELIMITER)) {
             throw new IllegalArgumentException("illegal field: " + field);
         }
 
@@ -299,7 +302,7 @@ public class Utils {
             return false;
         }
 
-        if (field.equals("$") || field.contains(".")) {
+        if (field.equals("$") || field.contains(PATH_DELIMITER)) {
             throw new IllegalArgumentException("illegal field: " + field);
         }
 
@@ -489,16 +492,18 @@ public class Utils {
         return joinPath(Arrays.asList(fragments));
     }
 
-    private static String joinTail(List<String> pathFragments) {
-        return joinPath(getTail(pathFragments));
+    static String joinTail(List<String> pathFragments) {
+        return pathFragments.stream()
+            .skip(1)
+            .collect(Collectors.joining(PATH_DELIMITER));
     }
 
     static String joinPath(List<String> fragments) {
-        return String.join(".", fragments);
+        return String.join(PATH_DELIMITER, fragments);
     }
 
     static List<String> splitPath(String input) {
-        return Arrays.asList(input.split("\\."));
+        return Arrays.asList(input.split(Pattern.quote(PATH_DELIMITER)));
     }
 
     static List<String> getTail(List<String> pathFragments) {
