@@ -39,7 +39,7 @@ public class ArrayFilters {
                 throw new FailedToParseException("Error parsing array filter :: caused by ::" +
                     " Expected a single top-level field name, found '" + keys.get(0) + "' and '" + keys.get(1) + "'");
             }
-            Entry<String, Object> entry = arrayFilter.entrySet().iterator().next();
+            Entry<String, Object> entry = CollectionUtils.getSingleElement(arrayFilter.entrySet());
 
             List<String> pathFragments = Utils.splitPath(entry.getKey());
             String identifier = pathFragments.get(0);

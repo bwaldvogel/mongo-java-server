@@ -499,7 +499,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             @SuppressWarnings("unchecked")
             List<Document> writeErrors = (List<Document>) result.get("writeErrors");
             if (writeErrors.size() == 1) {
-                result.putAll(writeErrors.get(0));
+                result.putAll(CollectionUtils.getSingleElement(writeErrors));
                 result.remove("writeErrors");
             }
         }
@@ -583,10 +583,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         @SuppressWarnings("unchecked")
         List<Document> pipeline = (List<Document>) query.get("pipeline");
         for (Document stage : pipeline) {
-            if (stage.size() != 1) {
+            String stageOperation = CollectionUtils.getSingleElement(stage.keySet(), () -> {
                 throw new MongoServerError(40323, "A pipeline stage specification object must contain exactly one field.");
-            }
-            String stageOperation = stage.keySet().iterator().next();
+            });
             switch (stageOperation) {
                 case "$match":
                     Document matchQuery = (Document) stage.get(stageOperation);

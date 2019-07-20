@@ -29,7 +29,7 @@ public abstract class Index<P> {
     }
 
     public String getName() {
-        if (keys.size() == 1 && keys.get(0).getKey().equals(Constants.ID_FIELD)) {
+        if (keys.size() == 1 && CollectionUtils.getSingleElement(keys).getKey().equals(Constants.ID_FIELD)) {
             return Constants.ID_INDEX_NAME;
         }
         return keys.stream()

@@ -153,11 +153,9 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                 }
                 Document keyObj = (Document) queriedKey;
                 if (Utils.containsQueryExpression(keyObj)) {
-                    if (keyObj.keySet().size() != 1) {
-                        throw new UnsupportedOperationException("illegal query key: " + queriedKeys);
-                    }
+                    String expression = CollectionUtils.getSingleElement(keyObj.keySet(),
+                        () -> new UnsupportedOperationException("illegal query key: " + queriedKeys));
 
-                    String expression = keyObj.keySet().iterator().next();
                     if (expression.startsWith("$")) {
                         return getPositionsForExpression(keyObj, expression);
                     }

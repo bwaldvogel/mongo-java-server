@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
@@ -85,10 +86,9 @@ public class GroupStage implements AggregationStage {
             }
             String field = accumulatorEntry.getKey();
             Document entryValue = (Document) accumulatorEntry.getValue();
-            if (entryValue.size() != 1) {
+            Entry<String, Object> aggregation = CollectionUtils.getSingleElement(entryValue.entrySet(), () -> {
                 throw new MongoServerError(40238, "The field '" + field + "' must specify one accumulator");
-            }
-            Entry<String, Object> aggregation = entryValue.entrySet().iterator().next();
+            });
             String groupOperator = aggregation.getKey();
             Object expression = aggregation.getValue();
             if (groupOperator.equals("$sum")) {

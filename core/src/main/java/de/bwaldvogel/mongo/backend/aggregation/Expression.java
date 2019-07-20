@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.backend.Assert;
+import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.LinkedTreeSet;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
@@ -246,8 +247,8 @@ public enum Expression implements ExpressionTraits {
             final Object thenExpression;
             final Object elseExpression;
 
-            if (expressionValue.size() == 1 && expressionValue.get(0) instanceof Document) {
-                Document condDocument = (Document) expressionValue.get(0);
+            if (expressionValue.size() == 1 && CollectionUtils.getSingleElement(expressionValue) instanceof Document) {
+                Document condDocument = (Document) CollectionUtils.getSingleElement(expressionValue);
                 List<String> requiredKeys = Arrays.asList("if", "then", "else");
                 for (String requiredKey : requiredKeys) {
                     if (!condDocument.containsKey(requiredKey)) {
@@ -1059,7 +1060,7 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             if (expressionValue.size() == 1) {
-                Object singleValue = expressionValue.get(0);
+                Object singleValue = CollectionUtils.getSingleElement(expressionValue);
                 if (singleValue instanceof Collection<?>) {
                     return apply(singleValue, document);
                 }
