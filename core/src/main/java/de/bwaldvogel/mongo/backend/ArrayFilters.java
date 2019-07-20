@@ -62,7 +62,7 @@ public class ArrayFilters {
     }
 
     private static Object createFilter(List<String> pathFragments, Object query) {
-        List<String> tail = getTail(pathFragments);
+        List<String> tail = Utils.getTail(pathFragments);
         if (tail.isEmpty()) {
             return query;
         } else {
@@ -157,17 +157,13 @@ public class ArrayFilters {
                 throw new BadValueException("The path '" + nextPath + "' must exist in the document in order to apply array updates.");
             }
             Document subDocument = (Document) subObject;
-            List<String> tail = getTail(pathFragments);
+            List<String> tail = Utils.getTail(pathFragments);
             return calculateKeys(subDocument, tail, nextPath);
         }
     }
 
     Map<String, Object> getValues() {
         return values;
-    }
-
-    private static List<String> getTail(List<String> pathFragments) {
-        return pathFragments.subList(1, pathFragments.size());
     }
 
 }

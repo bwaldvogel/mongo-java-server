@@ -168,7 +168,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         } catch (UnknownHostException e) {
             throw new MongoServerException("failed to get hostname", e);
         }
-        serverStatus.put("version", Utils.join(mongoBackend.getVersion(), '.'));
+        serverStatus.put("version", Utils.join(mongoBackend.getVersion(), "."));
         serverStatus.put("process", "java");
         serverStatus.put("pid", getProcessId());
 

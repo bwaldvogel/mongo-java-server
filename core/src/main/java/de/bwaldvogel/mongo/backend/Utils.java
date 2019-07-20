@@ -77,10 +77,12 @@ public class Utils {
         if (key.startsWith(".") || key.contains("..")) {
             throw new MongoServerError(15998, "FieldPath field names may not be empty strings.");
         }
-        int dotPos = key.indexOf('.');
-        if (dotPos > 0) {
-            String mainKey = key.substring(0, dotPos);
-            String subKey = key.substring(dotPos + 1);
+        List<String> pathFragments = splitPath(key);
+        String mainKey = pathFragments.get(0);
+        if (pathFragments.size() == 1) {
+            return Utils.getFieldValueListSafe(document, mainKey);
+        } else {
+            String subKey = joinTail(pathFragments);
             Assert.doesNotStartWith(subKey, "$.");
             Object subObject = Utils.getFieldValueListSafe(document, mainKey);
             if (subObject instanceof Document) {
@@ -88,19 +90,16 @@ public class Utils {
             } else {
                 return Missing.getInstance();
             }
-        } else {
-            return Utils.getFieldValueListSafe(document, key);
         }
     }
 
     public static String getDatabaseNameFromFullName(String fullName) {
-        int dotPos = fullName.indexOf('.');
-        return fullName.substring(0, dotPos);
+        return splitPath(fullName).get(0);
     }
 
     public static String getCollectionNameFromFullName(String fullName) {
-        int dotPos = fullName.indexOf('.');
-        return fullName.substring(dotPos + 1);
+        List<String> pathFragments = splitPath(fullName);
+        return joinTail(pathFragments);
     }
 
     public static boolean isTrue(Object value) {
@@ -363,15 +362,10 @@ public class Utils {
         }
     }
 
-    public static String join(List<Integer> array, char c) {
-        final StringBuilder sb = new StringBuilder();
-        for (int value : array) {
-            if (sb.length() > 0) {
-                sb.append(c);
-            }
-            sb.append(value);
-        }
-        return sb.toString();
+    public static String join(List<?> values, String delimiter) {
+        return values.stream()
+            .map(Object::toString)
+            .collect(Collectors.joining(delimiter));
     }
 
     static void changeSubdocumentValue(Object document, String key, Object newValue, Integer matchPos) {
@@ -495,12 +489,20 @@ public class Utils {
         return joinPath(Arrays.asList(fragments));
     }
 
+    private static String joinTail(List<String> pathFragments) {
+        return joinPath(getTail(pathFragments));
+    }
+
     static String joinPath(List<String> fragments) {
         return String.join(".", fragments);
     }
 
     static List<String> splitPath(String input) {
         return Arrays.asList(input.split("\\."));
+    }
+
+    static List<String> getTail(List<String> pathFragments) {
+        return pathFragments.subList(1, pathFragments.size());
     }
 
     public static String getCommonPathPrefix(String path1, String path2) {

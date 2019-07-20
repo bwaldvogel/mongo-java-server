@@ -179,7 +179,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
-            Document response = new Document("version", Utils.join(version, '.'));
+            Document response = new Document("version", Utils.join(version, "."));
             response.put("versionArray", version);
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             Utils.markOkay(response);
