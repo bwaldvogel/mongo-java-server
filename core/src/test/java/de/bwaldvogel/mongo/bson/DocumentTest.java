@@ -49,7 +49,7 @@ public class DocumentTest {
         original.put("null-value", null);
         original.put("set", new LinkedHashSet<>());
 
-        String originalToString = "{\"subDocument\" : {\"_id\" : 1}, \"sub\" : {\"sub\" : [1, {\"key\" : \"value\"}, 3]}, \"null-value\" : null, \"set\" : []}";
+        String originalToString = "{\"subDocument\" : {\"_id\" : 1}, \"sub\" : {\"sub\" : [ 1, {\"key\" : \"value\"}, 3 ]}, \"null-value\" : null, \"set\" : []}";
         assertThat(original).hasToString(originalToString);
 
         Document deepClone = original.cloneDeeply();
@@ -65,7 +65,7 @@ public class DocumentTest {
         deepClone.remove("null-value");
         ((Collection<Object>) deepClone.get("set")).add("more");
 
-        assertThat(deepClone).hasToString("{\"subDocument\" : {\"_id\" : 2}, \"sub\" : {\"sub\" : [1, 25, 3]}, \"set\" : [\"more\"]}");
+        assertThat(deepClone).hasToString("{\"subDocument\" : {\"_id\" : 2}, \"sub\" : {\"sub\" : [ 1, 25, 3 ]}, \"set\" : [ \"more\" ]}");
         assertThat(original).hasToString(originalToString);
     }
 
@@ -94,7 +94,7 @@ public class DocumentTest {
         assertThat(new Document()).hasToString("{}");
         assertThat(new Document("key", "value")).hasToString("{\"key\" : \"value\"}");
         assertThat(new Document("key", new Document("value", 12345L))).hasToString("{\"key\" : {\"value\" : 12345}}");
-        assertThat(json("array: [{'123a': {name: 'old'}}]")).hasToString("{\"array\" : [{\"123a\" : {\"name\" : \"old\"}}]}");
+        assertThat(json("array: [{'123a': {name: 'old'}}]")).hasToString("{\"array\" : [ {\"123a\" : {\"name\" : \"old\"}} ]}");
     }
 
     @Test

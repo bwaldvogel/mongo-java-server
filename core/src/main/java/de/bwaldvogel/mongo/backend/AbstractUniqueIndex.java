@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -41,8 +42,18 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         if (isSparse() && hasNoValueForKeys(document)) {
             return null;
         }
-        KeyValue keyValue = getKeyValue(document);
-        return removeDocument(keyValue);
+
+        List<KeyValue> keyValues = getKeyValues(document);
+        Set<P> positions = keyValues.stream()
+            .map(this::removeDocument)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+
+        if (positions.isEmpty()) {
+            return null;
+        } else {
+            return CollectionUtils.getSingleElement(positions);
+        }
     }
 
     @Override
@@ -50,9 +61,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         if (isSparse() && hasNoValueForKeys(document)) {
             return;
         }
-        KeyValue keyValue = getKeyValue(document);
-        if (containsKey(keyValue)) {
-            throw new DuplicateKeyError(this, collection, getKeyValue(document, false));
+        for (KeyValue key : getKeyValues(document, false)) {
+            KeyValue normalizedKey = key.normalized();
+            if (containsKey(normalizedKey)) {
+                throw new DuplicateKeyError(this, collection, key);
+            }
         }
     }
 
@@ -62,9 +75,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         if (isSparse() && hasNoValueForKeys(document)) {
             return;
         }
-        KeyValue keyValue = getKeyValue(document);
-        boolean added = putKeyPosition(keyValue, position);
-        Assert.isTrue(added, () -> "Key " + keyValue + " already exists. Concurrency issue?");
+        List<KeyValue> keyValues = getKeyValues(document);
+        for (KeyValue keyValue : keyValues) {
+            boolean added = putKeyPosition(keyValue, position);
+            Assert.isTrue(added, () -> "Key " + keyValue + " already exists. Concurrency issue?");
+        }
     }
 
     @Override

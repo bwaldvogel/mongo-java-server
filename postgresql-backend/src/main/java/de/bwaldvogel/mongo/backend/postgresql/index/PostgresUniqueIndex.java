@@ -69,7 +69,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     private void checkDocument(Document document, MongoCollection<Long> collection, String operation) {
-        Map<String, Object> keyValues = getKeyValues(document);
+        Map<String, Object> keyValues = getKeyValueMap(document);
         String sql = createSelectStatement(keyValues);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -84,7 +84,7 @@ public class PostgresUniqueIndex extends Index<Long> {
         }
     }
 
-    private Map<String, Object> getKeyValues(Document document) {
+    private Map<String, Object> getKeyValueMap(Document document) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (String key : keys()) {
             Object value = Utils.getSubdocumentValue(document, key);
@@ -102,7 +102,7 @@ public class PostgresUniqueIndex extends Index<Long> {
 
     @Override
     public Long remove(Document document) {
-        Map<String, Object> keyValues = getKeyValues(document);
+        Map<String, Object> keyValues = getKeyValueMap(document);
         String sql = createSelectStatement(keyValues);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {

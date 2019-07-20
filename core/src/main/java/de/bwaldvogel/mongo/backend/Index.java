@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,15 +51,27 @@ public abstract class Index<P> {
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    KeyValue getKeyValue(Document document) {
-        return getKeyValue(document, true);
+    List<KeyValue> getKeyValues(Document document) {
+        return getKeyValues(document, true);
     }
 
-    KeyValue getKeyValue(Document document, boolean normalize) {
-        return new KeyValue(keys().stream()
+    List<KeyValue> getKeyValues(Document document, boolean normalize) {
+        KeyValue values = new KeyValue(keys().stream()
             .map(key -> Utils.getSubdocumentValue(document, key))
             .map(normalize ? Utils::normalizeValue : Function.identity())
             .collect(Collectors.toList()));
+
+        if (values.stream().anyMatch(Collection.class::isInstance)) {
+            if (values.size() == 1) {
+                Collection<Object> arrayValues = (Collection<Object>) values.get(0);
+                return arrayValues.stream()
+                    .map(KeyValue::new)
+                    .collect(Collectors.toList());
+            } else {
+                throw new UnsupportedOperationException("Not yet implemented");
+            }
+        }
+        return Collections.singletonList(values);
     }
 
     public abstract void checkAdd(Document document, MongoCollection<P> collection);
@@ -83,8 +97,10 @@ public abstract class Index<P> {
     }
 
     protected boolean nullAwareEqualsKeys(Document oldDocument, Document newDocument) {
-        Object oldKey = getKeyValue(oldDocument);
-        Object newKey = getKeyValue(newDocument);
-        return Utils.nullAwareEquals(oldKey, newKey);
+        List<KeyValue> oldKeyValues = getKeyValues(oldDocument);
+        List<KeyValue> newKeyValues = getKeyValues(newDocument);
+        Assert.hasSize(oldKeyValues, 1);
+        Assert.hasSize(newKeyValues, 1);
+        return Utils.nullAwareEquals(oldKeyValues.get(0), newKeyValues.get(0));
     }
 }

@@ -39,6 +39,19 @@ public class AssertTest {
     }
 
     @Test
+    public void testHasSize() throws Exception {
+        Assert.hasSize(Arrays.asList("a", "b", "c"), 3);
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> Assert.hasSize(Collections.emptySet(), 1))
+            .withMessage("Expected [] to have size 1 but got 0 elements");
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> Assert.hasSize(Collections.emptySet(), 1, () -> "some message"))
+            .withMessage("some message");
+    }
+
+    @Test
     public void testEquals() throws Exception {
         Assert.equals(null, null);
         Assert.equals("a", "a");

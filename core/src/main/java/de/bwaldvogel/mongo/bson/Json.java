@@ -40,9 +40,12 @@ public final class Json {
         }
         if (value instanceof Collection) {
             Collection<?> collection = (Collection<?>) value;
+            if (collection.isEmpty()) {
+                return "[]";
+            }
             return collection.stream()
                 .map(Json::toJsonValue)
-                .collect(Collectors.joining(", ", "[", "]"));
+                .collect(Collectors.joining(", ", "[ ", " ]"));
         }
         if (value instanceof ObjectId) {
             ObjectId objectId = (ObjectId) value;

@@ -148,6 +148,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testInsertAndFindJavaScriptContent();
     }
 
+    @Override
+    public void testMultikeyIndex_insertSimpleArrayValues() throws Exception {
+        assumeStrictTests();
+        super.testMultikeyIndex_insertSimpleArrayValues();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }

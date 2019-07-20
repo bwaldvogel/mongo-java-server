@@ -20,6 +20,17 @@ public class Assert {
         notEmpty(values, () -> "Given collection must not be empty");
     }
 
+    public static void hasSize(Collection<?> values, int expectedSize) {
+        hasSize(values, expectedSize,
+            () -> "Expected " + values + " to have size " + expectedSize + " but got " + values.size() + " elements");
+    }
+
+    public static void hasSize(Collection<?> values, int expectedSize, Supplier<String> messageSupplier) {
+        if (values.size() != expectedSize) {
+            throw new IllegalArgumentException(messageSupplier.get());
+        }
+    }
+
     public static void notEmpty(Collection<?> values, Supplier<String> messageSupplier) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException(messageSupplier.get());
