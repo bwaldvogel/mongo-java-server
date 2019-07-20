@@ -123,6 +123,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         return syncClient.getDatabase("admin");
     }
 
+    private String getCollectionName() {
+        return collection.getNamespace().getCollectionName();
+    }
+
     @Test
     public void testSimpleInsert() throws Exception {
         collection.insertOne(json("_id: 1"));
@@ -3091,6 +3095,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testCompoundUniqueIndices_Subdocument() {
+        collection.createIndex(json("a: 1, 'b.c': 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, a: 'foo', b: 'foo'"));
+        collection.insertOne(json("_id: 3, a: 'bar', b: {c: 1}"));
+        collection.insertOne(json("_id: 4, a: 'bar', b: {c: 2}"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: 'bar', b: {c: 1}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b.c_1 dup key: { : \"bar\", : 1 }");
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/80
     @Test
     public void testCompoundUniqueIndicesWithInQuery() {
@@ -4627,10 +4644,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
 
         Mockito.verify(documentCodec).generateIdIfAbsentFromDocument(Mockito.any());
-    }
-
-    private String getCollectionName() {
-        return collection.getNamespace().getCollectionName();
     }
 
 }
