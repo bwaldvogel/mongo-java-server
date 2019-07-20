@@ -4675,4 +4675,37 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 8, a: [2, 3]"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/69
+    @Test
+    public void testCompoundMultikeyIndex_insertSimpleArrayValues() throws Exception {
+        collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, a: 1"));
+        collection.insertOne(json("_id: 3, a: [2, 3], b: 1"));
+        collection.insertOne(json("_id: 4, a: [4, 5], b: 1"));
+        collection.insertOne(json("_id: 5, a: [1, 2, 3, 4, 5], b: 2"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: [1]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : 1, : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: [6, 2], b: 1")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : 2, : 1 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: ['abc'], b: [1, 2, 3]")),
+            171, "CannotIndexParallelArrays", "cannot index parallel arrays [b] [a]");
+
+        collection.deleteOne(json("_id: 3"));
+        collection.insertOne(json("_id: 6, a: [2, 3], b: 1"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/69
+    @Test
+    public void testCompoundMultikeyIndex_threeKeys() throws Exception {
+        collection.createIndex(json("b: 1, a: 1, c: 1"), new IndexOptions().unique(true));
+
+        assertMongoWriteException(() -> collection.insertOne(json("b: [1, 2, 3], a: ['abc'], c: ['x', 'y']")),
+            171, "CannotIndexParallelArrays", "cannot index parallel arrays [a] [b]");
+    }
+
 }

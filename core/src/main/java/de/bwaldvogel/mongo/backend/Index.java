@@ -2,14 +2,16 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
 public abstract class Index<P> {
@@ -56,22 +58,30 @@ public abstract class Index<P> {
     }
 
     List<KeyValue> getKeyValues(Document document, boolean normalize) {
-        KeyValue values = new KeyValue(keys().stream()
-            .map(key -> Utils.getSubdocumentValue(document, key))
-            .map(normalize ? Utils::normalizeValue : Function.identity())
-            .collect(Collectors.toList()));
-
-        if (values.stream().anyMatch(Collection.class::isInstance)) {
-            if (values.size() == 1) {
-                Collection<Object> arrayValues = (Collection<Object>) values.get(0);
-                return arrayValues.stream()
-                    .map(KeyValue::new)
-                    .collect(Collectors.toList());
-            } else {
-                throw new UnsupportedOperationException("Not yet implemented");
+        Map<String, Object> valuesPerKey = new LinkedHashMap<>();
+        for (String key : keys()) {
+            Object value = Utils.getSubdocumentValue(document, key);
+            if (normalize) {
+                value = Utils.normalizeValue(value);
             }
+            valuesPerKey.put(key, value);
         }
-        return Collections.singletonList(values);
+
+        Map<String, Object> collectionValues = valuesPerKey.entrySet().stream()
+            .filter(entry -> entry.getValue() instanceof Collection)
+            .collect(StreamUtils.toLinkedHashMap());
+
+        if (collectionValues.size() == 1) {
+            @SuppressWarnings("unchecked")
+            Collection<Object> collectionValue = (Collection<Object>) CollectionUtils.getSingleElement(collectionValues.values());
+            return CollectionUtils.multiplyWithOtherElements(valuesPerKey.values(), collectionValue).stream()
+                .map(KeyValue::new)
+                .collect(Collectors.toList());
+        } else if (collectionValues.size() > 1) {
+            throw new CannotIndexParallelArraysError(collectionValues.keySet());
+        } else {
+            return Collections.singletonList(new KeyValue(valuesPerKey.values()));
+        }
     }
 
     public abstract void checkAdd(Document document, MongoCollection<P> collection);

@@ -1,6 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Supplier;
 
 public final class CollectionUtils {
@@ -26,6 +29,25 @@ public final class CollectionUtils {
             throw exceptionSupplier.get();
         }
         return value;
+    }
+
+    static <T> List<List<T>> multiplyWithOtherElements(Collection<T> allValues, Collection<T> collectionValues) {
+        Assert.isTrue(allValues.contains(collectionValues), () -> "Expected " + collectionValues + " to be part of " + allValues);
+        List<List<T>> result = new ArrayList<>();
+        for (T collectionValue : collectionValues) {
+            List<T> values = new ArrayList<>();
+
+            for (T value : allValues) {
+                if (value == collectionValues) {
+                    values.add(collectionValue);
+                } else {
+                    values.add(value);
+                }
+            }
+
+            result.add(values);
+        }
+        return result;
     }
 
 }

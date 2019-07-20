@@ -154,6 +154,18 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testMultikeyIndex_insertSimpleArrayValues();
     }
 
+    @Override
+    public void testCompoundMultikeyIndex_insertSimpleArrayValues() throws Exception {
+        assumeStrictTests();
+        super.testCompoundMultikeyIndex_insertSimpleArrayValues();
+    }
+
+    @Override
+    public void testCompoundMultikeyIndex_threeKeys() throws Exception {
+        assumeStrictTests();
+        super.testCompoundMultikeyIndex_threeKeys();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
