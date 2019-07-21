@@ -149,15 +149,15 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    public void testMultikeyIndex_insertSimpleArrayValues() throws Exception {
+    public void testMultikeyIndex_simpleArrayValues() throws Exception {
         assumeStrictTests();
-        super.testMultikeyIndex_insertSimpleArrayValues();
+        super.testMultikeyIndex_simpleArrayValues();
     }
 
     @Override
-    public void testCompoundMultikeyIndex_insertSimpleArrayValues() throws Exception {
+    public void testCompoundMultikeyIndex_simpleArrayValues() throws Exception {
         assumeStrictTests();
-        super.testCompoundMultikeyIndex_insertSimpleArrayValues();
+        super.testCompoundMultikeyIndex_simpleArrayValues();
     }
 
     @Override

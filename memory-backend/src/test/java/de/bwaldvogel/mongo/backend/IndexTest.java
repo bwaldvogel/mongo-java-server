@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,6 +10,7 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 
 public class IndexTest {
 
@@ -42,14 +44,41 @@ public class IndexTest {
     }
 
     @Test
-    public void testGetKeyValues_ArrayValue() throws Exception {
+    public void testGetKeyValues_multiKey() throws Exception {
         Index<?> index = new MemoryUniqueIndex(Collections.singletonList(new IndexKey("a", true)), false);
 
-        assertThat(index.getKeyValues(new Document("a", Arrays.asList(1, 2, 3))))
+        assertThat(index.getKeyValues(new Document("a", Arrays.asList(1, 2, 3, 2))))
             .containsExactly(
                 new KeyValue(1.0),
                 new KeyValue(2.0),
                 new KeyValue(3.0));
+    }
+
+    @Test
+    public void testGetKeyValues_compoundMultiKey() throws Exception {
+        Index<?> index = new MemoryUniqueIndex(Arrays.asList(
+            new IndexKey("a", true),
+            new IndexKey("b", true),
+            new IndexKey("c", true)
+        ), false);
+
+        assertThat(index.getKeyValues(new Document("b", Arrays.asList(1, 2, 3)).append("c", 20).append("a", "value")))
+            .containsExactly(
+                new KeyValue("value", 1.0, 20.0),
+                new KeyValue("value", 2.0, 20.0),
+                new KeyValue("value", 3.0, 20.0));
+    }
+
+    @Test
+    public void testGetKeyValues_compoundMultiKey_tooManyCollections() throws Exception {
+        Index<?> index = new MemoryUniqueIndex(Arrays.asList(
+            new IndexKey("a", true),
+            new IndexKey("b", true)
+        ), false);
+
+        assertThatExceptionOfType(CannotIndexParallelArraysError.class)
+            .isThrownBy(() -> index.getKeyValues(new Document("a", Arrays.asList(1, 2, 3)).append("b", Arrays.asList("x", "y"))))
+            .withMessage("[Error 171] cannot index parallel arrays [b] [a]");
     }
 
 }

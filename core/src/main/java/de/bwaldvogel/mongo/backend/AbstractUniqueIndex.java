@@ -35,17 +35,21 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     protected abstract P getPosition(KeyValue keyValue);
 
+    private boolean isSparseAndHasNoValueForKeys(Document document) {
+        return isSparse() && hasNoValueForKeys(document);
+    }
+
     private boolean hasNoValueForKeys(Document document) {
         return keys().stream().noneMatch(key -> Utils.hasSubdocumentValue(document, key));
     }
 
     @Override
     public synchronized P remove(Document document) {
-        if (isSparse() && hasNoValueForKeys(document)) {
+        if (isSparseAndHasNoValueForKeys(document)) {
             return null;
         }
 
-        List<KeyValue> keyValues = getKeyValues(document);
+        Set<KeyValue> keyValues = getKeyValues(document);
         Set<P> positions = keyValues.stream()
             .map(this::removeDocument)
             .filter(Objects::nonNull)
@@ -60,7 +64,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     @Override
     public synchronized void checkAdd(Document document, MongoCollection<P> collection) {
-        if (isSparse() && hasNoValueForKeys(document)) {
+        if (isSparseAndHasNoValueForKeys(document)) {
             return;
         }
         for (KeyValue key : getKeyValues(document, false)) {
@@ -74,10 +78,10 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     @Override
     public synchronized void add(Document document, P position, MongoCollection<P> collection) {
         checkAdd(document, collection);
-        if (isSparse() && hasNoValueForKeys(document)) {
+        if (isSparseAndHasNoValueForKeys(document)) {
             return;
         }
-        List<KeyValue> keyValues = getKeyValues(document);
+        Set<KeyValue> keyValues = getKeyValues(document);
         for (KeyValue keyValue : keyValues) {
             boolean added = putKeyPosition(keyValue, position);
             Assert.isTrue(added, () -> "Key " + keyValue + " already exists. Concurrency issue?");
@@ -85,11 +89,28 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection) {
+    public synchronized void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection) {
         if (nullAwareEqualsKeys(oldDocument, newDocument)) {
             return;
         }
-        checkAdd(newDocument, collection);
+        if (isSparseAndHasNoValueForKeys(newDocument)) {
+            return;
+        }
+        P oldPosition = getDocumentPosition(oldDocument);
+        for (KeyValue key : getKeyValues(newDocument, false)) {
+            KeyValue normalizedKey = key.normalized();
+            P position = getPosition(normalizedKey);
+            if (position != null && !position.equals(oldPosition)) {
+                throw new DuplicateKeyError(this, collection, key);
+            }
+        }
+    }
+
+    private P getDocumentPosition(Document oldDocument) {
+        Set<P> positions = getKeyValues(oldDocument).stream()
+            .map(this::getPosition)
+            .collect(StreamUtils.toLinkedHashSet());
+        return CollectionUtils.getSingleElement(positions);
     }
 
     @Override

@@ -53,11 +53,11 @@ public abstract class Index<P> {
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    List<KeyValue> getKeyValues(Document document) {
+    Set<KeyValue> getKeyValues(Document document) {
         return getKeyValues(document, true);
     }
 
-    List<KeyValue> getKeyValues(Document document, boolean normalize) {
+    Set<KeyValue> getKeyValues(Document document, boolean normalize) {
         Map<String, Object> valuesPerKey = new LinkedHashMap<>();
         for (String key : keys()) {
             Object value = Utils.getSubdocumentValue(document, key);
@@ -76,11 +76,11 @@ public abstract class Index<P> {
             Collection<Object> collectionValue = (Collection<Object>) CollectionUtils.getSingleElement(collectionValues.values());
             return CollectionUtils.multiplyWithOtherElements(valuesPerKey.values(), collectionValue).stream()
                 .map(KeyValue::new)
-                .collect(Collectors.toList());
+                .collect(StreamUtils.toLinkedHashSet());
         } else if (collectionValues.size() > 1) {
             throw new CannotIndexParallelArraysError(collectionValues.keySet());
         } else {
-            return Collections.singletonList(new KeyValue(valuesPerKey.values()));
+            return Collections.singleton(new KeyValue(valuesPerKey.values()));
         }
     }
 
@@ -107,10 +107,8 @@ public abstract class Index<P> {
     }
 
     protected boolean nullAwareEqualsKeys(Document oldDocument, Document newDocument) {
-        List<KeyValue> oldKeyValues = getKeyValues(oldDocument);
-        List<KeyValue> newKeyValues = getKeyValues(newDocument);
-        Assert.hasSize(oldKeyValues, 1);
-        Assert.hasSize(newKeyValues, 1);
-        return Utils.nullAwareEquals(oldKeyValues.get(0), newKeyValues.get(0));
+        Set<KeyValue> oldKeyValues = getKeyValues(oldDocument);
+        Set<KeyValue> newKeyValues = getKeyValues(newDocument);
+        return Utils.nullAwareEquals(oldKeyValues, newKeyValues);
     }
 }

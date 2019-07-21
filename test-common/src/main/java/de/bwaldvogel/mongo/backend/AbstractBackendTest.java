@@ -4654,7 +4654,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/69
     @Test
-    public void testMultikeyIndex_insertSimpleArrayValues() throws Exception {
+    public void testMultikeyIndex_simpleArrayValues() throws Exception {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -4679,11 +4679,32 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.deleteOne(json("_id: 3"));
         collection.insertOne(json("_id: 8, a: [2, 3]"));
+
+        assertMongoWriteException(() -> collection.replaceOne(json("_id: 1"), json("_id: 1, a: [3, 4]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : 3 }");
+
+        collection.replaceOne(json("_id: 4"), json("_id: 4, a: ['x', 'y']"));
+        collection.insertOne(json("_id: 9, a: [4, 6]"));
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 9"), json("$push: {a: 2}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : 2 }");
+
+        Document result = collection.findOneAndUpdate(json("_id: 8"), json("$pull: {a: 2}"),
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
+        assertThat(result).isEqualTo(json("_id: 8, a: [3]"));
+
+        result = collection.findOneAndUpdate(json("_id: 9"), json("$push: {a: 2}"),
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
+        assertThat(result).isEqualTo(json("_id: 9, a: [4, 6, 2]"));
+
+        result = collection.findOneAndUpdate(json("_id: 9"), json("$push: {a: 2}"),
+            new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
+        assertThat(result).isEqualTo(json("_id: 9, a: [4, 6, 2, 2]"));
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/69
     @Test
-    public void testCompoundMultikeyIndex_insertSimpleArrayValues() throws Exception {
+    public void testCompoundMultikeyIndex_simpleArrayValues() throws Exception {
         collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -4703,6 +4724,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.deleteOne(json("_id: 3"));
         collection.insertOne(json("_id: 6, a: [2, 3], b: 1"));
+
+        assertMongoWriteException(() -> collection.replaceOne(json("_id: 1"), json("_id: 1, a: [3, 4], b: 1")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : 3, : 1 }");
+
+        collection.replaceOne(json("_id: 4"), json("_id: 4, a: ['x', 'y'], b: 1"));
+        collection.insertOne(json("_id: 7, a: [4, 6], b: 1"));
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/69
