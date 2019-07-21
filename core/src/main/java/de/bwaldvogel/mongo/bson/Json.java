@@ -44,7 +44,7 @@ public final class Json {
                 return "[]";
             }
             return collection.stream()
-                .map(Json::toJsonValue)
+                .map(v -> toJsonValue(v, compactKey, "{ ", " }"))
                 .collect(Collectors.joining(", ", "[ ", " ]"));
         }
         if (value instanceof ObjectId) {

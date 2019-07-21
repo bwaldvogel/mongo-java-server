@@ -228,7 +228,7 @@ public class Utils {
         }
 
         if (value instanceof List<?>) {
-            if (field.matches("\\d+")) {
+            if (isNumeric(field)) {
                 int pos = Integer.parseInt(field);
                 List<?> list = (List<?>) value;
                 if (pos >= 0 && pos < list.size()) {
@@ -237,7 +237,7 @@ public class Utils {
                     return Missing.getInstance();
                 }
             } else {
-                throw new IllegalArgumentException("illegal field: " + field);
+                return Missing.getInstance();
             }
         } else if (value instanceof Document) {
             Document document = (Document) value;
@@ -245,6 +245,10 @@ public class Utils {
         } else {
             return Missing.getInstance();
         }
+    }
+
+    private static boolean isNumeric(String value) {
+        return value.chars().allMatch(Character::isDigit);
     }
 
     static boolean hasSubdocumentValue(Object document, String key) {
@@ -305,7 +309,7 @@ public class Utils {
         }
 
         if (document instanceof List<?>) {
-            if (field.matches("\\d+")) {
+            if (isNumeric(field)) {
                 int pos = Integer.parseInt(field);
                 List<?> list = (List<?>) document;
                 return (pos >= 0 && pos < list.size());
@@ -325,7 +329,12 @@ public class Utils {
 
     private static void setListSafe(Object document, String key, Object obj) {
         if (document instanceof List<?>) {
-            int pos = Integer.parseInt(key);
+            final int pos;
+            try {
+                pos = Integer.parseInt(key);
+            } catch (NumberFormatException e) {
+                throw new PathNotViableException("Cannot create field '" + key + "' in " + document);
+            }
             @SuppressWarnings("unchecked")
             List<Object> list = ((List<Object>) document);
             while (list.size() <= pos) {
@@ -387,7 +396,12 @@ public class Utils {
         String subKey = Utils.getSubkey(pathFragments, matchPos);
         Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document || subObject instanceof List<?>) {
-            changeSubdocumentValue(subObject, subKey, newValue, matchPos);
+            try {
+                changeSubdocumentValue(subObject, subKey, newValue, matchPos);
+            } catch (PathNotViableException e) {
+                String element = new Document(mainKey, subObject).toString(true);
+                throw new PathNotViableException("Cannot create field '" + subKey + "' in element " + element);
+            }
         } else if (!Missing.isNullOrMissing(subObject)) {
             String element = new Document(mainKey, subObject).toString(true);
             throw new PathNotViableException("Cannot create field '" + subKey + "' in element " + element);

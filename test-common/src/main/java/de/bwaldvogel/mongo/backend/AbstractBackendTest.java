@@ -2171,6 +2171,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testUpdateSet_arrayOfDocuments() throws Exception {
+        collection.insertOne(json("_id: 1, foo: [{bar: 1}, {bar: 2}]"));
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$set: {'foo.bar': 3}")),
+            28, "PathNotViable", "Cannot create field 'bar' in element {foo: [ { bar: 1 }, { bar: 2 } ]}");
+    }
+
+    @Test
     public void testUpdateSetOnInsert() throws Exception {
         Document object = json("_id: 1");
         collection.updateOne(object, json("$set: {b: 3}, $setOnInsert: {a: 3}"), new UpdateOptions().upsert(true));
