@@ -25,7 +25,9 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     protected abstract P removeDocument(KeyValue keyValue);
 
-    protected abstract boolean containsKey(KeyValue keyValue);
+    protected boolean containsKey(KeyValue keyValue) {
+        return getPosition(keyValue) != null;
+    }
 
     protected abstract boolean putKeyPosition(KeyValue keyValue, P position);
 

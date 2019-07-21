@@ -25,11 +25,6 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
     }
 
     @Override
-    protected boolean containsKey(KeyValue keyValue) {
-        return mvMap.containsKey(keyValue);
-    }
-
-    @Override
     protected boolean putKeyPosition(KeyValue keyValue, Object position) {
         Object oldValue = mvMap.putIfAbsent(keyValue, Missing.ofNullable(position));
         return oldValue == null;

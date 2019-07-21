@@ -33,11 +33,6 @@ public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
     }
 
     @Override
-    protected boolean containsKey(KeyValue keyValue) {
-        return index.containsKey(keyValue);
-    }
-
-    @Override
     protected boolean putKeyPosition(KeyValue keyValue, Integer position) {
         Integer oldValue = index.putIfAbsent(keyValue, position);
         return oldValue == null;
