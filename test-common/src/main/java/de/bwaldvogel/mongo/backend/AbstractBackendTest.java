@@ -508,6 +508,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testDistinct_documentArray() throws Exception {
+        collection.insertOne(json("_id: 1, n: null"));
+        collection.insertOne(json("_id: 2, n: [{item: 1}, {item: 2}]"));
+        collection.insertOne(json("_id: 3, n: {item: 3}"));
+        collection.insertOne(json("_id: 4, n: {item: [4, 5]}"));
+        collection.insertOne(json("_id: 5, n: {}"));
+
+        assertThat(toArray(collection.distinct("n.item", Integer.class)))
+            .containsExactly(1, 2, 3, 4, 5);
+    }
+
+    @Test
     public void testInsertQueryAndSortBinaryTypes() throws Exception {
         byte[] highBytes = new byte[16];
         for (int i = 0; i < highBytes.length; i++) {

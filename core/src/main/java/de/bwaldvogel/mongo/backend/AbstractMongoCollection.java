@@ -373,7 +373,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Set<Object> values = new LinkedTreeSet<>();
 
         for (Document document : queryDocuments(filter, null, 0, 0)) {
-            Object value = Utils.getSubdocumentValue(document, key);
+            Object value = Utils.getSubdocumentValueCollectionAware(document, key);
             if (!(value instanceof Missing)) {
                 if (value instanceof Collection) {
                     values.addAll((Collection<?>) value);
