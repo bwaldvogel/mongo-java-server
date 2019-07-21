@@ -235,13 +235,17 @@ class FieldUpdates {
             throw new MongoServerError(10143, modifier + " requires an array argument but was given a " + describeType(value));
         }
 
-        if (popValue == null) {
-            throw new FailedToParseException("Expected a number in: " + key + ": null");
+        if (!(popValue instanceof Number)) {
+            throw new FailedToParseException("Expected a number in: " + key + ": " + Json.toJsonValue(popValue));
         }
+        Object normalizedValue = Utils.normalizeValue(popValue);
+        Assert.notNull(normalizedValue);
+        if (!Utils.nullAwareEquals(normalizedValue, 1) && !Utils.nullAwareEquals(normalizedValue, -1)) {
+            throw new FailedToParseException("$pop expects 1 or -1, found: " + Json.toJsonValue(popValue));
+        }
+
         if (!list.isEmpty()) {
-            Object normalizedValue = Utils.normalizeValue(popValue);
-            Assert.notNull(normalizedValue);
-            if (normalizedValue.equals(Double.valueOf(-1.0))) {
+            if (Utils.nullAwareEquals(normalizedValue, -1)) {
                 list.remove(0);
             } else {
                 list.remove(list.size() - 1);

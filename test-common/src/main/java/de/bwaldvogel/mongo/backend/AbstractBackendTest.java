@@ -2396,7 +2396,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(object, json("$set: {'foo.bar': [1, 2, 3]}"));
         assertThat(collection.find(object).first()).isEqualTo(json("_id: 1, foo: {bar: [1, 2, 3]}"));
 
-        collection.updateOne(object, json("$pop: {'foo.bar': 1}"));
+        collection.updateOne(object, json("$pop: {'foo.bar': 1.0}"));
         assertThat(collection.find(object).first()).isEqualTo(json("_id: 1, foo: {bar: [1, 2]}"));
 
         collection.updateOne(object, json("$pop: {'foo.bar': -1}"));
@@ -2404,6 +2404,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.updateOne(object, json("$pop: {'foo.bar': null}")),
             9, "FailedToParse", "Expected a number in: foo.bar: null");
+
+        assertMongoWriteException(() -> collection.updateOne(object, json("$pop: {'foo.bar': 'x'}")),
+            9, "FailedToParse", "Expected a number in: foo.bar: \"x\"");
+
+        assertMongoWriteException(() -> collection.updateOne(object, json("$pop: {'foo.bar': 2}")),
+            9, "FailedToParse", "$pop expects 1 or -1, found: 2");
     }
 
     @Test
