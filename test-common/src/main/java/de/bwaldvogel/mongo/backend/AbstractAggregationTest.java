@@ -882,6 +882,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithUnwind_subdocumentArray() throws Exception {
+        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$items.sizes'}"));
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+        collection.insertOne(json("_id: 1, items: [{sizes: ['S', 'M', 'L']}]"));
+        collection.insertOne(json("_id: 2, items: [{sizes: 'M'}]"));
+        collection.insertOne(json("_id: 3, items: {sizes: ['XL', 'S']}"));
+        collection.insertOne(json("_id: 4, items: [{sizes: ['M', 'L']}]"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 3, items: {sizes: 'XL'}"),
+                json("_id: 3, items: {sizes: 'S'}")
+            );
+    }
+
+    @Test
     public void testAggregateWithLookup() {
         MongoCollection<Document> authorsCollection = db.getCollection("authors");
         authorsCollection.insertOne(json("_id: 1, name: 'Uncle Bob'"));
