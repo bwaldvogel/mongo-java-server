@@ -17,8 +17,8 @@ public class DocumentComparator implements Comparator<Document> {
     @Override
     public int compare(Document document1, Document document2) {
         for (String sortKey : orderBy.keySet()) {
-            Object value1 = Utils.getSubdocumentValue(document1, sortKey);
-            Object value2 = Utils.getSubdocumentValue(document2, sortKey);
+            Object value1 = Utils.getSubdocumentValueCollectionAware(document1, sortKey);
+            Object value2 = Utils.getSubdocumentValueCollectionAware(document2, sortKey);
 
             final ValueComparator comparator;
             if (((Number) orderBy.get(sortKey)).intValue() > 0) {

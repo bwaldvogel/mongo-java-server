@@ -161,9 +161,27 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     @Override
+    public void testCompoundMultikeyIndex_documents() throws Exception {
+        assumeStrictTests();
+        super.testCompoundMultikeyIndex_documents();
+    }
+
+    @Override
+    public void testCompoundMultikeyIndex_deepDocuments() throws Exception {
+        assumeStrictTests();
+        super.testCompoundMultikeyIndex_deepDocuments();
+    }
+
+    @Override
     public void testCompoundMultikeyIndex_threeKeys() throws Exception {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_threeKeys();
+    }
+
+    @Override
+    public void testEmbeddedSort_arrayOfDocuments() {
+        assumeStrictTests();
+        super.testEmbeddedSort_arrayOfDocuments();
     }
 
     private void assumeStrictTests() {

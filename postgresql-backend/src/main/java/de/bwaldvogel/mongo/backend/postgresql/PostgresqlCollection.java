@@ -176,8 +176,6 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
             return querySingleValue(stmt);
         } catch (SQLException e) {
             throw new MongoServerException("failed to insert " + document, e);
-        } catch (IOException e) {
-            throw new MongoServerException("failed to serialize " + document, e);
         }
     }
 
@@ -224,7 +222,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
                     }
                     return Long.valueOf(id);
                 }
-            } catch (SQLException | IOException e) {
+            } catch (SQLException e) {
                 throw new MongoServerException("failed to find document position of " + document, e);
             }
         } else {
@@ -241,7 +239,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
             Object idValue = document.get(idField);
             stmt.setString(2, PostgresqlUtils.toQueryValue(idValue));
             stmt.executeUpdate();
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             throw new MongoServerException("failed to update document in " + this, e);
         }
     }

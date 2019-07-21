@@ -74,26 +74,53 @@ public class Utils {
         }
     }
 
-    public static Object getSubdocumentValue(Document document, String key) {
+    private static void validateKey(String key) {
         if (key.endsWith(PATH_DELIMITER)) {
             throw new MongoServerError(40353, "FieldPath must not end with a '.'.");
         }
         if (key.startsWith(PATH_DELIMITER) || key.contains("..")) {
             throw new MongoServerError(15998, "FieldPath field names may not be empty strings.");
         }
+    }
+
+    public static Object getSubdocumentValue(Document document, String key) {
+        return getSubdocumentValue(document, key, false);
+    }
+
+    public static Object getSubdocumentValueCollectionAware(Document document, String key) {
+        return getSubdocumentValue(document, key, true);
+    }
+
+    private static Object getSubdocumentValue(Document document, String key, boolean handleCollections) {
+        validateKey(key);
         List<String> pathFragments = splitPath(key);
-        String mainKey = pathFragments.get(0);
         if (pathFragments.size() == 1) {
-            return Utils.getFieldValueListSafe(document, mainKey);
-        } else {
-            String subKey = joinTail(pathFragments);
-            Assert.doesNotStartWith(subKey, "$.");
-            Object subObject = Utils.getFieldValueListSafe(document, mainKey);
-            if (subObject instanceof Document) {
-                return getSubdocumentValue((Document) subObject, subKey);
-            } else {
-                return Missing.getInstance();
+            return Utils.getFieldValueListSafe(document, CollectionUtils.getSingleElement(pathFragments));
+        }
+        String mainKey = pathFragments.get(0);
+        String subKey = joinTail(pathFragments);
+        Assert.doesNotStartWith(subKey, "$.");
+        Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+        if (subObject instanceof Document) {
+            return getSubdocumentValue((Document) subObject, subKey, handleCollections);
+        } else if (handleCollections && subObject instanceof Collection) {
+            Collection<?> values = (Collection<?>) subObject;
+            List<Object> result = new ArrayList<>();
+            for (Object o : values) {
+                if (o instanceof Document) {
+                    Object subdocumentValue = getSubdocumentValue((Document) o, subKey, handleCollections);
+                    if (subdocumentValue instanceof Collection) {
+                        result.addAll((Collection<?>) subdocumentValue);
+                    } else {
+                        result.add(subdocumentValue);
+                    }
+                } else {
+                    result.add(Missing.getInstance());
+                }
             }
+            return result;
+        } else {
+            return Missing.getInstance();
         }
     }
 

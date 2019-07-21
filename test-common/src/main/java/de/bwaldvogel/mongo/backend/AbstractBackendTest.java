@@ -693,6 +693,29 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testEmbeddedSort_arrayOfDocuments() {
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, counts: {done: 1}"));
+        collection.insertOne(json("_id: 3, counts: {done: 2}"));
+        collection.insertOne(json("_id: 4, counts: [{done: 2}, {done: 1}]"));
+        collection.insertOne(json("_id: 5, counts: [{done: 4}, {done: 2}]"));
+        collection.insertOne(json("_id: 6, counts: {done: [3]}"));
+        collection.insertOne(json("_id: 7, counts: {done: [1, 2]}"));
+        collection.insertOne(json("_id: 8, counts: [1, 2]"));
+
+        List<Document> objs = toArray(collection.find(json("")).sort(json("\"counts.done\": -1, _id: 1")));
+        assertThat(objs).containsExactly(
+            json("_id: 5, counts: [{done: 4}, {done: 2}]"),
+            json("_id: 6, counts: {done: [3]}"),
+            json("_id: 3, counts: {done: 2}"),
+            json("_id: 4, counts: [{done: 2}, {done: 1}]"),
+            json("_id: 7, counts: {done: [1, 2]}"),
+            json("_id: 2, counts: {done: 1}"),
+            json("_id: 1"),
+            json("_id: 8, counts: [1, 2]"));
+    }
+
+    @Test
     public void testFindAndModifyCommandEmpty() throws Exception {
         Document cmd = new Document("findandmodify", getCollectionName());
 
@@ -4660,7 +4683,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Mockito.verify(documentCodec).generateIdIfAbsentFromDocument(Mockito.any());
     }
 
-    // https://github.com/bwaldvogel/mongo-java-server/issues/69
     @Test
     public void testMultikeyIndex_simpleArrayValues() throws Exception {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
@@ -4668,7 +4690,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2, a: 1"));
         collection.insertOne(json("_id: 3, a: [2, 3]"));
-        collection.insertOne(json("_id: 4, a: [4, 5]"));
+        collection.insertOne(json("_id: 4, a: [4, 5, 4]"));
         collection.insertOne(json("_id: 5, a: [[1, 2], [3, 4]]"));
         collection.insertOne(json("_id: 6, a: [[1, 3], [4, 5]]"));
         collection.insertOne(json("_id: 7, a: [[2, 1], [4, 3]]"));
@@ -4710,7 +4732,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result).isEqualTo(json("_id: 9, a: [4, 6, 2, 2]"));
     }
 
-    // https://github.com/bwaldvogel/mongo-java-server/issues/69
     @Test
     public void testCompoundMultikeyIndex_simpleArrayValues() throws Exception {
         collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true));
@@ -4740,13 +4761,67 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 7, a: [4, 6], b: 1"));
     }
 
-    // https://github.com/bwaldvogel/mongo-java-server/issues/69
     @Test
     public void testCompoundMultikeyIndex_threeKeys() throws Exception {
         collection.createIndex(json("b: 1, a: 1, c: 1"), new IndexOptions().unique(true));
 
         assertMongoWriteException(() -> collection.insertOne(json("b: [1, 2, 3], a: ['abc'], c: ['x', 'y']")),
             171, "CannotIndexParallelArrays", "cannot index parallel arrays [a] [b]");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/69
+    @Test
+    public void testCompoundMultikeyIndex_documents() throws Exception {
+        collection.createIndex(json("item: 1, 'stock.size': 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, item: 'abc'"));
+        collection.insertOne(json("_id: 3, item: 'abc', stock: [{size: 'S', color: 'red'}]"));
+        collection.insertOne(json("_id: 4, item: 'abc', stock: [{size: 'L', color: 'black'}]"));
+        collection.insertOne(json("_id: 5, item: 'abc', stock: [{size: 'M'}, {size: 'XL'}]"));
+        collection.insertOne(json("_id: 6, item: 'xyz', stock: [{size: 'S'}, {size: 'M'}]"));
+        collection.insertOne(json("_id: 7, item: 'xyz', stock: [1, 2, 3]"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("item: 'abc'")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{color: 'black'}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{size: 'S'}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : \"S\" }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{size: 'XL'}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : \"XL\" }");
+    }
+
+    @Test
+    public void testCompoundMultikeyIndex_deepDocuments() throws Exception {
+        collection.createIndex(json("'a.b.c': 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, a: {b: {c: 1}}"));
+        collection.insertOne(json("_id: 3, a: {b: {c: 2}}"));
+        collection.insertOne(json("_id: 4, a: [{b: {c: 3}}, {b: {c: 4}}]"));
+        collection.insertOne(json("_id: 5, a: [{b: [{c: 5}, {c: 6}]}, {b: [{c: 7}, {c: 8}]}]"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: 1}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: [{b: 1}, {b: 2}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1}}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: [1, 2]}}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 4}}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 4 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 8}}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 8 }");
     }
 
 }

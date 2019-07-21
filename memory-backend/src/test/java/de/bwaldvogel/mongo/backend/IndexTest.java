@@ -81,4 +81,19 @@ public class IndexTest {
             .withMessage("[Error 171] cannot index parallel arrays [b] [a]");
     }
 
+    @Test
+    public void testGetKeyValues_multiKey_document() throws Exception {
+        Index<?> index = new MemoryUniqueIndex(Collections.singletonList(new IndexKey("a.b", true)), false);
+
+        assertThat(index.getKeyValues(new Document("a", Arrays.asList(new Document("b", 1), new Document("b", 2)))))
+            .containsExactly(
+                new KeyValue(1.0),
+                new KeyValue(2.0));
+
+        assertThat(index.getKeyValues(new Document("a", Arrays.asList(new Document("c", 1), new Document("b", 2)))))
+            .containsExactly(
+                new KeyValue((Object) null),
+                new KeyValue(2.0));
+    }
+
 }

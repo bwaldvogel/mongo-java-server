@@ -2,12 +2,13 @@ package de.bwaldvogel.mongo.backend.postgresql;
 
 import static de.bwaldvogel.mongo.backend.postgresql.JsonConverter.toJson;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
 
 public final class PostgresqlUtils {
@@ -37,7 +38,7 @@ public final class PostgresqlUtils {
         return "CASE WHEN (" + dataKey + ")::numeric = -0.0 THEN '0' ELSE " + dataKey + " END";
     }
 
-    public static String toQueryValue(Object queryValue) throws IOException {
+    public static String toQueryValue(Object queryValue) {
         Objects.requireNonNull(queryValue);
         if (queryValue instanceof String) {
             return (String) queryValue;
@@ -52,13 +53,16 @@ public final class PostgresqlUtils {
         } else if (queryValue instanceof Map) {
             return toJson(queryValue);
         } else if (queryValue instanceof List) {
-            return toJson(queryValue);
+            List<?> values = ((List<?>) queryValue).stream()
+                .map(value -> value instanceof Missing ? null : value)
+                .collect(Collectors.toList());
+            return toJson(values);
         } else {
             return toJsonWithClass(queryValue);
         }
     }
 
-    private static String toJsonWithClass(Object queryValue) throws IOException {
+    private static String toJsonWithClass(Object queryValue) {
         String valueAsJson = toJson(queryValue);
         return valueAsJson.replaceFirst("\\{", "\\{\"@class\":\"" + queryValue.getClass().getName() + "\",");
     }

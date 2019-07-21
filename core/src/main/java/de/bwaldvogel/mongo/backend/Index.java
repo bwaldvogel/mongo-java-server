@@ -60,7 +60,7 @@ public abstract class Index<P> {
     Set<KeyValue> getKeyValues(Document document, boolean normalize) {
         Map<String, Object> valuesPerKey = new LinkedHashMap<>();
         for (String key : keys()) {
-            Object value = Utils.getSubdocumentValue(document, key);
+            Object value = Utils.getSubdocumentValueCollectionAware(document, key);
             if (normalize) {
                 value = Utils.normalizeValue(value);
             }

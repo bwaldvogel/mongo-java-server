@@ -9,6 +9,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectMapper.DefaultTyping;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.exception.MongoServerException;
 
 final class JsonConverter {
 
@@ -46,9 +48,13 @@ final class JsonConverter {
         return objectMapper;
     }
 
-    static String toJson(Object object) throws IOException {
+    static String toJson(Object object) {
         ObjectWriter writer = objectMapper.writer();
-        return writer.writeValueAsString(object);
+        try {
+            return writer.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            throw new MongoServerException("Failed to serialize value to JSON", e);
+        }
     }
 
     static Document fromJson(String json) throws IOException {

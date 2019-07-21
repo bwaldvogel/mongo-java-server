@@ -87,7 +87,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     private Map<String, Object> getKeyValueMap(Document document) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (String key : keys()) {
-            Object value = Utils.getSubdocumentValue(document, key);
+            Object value = Utils.getSubdocumentValueCollectionAware(document, key);
             if (value instanceof Missing) {
                 value = null;
             }
