@@ -89,7 +89,7 @@ public class ArrayFilters {
         return new ArrayFilters(Collections.emptyMap());
     }
 
-    public boolean isEmpty() {
+    private boolean isEmpty() {
         return values.isEmpty();
     }
 
@@ -99,6 +99,9 @@ public class ArrayFilters {
     }
 
     private Object getArrayFilterQuery(String key) {
+        if (isPositionalAll(key)) {
+            return new Document(QueryOperator.EXISTS.getValue(), true);
+        }
         return values.get(extractKeyFromPositionalOperator(key));
     }
 
@@ -123,47 +126,61 @@ public class ArrayFilters {
         }
 
         List<String> pathFragments = Utils.splitPath(key);
-        String path = pathFragments.get(0);
-        return calculateKeys(document, pathFragments, path);
+        return calculateKeys(document, pathFragments, "");
     }
 
-    private List<String> calculateKeys(Document document, List<String> pathFragments, String path) {
-        String firstFragment = pathFragments.get(0);
-        Object subObject = Utils.getSubdocumentValue(document, firstFragment);
-        if (subObject instanceof Missing) {
-            throw new BadValueException("The path '" + path + "' must exist in the document in order to apply array updates.");
+    private List<String> calculateKeys(Object object, List<String> pathFragments, String path) {
+        if (pathFragments.isEmpty()) {
+            return Collections.singletonList(path);
         }
+        String fragment = pathFragments.get(0);
 
-        String nextFragment = pathFragments.get(1);
-        if (isPositionalOperator(nextFragment)) {
-            if (!(subObject instanceof List)) {
-                throw new BadValueException("Cannot apply array updates to non-array element " + firstFragment + ": " + Json.toJsonValue(subObject));
-            }
-            List<?> values = (List<?>) subObject;
-            Object arrayFilterQuery = getArrayFilterQuery(nextFragment);
-            QueryMatcher queryMatcher = new DefaultQueryMatcher();
-            List<String> keys = new ArrayList<>();
-            for (int i = 0; i < values.size(); i++) {
-                if (queryMatcher.matchesValue(arrayFilterQuery, values.get(i))) {
-                    List<String> remaining = pathFragments.subList(2, pathFragments.size());
-                    keys.add(Utils.joinPath(path, String.valueOf(i), remaining));
-                }
-            }
-
-            return keys;
-        } else {
-            String nextPath = Utils.joinPath(path, nextFragment);
-            if (!(subObject instanceof Document)) {
-                throw new BadValueException("The path '" + nextPath + "' must exist in the document in order to apply array updates.");
-            }
-            Document subDocument = (Document) subObject;
+        if (!isPositionalOperator(fragment)) {
+            String nextPath = Utils.joinPath(path, fragment);
             List<String> tail = Utils.getTail(pathFragments);
-            return calculateKeys(subDocument, tail, nextPath);
+            Object subObject = Utils.getFieldValueListSafe(object, fragment);
+            return calculateKeys(subObject, tail, nextPath);
         }
+
+        if (object instanceof Missing) {
+            throw new BadValueException("The path '" + path + "' must exist in the document in order to apply array updates.");
+        } else if (!(object instanceof List)) {
+            String previousKey = Utils.getLastFragment(path);
+            String element = Json.toJsonValue(object, true, "{ ", " }");
+            throw new BadValueException("Cannot apply array updates to non-array element " + previousKey + ": " + element);
+        }
+
+        List<?> values = (List<?>) object;
+        Object arrayFilterQuery = getArrayFilterQuery(fragment);
+        QueryMatcher queryMatcher = new DefaultQueryMatcher();
+        List<String> keys = new ArrayList<>();
+        for (int i = 0; i < values.size(); i++) {
+            Object value = values.get(i);
+            if (queryMatcher.matchesValue(arrayFilterQuery, value)) {
+                List<String> remaining = Utils.getTail(pathFragments);
+                String nextPath = Utils.joinPath(path, String.valueOf(i));
+                List<String> subKeys = calculateKeys(value, remaining, nextPath);
+                keys.addAll(subKeys);
+            }
+        }
+
+        return keys;
+    }
+
+    private static boolean isPositionalAll(String key) {
+        return key.equals("$[]");
     }
 
     Map<String, Object> getValues() {
         return values;
+    }
+
+    boolean canHandle(String key) {
+        if (!isEmpty()) {
+            return true;
+        } else {
+            return Utils.splitPath(key).stream().anyMatch(ArrayFilters::isPositionalAll);
+        }
     }
 
 }

@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
@@ -354,16 +355,18 @@ public class Utils {
         result.put("ok", 1.0);
     }
 
-    private static void setListSafe(Object document, String key, Object obj) {
+    private static void setListSafe(Object document, String key, String previousKey, Object obj) {
         if (document instanceof List<?>) {
+            @SuppressWarnings("unchecked")
+            List<Object> list = ((List<Object>) document);
             final int pos;
             try {
                 pos = Integer.parseInt(key);
             } catch (NumberFormatException e) {
-                throw new PathNotViableException("Cannot create field '" + key + "' in " + document);
+                String element = new Document(previousKey, document).toString(true);
+                throw new PathNotViableException("Cannot create field '" + key + "' in element " + element);
             }
-            @SuppressWarnings("unchecked")
-            List<Object> list = ((List<Object>) document);
+
             while (list.size() <= pos) {
                 list.add(null);
             }
@@ -414,28 +417,28 @@ public class Utils {
     }
 
     static void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos) {
+        changeSubdocumentValue(document, key, newValue, null, matchPos);
+    }
+
+    private static void changeSubdocumentValue(Object document, String key, Object newValue, String previousKey, AtomicReference<Integer> matchPos) {
         List<String> pathFragments = splitPath(key);
         String mainKey = pathFragments.get(0);
         if (pathFragments.size() == 1) {
-            setListSafe(document, key, newValue);
+            setListSafe(document, key, previousKey, newValue);
             return;
         }
         String subKey = Utils.getSubkey(pathFragments, matchPos);
         Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document || subObject instanceof List<?>) {
-            try {
-                changeSubdocumentValue(subObject, subKey, newValue, matchPos);
-            } catch (PathNotViableException e) {
-                String element = new Document(mainKey, subObject).toString(true);
-                throw new PathNotViableException("Cannot create field '" + subKey + "' in element " + element);
-            }
+            changeSubdocumentValue(subObject, subKey, newValue, mainKey, matchPos);
         } else if (!Missing.isNullOrMissing(subObject)) {
             String element = new Document(mainKey, subObject).toString(true);
-            throw new PathNotViableException("Cannot create field '" + subKey + "' in element " + element);
+            String subKeyFirst = Utils.splitPath(subKey).get(0);
+            throw new PathNotViableException("Cannot create field '" + subKeyFirst + "' in element " + element);
         } else {
             Document obj = new Document();
-            changeSubdocumentValue(obj, subKey, newValue, matchPos);
-            setListSafe(document, mainKey, obj);
+            changeSubdocumentValue(obj, subKey, newValue, mainKey, matchPos);
+            setListSafe(document, mainKey, previousKey, obj);
         }
     }
 
@@ -516,16 +519,11 @@ public class Utils {
         return response;
     }
 
-    static String joinPath(String first, String second, List<String> rest) {
-        List<String> fragments = new ArrayList<>();
-        fragments.add(first);
-        fragments.add(second);
-        fragments.addAll(rest);
-        return joinPath(fragments);
-    }
 
     static String joinPath(String... fragments) {
-        return joinPath(Arrays.asList(fragments));
+        return Stream.of(fragments)
+            .filter(fragment -> !fragment.isEmpty())
+            .collect(Collectors.joining(PATH_DELIMITER));
     }
 
     public static String joinTail(List<String> pathFragments) {
@@ -563,6 +561,11 @@ public class Utils {
             return null;
         }
         return joinPath(commonFragments);
+    }
+
+    static String getLastFragment(String path) {
+        List<String> fragments = splitPath(path);
+        return fragments.get(fragments.size() - 1);
     }
 
 }

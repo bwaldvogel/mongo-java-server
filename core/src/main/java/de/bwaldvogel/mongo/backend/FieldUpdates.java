@@ -50,13 +50,13 @@ class FieldUpdates {
     void apply(Document change, String modifier) {
         for (String key : change.keySet()) {
             Object value = change.get(key);
-            if (arrayFilters.isEmpty()) {
-                apply(change, modifier, key, value);
-            } else {
+            if (arrayFilters.canHandle(key)) {
                 List<String> arrayKeys = arrayFilters.calculateKeys(document, key);
                 for (String arrayKey : arrayKeys) {
                     apply(change, modifier, arrayKey, value);
                 }
+            } else {
+                apply(change, modifier, key, value);
             }
         }
 
@@ -263,8 +263,9 @@ class FieldUpdates {
         } else if (value instanceof Number) {
             number = (Number) value;
         } else {
+            String lastKey = Utils.getLastFragment(key);
             throw new TypeMismatchException("Cannot apply " + updateOperator.getValue() + " to a value of non-numeric type." +
-                " {" + ID_FIELD + ": " + Json.toJsonValue(document.get(ID_FIELD)) + "} has the field '" + key + "'" +
+                " {" + ID_FIELD + ": " + Json.toJsonValue(document.get(ID_FIELD)) + "} has the field '" + lastKey + "'" +
                 " of non-numeric type " + describeType(value));
         }
 

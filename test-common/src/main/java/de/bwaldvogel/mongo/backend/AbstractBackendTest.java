@@ -1103,6 +1103,44 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testFindOneAndUpdate_IllegalArrayFiltersPaths() {
+        collection.insertOne(json("_id: 1, grades: 'abc', a: {b: [1, 2, 3]}"));
+        collection.insertOne(json("_id: 2, grades: 'abc', a: {b: [{c: 1}, {c: 2}, {c: 3}]}"));
+        collection.insertOne(json("_id: 3, grades: 'abc', a: {b: [[[1, 2], [3, 4]]]}"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'a.b.$[x].c': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 1}")))))
+            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {1: 2}");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'a.b.$[x].c.d': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 1}")))))
+            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {1: 2}");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 2"),
+                json("$set: {'a.b.$[].c.$[]': 'abc'}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element c: 1");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 3"),
+                json("$set: {'a.b.$[].0.c': 'abc'}")))
+            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: [ 1, 2 ]}");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 3"),
+                json("$set: {'a.b.$[].0.$[].c': 'abc'}")))
+            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: 1}");    }
+
+    @Test
     public void testFindAndRemoveFromEmbeddedList() {
         collection.insertOne(json("_id: 1, a: [1]"));
         Document result = collection.findOneAndDelete(json("_id: 1"));
@@ -4834,6 +4872,166 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 8}}")),
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 8 }");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/82
+    @Test
+    public void testUpdateArrayWithPositionalAll() {
+        collection.insertOne(json("_id: 1, grades: [95, 102, 90, 150]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$inc: {'grades.$[]': -10}"));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [85, 92, 80, 140]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$set: {'grades.$[]': 'abc'}"));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: ['abc', 'abc', 'abc', 'abc']"));
+    }
+
+    @Test
+    public void testUpdateArrayWithPositionalAll_NullValue() {
+        collection.insertOne(json("_id: 1, grades: [1, 2, null, 3]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$set: {'grades.$[]': 'abc'}"));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: ['abc', 'abc', 'abc', 'abc']"));
+    }
+
+    @Test
+    public void testUpdateArrayWithPositionalAllAndArrayFilter() {
+        collection.insertOne(json("_id: 1, grades: [{x: [1, 2, 3]}, {x: [3, 4, 5]}, {x: [1, 2, 3]}]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$inc: {'grades.$[].x.$[element]': 1}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 3}"))));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [{x: [1, 2, 4]}, {x: [4, 5, 6]}, {x: [1, 2, 4]}]"));
+    }
+
+    @Test
+    public void testUpdateArrayOfDocumentsWithPositionalAll() {
+        collection.insertOne(json("_id: 1, grades: [{value: 20}, {value: 30}, {value: 40}]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$inc: {'grades.$[].value': 10}"));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [{value: 30}, {value: 40}, {value: 50}]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$set: {'grades.$[].value': 10}"));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [{value: 10}, {value: 10}, {value: 10}]"));
+    }
+
+    @Test
+    public void testIllegalUpdateWithPositionalAll() {
+        collection.insertOne(json("_id: 1, a: {b: [1, 2, 3]}"));
+        collection.insertOne(json("_id: 2, a: {b: 5}"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'a.$[]': 'abc'}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element a: { b: [ 1, 2, 3 ] }");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 2"), json("$set: {'a.b.$[]': 'abc'}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element b: 5");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'a.b.$[].c': 'abc'}")))
+            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: 1}");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/82
+    @Test
+    public void testUpsertWithPositionalAll() throws Exception {
+        Document result = collection.findOneAndUpdate(json("_id: 1, a: [5, 8]"), json("$set: {'a.$[]': 1}"),
+            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
+
+        assertThat(result).isEqualTo(json("_id: 1, a: [1, 1]"));
+    }
+
+    @Test
+    public void testUpdateWithMultipleArrayFiltersInOnePath() throws Exception {
+        collection.insertOne(json("_id: 1, grades: [{value: 10, x: [1, 2]}, {value: 20, x: [3, 4]}]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$set: {'grades.$[element].x.$[]': 'abc'}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'element.value': {$gt: 10}"))));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [{value: 10, x: [1, 2]}, {value: 20, x: ['abc', 'abc']}]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$set: {'grades.0.x.$[element]': 'abc'}"),
+            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'element': {$gt: 1}"))));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [{value: 10, x: [1, 'abc']}, {value: 20, x: ['abc', 'abc']}]"));
+    }
+
+    @Test
+    public void testUpdateArrayWithMultiplePositionalAll() {
+        collection.insertOne(json("_id: 1, grades: [[1, 2], [3, 4]]"));
+        collection.insertOne(json("_id: 2, grades: [{c: [1, 2]}, {c: [3, 4]}]"));
+        collection.insertOne(json("_id: 3, grades: [{c: [1, 2]}, {c: [3, 4]}, {d: [5, 6]}]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$inc: {'grades.$[].$[]': 1}"));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [[2, 3], [4, 5]]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 2"),
+            json("$inc: {'grades.$[].c.$[]': 1}"));
+
+        assertThat(collection.find(json("_id: 2")).first())
+            .isEqualTo(json("_id: 2, grades: [{c: [2, 3]}, {c: [4, 5]}]"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 3"), json("$inc: {'grades.$[].c.$[]': 1}")))
+            .withMessageContaining("Command failed with error 2 (BadValue): 'The path 'grades.2.c' must exist in the document in order to apply array updates.");
+    }
+
+    @Test
+    public void testUpdateArrayWithMultiplePositionalAll_Simple() {
+        collection.insertOne(json("_id: 1, grades: [[1, 2], [3, 4]]"));
+
+        collection.findOneAndUpdate(
+            json("_id: 1"),
+            json("$set: {'grades.$[].$[]': 1}"));
+
+        assertThat(collection.find(json("_id: 1")).first())
+            .isEqualTo(json("_id: 1, grades: [[1, 1], [1, 1]]"));
+    }
+
+    @Test
+    public void testUpdateArrayWithIllegalMultiplePositionalAll() {
+        collection.insertOne(json("_id: 1, grades: [[[1, 2], [3, 4]], [[4, 5], [2, 3]]]"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$inc: {'grades.$[].$[]': 1}")))
+            .withMessageContaining("Command failed with error 14 (TypeMismatch): 'Cannot apply $inc to a value of non-numeric type. {_id: 1} has the field '0' of non-numeric type array");
     }
 
 }

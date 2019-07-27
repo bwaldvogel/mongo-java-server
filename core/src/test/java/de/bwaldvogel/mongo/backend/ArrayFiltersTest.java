@@ -79,7 +79,7 @@ public class ArrayFiltersTest {
 
         assertThatExceptionOfType(BadValueException.class)
             .isThrownBy(() -> arrayFilters.calculateKeys(json("b: 123"), "a.b.$[x]"))
-            .withMessage("[Error 2] The path 'a' must exist in the document in order to apply array updates.");
+            .withMessage("[Error 2] The path 'a.b' must exist in the document in order to apply array updates.");
     }
 
     @Test
@@ -92,6 +92,38 @@ public class ArrayFiltersTest {
         assertThatExceptionOfType(BadValueException.class)
             .isThrownBy(() -> arrayFilters.calculateKeys(json("a: {b: 10}"), "a.b.$[x]"))
             .withMessage("[Error 2] Cannot apply array updates to non-array element b: 10");
+    }
+
+    @Test
+    public void testParseAndCalculateKeys_PositionalAll() throws Exception {
+        Document query = json("");
+        Document updateQuery = json("$set: {'values.$[].active': true}");
+
+        ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
+
+        List<String> keys = arrayFilters.calculateKeys(
+            json("values: [{name: 'A'}, {name: 'B'}, {name: 'C'}]"),
+            "values.$[].active");
+        assertThat(keys).containsExactly("values.0.active", "values.1.active", "values.2.active");
+    }
+
+    @Test
+    public void testParseAndCalculateKeys_PositionalAllAndElementFilter() throws Exception {
+        Document query = json("arrayFilters: [{element: {$gte: 3}}]");
+        Document updateQuery = json("$inc: {'grades.$[].x.$[element]': 1}");
+
+        ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
+
+        List<String> keys = arrayFilters.calculateKeys(
+            json("grades: [{x: [1, 2, 3]}, {x: [3, 4, 5]}, {x: [1, 2, 3]}]"),
+            "grades.$[].x.$[element]");
+        assertThat(keys).containsExactly(
+            "grades.0.x.2",
+            "grades.1.x.0",
+            "grades.1.x.1",
+            "grades.1.x.2",
+            "grades.2.x.2"
+        );
     }
 
     @Test
