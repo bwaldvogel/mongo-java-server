@@ -63,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mongodb.DBRef;
+import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCommandException;
@@ -3208,6 +3209,39 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(toArray(collection.find(json("a: 'foo', b: { $in: ['bar'] }"))))
             .hasSize(1);
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/83
+    @Test
+    public void testAddUniqueIndexOnExistingDocuments() throws Exception {
+        collection.insertOne(json("_id: 1, value: 'a'"));
+        collection.insertOne(json("_id: 2, value: 'b'"));
+        collection.insertOne(json("_id: 3, value: 'c'"));
+
+        collection.createIndex(json("value: 1"), new IndexOptions().unique(true));
+
+        assertMongoWriteException(() -> collection.insertOne(json("value: 'c'")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : \"c\" }");
+
+        collection.insertOne(json("_id: 4, value: 'd'"));
+    }
+
+    @Test
+    public void testAddUniqueIndexOnExistingDocuments_violatingUniqueness() throws Exception {
+        collection.insertOne(json("_id: 1, value: 'a'"));
+        collection.insertOne(json("_id: 2, value: 'b'"));
+        collection.insertOne(json("_id: 3, value: 'c'"));
+        collection.insertOne(json("_id: 4, value: 'b'"));
+
+        assertThatExceptionOfType(DuplicateKeyException.class)
+            .isThrownBy(() -> collection.createIndex(json("value: 1"), new IndexOptions().unique(true)))
+            .withMessage("Write failed with error code 11000 and error message " +
+                "'E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : \"b\" }'");
+
+        assertThat(toArray(collection.listIndexes()))
+            .containsExactly(json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"));
+
+        collection.insertOne(json("_id: 5, value: 'a'"));
     }
 
     @Test

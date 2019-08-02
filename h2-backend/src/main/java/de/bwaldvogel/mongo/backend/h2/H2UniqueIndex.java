@@ -46,6 +46,11 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
     }
 
     @Override
+    public boolean isEmpty() {
+        return mvMap.isEmpty();
+    }
+
+    @Override
     public long getDataSize() {
         return getCount();
     }

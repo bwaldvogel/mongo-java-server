@@ -28,15 +28,21 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class PostgresUniqueIndex extends Index<Long> {
 
+    private static final String SQL_ERROR_DUPLICATE_KEY = "23505";
+
     private final PostgresqlBackend backend;
+    private final String databaseName;
+    private final String collectionName;
     private final String fullCollectionName;
     private final String indexName;
 
     public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, List<IndexKey> keys, boolean sparse) {
         super(keys, sparse);
         this.backend = backend;
-        fullCollectionName = PostgresqlCollection.getQualifiedTablename(databaseName, collectionName);
-        indexName = collectionName + "_" + indexName(keys);
+        this.databaseName = databaseName;
+        this.collectionName = collectionName;
+        this.fullCollectionName = PostgresqlCollection.getQualifiedTablename(databaseName, collectionName);
+        this.indexName = collectionName + "_" + indexName(keys);
     }
 
     public void initialize() {
@@ -46,7 +52,11 @@ public class PostgresUniqueIndex extends Index<Long> {
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw new MongoServerException("failed to create unique index on " + fullCollectionName, e);
+            if (e.getSQLState().equals(SQL_ERROR_DUPLICATE_KEY)) {
+                throw new DuplicateKeyError(databaseName + "." + collectionName, e.getMessage());
+            } else {
+                throw new MongoServerException("failed to create unique index on " + fullCollectionName, e);
+            }
         }
     }
 
@@ -166,6 +176,11 @@ public class PostgresUniqueIndex extends Index<Long> {
     @Override
     public long getCount() {
         return 0;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return false;
     }
 
     @Override

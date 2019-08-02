@@ -23,6 +23,11 @@ public class MemoryUniqueIndex extends AbstractUniqueIndex<Integer> {
     }
 
     @Override
+    public boolean isEmpty() {
+        return index.isEmpty();
+    }
+
+    @Override
     public long getDataSize() {
         return getCount(); // TODO
     }

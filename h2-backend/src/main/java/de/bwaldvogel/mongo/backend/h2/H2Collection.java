@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.h2.mvstore.MVMap;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
+import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
@@ -93,6 +95,11 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             }
         }
         return null;
+    }
+
+    @Override
+    protected Stream<DocumentWithPosition<Object>> streamAllDocumentsWithPosition() {
+        return dataMap.entrySet().stream().map(entry -> new DocumentWithPosition<>(entry.getValue(), entry.getKey()));
     }
 
     @Override

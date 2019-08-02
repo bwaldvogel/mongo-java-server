@@ -3,6 +3,8 @@ package de.bwaldvogel.mongo.backend;
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.stream.Stream;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -67,6 +69,12 @@ public class AbstractMongoCollectionTest {
         protected void handleUpdate(Document document) {
             // noop
         }
+
+        @Override
+        protected Stream<DocumentWithPosition<Object>> streamAllDocumentsWithPosition() {
+            throw new UnsupportedOperationException();
+        }
+
     }
 
     private TestCollection collection;

@@ -1,5 +1,10 @@
 package de.bwaldvogel.mongo.backend.postgresql;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
 import java.util.Arrays;
 
 import org.junit.AfterClass;
@@ -7,6 +12,8 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.mongodb.DuplicateKeyException;
+import com.mongodb.client.model.IndexOptions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -182,6 +189,25 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     public void testEmbeddedSort_arrayOfDocuments() {
         assumeStrictTests();
         super.testEmbeddedSort_arrayOfDocuments();
+    }
+
+    @Override
+    public void testAddUniqueIndexOnExistingDocuments_violatingUniqueness() throws Exception {
+        collection.insertOne(json("_id: 1, value: 'a'"));
+        collection.insertOne(json("_id: 2, value: 'b'"));
+        collection.insertOne(json("_id: 3, value: 'c'"));
+        collection.insertOne(json("_id: 4, value: 'b'"));
+
+        assertThatExceptionOfType(DuplicateKeyException.class)
+            .isThrownBy(() -> collection.createIndex(json("value: 1"), new IndexOptions().unique(true)))
+            .withMessage("Write failed with error code 11000 and error message " +
+                "'E11000 duplicate key error collection: testdb.testcoll index: " +
+                "ERROR: could not create unique index \"testcoll_value_ASC\"\n  Detail: Key ((data ->> 'value'::text))=(b) is duplicated.'");
+
+        assertThat(toArray(collection.listIndexes()))
+            .containsExactly(json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"));
+
+        collection.insertOne(json("_id: 5, value: 'a'"));
     }
 
     private void assumeStrictTests() {

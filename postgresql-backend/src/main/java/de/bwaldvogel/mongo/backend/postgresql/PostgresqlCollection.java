@@ -7,9 +7,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
+import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -227,6 +230,27 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
         } catch (SQLException e) {
             throw new MongoServerException("failed to find document position of " + document, e);
         }
+    }
+
+    @Override
+    protected Stream<DocumentWithPosition<Long>> streamAllDocumentsWithPosition() {
+        String sql = "SELECT id, data FROM " + getQualifiedTablename();
+
+        List<DocumentWithPosition<Long>> allDocumentsWithPositions = new ArrayList<>();
+        try (Connection connection = backend.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                while (resultSet.next()) {
+                    long id = resultSet.getLong("id");
+                    String data = resultSet.getString("data");
+                    Document document = JsonConverter.fromJson(data);
+                    allDocumentsWithPositions.add(new DocumentWithPosition<>(document, id));
+                }
+            }
+        } catch (SQLException | IOException e) {
+            throw new MongoServerException("failed to stream all documents with positions", e);
+        }
+        return allDocumentsWithPositions.stream();
     }
 
     @Override

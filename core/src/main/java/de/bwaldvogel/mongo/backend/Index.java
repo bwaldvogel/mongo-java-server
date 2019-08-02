@@ -96,6 +96,8 @@ public abstract class Index<P> {
 
     public abstract long getCount();
 
+    public abstract boolean isEmpty();
+
     public abstract long getDataSize();
 
     public abstract void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection);

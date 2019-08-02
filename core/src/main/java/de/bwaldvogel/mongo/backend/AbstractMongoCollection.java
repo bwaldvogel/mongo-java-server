@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,6 +140,19 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public void addIndex(Index<P> index) {
+        if (index.isEmpty()) {
+            streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
+                Document document = documentWithPosition.getDocument();
+                index.checkAdd(document, this);
+            });
+            streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
+                Document document = documentWithPosition.getDocument();
+                P position = documentWithPosition.getPosition();
+                index.add(document, position, this);
+            });
+        } else {
+            log.debug("Index is not empty");
+        }
         indexes.add(index);
     }
 
@@ -661,6 +675,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected abstract void removeDocument(P position);
 
     protected abstract P findDocumentPosition(Document document);
+
+    protected abstract Stream<DocumentWithPosition<P>> streamAllDocumentsWithPosition();
 
     private boolean isSystemCollection() {
         return AbstractMongoDatabase.isSystemCollection(getCollectionName());

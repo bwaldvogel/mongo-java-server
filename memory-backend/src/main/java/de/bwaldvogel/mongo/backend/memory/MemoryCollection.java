@@ -7,12 +7,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
+import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class MemoryCollection extends AbstractMongoCollection<Integer> {
@@ -244,6 +247,12 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             return null;
         }
         return Integer.valueOf(position);
+    }
+
+    @Override
+    protected Stream<DocumentWithPosition<Integer>> streamAllDocumentsWithPosition() {
+        return IntStream.range(0, documents.size())
+            .mapToObj(index -> new DocumentWithPosition<>(documents.get(index), index));
     }
 
     @Override
