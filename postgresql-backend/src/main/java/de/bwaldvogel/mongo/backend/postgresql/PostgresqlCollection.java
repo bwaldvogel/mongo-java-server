@@ -207,26 +207,25 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
 
     @Override
     protected Long findDocumentPosition(Document document) {
-        if (document.containsKey(idField)) {
-            String sql = "SELECT id FROM " + getQualifiedTablename() + " WHERE " + PostgresqlUtils.toDataKey(idField) + " = ?";
-            try (Connection connection = backend.getConnection();
-                 PreparedStatement stmt = connection.prepareStatement(sql)) {
-                stmt.setString(1, PostgresqlUtils.toQueryValue(document.get(idField)));
-                try (ResultSet resultSet = stmt.executeQuery()) {
-                    if (!resultSet.next()) {
-                        return null;
-                    }
-                    long id = resultSet.getLong(1);
-                    if (resultSet.next()) {
-                        throw new MongoServerException("got more than one id");
-                    }
-                    return Long.valueOf(id);
-                }
-            } catch (SQLException e) {
-                throw new MongoServerException("failed to find document position of " + document, e);
-            }
-        } else {
+        if (!document.containsKey(idField)) {
             throw new UnsupportedOperationException("not yet implemented");
+        }
+        String sql = "SELECT id FROM " + getQualifiedTablename() + " WHERE " + PostgresqlUtils.toDataKey(idField) + " = ?";
+        try (Connection connection = backend.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, PostgresqlUtils.toQueryValue(document.get(idField)));
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+                long id = resultSet.getLong(1);
+                if (resultSet.next()) {
+                    throw new MongoServerException("got more than one id");
+                }
+                return Long.valueOf(id);
+            }
+        } catch (SQLException e) {
+            throw new MongoServerException("failed to find document position of " + document, e);
         }
     }
 

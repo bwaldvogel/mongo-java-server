@@ -53,7 +53,6 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         return value.intValue();
     }
 
-
     @Override
     protected Object addDocumentInternal(Document document) {
         final Object key;
@@ -96,7 +95,6 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         return null;
     }
 
-
     @Override
     protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy, int numberToSkip, int numberToReturn) {
 
@@ -123,8 +121,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-            int numberToReturn) {
+    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         for (Document document : dataMap.values()) {

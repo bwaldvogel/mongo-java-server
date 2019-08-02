@@ -78,7 +78,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                           int numberToReturn);
+                                                         int numberToReturn);
 
     protected abstract Iterable<Document> matchDocuments(Document query, Iterable<P> positions, Document orderBy,
                                                          int numberToSkip, int numberToReturn);
