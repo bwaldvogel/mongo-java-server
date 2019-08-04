@@ -544,7 +544,10 @@ public class Utils {
         return pathFragments.subList(1, pathFragments.size());
     }
 
-    public static String getCommonPathPrefix(String path1, String path2) {
+    public static String getShorterPathIfPrefix(String path1, String path2) {
+        if (!path1.startsWith(path2) && !path2.startsWith(path1)) {
+            return null;
+        }
         List<String> fragments1 = splitPath(path1);
         List<String> fragments2 = splitPath(path2);
         List<String> commonFragments = new ArrayList<>();

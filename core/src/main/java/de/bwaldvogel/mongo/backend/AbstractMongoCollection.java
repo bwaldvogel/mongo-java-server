@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -256,14 +255,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return newDocument;
     }
 
-    private static void validateUpdateQuery(Document update) {
+    static void validateUpdateQuery(Document update) {
         Set<String> allModifiedPaths = new LinkedHashSet<>();
         for (Object value : update.values()) {
             Document modification = (Document) value;
             for (String path : modification.keySet()) {
                 for (String otherPath : allModifiedPaths) {
-                    String commonPathPrefix = Utils.getCommonPathPrefix(path, otherPath);
-                    if (Objects.equals(path, commonPathPrefix) || Objects.equals(otherPath, commonPathPrefix)) {
+                    String commonPathPrefix = Utils.getShorterPathIfPrefix(path, otherPath);
+                    if (commonPathPrefix != null) {
                         throw new ConflictingUpdateOperatorsException(path, commonPathPrefix);
                     }
                 }

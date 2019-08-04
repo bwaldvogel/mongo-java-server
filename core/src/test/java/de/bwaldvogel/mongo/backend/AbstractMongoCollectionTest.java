@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.stream.Stream;
 
@@ -10,6 +11,7 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
 
 public class AbstractMongoCollectionTest {
 
@@ -110,4 +112,22 @@ public class AbstractMongoCollectionTest {
         assertThat(collection.deriveDocumentId(json("_id: {$in: [1]}"))).isEqualTo(1);
         assertThat(collection.deriveDocumentId(json("_id: {$in: []}"))).isInstanceOf(ObjectId.class);
     }
+
+    @Test
+    public void testValidateUpdateQuery() throws Exception {
+        AbstractMongoCollection.validateUpdateQuery(new Document());
+        AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}"));
+        AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}, $inc: {c: 1}"));
+        AbstractMongoCollection.validateUpdateQuery(json("$set: {'a.b.c': 1}, $inc: {'a.b.d': 1}"));
+        AbstractMongoCollection.validateUpdateQuery(json("$set: {'a.b.c': 1}, $inc: {'a.c': 1}"));
+
+        assertThatExceptionOfType(ConflictingUpdateOperatorsException.class)
+            .isThrownBy(() -> AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}, $inc: {b: 1}")))
+            .withMessage("[Error 40] Updating the path 'b' would create a conflict at 'b'");
+
+        assertThatExceptionOfType(ConflictingUpdateOperatorsException.class)
+            .isThrownBy(() -> AbstractMongoCollection.validateUpdateQuery(json("$set: {'a.b.c': 1}, $inc: {'a.b': 1}")))
+            .withMessage("[Error 40] Updating the path 'a.b' would create a conflict at 'a.b'");
+    }
+
 }
