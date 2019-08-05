@@ -120,6 +120,8 @@ public class AbstractMongoCollectionTest {
         AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}, $inc: {c: 1}"));
         AbstractMongoCollection.validateUpdateQuery(json("$set: {'a.b.c': 1}, $inc: {'a.b.d': 1}"));
         AbstractMongoCollection.validateUpdateQuery(json("$set: {'a.b.c': 1}, $inc: {'a.c': 1}"));
+        AbstractMongoCollection.validateUpdateQuery(json("$inc: {'a.$.y': 1, 'a.$.x': 1}"));
+        AbstractMongoCollection.validateUpdateQuery(json("$inc: {'a.$.deleted': 1, 'a.$.deletedBy': 1}"));
 
         assertThatExceptionOfType(ConflictingUpdateOperatorsException.class)
             .isThrownBy(() -> AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}, $inc: {b: 1}")))

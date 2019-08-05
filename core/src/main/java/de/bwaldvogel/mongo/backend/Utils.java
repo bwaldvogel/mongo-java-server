@@ -557,12 +557,10 @@ public class Utils {
             if (fragment1.equals(fragment2)) {
                 commonFragments.add(fragment1);
             } else {
-                break;
+                return null;
             }
         }
-        if (commonFragments.isEmpty()) {
-            return null;
-        }
+        Assert.notEmpty(commonFragments);
         return joinPath(commonFragments);
     }
 

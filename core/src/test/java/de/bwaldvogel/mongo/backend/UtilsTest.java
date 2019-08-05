@@ -271,6 +271,8 @@ public class UtilsTest {
         assertThat(Utils.getShorterPathIfPrefix("a", "b")).isNull();
         assertThat(Utils.getShorterPathIfPrefix("a.b", "b.c")).isNull();
         assertThat(Utils.getShorterPathIfPrefix("a.b.c", "a.b.d")).isNull();
+        assertThat(Utils.getShorterPathIfPrefix("deleted", "deletedBy")).isNull();
+        assertThat(Utils.getShorterPathIfPrefix("a.deleted", "a.deletedBy")).isNull();
         assertThat(Utils.getShorterPathIfPrefix("a", "a")).isEqualTo("a");
         assertThat(Utils.getShorterPathIfPrefix("a.b", "a.b")).isEqualTo("a.b");
         assertThat(Utils.getShorterPathIfPrefix("a.b.c", "a")).isEqualTo("a");

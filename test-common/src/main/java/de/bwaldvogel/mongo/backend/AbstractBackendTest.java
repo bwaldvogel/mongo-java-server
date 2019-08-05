@@ -2590,7 +2590,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testUpdateArrayMatch() throws Exception {
 
-        collection.insertOne(json("_id: 1, a: [{x: 1, y: 1}, {x: 2,y: 2}, {x: 3, y: 3}]"));
+        collection.insertOne(json("_id: 1, a: [{x: 1, y: 1}, {x: 2, y: 2}, {x: 3, y: 3}]"));
 
         collection.updateOne(json("'a.x': 2"), json("$inc: {'a.$.y': 1}"));
 
@@ -2601,6 +2601,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(json("'array.123a.name': 'old'"), json("$set: {'array.$.123a.name': 'new'}"));
         assertThat(collection.find(json("'array.123a.name': 'new'")).first()).isNotNull();
         assertThat(collection.find(json("'array.123a.name': 'old'")).first()).isNull();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/85
+    @Test
+    public void testUpdateArrayMatch_MultipleFields() throws Exception {
+        collection.insertOne(json("_id: 1, a: [{x: 1, y: 1}, {x: 2, y: 2}, {x: 3, y: 3}]"));
+
+        collection.updateOne(json("'a.x': 2"),
+            json("$inc: {'a.$.y': 1, 'a.$.x': 1}, $set: {'a.$.foo': 1, 'a.$.foo2': 1}"));
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactly(json("_id: 1, a: [{x: 1, y: 1}, {x: 3, y: 3, foo: 1, foo2: 1}, {x: 3, y: 3}]"));
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/32
