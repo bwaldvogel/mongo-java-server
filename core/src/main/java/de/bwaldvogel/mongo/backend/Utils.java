@@ -126,7 +126,7 @@ public class Utils {
     }
 
     public static String getDatabaseNameFromFullName(String fullName) {
-        return splitPath(fullName).get(0);
+        return firstFragment(fullName);
     }
 
     public static String getCollectionNameFromFullName(String fullName) {
@@ -534,6 +534,11 @@ public class Utils {
 
     static String joinPath(List<String> fragments) {
         return String.join(PATH_DELIMITER, fragments);
+    }
+
+    public static String firstFragment(String input) {
+        List<String> fragments = splitPath(input);
+        return fragments.get(0);
     }
 
     public static List<String> splitPath(String input) {

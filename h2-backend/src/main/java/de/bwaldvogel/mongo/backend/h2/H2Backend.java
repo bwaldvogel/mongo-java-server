@@ -30,7 +30,7 @@ public class H2Backend extends AbstractMongoBackend {
         for (String mapName : mvStore.getMapNames()) {
             if (mapName.startsWith(H2Database.DATABASES_PREFIX)) {
                 String fullName = mapName.substring(H2Database.DATABASES_PREFIX.length());
-                String databaseName = Utils.splitPath(fullName).get(0);
+                String databaseName = Utils.firstFragment(fullName);
 
                 log.info("opening database '{}'", databaseName);
                 try {

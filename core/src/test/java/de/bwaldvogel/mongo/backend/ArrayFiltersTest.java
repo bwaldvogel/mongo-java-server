@@ -161,4 +161,15 @@ public class ArrayFiltersTest {
                 entry("y", json("$lt: 10")));
     }
 
+    @Test
+    public void testParse_MultipleSubdocumentFieldsInOneFilter() throws Exception {
+        Document query = json("arrayFilters: [{'a.x': {$gt: 20}, 'a.y': {$lt: 30}}]");
+        Document updateQuery = json("$set: {'values.$[a].amount': 20}");
+
+        ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
+
+        assertThat(arrayFilters.getValues())
+            .containsExactly(entry("a", json("x: {$gt: 20}, y: {$lt: 30}")));
+    }
+
 }

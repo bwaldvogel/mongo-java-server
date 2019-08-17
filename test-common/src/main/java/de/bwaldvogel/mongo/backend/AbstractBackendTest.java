@@ -1032,6 +1032,40 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/86
+    @Test
+    public void testUpdateWithMultipleComplexArrayFilters() throws Exception {
+        collection.insertOne(json("_id: 1, products: [" +
+            "{id: 1, charges: [" +
+            "{type: 'A', min: 0, max: 1}, " +
+            "{type: 'A', min: 0, max: 2}, " +
+            "{type: 'B', min: 0, max: 1}, " +
+            "]}, " +
+            "{id: 2, charges: [{type: 'A', min: 0, max: 1}, ]}, " +
+            "]"));
+
+        collection.updateMany(
+            json(""),
+            json("$set: {'products.$[product].charges.$[charge].amount': 10}"),
+            new UpdateOptions().arrayFilters(Arrays.asList(
+                json("'product.id': 1"),
+                json("'charge.type': 'A', 'charge.min': 0, 'charge.max': 2")
+            ))
+        );
+
+        assertThat(toArray(collection.find(json(""))))
+            .containsExactly(
+                json("_id: 1, products: [" +
+                    "{id: 1, charges: [" +
+                    "{type: 'A', min: 0, max: 1}, " +
+                    "{type: 'A', min: 0, max: 2, amount: 10}, " +
+                    "{type: 'B', min: 0, max: 1}, " +
+                    "]}, " +
+                    "{id: 2, charges: [{type: 'A', min: 0, max: 1}, ]}, " +
+                    "]")
+            );
+    }
+
     @Test
     public void testFindOneAndUpdate_IllegalArrayFilters() {
         collection.insertOne(json("_id: 1, grades: 'abc', a: {b: 123}"));

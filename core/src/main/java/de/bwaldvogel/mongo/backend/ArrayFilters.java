@@ -34,23 +34,25 @@ public class ArrayFilters {
             if (arrayFilter.isEmpty()) {
                 throw new FailedToParseException("Cannot use an expression without a top-level field name in arrayFilters");
             }
-            if (arrayFilter.size() > 1) {
-                List<String> keys = new ArrayList<>(arrayFilter.keySet());
+
+            List<String> topLevelFieldNames = arrayFilter.keySet().stream()
+                .map(Utils::firstFragment)
+                .distinct()
+                .collect(Collectors.toList());
+
+            if (topLevelFieldNames.size() > 1) {
                 throw new FailedToParseException("Error parsing array filter :: caused by ::" +
-                    " Expected a single top-level field name, found '" + keys.get(0) + "' and '" + keys.get(1) + "'");
-            }
-            Entry<String, Object> entry = CollectionUtils.getSingleElement(arrayFilter.entrySet());
-
-            List<String> pathFragments = Utils.splitPath(entry.getKey());
-            String identifier = pathFragments.get(0);
-            if (!identifier.matches("^[a-zA-Z0-9]+$")) {
-                throw new BadValueException("Error parsing array filter :: caused by :: The top-level field name must be an alphanumeric string beginning with a lowercase letter, found '" + identifier + "'");
+                    " Expected a single top-level field name, found '" + topLevelFieldNames.get(0) + "' and '" + topLevelFieldNames.get(1) + "'");
             }
 
-            Object query = entry.getValue();
-            Object filter = createFilter(pathFragments, query);
-            if (arrayFilterMap.put(identifier, filter) != null) {
-                throw new FailedToParseException("Found multiple array filters with the same top-level field name " + identifier);
+            String topLevelFieldName = CollectionUtils.getSingleElement(topLevelFieldNames);
+            if (!topLevelFieldName.matches("^[a-zA-Z0-9]+$")) {
+                throw new BadValueException("Error parsing array filter :: caused by :: The top-level field name must be an alphanumeric string beginning with a lowercase letter, found '" + topLevelFieldName + "'");
+            }
+
+            Object filter = createFilter(arrayFilter);
+            if (arrayFilterMap.put(topLevelFieldName, filter) != null) {
+                throw new FailedToParseException("Found multiple array filters with the same top-level field name " + topLevelFieldName);
             }
         }
 
@@ -59,6 +61,23 @@ public class ArrayFilters {
         }
 
         return new ArrayFilters(arrayFilterMap);
+    }
+
+    private static Object createFilter(Document arrayFilter) {
+        Document filter = new Document();
+
+        for (Entry<String, Object> entry : arrayFilter.entrySet()) {
+            List<String> pathFragments = Utils.splitPath(entry.getKey());
+            String tailPath = Utils.joinTail(pathFragments);
+            Object query = entry.getValue();
+            if (tailPath.isEmpty()) {
+                Assert.hasSize(arrayFilter.keySet(), 1);
+                return query;
+            } else {
+                filter.put(tailPath, query);
+            }
+        }
+        return filter;
     }
 
     private static Object createFilter(List<String> pathFragments, Object query) {
