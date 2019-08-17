@@ -1082,6 +1082,22 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $strLenBytes {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            String string = requireSingleStringValue(expressionValue);
+            return string.getBytes(StandardCharsets.UTF_8).length;
+        }
+    },
+
+    $strLenCP {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            String string = requireSingleStringValue(expressionValue);
+            return string.length();
+        }
+    },
+
     $toLower {
         @Override
         Object apply(List<?> expressionValue, Document document) {

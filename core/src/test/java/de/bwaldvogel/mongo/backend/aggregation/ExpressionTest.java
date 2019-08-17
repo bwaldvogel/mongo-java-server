@@ -1159,6 +1159,48 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateStrLenBytes() throws Exception {
+        assertThat(Expression.evaluate(json("$strLenBytes: ''"), json(""))).isEqualTo(0);
+        assertThat(Expression.evaluate(json("$strLenBytes: '$a'"), json("a: 'value'"))).isEqualTo(5);
+        assertThat(Expression.evaluate(json("$strLenBytes: 'cafétéria'"), json(""))).isEqualTo(11);
+        assertThat(Expression.evaluate(json("$strLenBytes: '$a'"), json("a: '$€λA'"))).isEqualTo(7);
+        assertThat(Expression.evaluate(json("$strLenBytes: '寿司'"), json(""))).isEqualTo(6);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$strLenBytes: null"), json("")))
+            .withMessage("[Error 34471] $strLenBytes requires a string argument, found: null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$strLenBytes: 123"), json("")))
+            .withMessage("[Error 34471] $strLenBytes requires a string argument, found: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$strLenBytes: '$a'"), json("")))
+            .withMessage("[Error 34471] $strLenBytes requires a string argument, found: missing");
+    }
+
+    @Test
+    public void testEvaluateStrLenCP() throws Exception {
+        assertThat(Expression.evaluate(json("$strLenCP: ''"), json(""))).isEqualTo(0);
+        assertThat(Expression.evaluate(json("$strLenCP: '$a'"), json("a: 'value'"))).isEqualTo(5);
+        assertThat(Expression.evaluate(json("$strLenCP: 'cafétéria'"), json(""))).isEqualTo(9);
+        assertThat(Expression.evaluate(json("$strLenCP: '$a'"), json("a: '$€λA'"))).isEqualTo(4);
+        assertThat(Expression.evaluate(json("$strLenCP: '寿司'"), json(""))).isEqualTo(2);
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$strLenCP: null"), json("")))
+            .withMessage("[Error 34471] $strLenCP requires a string argument, found: null");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$strLenCP: 123"), json("")))
+            .withMessage("[Error 34471] $strLenCP requires a string argument, found: int");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$strLenCP: '$a'"), json("")))
+            .withMessage("[Error 34471] $strLenCP requires a string argument, found: missing");
+    }
+
+    @Test
     public void testEvaluateYear() throws Exception {
         assertThat(Expression.evaluate(json("$year: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$year: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(2018);

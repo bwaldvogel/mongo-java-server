@@ -28,6 +28,14 @@ interface ExpressionTraits {
         return requireCollectionInSize(list, 1).get(0);
     }
 
+    default String requireSingleStringValue(List<?> expressionValue) {
+        Object value = requireSingleValue(expressionValue);
+        if (!(value instanceof String)) {
+            throw new MongoServerError(34471, name() + " requires a string argument, found: " + describeType(value));
+        }
+        return (String) value;
+    }
+
     default Number evaluateNumericValue(List<?> expressionValue, Function<Double, ? extends Number> function) {
         Object value = requireSingleValue(expressionValue);
         if (isNullOrMissing(value)) {

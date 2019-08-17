@@ -474,6 +474,26 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithStrLenExpressionProjection() throws Exception {
+        List<Document> pipeline = jsonList("$project: {_id: 0, lenCP: {$strLenCP: '$a'}, lenBytes: {$strLenBytes: '$a'}}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("a: 'cafétéria', b: 123"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("lenCP: 9, lenBytes: 11"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {len: {$strLenCP: '$x'}}")).first())
+            .withMessageContaining("Command failed with error 34471 (Location34471): '$strLenCP requires a string argument, found: missing'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {len: {$strLenCP: '$b'}}")).first())
+            .withMessageContaining("Command failed with error 34471 (Location34471): '$strLenCP requires a string argument, found: int'");
+    }
+
+    @Test
     public void testAggregateWithAddFields() throws Exception {
         List<Document> pipeline = jsonList("$addFields: {value: '$x'}");
 
