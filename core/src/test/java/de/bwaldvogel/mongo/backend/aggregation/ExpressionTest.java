@@ -1201,6 +1201,56 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateSubstrBytes() throws Exception {
+        assertThat(Expression.evaluate(json("$substrBytes: ['', -1, -1]"), json(""))).isEqualTo("");
+        assertThat(Expression.evaluate(json("$substrBytes: ['$a', 0, -1]"), json("a: 'value'"))).isEqualTo("value");
+        assertThat(Expression.evaluate(json("$substrBytes: ['$a', 0, 5]"), json("a: 'cafétéria'"))).isEqualTo("café");
+        assertThat(Expression.evaluate(json("$substrBytes: ['$a', 0, 5]"), json("a: 123"))).isEqualTo("123");
+        assertThat(Expression.evaluate(json("$substrBytes: ['$a', 0, '$len']"), json("a: 'hello', len: 2"))).isEqualTo("he");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrBytes: null"), json("")))
+            .withMessage("[Error 16020] Expression $substrBytes takes exactly 3 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrBytes: [123]"), json("")))
+            .withMessage("[Error 16020] Expression $substrBytes takes exactly 3 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrBytes: [123, 'abc', 'def']"), json("")))
+            .withMessage("[Error 16034] $substrBytes:  starting index must be a numeric type (is BSON type string)");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrBytes: [123, 0, 'def']"), json("")))
+            .withMessage("[Error 16035] $substrBytes:  length must be a numeric type (is BSON type string)");
+    }
+
+    @Test
+    public void testEvaluateSubstrCP() throws Exception {
+        assertThat(Expression.evaluate(json("$substrCP: ['', -1, -1]"), json(""))).isEqualTo("");
+        assertThat(Expression.evaluate(json("$substrCP: ['$a', 0, -1]"), json("a: 'value'"))).isEqualTo("value");
+        assertThat(Expression.evaluate(json("$substrCP: ['$a', 0, 5]"), json("a: 'cafétéria'"))).isEqualTo("cafét");
+        assertThat(Expression.evaluate(json("$substrCP: ['$a', 0, 5]"), json("a: 123"))).isEqualTo("123");
+        assertThat(Expression.evaluate(json("$substrCP: ['$a', 0, '$len']"), json("a: 'hello', len: 2"))).isEqualTo("he");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrCP: null"), json("")))
+            .withMessage("[Error 16020] Expression $substrCP takes exactly 3 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrCP: [123]"), json("")))
+            .withMessage("[Error 16020] Expression $substrCP takes exactly 3 arguments. 1 were passed in.");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrCP: [123, 'abc', 'def']"), json("")))
+            .withMessage("[Error 34450] $substrCP: starting index must be a numeric type (is BSON type string)");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$substrCP: [123, 0, 'def']"), json("")))
+            .withMessage("[Error 34452] $substrCP: length must be a numeric type (is BSON type string)");
+    }
+
+    @Test
     public void testEvaluateYear() throws Exception {
         assertThat(Expression.evaluate(json("$year: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$year: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(2018);

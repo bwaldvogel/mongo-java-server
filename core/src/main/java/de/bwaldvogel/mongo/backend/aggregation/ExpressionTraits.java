@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 
+import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
@@ -25,7 +26,8 @@ interface ExpressionTraits {
     String name();
 
     default Object requireSingleValue(List<?> list) {
-        return requireCollectionInSize(list, 1).get(0);
+        requireCollectionInSize(list, 1);
+        return CollectionUtils.getSingleElement(list);
     }
 
     default String requireSingleStringValue(List<?> expressionValue) {
@@ -80,15 +82,14 @@ interface ExpressionTraits {
         return evaluateDateTime(expressionValue, zonedDateTime -> timeFunction.apply(zonedDateTime.toLocalTime()), document);
     }
 
-    default List<?> requireCollectionInSize(List<?> value, int expectedCollectionSize) {
+    default void requireCollectionInSize(List<?> value, int expectedCollectionSize) {
         if (value.size() != expectedCollectionSize) {
             throw new MongoServerError(16020, "Expression " + name() + " takes exactly " + expectedCollectionSize + " arguments. " + value.size() + " were passed in.");
         }
-        return value;
     }
 
-    default TwoParameters requireTwoParameters(List<?> value) {
-        List<?> parameters = requireCollectionInSize(value, 2);
+    default TwoParameters requireTwoParameters(List<?> parameters) {
+        requireCollectionInSize(parameters, 2);
         return new TwoParameters(parameters.get(0), parameters.get(1));
     }
 
@@ -209,19 +210,22 @@ interface ExpressionTraits {
 
     default String evaluateString(List<?> expressionValue, Function<String, String> function) {
         Object value = requireSingleValue(expressionValue);
+        value = convertToString(value);
+        if (value == null) return null;
+        return function.apply((String) value);
+    }
+
+    default String convertToString(Object value) {
         if (isNullOrMissing(value)) {
             return null;
+        } else if (value instanceof String) {
+            return (String) value;
+        } else if (value instanceof Number) {
+            return value.toString();
+        } else if (value instanceof ObjectId) {
+            return ((ObjectId) value).getHexData();
         }
-        if (value instanceof Number) {
-            value = value.toString();
-        }
-        if (value instanceof ObjectId) {
-            value = ((ObjectId) value).getHexData();
-        }
-        if (!(value instanceof String)) {
-            throw new MongoServerError(16007, "can't convert from BSON type " + describeType(value) + " to String");
-        }
-        return function.apply((String) value);
+        throw new MongoServerError(16007, "can't convert from BSON type " + describeType(value) + " to String");
     }
 
 }

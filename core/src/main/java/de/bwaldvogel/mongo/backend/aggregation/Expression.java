@@ -265,10 +265,10 @@ public enum Expression implements ExpressionTraits {
                 thenExpression = condDocument.get("then");
                 elseExpression = condDocument.get("else");
             } else {
-                List<?> collection = requireCollectionInSize(expressionValue, 3);
-                ifExpression = collection.get(0);
-                thenExpression = collection.get(1);
-                elseExpression = collection.get(2);
+                requireCollectionInSize(expressionValue, 3);
+                ifExpression = expressionValue.get(0);
+                thenExpression = expressionValue.get(1);
+                elseExpression = expressionValue.get(2);
             }
 
             if (Utils.isTrue(evaluate(ifExpression, document))) {
@@ -1098,6 +1098,72 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $substr {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            return $substrBytes.apply(expressionValue, document);
+        }
+    },
+
+    $substrBytes {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            requireCollectionInSize(expressionValue, 3);
+            String value = convertToString(expressionValue.get(0));
+            if (value == null || value.isEmpty()) {
+                return "";
+            }
+
+            byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+
+            Object startValue = expressionValue.get(1);
+            if (!(startValue instanceof Number)) {
+                throw new MongoServerError(16034, name() + ":  starting index must be a numeric type (is BSON type " + describeType(startValue) + ")");
+            }
+            int startIndex = Math.max(0, ((Number) startValue).intValue());
+            startIndex = Math.min(bytes.length, startIndex);
+
+            Object lengthValue = expressionValue.get(2);
+            if (!(lengthValue instanceof Number)) {
+                throw new MongoServerError(16035, name() + ":  length must be a numeric type (is BSON type " + describeType(lengthValue) + ")");
+            }
+            int length = ((Number) lengthValue).intValue();
+            if (length < 0) {
+                length = bytes.length - startIndex;
+            }
+            length = Math.min(bytes.length, length);
+            return new String(bytes, startIndex, length, StandardCharsets.UTF_8);
+        }
+    },
+
+    $substrCP {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            requireCollectionInSize(expressionValue, 3);
+            String value = convertToString(expressionValue.get(0));
+            if (value == null || value.isEmpty()) {
+                return "";
+            }
+            Object startValue = expressionValue.get(1);
+            if (!(startValue instanceof Number)) {
+                throw new MongoServerError(34450, name() + ": starting index must be a numeric type (is BSON type " + describeType(startValue) + ")");
+            }
+            int startIndex = Math.max(0, ((Number) startValue).intValue());
+            startIndex = Math.min(value.length(), startIndex);
+
+            Object lengthValue = expressionValue.get(2);
+            if (!(lengthValue instanceof Number)) {
+                throw new MongoServerError(34452, name() + ": length must be a numeric type (is BSON type " + describeType(lengthValue) + ")");
+            }
+            int length = ((Number) lengthValue).intValue();
+            if (length < 0) {
+                length = value.length() - startIndex;
+            }
+            int endIndex = Math.min(value.length(), startIndex + length);
+            return value.substring(startIndex, endIndex);
+        }
+    },
+
     $toLower {
         @Override
         Object apply(List<?> expressionValue, Document document) {
@@ -1114,7 +1180,7 @@ public enum Expression implements ExpressionTraits {
 
     $toString {
         @Override
-        Object apply(List<?> expressionValue, Document document) {
+        String apply(List<?> expressionValue, Document document) {
             return evaluateString(expressionValue, Function.identity());
         }
     },

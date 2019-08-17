@@ -494,6 +494,66 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithSubstringExpressionProjection() throws Exception {
+        List<Document> pipeline = jsonList("$project: {_id: 0, " +
+            "a: {$substr: ['$v', 0, -1]}, " +
+            "b: {$substr: ['$v', 1, -3]}, " +
+            "c: {$substr: ['$v', 5, 5]}, " +
+            "d: {$substr: [123, 0, -1]}, " +
+            "e: {$substr: [null, 0, -1]}" +
+            "f: {$substr: ['abc', 4, -1]}" +
+            "}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("v: 'some value'"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("a: 'some value', b: 'ome value', c: 'value', d: '123', e: '', f: ''"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: 'abc'}}")).first())
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $substrBytes takes exactly 3 arguments. 1 were passed in.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: ['abc', 'abc', 3]}}")).first())
+            .withMessageContaining("Command failed with error 16034 (Location16034): '$substrBytes:  starting index must be a numeric type (is BSON type string)");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: ['abc', 3, 'abc']}}")).first())
+            .withMessageContaining("Command failed with error 16035 (Location16035): '$substrBytes:  length must be a numeric type (is BSON type string)");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: 'abc'}}")).first())
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $substrCP takes exactly 3 arguments. 1 were passed in.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: ['abc', 'abc', 3]}}")).first())
+            .withMessageContaining("Command failed with error 34450 (Location34450): '$substrCP: starting index must be a numeric type (is BSON type string)");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: ['abc', 3, 'abc']}}")).first())
+            .withMessageContaining("Command failed with error 34452 (Location34452): '$substrCP: length must be a numeric type (is BSON type string)");
+    }
+
+    @Test
+    public void testAggregateWithSubstringUnicodeExpressionProjection() throws Exception {
+        List<Document> pipeline = jsonList("$project: {_id: 0, " +
+            "a: {$substrBytes: ['$v', 0, 5]}, " +
+            "b: {$substrCP: ['$v', 0, 5]}, " +
+            "c: {$substrBytes: ['$v', 5, 4]}, " +
+            "d: {$substrCP: ['$v', 5, 4]}, " +
+            "}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("v: 'cafétéria'"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("a: 'café', b: 'cafét', c: 'tér', d: 'éria'"));
+    }
+
+    @Test
     public void testAggregateWithAddFields() throws Exception {
         List<Document> pipeline = jsonList("$addFields: {value: '$x'}");
 
