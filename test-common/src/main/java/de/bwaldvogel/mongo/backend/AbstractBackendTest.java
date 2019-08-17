@@ -1135,6 +1135,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("$set: {'a.b.$[x]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gte: 100}")))))
             .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element b: 123'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'a.b': 10, b: 12")))))
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b''");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.findOneAndUpdate(
+                json("_id: 1"),
+                json("$set: {'grades': 'abc'}"),
+                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(
+                    json("'a.b': 10"),
+                    json("'a.c': 10")
+                ))))
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Found multiple array filters with the same top-level field name a'");
     }
 
     @Test
