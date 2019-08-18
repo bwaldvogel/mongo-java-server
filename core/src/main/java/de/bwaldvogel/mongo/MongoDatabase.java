@@ -33,6 +33,6 @@ public interface MongoDatabase {
 
     void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName);
 
-    MongoCollection<?> unregisterCollection(String collectionName);
+    void unregisterCollection(String collectionName);
 
 }

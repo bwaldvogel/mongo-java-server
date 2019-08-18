@@ -962,10 +962,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public MongoCollection<P> unregisterCollection(String collectionName) {
+    public void unregisterCollection(String collectionName) {
         MongoCollection<P> removedCollection = collections.remove(collectionName);
         namespaces.deleteDocuments(new Document("name", removedCollection.getFullName()), 1);
-        return removedCollection;
     }
 
     @Override
