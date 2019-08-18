@@ -1,12 +1,14 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.net.InetSocketAddress;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 import org.slf4j.Logger;
@@ -33,9 +35,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoBackend.class);
 
-    private final TreeMap<String, MongoDatabase> databases = new TreeMap<>();
+    private final Map<String, MongoDatabase> databases = new TreeMap<>();
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
+
+    private final Clock clock = Clock.systemDefaultZone();
 
     private int maxWireVersion = 2;
     private int minWireVersion = 0;
@@ -175,7 +179,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
             response.put("maxWireVersion", Integer.valueOf(maxWireVersion));
             response.put("minWireVersion", Integer.valueOf(minWireVersion));
-            response.put("localTime", new Date());
+            response.put("localTime", Instant.now(clock));
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
@@ -252,4 +256,10 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         this.maxWireVersion = maxWireVersion;
         this.minWireVersion = minWireVersion;
     }
+
+    @Override
+    public Clock getClock() {
+        return clock;
+    }
+
 }

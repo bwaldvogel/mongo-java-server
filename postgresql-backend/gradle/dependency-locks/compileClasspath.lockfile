@@ -4,4 +4,5 @@
 com.fasterxml.jackson.core:jackson-annotations:2.9.0
 com.fasterxml.jackson.core:jackson-core:2.9.9
 com.fasterxml.jackson.core:jackson-databind:2.9.9.3
+com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9
 org.slf4j:slf4j-api:1.7.28

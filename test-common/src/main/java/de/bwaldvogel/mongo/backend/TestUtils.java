@@ -43,7 +43,11 @@ public class TestUtils {
         return database.runCommand(collStats);
     }
 
-    static Date date(String instant) {
-        return Date.from(Instant.parse(instant));
+    static Instant instant(String value) {
+        return Instant.parse(value);
+    }
+
+    static Date date(String value) {
+        return Date.from(instant(value));
     }
 }

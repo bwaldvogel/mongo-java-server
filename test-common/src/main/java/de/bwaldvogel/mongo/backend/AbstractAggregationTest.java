@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.date;
+import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
@@ -365,12 +367,12 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, item: 'zzz', price:  5, quantity: 10").append("date", TestUtils.date("2014-02-15T09:12:00Z")));
-        collection.insertOne(json("_id: 2, item: 'abc', price: 10, quantity:  2").append("date", TestUtils.date("2014-01-01T08:00:00Z")));
-        collection.insertOne(json("_id: 3, item: 'jkl', price: 20, quantity:  1").append("date", TestUtils.date("2014-02-03T09:00:00Z")));
-        collection.insertOne(json("_id: 4, item: 'xyz', price:  5, quantity:  5").append("date", TestUtils.date("2014-02-03T09:05:00Z")));
-        collection.insertOne(json("_id: 5, item: 'abc', price: 10, quantity: 10").append("date", TestUtils.date("2014-02-15T08:00:00Z")));
-        collection.insertOne(json("_id: 6, item: 'xyz', price:  5, quantity: 10").append("date", TestUtils.date("2014-02-15T09:12:00Z")));
+        collection.insertOne(json("_id: 1, item: 'zzz', price:  5, quantity: 10").append("date", instant("2014-02-15T09:12:00Z")));
+        collection.insertOne(json("_id: 2, item: 'abc', price: 10, quantity:  2").append("date", instant("2014-01-01T08:00:00Z")));
+        collection.insertOne(json("_id: 3, item: 'jkl', price: 20, quantity:  1").append("date", instant("2014-02-03T09:00:00Z")));
+        collection.insertOne(json("_id: 4, item: 'xyz', price:  5, quantity:  5").append("date", instant("2014-02-03T09:05:00Z")));
+        collection.insertOne(json("_id: 5, item: 'abc', price: 10, quantity: 10").append("date", instant("2014-02-15T08:00:00Z")));
+        collection.insertOne(json("_id: 6, item: 'xyz', price:  5, quantity: 10").append("date", instant("2014-02-15T09:12:00Z")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactlyInAnyOrder(
@@ -649,17 +651,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
-        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", TestUtils.date("2014-01-01T08:00:00Z")));
-        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", TestUtils.date("2014-02-03T09:00:00Z")));
-        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", TestUtils.date("2014-02-03T09:05:00Z")));
-        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", TestUtils.date("2014-02-15T08:00:00Z")));
-        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", TestUtils.date("2014-02-15T09:12:00Z")));
+        collection.insertOne(json("_id: 1, item: 'abc', price: 10, quantity:  2").append("date", instant("2014-01-01T08:00:00Z")));
+        collection.insertOne(json("_id: 2, item: 'jkl', price: 20, quantity:  1").append("date", instant("2014-02-03T09:00:00Z")));
+        collection.insertOne(json("_id: 3, item: 'xyz', price:  5, quantity:  5").append("date", instant("2014-02-03T09:05:00Z")));
+        collection.insertOne(json("_id: 4, item: 'abc', price: 10, quantity: 10").append("date", instant("2014-02-15T08:00:00Z")));
+        collection.insertOne(json("_id: 5, item: 'xyz', price:  5, quantity: 10").append("date", instant("2014-02-15T09:12:00Z")));
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactlyInAnyOrder(
-                json("_id: 'abc'").append("firstSale", TestUtils.date("2014-01-01T08:00:00Z")).append("lastSale", TestUtils.date("2014-02-15T08:00:00Z")),
-                json("_id: 'jkl'").append("firstSale", TestUtils.date("2014-02-03T09:00:00Z")).append("lastSale", TestUtils.date("2014-02-03T09:00:00Z")),
-                json("_id: 'xyz'").append("firstSale", TestUtils.date("2014-02-03T09:05:00Z")).append("lastSale", TestUtils.date("2014-02-15T09:12:00Z"))
+                json("_id: 'abc'").append("firstSale", date("2014-01-01T08:00:00Z")).append("lastSale", date("2014-02-15T08:00:00Z")),
+                json("_id: 'jkl'").append("firstSale", date("2014-02-03T09:00:00Z")).append("lastSale", date("2014-02-03T09:00:00Z")),
+                json("_id: 'xyz'").append("firstSale", date("2014-02-03T09:05:00Z")).append("lastSale", date("2014-02-15T09:12:00Z"))
             );
     }
 

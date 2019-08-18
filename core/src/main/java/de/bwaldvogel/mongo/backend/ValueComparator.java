@@ -1,9 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -47,7 +47,7 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(UUID.class);
         SORT_PRIORITY.add(ObjectId.class);
         SORT_PRIORITY.add(Boolean.class);
-        SORT_PRIORITY.add(Date.class);
+        SORT_PRIORITY.add(Instant.class);
         SORT_PRIORITY.add(BsonRegularExpression.class);
     }
 
@@ -129,9 +129,9 @@ public class ValueComparator implements Comparator<Object> {
             return value1.toString().compareTo(value2.toString());
         }
 
-        if (Date.class.isAssignableFrom(clazz)) {
-            Date date1 = (Date) value1;
-            Date date2 = (Date) value2;
+        if (Instant.class.isAssignableFrom(clazz)) {
+            Instant date1 = (Instant) value1;
+            Instant date2 = (Instant) value2;
             return date1.compareTo(date2);
         }
 

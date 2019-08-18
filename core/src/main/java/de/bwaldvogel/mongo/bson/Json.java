@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.bson;
 
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,9 +34,9 @@ public final class Json {
             Document document = (Document) value;
             return document.toString(compactKey, jsonPrefix, jsonSuffix);
         }
-        if (value instanceof Date) {
-            Date date = (Date) value;
-            return toJsonValue(date.toInstant().toString());
+        if (value instanceof Instant) {
+            Instant instant = (Instant) value;
+            return toJsonValue(instant.toString());
         }
         if (value instanceof Collection) {
             Collection<?> collection = (Collection<?>) value;

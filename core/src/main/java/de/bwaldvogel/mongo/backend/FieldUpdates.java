@@ -4,10 +4,10 @@ import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
 import static de.bwaldvogel.mongo.backend.Utils.splitPath;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -317,12 +317,12 @@ class FieldUpdates {
                 " Please use a boolean ('true') or a $type expression ({$type: 'timestamp/date'}).");
         }
 
-
+        Instant now = Instant.now();
         final Object newValue;
         if (useDate) {
-            newValue = new Date();
+            newValue = now;
         } else {
-            newValue = new BsonTimestamp(System.currentTimeMillis());
+            newValue = new BsonTimestamp(now.toEpochMilli());
         }
 
         changeSubdocumentValue(document, key, newValue);

@@ -4,6 +4,7 @@
 com.fasterxml.jackson.core:jackson-annotations:2.9.0
 com.fasterxml.jackson.core:jackson-core:2.9.9
 com.fasterxml.jackson.core:jackson-databind:2.9.9.3
+com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9
 io.netty:netty-buffer:4.1.39.Final
 io.netty:netty-codec:4.1.39.Final
 io.netty:netty-common:4.1.39.Final

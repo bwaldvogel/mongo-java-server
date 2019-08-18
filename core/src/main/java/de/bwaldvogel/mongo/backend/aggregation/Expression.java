@@ -5,13 +5,13 @@ import static de.bwaldvogel.mongo.backend.Utils.describeType;
 import static de.bwaldvogel.mongo.bson.Json.toJsonValue;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -48,18 +48,19 @@ public enum Expression implements ExpressionTraits {
                 if (isNullOrMissing(number)) {
                     return null;
                 }
-                if (!(number instanceof Number) && !(number instanceof Date)) {
+                if (!(number instanceof Number) && !(number instanceof Instant)) {
                     throw new MongoServerError(16554,
                         name() + " only supports numeric or date types, not " + describeType(number));
                 }
-                if (number instanceof Date) {
-                    number = ((Date) number).getTime();
+                if (number instanceof Instant) {
+                    Instant instant = (Instant) number;
+                    number = instant.toEpochMilli();
                     returnDate = true;
                 }
                 sum = Utils.addNumbers(sum, (Number) number);
             }
             if (returnDate) {
-                return new Date(sum.longValue());
+                return Instant.ofEpochMilli(sum.longValue());
             }
             return sum;
         }

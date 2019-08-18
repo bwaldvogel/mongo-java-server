@@ -2,10 +2,10 @@ package de.bwaldvogel.mongo.wire;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -106,7 +106,8 @@ public class BsonEncoder {
                 }
                 break;
             case BsonConstants.TYPE_UTC_DATETIME:
-                buffer.writeLongLE(((Date) value).getTime());
+                Instant instant = (Instant) value;
+                buffer.writeLongLE(instant.toEpochMilli());
                 break;
             case BsonConstants.TYPE_REGEX:
                 BsonRegularExpression pattern = (BsonRegularExpression) value;
@@ -168,7 +169,7 @@ public class BsonEncoder {
             return BsonConstants.TYPE_DATA;
         } else if (value instanceof Collection<?> || value instanceof String[]) {
             return BsonConstants.TYPE_ARRAY;
-        } else if (value instanceof Date) {
+        } else if (value instanceof Instant) {
             return BsonConstants.TYPE_UTC_DATETIME;
         } else if (value instanceof BsonTimestamp) {
             return BsonConstants.TYPE_TIMESTAMP;

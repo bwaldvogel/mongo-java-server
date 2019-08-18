@@ -13,15 +13,16 @@ import static com.mongodb.client.model.Updates.addEachToSet;
 import static com.mongodb.client.model.Updates.pull;
 import static com.mongodb.client.model.Updates.pullByFilter;
 import static com.mongodb.client.model.Updates.set;
+import static de.bwaldvogel.mongo.backend.TestUtils.date;
 import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
+import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,7 +31,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
@@ -1853,15 +1853,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testServerStatus() throws Exception {
-        Date before = new Date();
+        Instant before = Instant.now();
         Document serverStatus = runCommand("serverStatus");
         assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
         assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);
-        Date serverTime = (Date) serverStatus.get("localTime");
-        assertThat(serverTime).isNotNull();
-        assertThat(serverTime.after(new Date())).isFalse();
-        assertThat(before.after(serverTime)).isFalse();
+        Instant serverTime = ((Date) serverStatus.get("localTime")).toInstant();
+
+        assertThat(serverTime)
+            .isNotNull()
+            .isBeforeOrEqualTo(Instant.now());
+
+        assertThat(before).isBeforeOrEqualTo(serverTime);
 
         Document connections = (Document) serverStatus.get("connections");
         assertThat(connections.get("current")).isNotNull();
@@ -2455,27 +2458,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // see http://docs.mongodb.org/manual/reference/operator/update/max
     @Test
     public void testUpdateMaxCompareDates() throws Exception {
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-
         Document object = new Document("_id", 1).append("desc", "crafts")
-            .append("dateEntered", df.parse("2013-10-01T05:00:00"))
-            .append("dateExpired", df.parse("2013-10-01T16:38:16"));
+            .append("dateEntered", instant("2013-10-01T05:00:00Z"))
+            .append("dateExpired", instant("2013-10-01T16:38:16Z"));
 
         collection.insertOne(object);
 
         collection.updateOne(json("_id: 1"),
-            new Document("$max", new Document("dateExpired", df.parse("2013-09-30T00:00:00"))));
+            new Document("$max", new Document("dateExpired", instant("2013-09-30T00:00:00Z"))));
         assertThat(collection.find(json("_id: 1")).first())
             .isEqualTo(json("_id: 1, desc: 'crafts'")
-                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
-                .append("dateExpired", df.parse("2013-10-01T16:38:16")));
+                .append("dateEntered", date("2013-10-01T05:00:00Z"))
+                .append("dateExpired", date("2013-10-01T16:38:16Z")));
 
         collection.updateOne(json("_id: 1"),
-            new Document("$max", new Document("dateExpired", df.parse("2014-01-07T00:00:00"))));
+            new Document("$max", new Document("dateExpired", instant("2014-01-07T00:00:00Z"))));
         assertThat(collection.find(json("_id: 1")).first()).isEqualTo(
             json("_id: 1, desc: 'crafts'")
-                .append("dateEntered", df.parse("2013-10-01T05:00:00"))
-                .append("dateExpired", df.parse("2014-01-07T00:00:00")));
+                .append("dateEntered", date("2013-10-01T05:00:00Z"))
+                .append("dateExpired", date("2014-01-07T00:00:00Z")));
     }
 
     // see http://docs.mongodb.org/manual/reference/operator/update/min
@@ -2495,27 +2496,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // see http://docs.mongodb.org/manual/reference/operator/update/min
     @Test
     public void testUpdateMinCompareDates() throws Exception {
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-
         Document object = new Document("_id", 1).append("desc", "crafts")
-            .append("dateEntered", df.parse("2013-10-01T05:00:00"))
-            .append("dateExpired", df.parse("2013-10-01T16:38:16"));
+            .append("dateEntered", instant("2013-10-01T05:00:00Z"))
+            .append("dateExpired", instant("2013-10-01T16:38:16Z"));
 
         collection.insertOne(object);
 
         collection.updateOne(json("_id: 1"),
-            new Document("$min", new Document("dateEntered", df.parse("2013-09-25T00:00:00"))));
+            new Document("$min", new Document("dateEntered", instant("2013-09-25T00:00:00Z"))));
         assertThat(collection.find(json("_id: 1")).first()) //
             .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
-                .append("dateExpired", df.parse("2013-10-01T16:38:16")));
+                .append("dateEntered", date("2013-09-25T00:00:00Z")) //
+                .append("dateExpired", date("2013-10-01T16:38:16Z")));
 
         collection.updateOne(json("_id: 1"),
-            new Document("$min", new Document("dateEntered", df.parse("2014-01-07T00:00:00"))));
+            new Document("$min", new Document("dateEntered", instant("2014-01-07T00:00:00Z"))));
         assertThat(collection.find(json("_id: 1")).first()) //
             .isEqualTo(json("_id: 1, desc: 'crafts'") //
-                .append("dateEntered", df.parse("2013-09-25T00:00:00")) //
-                .append("dateExpired", df.parse("2013-10-01T16:38:16")));
+                .append("dateEntered", date("2013-09-25T00:00:00Z")) //
+                .append("dateExpired", date("2013-10-01T16:38:16Z")));
     }
 
     @Test
@@ -3598,20 +3597,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testFindAndOfOrs() throws Exception {
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        collection.insertOne(new Document("_id", 1).append("published", true).append("startDate", dateFormat.parse("2015-03-01 13:20:05")));
-        collection.insertOne(new Document("_id", 2).append("published", true).append("expiration", dateFormat.parse("2020-12-31 18:00:00")));
+        collection.insertOne(new Document("_id", 1).append("published", true).append("startDate", instant("2015-03-01T13:20:05Z")));
+        collection.insertOne(new Document("_id", 2).append("published", true).append("expiration", instant("2020-12-31T18:00:00Z")));
         collection.insertOne(new Document("_id", 3).append("published", true));
         collection.insertOne(new Document("_id", 4).append("published", false));
-        collection.insertOne(new Document("_id", 5).append("published", true).append("startDate", dateFormat.parse("2017-01-01 00:00:00")));
-        collection.insertOne(new Document("_id", 6).append("published", true).append("expiration", dateFormat.parse("2016-01-01 00:00:00")));
+        collection.insertOne(new Document("_id", 5).append("published", true).append("startDate", instant("2017-01-01T00:00:00Z")));
+        collection.insertOne(new Document("_id", 6).append("published", true).append("expiration", instant("2016-01-01T00:00:00Z")));
 
-        Date now = dateFormat.parse("2016-01-01 00:00:00");
+        Instant instant = instant("2016-01-01T00:00:00Z");
         Bson query = and(
             ne("published", false),
-            or(exists("startDate", false), lt("startDate", now)),
-            or(exists("expiration", false), gt("expiration", now))
+            or(exists("startDate", false), lt("startDate", instant)),
+            or(exists("expiration", false), gt("expiration", instant))
         );
         List<Document> documents = toArray(collection.find(query).projection(json("_id: 1")));
         assertThat(documents).containsExactly(json("_id: 1"), json("_id: 2"), json("_id: 3"));

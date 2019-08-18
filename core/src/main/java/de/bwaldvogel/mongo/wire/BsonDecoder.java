@@ -2,8 +2,8 @@ package de.bwaldvogel.mongo.wire;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -71,7 +71,7 @@ class BsonDecoder {
                 value = decodeBoolean(buffer);
                 break;
             case BsonConstants.TYPE_UTC_DATETIME:
-                value = new Date(buffer.readLongLE());
+                value = Instant.ofEpochMilli(buffer.readLongLE());
                 break;
             case BsonConstants.TYPE_NULL:
                 value = null;

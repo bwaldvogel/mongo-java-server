@@ -4,10 +4,10 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -107,9 +107,9 @@ public class ValueComparatorTest {
 
     @Test
     public void testCompareDateValues() {
-        assertComparesTheSame(new Date(17), new Date(17));
-        assertFirstValueBeforeSecondValue(new Date(28), new Date(29));
-        assertFirstValueBeforeSecondValue(null, new Date());
+        assertComparesTheSame(Instant.ofEpochSecond(17), Instant.ofEpochSecond(17));
+        assertFirstValueBeforeSecondValue(Instant.ofEpochSecond(28), Instant.ofEpochSecond(29));
+        assertFirstValueBeforeSecondValue(null, Instant.now());
     }
 
     @Test

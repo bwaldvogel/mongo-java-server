@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -99,6 +100,11 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public void close() {
         backend.close();
+    }
+
+    @Override
+    public Clock getClock() {
+        return backend.getClock();
     }
 
 }

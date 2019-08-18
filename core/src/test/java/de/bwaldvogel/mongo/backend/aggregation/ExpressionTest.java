@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.assertj.core.data.Offset;
@@ -60,7 +59,9 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$add: []"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$add: 17"), json(""))).isEqualTo(17);
         assertThat(Expression.evaluate(json("$add: [1, null, 2]"), json(""))).isNull();
-        assertThat(Expression.evaluate(new Document("$add", Arrays.asList(new Date(1000), new Date(2000))), json(""))).isEqualTo(new Date(3000));
+        assertThat(Expression.evaluate(new Document("$add",
+            Arrays.asList(Instant.ofEpochSecond(1000), Instant.ofEpochSecond(2000))), json("")))
+            .isEqualTo(Instant.ofEpochSecond(3000));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$add: 'abc'"), json("")))
@@ -1700,8 +1701,8 @@ public class ExpressionTest {
             .withMessage("[Error 168] Unrecognized expression '$foo'");
     }
 
-    private static Date toDate(String instant) {
-        return Date.from(Instant.parse(instant));
+    private static Instant toDate(String instant) {
+        return Instant.parse(instant);
     }
 
 }

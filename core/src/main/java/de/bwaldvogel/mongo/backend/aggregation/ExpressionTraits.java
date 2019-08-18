@@ -10,7 +10,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
@@ -124,11 +123,11 @@ interface ExpressionTraits {
                 timezone = ZoneId.of(timezoneExpression.toString());
             }
         }
-        if (!(value instanceof Date)) {
+        if (!(value instanceof Instant)) {
             throw new MongoServerError(16006, "can't convert from " + describeType(value) + " to Date");
         }
 
-        Instant instant = ((Date) value).toInstant();
+        Instant instant = (Instant) value;
         return ZonedDateTime.ofInstant(instant, timezone);
     }
 

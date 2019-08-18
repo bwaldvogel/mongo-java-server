@@ -3,6 +3,7 @@ dependencies {
 
     implementation "com.fasterxml.jackson.core:jackson-core:latest.release"
     implementation "com.fasterxml.jackson.core:jackson-databind:latest.release"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:latest.release"
 
     testRuntimeOnly "org.postgresql:postgresql:latest.release"
     testImplementation "com.zaxxer:HikariCP:latest.release"

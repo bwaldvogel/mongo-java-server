@@ -3,10 +3,10 @@ package de.bwaldvogel.mongo.wire;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -174,7 +174,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
         serverStatus.put("uptime", Integer.valueOf((int) TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - started)));
         serverStatus.put("uptimeMillis", Long.valueOf(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)));
-        serverStatus.put("localTime", new Date());
+        serverStatus.put("localTime", Instant.now(mongoBackend.getClock()));
 
         Document connections = new Document();
         connections.put("current", Integer.valueOf(channelGroup.size()));

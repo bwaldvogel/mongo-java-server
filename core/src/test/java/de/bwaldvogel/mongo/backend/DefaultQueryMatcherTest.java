@@ -22,8 +22,8 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -881,7 +881,7 @@ public class DefaultQueryMatcherTest {
         assertThat(DefaultQueryMatcher.matchTypes(new ObjectId(), 7)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(true, 8)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(Boolean.FALSE, 8)).isTrue();
-        assertThat(DefaultQueryMatcher.matchTypes(new Date(), 9)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(Instant.now(), 9)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(null, 10)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(Pattern.compile(".*"), 11)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(123, 16)).isTrue();

@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -25,7 +25,7 @@ enum BsonType {
     BIN_DATA(5, "binData", byte[].class, UUID.class),
     OBJECT_ID(7, "objectId", ObjectId.class),
     BOOL(8, "bool", Boolean.class),
-    DATE(9, "date", Date.class),
+    DATE(9, "date", Instant.class),
     NULL(10, "null") {
         @Override
         public boolean matches(Object value) {

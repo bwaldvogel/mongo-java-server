@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 
 import org.junit.Test;
 
@@ -71,7 +71,7 @@ public class UtilsTest {
         assertThat(Utils.normalizeValue(-0.0)).isEqualTo(0.0);
         assertThat(Utils.normalizeValue(0.0)).isEqualTo(0.0);
         assertThat(Utils.normalizeValue(Missing.getInstance())).isNull();
-        assertThat(Utils.normalizeValue(new Date())).isInstanceOf(Date.class);
+        assertThat(Utils.normalizeValue(Instant.now())).isInstanceOf(Instant.class);
         assertThat(Utils.normalizeValue(json("a: {b: 1}"))).isEqualTo(json("a: {b: 1.0}"));
         assertThat(Utils.normalizeValue(json("a: {b: -0.0, c: -1}"))).isEqualTo(json("a: {b: 0.0, c: -1.0}"));
         assertThat(Utils.normalizeValue(json("a: {c: 1, b: 0}")))

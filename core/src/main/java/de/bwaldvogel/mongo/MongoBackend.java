@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 
@@ -29,6 +30,8 @@ public interface MongoBackend {
     Collection<Document> getCurrentOperations(MongoQuery query);
 
     List<Integer> getVersion();
+
+    Clock getClock();
 
     void close();
 
