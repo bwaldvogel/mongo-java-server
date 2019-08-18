@@ -99,9 +99,6 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             log.error("unknown command: {}", query, e);
             Map<String, ?> additionalInfo = Collections.singletonMap("bad cmd", query.getQuery());
             return queryFailure(header, e, additionalInfo);
-        } catch (MongoServerError e) {
-            log.error("failed to handle query {}", query, e);
-            return queryFailure(header, e);
         } catch (MongoSilentServerException e) {
             return queryFailure(header, e);
         } catch (MongoServerException e) {
