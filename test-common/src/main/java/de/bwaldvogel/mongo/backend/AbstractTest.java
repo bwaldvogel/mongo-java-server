@@ -1,6 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.net.InetSocketAddress;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 
 import org.bson.Document;
 import org.junit.AfterClass;
@@ -18,6 +21,8 @@ import de.bwaldvogel.mongo.MongoServer;
 public abstract class AbstractTest {
 
     protected static final String TEST_DATABASE_NAME = "testdb";
+
+    protected static final Clock TEST_CLOCK = Clock.fixed(Instant.parse("2019-05-23T12:00:00.123Z"), ZoneOffset.UTC);
 
     protected static com.mongodb.MongoClient syncClient;
     protected static MongoDatabase db;
@@ -67,6 +72,7 @@ public abstract class AbstractTest {
 
     protected void setUpBackend() throws Exception {
         MongoBackend backend = createBackend();
+        backend.setClock(TEST_CLOCK);
         mongoServer = new MongoServer(backend);
         serverAddress = mongoServer.bind();
     }

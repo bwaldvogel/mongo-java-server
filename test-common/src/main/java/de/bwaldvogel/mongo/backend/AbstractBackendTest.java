@@ -108,7 +108,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     protected static final String OTHER_TEST_DATABASE_NAME = "bar";
 
-    private Document runCommand(String commandName) {
+    protected Document runCommand(String commandName) {
         return runCommand(new Document(commandName, Integer.valueOf(1)));
     }
 
@@ -1853,18 +1853,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testServerStatus() throws Exception {
-        Instant before = Instant.now();
         Document serverStatus = runCommand("serverStatus");
         assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
         assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);
         Instant serverTime = ((Date) serverStatus.get("localTime")).toInstant();
-
-        assertThat(serverTime)
-            .isNotNull()
-            .isBeforeOrEqualTo(Instant.now());
-
-        assertThat(before).isBeforeOrEqualTo(serverTime);
+        assertThat(serverTime).isEqualTo(TEST_CLOCK.instant());
 
         Document connections = (Document) serverStatus.get("connections");
         assertThat(connections.get("current")).isNotNull();

@@ -31,8 +31,10 @@ public interface MongoBackend {
 
     List<Integer> getVersion();
 
+    void close();
+
     Clock getClock();
 
-    void close();
+    void setClock(Clock clock);
 
 }

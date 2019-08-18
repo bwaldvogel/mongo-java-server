@@ -39,7 +39,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
 
-    private final Clock clock = Clock.systemDefaultZone();
+    private Clock clock = Clock.systemDefaultZone();
 
     private int maxWireVersion = 2;
     private int minWireVersion = 0;
@@ -260,6 +260,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public Clock getClock() {
         return clock;
+    }
+
+    @Override
+    public void setClock(Clock clock) {
+        this.clock = clock;
     }
 
 }

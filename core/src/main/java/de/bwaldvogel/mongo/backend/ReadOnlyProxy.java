@@ -107,4 +107,9 @@ public class ReadOnlyProxy implements MongoBackend {
         return backend.getClock();
     }
 
+    @Override
+    public void setClock(Clock clock) {
+        backend.setClock(clock);
+    }
+
 }
