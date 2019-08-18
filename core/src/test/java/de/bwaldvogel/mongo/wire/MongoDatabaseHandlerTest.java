@@ -1,14 +1,15 @@
 package de.bwaldvogel.mongo.wire;
 
+import static de.bwaldvogel.mongo.TestUtils.json;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+import org.junit.Test;
+
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import io.netty.channel.Channel;
-import org.junit.Test;
-
-import static de.bwaldvogel.mongo.TestUtils.json;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class MongoDatabaseHandlerTest {
 
@@ -23,7 +24,7 @@ public class MongoDatabaseHandlerTest {
 
         final MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
 
-        handler.handleCommand(channel, query);
+        handler.handleCommand(query);
 
         verify(backend).handleCommand(channel, "dbName", "count", subQueryDoc);
     }
@@ -38,7 +39,7 @@ public class MongoDatabaseHandlerTest {
 
         final MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
 
-        handler.handleCommand(channel, query);
+        handler.handleCommand(query);
 
         verify(backend).handleCommand(channel, "dbName", "count", queryDoc);
     }

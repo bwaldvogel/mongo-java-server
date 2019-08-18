@@ -29,7 +29,6 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -68,7 +67,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ClientRequest object) throws Exception {
         if (object instanceof MongoQuery) {
-            ctx.channel().writeAndFlush(handleQuery(ctx.channel(), (MongoQuery) object));
+            ctx.channel().writeAndFlush(handleQuery((MongoQuery) object));
         } else if (object instanceof MongoInsert) {
             MongoInsert insert = (MongoInsert) object;
             mongoBackend.handleInsert(insert);
@@ -83,12 +82,12 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         }
     }
 
-    private MongoReply handleQuery(Channel channel, MongoQuery query) {
+    private MongoReply handleQuery(MongoQuery query) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
             List<Document> documents = new ArrayList<>();
             if (query.getCollectionName().startsWith("$cmd")) {
-                documents.add(handleCommand(channel, query));
+                documents.add(handleCommand(query));
             } else {
                 for (Document obj : mongoBackend.handleQuery(query)) {
                     documents.add(obj);
@@ -126,7 +125,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
     }
 
-    Document handleCommand(Channel channel, MongoQuery query) {
+    Document handleCommand(MongoQuery query) {
         String collectionName = query.getCollectionName();
         if (collectionName.equals("$cmd.sys.inprog")) {
             Collection<Document> currentOperations = mongoBackend.getCurrentOperations(query);
@@ -151,7 +150,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                         actualQuery = (Document)actualQuery.get("$query");
                     }
 
-                    return mongoBackend.handleCommand(channel, query.getDatabaseName(), command, actualQuery);
+                    return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), command, actualQuery);
             }
         }
 
