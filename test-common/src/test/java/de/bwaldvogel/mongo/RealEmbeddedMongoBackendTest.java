@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
 import java.util.Date;
 
 import org.bson.Document;
@@ -121,13 +120,11 @@ public class RealEmbeddedMongoBackendTest extends AbstractBackendTest {
 
     @Override
     public void testServerStatus() throws Exception {
-        Instant before = Instant.now();
         Document serverStatus = runCommand("serverStatus");
         assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
         assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);
-        Instant serverTime = ((Date) serverStatus.get("localTime")).toInstant();
-        assertThat(serverTime).isBetween(before, Instant.now());
+        assertThat(serverStatus.get("localTime")).isInstanceOf(Date.class);
 
         Document connections = (Document) serverStatus.get("connections");
         assertThat(connections.get("current")).isNotNull();
