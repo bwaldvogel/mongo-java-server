@@ -23,16 +23,6 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
-import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -577,71 +567,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
 
         MongoCollection<P> collection = resolveCollection(collectionName, false);
-
-        Aggregation aggregation = new Aggregation(collection);
-
-        @SuppressWarnings("unchecked")
-        List<Document> pipeline = (List<Document>) query.get("pipeline");
-        for (Document stage : pipeline) {
-            String stageOperation = CollectionUtils.getSingleElement(stage.keySet(), () -> {
-                throw new MongoServerError(40323, "A pipeline stage specification object must contain exactly one field.");
-            });
-            switch (stageOperation) {
-                case "$match":
-                    Document matchQuery = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new MatchStage(matchQuery));
-                    break;
-                case "$skip":
-                    Number numSkip = (Number) stage.get(stageOperation);
-                    aggregation.addStage(new SkipStage(numSkip.longValue()));
-                    break;
-                case "$limit":
-                    Number numLimit = (Number) stage.get(stageOperation);
-                    aggregation.addStage(new LimitStage(numLimit.longValue()));
-                    break;
-                case "$sort":
-                    Document orderBy = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new OrderByStage(orderBy));
-                    break;
-                case "$project":
-                    aggregation.addStage(new ProjectStage((Document) stage.get(stageOperation)));
-                    break;
-                case "$count":
-                    String count = (String) stage.get(stageOperation);
-                    aggregation.addStage(new GroupStage(new Document(ID_FIELD, null).append(count, new Document("$sum", 1))));
-                    aggregation.addStage(new ProjectStage(new Document(ID_FIELD, 0)));
-                    break;
-                case "$group":
-                    Document groupDetails = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new GroupStage(groupDetails));
-                    break;
-                case "$addFields":
-                    Document addFieldsDetails = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new AddFieldsStage(addFieldsDetails));
-                    break;
-                case "$unwind":
-                    Object unwind = stage.get(stageOperation);
-                    aggregation.addStage(new UnwindStage(unwind));
-                    break;
-                case "$lookup":
-                    Document lookup = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new LookupStage(lookup, this));
-                    break;
-                case "$replaceRoot":
-                    Document replaceRoot = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new ReplaceRootStage(replaceRoot));
-                    break;
-                case "$sortByCount":
-                    Object expression = stage.get(stageOperation);
-                    aggregation.addStage(new GroupStage(new Document(ID_FIELD, expression).append("count", new Document("$sum", 1))));
-                    aggregation.addStage(new OrderByStage(new Document("count", -1)));
-                    break;
-                default:
-                    throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
-            }
-        }
-
-        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregation.getResult());
+        Aggregation aggregation = Aggregation.fromPipeline(query, this, collection);
+        List<Document> aggregationResult = aggregation.computeResult();
+        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregationResult);
     }
 
     private int getOptionalNumber(Document query, String fieldName, int defaultValue) {
