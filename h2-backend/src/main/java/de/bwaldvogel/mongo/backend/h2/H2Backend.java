@@ -27,19 +27,21 @@ public class H2Backend extends AbstractMongoBackend {
     public H2Backend(MVStore mvStore) {
         this.mvStore = mvStore;
 
-        for (String mapName : mvStore.getMapNames()) {
-            if (mapName.startsWith(H2Database.DATABASES_PREFIX)) {
+        mvStore.getMapNames().stream()
+            .filter(mapName -> mapName.startsWith(H2Database.DATABASES_PREFIX))
+            .map(mapName -> {
                 String fullName = mapName.substring(H2Database.DATABASES_PREFIX.length());
-                String databaseName = Utils.firstFragment(fullName);
-
+                return Utils.firstFragment(fullName);
+            })
+            .distinct()
+            .forEach(databaseName -> {
                 log.info("opening database '{}'", databaseName);
                 try {
                     resolveDatabase(databaseName);
                 } catch (MongoServerException e) {
                     log.error("Failed to open '{}'", databaseName, e);
                 }
-            }
-        }
+            });
     }
 
     public H2Backend(String fileName) {
