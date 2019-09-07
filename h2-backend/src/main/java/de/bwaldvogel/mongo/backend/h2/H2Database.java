@@ -66,7 +66,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
         String fullCollectionName = databaseName + "." + collectionName;
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
-        return new H2Collection(databaseName, collectionName, idField, dataMap, metaMap);
+        return new H2Collection(this, collectionName, idField, dataMap, metaMap);
     }
 
     @Override

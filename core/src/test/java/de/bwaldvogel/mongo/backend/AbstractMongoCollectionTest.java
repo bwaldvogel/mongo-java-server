@@ -8,7 +8,9 @@ import java.util.stream.Stream;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
@@ -17,8 +19,8 @@ public class AbstractMongoCollectionTest {
 
     private static class TestCollection extends AbstractMongoCollection<Object> {
 
-        TestCollection(String databaseName, String collectionName, String idField) {
-            super(databaseName, collectionName, idField);
+        TestCollection(MongoDatabase database, String collectionName, String idField) {
+            super(database, collectionName, idField);
         }
 
         @Override
@@ -83,7 +85,8 @@ public class AbstractMongoCollectionTest {
 
     @Before
     public void setUp() {
-        this.collection = new TestCollection("some database", "some collection", "_id");
+        MongoDatabase database = Mockito.mock(MongoDatabase.class);
+        this.collection = new TestCollection(database, "some collection", "_id");
     }
 
     @Test

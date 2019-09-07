@@ -86,7 +86,11 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
             throw new MongoServerException("failed to create or open collection " + collectionName, e);
         }
 
-        return new PostgresqlCollection(this.backend, getDatabaseName(), collectionName, idField);
+        return new PostgresqlCollection(this, collectionName, idField);
+    }
+
+    public PostgresqlBackend getBackend() {
+        return backend;
     }
 
     static String getSchemaName(String databaseName) {

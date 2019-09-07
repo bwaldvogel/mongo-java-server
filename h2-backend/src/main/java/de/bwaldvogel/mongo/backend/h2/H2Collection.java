@@ -12,6 +12,7 @@ import org.h2.mvstore.MVMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
@@ -29,8 +30,8 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
     private static final String DATA_SIZE_KEY = "dataSize";
 
-    public H2Collection(String databaseName, String collectionName, String idField, MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap) {
-        super(databaseName, collectionName, idField);
+    public H2Collection(MongoDatabase database, String collectionName, String idField, MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap) {
+        super(database, collectionName, idField);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
         if (!this.metaMap.containsKey(DATA_SIZE_KEY)) {

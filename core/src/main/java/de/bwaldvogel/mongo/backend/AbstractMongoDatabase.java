@@ -970,7 +970,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     @Override
     public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName) {
         oldDatabase.unregisterCollection(collection.getCollectionName());
-        collection.renameTo(getDatabaseName(), newCollectionName);
+        collection.renameTo(this, newCollectionName);
         // TODO resolve cast
         @SuppressWarnings("unchecked")
         MongoCollection<P> newCollection = (MongoCollection<P>) collection;

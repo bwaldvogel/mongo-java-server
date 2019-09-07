@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
@@ -26,8 +27,8 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     private Queue<Integer> emptyPositions = new LinkedList<>();
     private AtomicInteger dataSize = new AtomicInteger();
 
-    public MemoryCollection(String databaseName, String collectionName, String idField) {
-        super(databaseName, collectionName, idField);
+    public MemoryCollection(MongoDatabase database, String collectionName, String idField) {
+        super(database, collectionName, idField);
     }
 
     @Override

@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.projection.ProjectingIterable;
 import de.bwaldvogel.mongo.backend.projection.Projection;
 import de.bwaldvogel.mongo.bson.Document;
@@ -31,14 +32,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoCollection.class);
 
+    private MongoDatabase database;
     private String collectionName;
-    private String databaseName;
     private final List<Index<P>> indexes = new ArrayList<>();
     private final QueryMatcher matcher = new DefaultQueryMatcher();
     protected final String idField;
 
-    protected AbstractMongoCollection(String databaseName, String collectionName, String idField) {
-        this.databaseName = databaseName;
+    protected AbstractMongoCollection(MongoDatabase database, String collectionName, String idField) {
+        this.database = database;
         this.collectionName = collectionName;
         this.idField = idField;
     }
@@ -118,8 +119,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public String getDatabaseName() {
-        return databaseName;
+    public MongoDatabase getDatabase() {
+        return database;
     }
 
     @Override
@@ -666,8 +667,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public void renameTo(String newDatabaseName, String newCollectionName) {
-        this.databaseName = newDatabaseName;
+    public void renameTo(MongoDatabase newDatabase, String newCollectionName) {
+        this.database = newDatabase;
         this.collectionName = newCollectionName;
     }
 

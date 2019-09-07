@@ -17,7 +17,7 @@ public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
 
     @Override
     protected MemoryCollection openOrCreateCollection(String collectionName, String idField) {
-        return new MemoryCollection(getDatabaseName(), collectionName, idField);
+        return new MemoryCollection(this, collectionName, idField);
     }
 
     @Override

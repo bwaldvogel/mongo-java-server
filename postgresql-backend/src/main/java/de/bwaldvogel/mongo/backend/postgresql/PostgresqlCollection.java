@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.bson.Document;
@@ -20,9 +21,9 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
 
     private final PostgresqlBackend backend;
 
-    public PostgresqlCollection(PostgresqlBackend backend, String databaseName, String collectionName, String idField) {
-        super(databaseName, collectionName, idField);
-        this.backend = backend;
+    public PostgresqlCollection(PostgresqlDatabase database, String collectionName, String idField) {
+        super(database, collectionName, idField);
+        this.backend = database.getBackend();
     }
 
     @Override
@@ -268,7 +269,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    public void renameTo(String newDatabaseName, String newCollectionName) {
+    public void renameTo(MongoDatabase newDatabase, String newCollectionName) {
         String oldTablename = PostgresqlCollection.getTablename(getCollectionName());
         String newTablename = PostgresqlCollection.getTablename(newCollectionName);
         try (Connection connection = backend.getConnection();
@@ -281,10 +282,10 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
             throw new MongoServerException("failed to rename " + this, e);
         }
 
-        if (!Objects.equals(getDatabaseName(), newDatabaseName)) {
+        if (!Objects.equals(getDatabaseName(), newDatabase.getDatabaseName())) {
             throw new UnsupportedOperationException();
         }
 
-        super.renameTo(newDatabaseName, newCollectionName);
+        super.renameTo(newDatabase, newCollectionName);
     }
 }

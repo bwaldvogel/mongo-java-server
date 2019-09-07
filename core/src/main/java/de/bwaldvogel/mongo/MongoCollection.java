@@ -8,7 +8,11 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public interface MongoCollection<P> {
 
-    String getDatabaseName();
+    MongoDatabase getDatabase();
+
+    default String getDatabaseName() {
+        return getDatabase().getDatabaseName();
+    }
 
     String getFullName();
 
@@ -55,6 +59,6 @@ public interface MongoCollection<P> {
 
     int getNumIndexes();
 
-    void renameTo(String newDatabaseName, String newCollectionName);
+    void renameTo(MongoDatabase newDatabase, String newCollectionName);
 
 }
