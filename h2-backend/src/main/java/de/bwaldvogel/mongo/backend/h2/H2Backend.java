@@ -21,7 +21,9 @@ public class H2Backend extends AbstractMongoBackend {
     }
 
     public void commit() {
-        mvStore.commit();
+        long oldVersion = mvStore.getCurrentVersion();
+        long newVersion = mvStore.commit();
+        log.debug("Committed MVStore (v: {} → {})", oldVersion, newVersion);
     }
 
     public H2Backend(MVStore mvStore) {
