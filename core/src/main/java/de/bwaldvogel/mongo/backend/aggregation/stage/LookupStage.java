@@ -10,6 +10,7 @@ import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 
@@ -49,8 +50,7 @@ public class LookupStage implements AggregationStage {
         if (value instanceof String) {
             return (String) value;
         }
-        throw new FailedToParseException("'" + name + "' option to $lookup must be a string, but was type " +
-            value.getClass().getName());
+        throw new FailedToParseException("'" + name + "' option to $lookup must be a string, but was type " + Utils.describeType(value));
     }
 
     private void ensureAllConfigurationPropertiesExist(Document configuration) {

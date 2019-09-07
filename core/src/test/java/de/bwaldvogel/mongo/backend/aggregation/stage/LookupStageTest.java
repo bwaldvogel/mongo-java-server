@@ -22,9 +22,11 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 public class LookupStageTest {
 
     private MongoDatabase database;
+    @SuppressWarnings("rawtypes")
     private MongoCollection authorsCollection;
 
     @Before
+    @SuppressWarnings("unchecked")
     public void setUp() {
         database = mock(MongoDatabase.class);
         authorsCollection = mock(MongoCollection.class);
@@ -67,7 +69,7 @@ public class LookupStageTest {
     public void testFromFieldWithWrongType() {
         assertThatThrownBy(() -> buildLookupStage("from: 1, localField: 'authorId', foreignField: '_id', as: 'author'"))
             .isInstanceOf(MongoServerException.class)
-            .hasMessage("[Error 9] 'from' option to $lookup must be a string, but was type java.lang.Integer");
+            .hasMessage("[Error 9] 'from' option to $lookup must be a string, but was type int");
     }
 
     @Test
