@@ -1093,6 +1093,85 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithIllegalLookupStage() {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$lookup: {from: 'coll', let: 'abc', pipeline: [], as: 'data'}"))))
+            .withMessageContaining("Command failed with error 9 (FailedToParse): '$lookup argument 'let: \"abc\"' must be an object, is type string'");
+
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$lookup: {from: 'coll', let: {}, pipeline: 'abc', as: 'data'}"))))
+            .withMessageContaining("Command failed with error 14 (TypeMismatch): ''pipeline' option must be specified as an array'");
+    }
+
+    @Test
+    public void testAggregateWithLookupAndPipeline() {
+        MongoCollection<Document> ordersCollection = db.getCollection("orders");
+        MongoCollection<Document> itemsCollection = db.getCollection("items");
+
+        List<Document> pipeline = jsonList("$lookup: {from: 'items'," +
+            " pipeline: [{$project: {item: 1, _id: 0}}]," +
+            " as: 'items'}");
+
+        assertThat(ordersCollection.aggregate(pipeline)).isEmpty();
+
+        ordersCollection.insertOne(json("_id: 1, order: 100"));
+        ordersCollection.insertOne(json("_id: 2, order: 101"));
+        ordersCollection.insertOne(json("_id: 3, order: 102"));
+
+        itemsCollection.insertOne(json("_id: 1, item: 'A'"));
+        itemsCollection.insertOne(json("_id: 2, item: 'B'"));
+
+        assertThat(toArray(ordersCollection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, order: 100, items: [{item: 'A'}, {item: 'B'}]"),
+                json("_id: 2, order: 101, items: [{item: 'A'}, {item: 'B'}]"),
+                json("_id: 3, order: 102, items: [{item: 'A'}, {item: 'B'}]")
+            );
+    }
+
+    @Test
+    public void testAggregateWithLookupAndUncorrelatedSubqueries() {
+        MongoCollection<Document> ordersCollection = db.getCollection("orders");
+        MongoCollection<Document> warehousesCollection = db.getCollection("warehouses");
+
+        List<Document> pipeline = jsonList("$lookup: {from: 'warehouses'," +
+            " let: { order_item: '$item', order_qty: '$ordered' }," +
+            " pipeline: [{$match:\n" +
+            "                 {$expr:\n" +
+            "                    {$and:\n" +
+            "                       [\n" +
+            "                         {$eq: ['$stock_item',  '$$order_item']},\n" +
+            "                         {$gte: ['$instock', '$$order_qty']}\n" +
+            "                       ]\n" +
+            "                    }\n" +
+            "                 }\n" +
+            "              },\n" +
+            "              {$project: {stock_item: 0, _id: 0}}]," +
+            " as: 'stockdata'}");
+
+        assertThat(ordersCollection.aggregate(pipeline)).isEmpty();
+
+        ordersCollection.insertOne(json("_id: 1, item: 'almonds', price: 12, ordered: 2"));
+        ordersCollection.insertOne(json("_id: 2, item: 'pecans', price: 20, ordered: 1"));
+        ordersCollection.insertOne(json("_id: 3, item: 'pecans', price: 10, ordered: 60"));
+
+        warehousesCollection.insertOne(json("_id: 1, stock_item: 'almonds', warehouse: 'A', instock: 120"));
+        warehousesCollection.insertOne(json("_id: 2, stock_item: 'pecans', warehouse: 'A', instock: 80"));
+        warehousesCollection.insertOne(json("_id: 3, stock_item: 'almonds', warehouse: 'B', instock: 60"));
+        warehousesCollection.insertOne(json("_id: 4, stock_item: 'cookies', warehouse: 'B', instock: 40"));
+        warehousesCollection.insertOne(json("_id: 5, stock_item: 'cookies', warehouse: 'A', instock: 80"));
+
+        assertThat(toArray(ordersCollection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, item: 'almonds', price: 12, ordered: 2, stockdata: [{instock: 120, warehouse: 'A'}, {instock: 60, warehouse: 'B'}]"),
+                json("_id: 2, item: 'pecans', price: 20, ordered: 1, stockdata: [{instock: 80, warehouse: 'A'}]"),
+                json("_id: 3, item: 'pecans', price: 10, ordered: 60, stockdata: [{instock: 80, warehouse: 'A'}]")
+            );
+    }
+
+    @Test
     public void testAggregateWithReplaceRoot() {
         List<Document> pipeline = jsonList("$replaceRoot: { newRoot: '$a.b' }");
 

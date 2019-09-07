@@ -567,7 +567,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
 
         MongoCollection<P> collection = resolveCollection(collectionName, false);
-        Aggregation aggregation = Aggregation.fromPipeline(query, this, collection);
+        Object pipeline = query.get("pipeline");
+        Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection);
         List<Document> aggregationResult = aggregation.computeResult();
         return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregationResult);
     }

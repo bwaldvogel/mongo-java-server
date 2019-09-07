@@ -5,6 +5,7 @@ import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +19,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.LookupWithPipelineStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
@@ -33,13 +35,13 @@ public class Aggregation {
     private final MongoCollection<?> collection;
 
     private final List<AggregationStage> stages = new ArrayList<>();
+    private Map<String, Object> variables = Collections.emptyMap();
 
     private Aggregation(MongoCollection<?> collection) {
         this.collection = collection;
     }
 
-    public static Aggregation fromPipeline(Document query, MongoDatabase database, MongoCollection<?> collection) {
-        Object pipelineObject = query.get("pipeline");
+    public static Aggregation fromPipeline(Object pipelineObject, MongoDatabase database, MongoCollection<?> collection) {
         if (!(pipelineObject instanceof List)) {
             throw new TypeMismatchException("'pipeline' option must be specified as an array");
         }
@@ -99,7 +101,11 @@ public class Aggregation {
                     break;
                 case "$lookup":
                     Document lookup = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new LookupStage(lookup, database));
+                    if (lookup.containsKey(LookupStage.LOCAL_FIELD)) {
+                        aggregation.addStage(new LookupStage(lookup, database));
+                    } else {
+                        aggregation.addStage(new LookupWithPipelineStage(lookup, database));
+                    }
                     break;
                 case "$replaceRoot":
                     Document replaceRoot = (Document) stage.get(stageOperation);
@@ -120,10 +126,30 @@ public class Aggregation {
     private List<Document> runStages() {
         Spliterator<Document> documents = collection.queryAll().spliterator();
         Stream<Document> stream = StreamSupport.stream(documents, false);
+        if (hasVariables()) {
+            stream = stream.map(this::addAllVariables);
+        }
         for (AggregationStage stage : stages) {
             stream = stage.apply(stream);
         }
+        if (hasVariables()) {
+            stream = stream.map(this::removeAllVariables);
+        }
         return stream.collect(Collectors.toList());
+    }
+
+    private boolean hasVariables() {
+        return !variables.isEmpty();
+    }
+
+    private Document addAllVariables(Document document) {
+        Document clone = document.clone();
+        clone.putAll(variables);
+        return clone;
+    }
+
+    private Document removeAllVariables(Document document) {
+        return CollectionUtils.removeAll(document, variables.keySet());
     }
 
     private void addStage(AggregationStage stage) {
@@ -135,6 +161,10 @@ public class Aggregation {
             return Collections.emptyList();
         }
         return runStages();
+    }
+
+    public void setVariables(Map<String, Object> variables) {
+        this.variables = Collections.unmodifiableMap(variables);
     }
 
 }

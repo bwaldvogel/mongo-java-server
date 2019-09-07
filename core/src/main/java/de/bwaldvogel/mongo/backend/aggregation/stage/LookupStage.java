@@ -12,19 +12,13 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.FailedToParseException;
 
-public class LookupStage implements AggregationStage {
-    private static final String FROM = "from";
-    private static final String LOCAL_FIELD = "localField";
+public class LookupStage extends AbstractLookupStage {
+
+    public static final String LOCAL_FIELD = "localField";
     private static final String FOREIGN_FIELD = "foreignField";
-    private static final String AS = "as";
-    private static final Set<String> CONFIGURATION_KEYS;
-    private final String localField;
-    private final String foreignField;
-    private final String as;
-    private final MongoCollection<?> collection;
 
+    private static final Set<String> CONFIGURATION_KEYS;
     static {
         CONFIGURATION_KEYS = new HashSet<>();
         CONFIGURATION_KEYS.add(FROM);
@@ -33,33 +27,19 @@ public class LookupStage implements AggregationStage {
         CONFIGURATION_KEYS.add(AS);
     }
 
+    private final String localField;
+    private final String foreignField;
+    private final String as;
+
+    private final MongoCollection<?> collection;
+
     public LookupStage(Document configuration, MongoDatabase mongoDatabase) {
-        String from = readConfigurationProperty(configuration, FROM);
+        String from = readStringConfigurationProperty(configuration, FROM);
         collection = mongoDatabase.resolveCollection(from, false);
-        localField = readConfigurationProperty(configuration, LOCAL_FIELD);
-        foreignField = readConfigurationProperty(configuration, FOREIGN_FIELD);
-        as = readConfigurationProperty(configuration, AS);
-        ensureAllConfigurationPropertiesExist(configuration);
-    }
-
-    private String readConfigurationProperty(Document configuration, String name) {
-        Object value = configuration.get(name);
-        if (value == null) {
-            throw new FailedToParseException("missing '" + name + "' option to $lookup stage specification: " + configuration);
-        }
-        if (value instanceof String) {
-            return (String) value;
-        }
-        throw new FailedToParseException("'" + name + "' option to $lookup must be a string, but was type " + Utils.describeType(value));
-    }
-
-    private void ensureAllConfigurationPropertiesExist(Document configuration) {
-        for (String name : configuration.keySet()) {
-            if (!CONFIGURATION_KEYS.contains(name)) {
-                String message = "unknown argument to $lookup: " + name;
-                throw new FailedToParseException(message);
-            }
-        }
+        localField = readStringConfigurationProperty(configuration, LOCAL_FIELD);
+        foreignField = readStringConfigurationProperty(configuration, FOREIGN_FIELD);
+        as = readStringConfigurationProperty(configuration, AS);
+        ensureAllConfigurationPropertiesExist(configuration, CONFIGURATION_KEYS);
     }
 
     @Override

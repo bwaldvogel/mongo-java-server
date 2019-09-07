@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public final class CollectionUtils {
@@ -48,6 +49,11 @@ public final class CollectionUtils {
             result.add(values);
         }
         return result;
+    }
+
+    public static <T extends Map<K, ?>, K> T removeAll(T map, Collection<K> keysToRemove) {
+        keysToRemove.forEach(map::remove);
+        return map;
     }
 
 }
