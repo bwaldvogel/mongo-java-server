@@ -26,7 +26,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     @ClassRule
     public static TemporaryFolder tempFolder = new TemporaryFolder();
 
-    private H2Backend backend;
+    private static H2Backend backend;
 
     private static File tempFile;
 
@@ -42,6 +42,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     @Override
     protected MongoBackend createBackend() throws Exception {
         backend = new H2Backend(tempFile.toString());
+        backend.getMvStore().setAutoCommitDelay(0);
         return backend;
     }
 
@@ -50,9 +51,17 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
 
+        long versionBeforeUpdate = backend.getMvStore().commit();
+
+        collection.findOneAndUpdate(json("_id: 2"), json("$set: {x: 10}"));
+
+        long versionAfterUpdate = backend.getMvStore().commit();
+        assertThat(versionAfterUpdate).isEqualTo(versionBeforeUpdate + 1);
+
         restart();
 
-        assertThat(toArray(collection.find())).containsExactly(json("_id: 1"), json("_id: 2"));
+        assertThat(toArray(collection.find()))
+            .containsExactly(json("_id: 1"), json("_id: 2, x: 10"));
     }
 
     @Test
@@ -103,11 +112,11 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
         backend.commit();
 
-        Document statsBefore = db.runCommand(json("{dbStats:1, scale:1}"));
+        Document statsBefore = db.runCommand(json("dbStats: 1, scale: 1"));
 
         restart();
 
-        Document statsAfter = db.runCommand(json("{dbStats:1, scale:1}"));
+        Document statsAfter = db.runCommand(json("dbStats: 1, scale: 1"));
 
         assertThat(statsAfter).isEqualTo(statsBefore);
     }

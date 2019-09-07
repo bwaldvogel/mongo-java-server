@@ -64,6 +64,10 @@ public class H2Backend extends AbstractMongoBackend {
         return new H2Database(databaseName, this, mvStore);
     }
 
+    public MVStore getMvStore() {
+        return mvStore;
+    }
+
     @Override
     public void close() {
         log.info("closing {}", this);
