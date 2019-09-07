@@ -20,6 +20,8 @@ public enum QueryOperator {
     LESS_THAN("$lt"),
     MOD("$mod"),
     SIZE("$size"),
+    AND("$and"),
+    OR("$or"),
     ALL("$all"),
     ELEM_MATCH("$elemMatch"),
     TYPE("$type"),

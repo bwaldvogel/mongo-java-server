@@ -605,6 +605,78 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithLogicalAndInMatch() throws Exception {
+        List<Document> pipeline = jsonList("$match: {$and: [{price: {$lt: 100}}, {quality: {$gt: 10}}]}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, price: 10, quality: 50"));
+        collection.insertOne(json("_id: 2, price: 150, quality: 500"));
+        collection.insertOne(json("_id: 3, price: 50, quality: 150"));
+        collection.insertOne(json("_id: 4, price: 10, quality: 5"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, price: 10, quality: 50"),
+                json("_id: 3, price: 50, quality: 150")
+            );
+    }
+
+    @Test
+    public void testAggregateWithLogicalAndInMatchExpr() throws Exception {
+        List<Document> pipeline = jsonList("$match: {$expr: {$and: [{$lt: ['$price', 100]}, {$gt: ['$quality', 10]}]}}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, price: 10, quality: 50"));
+        collection.insertOne(json("_id: 2, price: 150, quality: 500"));
+        collection.insertOne(json("_id: 3, price: 50, quality: 150"));
+        collection.insertOne(json("_id: 4, price: 10, quality: 5"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, price: 10, quality: 50"),
+                json("_id: 3, price: 50, quality: 150")
+            );
+    }
+
+    @Test
+    public void testAggregateWithLogicalOrInMatchExpr() throws Exception {
+        List<Document> pipeline = jsonList("$match: {$expr: {$or: [{$gt: ['$price', 100]}, {$gt: ['$quality', 70]}]}}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, price: 10, quality: 50"));
+        collection.insertOne(json("_id: 2, price: 150, quality: 500"));
+        collection.insertOne(json("_id: 3, price: 50, quality: 150"));
+        collection.insertOne(json("_id: 4, price: 10, quality: 5"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 2, price: 150, quality: 500"),
+                json("_id: 3, price: 50, quality: 150")
+            );
+    }
+
+    @Test
+    public void testAggregateWithLogicalOrInMatch() throws Exception {
+        List<Document> pipeline = jsonList("$match: {$or: [{$and: [{price: {$lt: 50}}, {quality: {$gt: 10}}]}, {quality: {$gt: 200}}]}");
+
+        assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
+
+        collection.insertOne(json("_id: 1, price: 10, quality: 50"));
+        collection.insertOne(json("_id: 2, price: 150, quality: 500"));
+        collection.insertOne(json("_id: 3, price: 50, quality: 150"));
+        collection.insertOne(json("_id: 4, price: 10, quality: 5"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, price: 10, quality: 50"),
+                json("_id: 2, price: 150, quality: 500")
+            );
+    }
+
+    @Test
     public void testAggregateWithCeil() throws Exception {
         List<Document> pipeline = jsonList("$project: {a: 1, ceil: {$ceil: '$a'}}");
 
