@@ -26,6 +26,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
 public class Aggregation {
 
@@ -38,8 +39,17 @@ public class Aggregation {
     }
 
     public static Aggregation fromPipeline(Document query, MongoDatabase database, MongoCollection<?> collection) {
-        @SuppressWarnings("unchecked")
-        List<Document> pipeline = (List<Document>) query.get("pipeline");
+        Object pipelineObject = query.get("pipeline");
+        if (!(pipelineObject instanceof List)) {
+            throw new TypeMismatchException("'pipeline' option must be specified as an array");
+        }
+        List<Document> pipeline = new ArrayList<>();
+        for (Object pipelineElement : (List<?>) pipelineObject) {
+            if (!(pipelineElement instanceof Document)) {
+                throw new TypeMismatchException("Each element of the 'pipeline' array must be an object");
+            }
+            pipeline.add((Document) pipelineElement);
+        }
         return fromPipeline(pipeline, database, collection);
     }
 

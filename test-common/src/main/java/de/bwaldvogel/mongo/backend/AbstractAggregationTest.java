@@ -47,6 +47,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    public void testAggregateWithIllegalPipeline() throws Exception {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', cursor: {}, pipeline: 123")))
+            .withMessageContaining("Command failed with error 14 (TypeMismatch): ''pipeline' option must be specified as an array'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', cursor: {}, pipeline: [1, 2, 3]")))
+            .withMessageContaining("Command failed with error 14 (TypeMismatch): 'Each element of the 'pipeline' array must be an object");
+    }
+
+    @Test
     public void testAggregateWithComplexGroupBySumPipeline() throws Exception {
         Document query = json("_id: null, n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}");
         List<Document> pipeline = Collections.singletonList(new Document("$group", query));
