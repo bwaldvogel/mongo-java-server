@@ -34,7 +34,7 @@ abstract class AbstractLookupStage implements AggregationStage {
         throw new FailedToParseException("$lookup argument '" + name + ": " + Json.toJsonValue(value) + "' must be an object, is type " + Utils.describeType(value));
     }
 
-    void ensureAllConfigurationPropertiesExist(Document configuration, Set<String> configurationKeys) {
+    void ensureAllConfigurationPropertiesAreKnown(Document configuration, Set<String> configurationKeys) {
         for (String name : configuration.keySet()) {
             if (!configurationKeys.contains(name)) {
                 String message = "unknown argument to $lookup: " + name;

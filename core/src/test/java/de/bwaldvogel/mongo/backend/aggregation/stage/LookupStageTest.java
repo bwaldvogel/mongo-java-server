@@ -4,34 +4,18 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.junit.Before;
 import org.junit.Test;
 
-import de.bwaldvogel.mongo.MongoCollection;
-import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.TestUtils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public class LookupStageTest {
-
-    private MongoDatabase database;
-    @SuppressWarnings("rawtypes")
-    private MongoCollection authorsCollection;
-
-    @Before
-    @SuppressWarnings("unchecked")
-    public void setUp() {
-        database = mock(MongoDatabase.class);
-        authorsCollection = mock(MongoCollection.class);
-        when(database.resolveCollection("authors", false)).thenReturn(authorsCollection);
-    }
+public class LookupStageTest extends AbstractLookupStageTest {
 
     @Test
     public void testMissingFromField() {

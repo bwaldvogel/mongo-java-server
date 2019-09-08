@@ -16,7 +16,7 @@ import de.bwaldvogel.mongo.bson.Document;
 public class LookupWithPipelineStage extends AbstractLookupStage {
 
     private static final String LET_FIELD = "let";
-    private static final String PIPELINE_FIELD = "pipeline";
+    public static final String PIPELINE_FIELD = "pipeline";
 
     private static final Set<String> CONFIGURATION_KEYS;
 
@@ -41,7 +41,7 @@ public class LookupWithPipelineStage extends AbstractLookupStage {
         let = readOptionalDocumentArgument(configuration, LET_FIELD);
         pipeline = configuration.get(PIPELINE_FIELD);
         as = readStringConfigurationProperty(configuration, AS);
-        ensureAllConfigurationPropertiesExist(configuration, CONFIGURATION_KEYS);
+        ensureAllConfigurationPropertiesAreKnown(configuration, CONFIGURATION_KEYS);
     }
 
     @Override

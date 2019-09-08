@@ -10,12 +10,11 @@ import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class LookupStage extends AbstractLookupStage {
 
-    public static final String LOCAL_FIELD = "localField";
+    private static final String LOCAL_FIELD = "localField";
     private static final String FOREIGN_FIELD = "foreignField";
 
     private static final Set<String> CONFIGURATION_KEYS;
@@ -39,7 +38,7 @@ public class LookupStage extends AbstractLookupStage {
         localField = readStringConfigurationProperty(configuration, LOCAL_FIELD);
         foreignField = readStringConfigurationProperty(configuration, FOREIGN_FIELD);
         as = readStringConfigurationProperty(configuration, AS);
-        ensureAllConfigurationPropertiesExist(configuration, CONFIGURATION_KEYS);
+        ensureAllConfigurationPropertiesAreKnown(configuration, CONFIGURATION_KEYS);
     }
 
     @Override

@@ -80,7 +80,8 @@ public class Aggregation {
                     aggregation.addStage(new OrderByStage(orderBy));
                     break;
                 case "$project":
-                    aggregation.addStage(new ProjectStage((Document) stage.get(stageOperation)));
+                    Document projection = (Document) stage.get(stageOperation);
+                    aggregation.addStage(new ProjectStage(projection));
                     break;
                 case "$count":
                     String count = (String) stage.get(stageOperation);
@@ -101,10 +102,10 @@ public class Aggregation {
                     break;
                 case "$lookup":
                     Document lookup = (Document) stage.get(stageOperation);
-                    if (lookup.containsKey(LookupStage.LOCAL_FIELD)) {
-                        aggregation.addStage(new LookupStage(lookup, database));
-                    } else {
+                    if (lookup.containsKey(LookupWithPipelineStage.PIPELINE_FIELD)) {
                         aggregation.addStage(new LookupWithPipelineStage(lookup, database));
+                    } else {
+                        aggregation.addStage(new LookupStage(lookup, database));
                     }
                     break;
                 case "$replaceRoot":
