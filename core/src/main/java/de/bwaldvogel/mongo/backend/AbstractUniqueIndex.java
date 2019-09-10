@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
@@ -49,9 +50,18 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
             return null;
         }
 
+        return apply(document, this::removeDocument);
+    }
+
+    @Override
+    public P getPosition(Document document) {
+        return apply(document, this::getPosition);
+    }
+
+    private P apply(Document document, Function<KeyValue, P> keyToPositionFunction) {
         Set<KeyValue> keyValues = getKeyValues(document);
         Set<P> positions = keyValues.stream()
-            .map(this::removeDocument)
+            .map(keyToPositionFunction)
             .filter(Objects::nonNull)
             .collect(Collectors.toSet());
 
@@ -114,9 +124,12 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
-    public void updateInPlace(Document oldDocument, Document newDocument, MongoCollection<P> collection) throws KeyConstraintError {
+    public void updateInPlace(Document oldDocument, Document newDocument, P position, MongoCollection<P> collection) throws KeyConstraintError {
         if (!nullAwareEqualsKeys(oldDocument, newDocument)) {
-            P position = remove(oldDocument);
+            P removedPosition = remove(oldDocument);
+            if (removedPosition != null) {
+                Assert.equals(removedPosition, position);
+            }
             add(newDocument, position, collection);
         }
     }

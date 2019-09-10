@@ -112,24 +112,7 @@ public class PostgresUniqueIndex extends Index<Long> {
 
     @Override
     public Long remove(Document document) {
-        Map<String, Object> keyValues = getKeyValueMap(document);
-        String sql = createSelectStatement(keyValues);
-        try (Connection connection = backend.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)) {
-            fillStrings(stmt, keyValues);
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                if (!resultSet.next()) {
-                    return null;
-                }
-                long position = resultSet.getLong("id");
-                if (resultSet.next()) {
-                    throw new MongoServerException("got more than one id");
-                }
-                return Long.valueOf(position);
-            }
-        } catch (SQLException | IOException e) {
-            throw new MongoServerException("failed to remove document from " + fullCollectionName, e);
-        }
+        return getPosition(document);
     }
 
     private void fillStrings(PreparedStatement statement, Map<String, Object> keyValues) throws SQLException, IOException {
@@ -196,6 +179,29 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    public void updateInPlace(Document oldDocument, Document newDocument, MongoCollection<Long> collection) throws KeyConstraintError {
+    public void updateInPlace(Document oldDocument, Document newDocument, Long position, MongoCollection<Long> collection) throws KeyConstraintError {
     }
+
+    @Override
+    public Long getPosition(Document document) {
+        Map<String, Object> keyValues = getKeyValueMap(document);
+        String sql = createSelectStatement(keyValues);
+        try (Connection connection = backend.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            fillStrings(stmt, keyValues);
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                if (!resultSet.next()) {
+                    return null;
+                }
+                long position = resultSet.getLong("id");
+                if (resultSet.next()) {
+                    throw new MongoServerException("got more than one id");
+                }
+                return Long.valueOf(position);
+            }
+        } catch (SQLException | IOException e) {
+            throw new MongoServerException("failed to get document position from " + fullCollectionName, e);
+        }
+    }
+
 }

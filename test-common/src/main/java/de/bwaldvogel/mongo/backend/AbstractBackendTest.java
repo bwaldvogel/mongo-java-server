@@ -3117,6 +3117,24 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/90
+    @Test
+    public void testUpdateWithSparseUniqueIndex() throws Exception {
+        collection.createIndex(json("a: 1"), new IndexOptions().unique(true).sparse(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+
+        collection.updateOne(json("_id: 1"), json("$set: {a: 'x'}"));
+        collection.updateOne(json("_id: 2"), json("$set: {a: 'y'}"));
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$set: {a: 'y'}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : \"y\" }");
+
+        collection.updateOne(json("_id: 2"), json("$unset: {a: 1}"));
+        collection.updateOne(json("_id: 1"), json("$set: {a: 'y'}"));
+    }
+
     @Test
     public void testSparseUniqueIndexOnEmbeddedDocument() throws Exception {
         collection.createIndex(json("'a.b.c': 1"), new IndexOptions().unique(true).sparse(true));
@@ -3405,8 +3423,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(json("_id: 1"), json("$rename: {'foo.a': 'a', 'bar.x': 'bar.c'}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { b: 2 }, bar: { c: 3, d: 4 }, a: 1}"));
 
-        assertThatExceptionOfType(MongoWriteException.class).isThrownBy(
-            () -> collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}")
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}")
         ));
     }
 

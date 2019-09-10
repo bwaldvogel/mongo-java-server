@@ -84,6 +84,8 @@ public abstract class Index<P> {
         }
     }
 
+    public abstract P getPosition(Document document);
+
     public abstract void checkAdd(Document document, MongoCollection<P> collection);
 
     public abstract void add(Document document, P position, MongoCollection<P> collection);
@@ -102,7 +104,7 @@ public abstract class Index<P> {
 
     public abstract void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection);
 
-    public abstract void updateInPlace(Document oldDocument, Document newDocument, MongoCollection<P> collection) throws KeyConstraintError;
+    public abstract void updateInPlace(Document oldDocument, Document newDocument, P position, MongoCollection<P> collection) throws KeyConstraintError;
 
     protected boolean isCompoundIndex() {
         return keys().size() > 1;

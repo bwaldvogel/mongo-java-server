@@ -8,8 +8,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -475,8 +477,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 for (Index<P> index : indexes) {
                     index.checkUpdate(oldDocument, newDocument, this);
                 }
+                P position = getSinglePosition(oldDocument);
                 for (Index<P> index : indexes) {
-                    index.updateInPlace(oldDocument, newDocument, this);
+                    index.updateInPlace(oldDocument, newDocument, position, this);
                 }
 
                 int oldSize = Utils.calculateSize(oldDocument);
@@ -502,6 +505,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             }
             return oldDocument;
         }
+    }
+
+    private P getSinglePosition(Document document) {
+        Set<P> positions = indexes.stream()
+            .map(index -> index.getPosition(document))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toSet());
+        return CollectionUtils.getSingleElement(positions);
     }
 
     protected abstract void handleUpdate(Document document);
