@@ -400,6 +400,61 @@ public class ExpressionTest {
     }
 
     @Test
+    public void testEvaluateReduce() throws Exception {
+        assertThat((Integer) Expression.evaluate(
+            json("$reduce: {input: '$quizzes', initialValue: 0, in: {$add: ['$$this', '$$value']}}"),
+            json("quizzes: [5, 6, 7]")))
+            .isEqualTo(18);
+
+        assertThat((Collection<Object>) Expression.evaluate(
+            json("$reduce: {input: '$quizzes',initialValue: [ 1, 2 ],in: {$concatArrays : ['$$value', '$$this']}}"),
+            json("quizzes: [ [ 3, 4 ], [ 5, 6 ] ]")))
+            .containsExactly(1, 2, 3, 4, 5, 6);
+
+        assertThat((Collection<Object>) Expression.evaluate(
+            json("$reduce: {input: '$quizzes',initialValue: [],in: {$concatArrays : ['$$value', '$$this']}}"),
+            json("quizzes: []")))
+            .isEmpty();
+
+        assertThat((Collection<Object>) Expression.evaluate(
+            json("$reduce: {input: '$quizzes', initialValue: [ 1, 2 ], in: '$$this'}"),
+            json("")))
+            .isNull();
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: 'a'"), json("")))
+            .withMessage("[Error 40075] $reduce only supports an object as its argument");
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: {input: [1, 2, 3], initialValue: null, in: '$this'}"), json("$this: 1")))
+            .withMessage("Document already contains '$this'");
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: {input: [1, 2, 3], initialValue: null, in: '$value'}"), json("$value: 1")))
+            .withMessage("Document already contains '$value'");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: {input: 'a', initialValue: null, in: null}"), json("")))
+            .withMessage("[Error 40080] input to $reduce must be an array not string");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: {initialValue: null, in: '$value'}"), json("")))
+            .withMessage("[Error 40079] Missing 'input' parameter to $reduce");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: {input: [1, 2, 3], in: '$value'}"), json("")))
+            .withMessage("[Error 40079] Missing 'initialValue' parameter to $reduce");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: {input: [1, 2, 3], initialValue: null}"), json("")))
+            .withMessage("[Error 40079] Missing 'in' parameter to $reduce");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$reduce: {input: [1, 2, 3], initialValue: null, in: '$value', foo: 1}"), json("")))
+            .withMessage("[Error 40076] Unrecognized parameter to $reduce: foo");
+    }
+
+    @Test
     public void testEvaluateMergeObjects() throws Exception {
         assertThat(Expression.evaluate(json("$mergeObjects: [{a: 1}, null]"), json(""))).isEqualTo(json("a: 1"));
         assertThat(Expression.evaluate(json("$mergeObjects: [null, null]"), json(""))).isEqualTo(json(""));
