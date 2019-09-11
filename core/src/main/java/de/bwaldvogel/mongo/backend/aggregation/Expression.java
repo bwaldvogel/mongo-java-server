@@ -622,6 +622,58 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $reduce {
+        @Override
+        Object apply(Object expressionValue, Document document) {
+            Document reduceExpression = requireDocument(expressionValue, 40075);
+            List<String> requiredKeys = Arrays.asList("input", "initialValue", "in");
+            for (String requiredKey : requiredKeys) {
+                if (!reduceExpression.containsKey(requiredKey)) {
+                    throw new MongoServerError(40079, "Missing '" + requiredKey + "' parameter to " + name());
+                }
+            }
+
+            for (String key : reduceExpression.keySet()) {
+                if (!Arrays.asList("input", "initialValue", "in").contains(key)) {
+                    throw new MongoServerError(40076, "Unrecognized parameter to " + name() + ": " + key);
+                }
+            }
+
+            Object input = evaluate(reduceExpression.get("input"), document);
+            Object initialValue = evaluate(reduceExpression.get("initialValue"), document);
+
+            if (Missing.isNullOrMissing(input)) {
+                return null;
+            }
+
+            if (!(input instanceof Collection)) {
+                throw new MongoServerError(40080, "input to " + name() + " must be an array not " + describeType(input));
+            }
+
+            Collection<?> inputCollection = (Collection<?>) input;
+
+            final String thisKey = "$this";
+            final String valueKey = "$value";
+            Document documentForReduce = document.clone();
+            Assert.isFalse(documentForReduce.containsKey(thisKey), () -> "Document already contains '" + thisKey + "'");
+            Assert.isFalse(documentForReduce.containsKey(valueKey), () -> "Document already contains '" + valueKey + "'");
+            Object result = initialValue;
+            for (Object inputValue : inputCollection) {
+                Object evaluatedInputValue = evaluate(inputValue, document);
+                documentForReduce.put(thisKey, evaluatedInputValue);
+                documentForReduce.put(valueKey, result);
+                result = evaluate(reduceExpression.get("in"), documentForReduce);
+            }
+
+            return result;
+        }
+
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            throw new UnsupportedOperationException("must not be invoked");
+        }
+    },
+
     $mergeObjects {
         @Override
         Object apply(List<?> expressionValue, Document document) {
