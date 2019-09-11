@@ -1327,7 +1327,7 @@ public enum Expression implements ExpressionTraits {
                 }
                 return exp.apply(expressionValue, document);
             } else {
-                result.put(expressionKey, expressionValue);
+                result.put(expressionKey, evaluate(expressionValue, document));
             }
         }
         return result;

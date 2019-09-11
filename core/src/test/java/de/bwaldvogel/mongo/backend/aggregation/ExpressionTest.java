@@ -406,6 +406,14 @@ public class ExpressionTest {
             json("quizzes: [5, 6, 7]")))
             .isEqualTo(18);
 
+        final Document expectedDocument = new Document();
+        expectedDocument.put("sum", 15);
+        expectedDocument.put("product", 48.0);
+        assertThat(Expression.evaluate(
+            json("$reduce: {input: '$quizzes', initialValue: { sum: 5, product: 2 }, in: {sum: {$add : ['$$value.sum', '$$this']},product: {$multiply: [ '$$value.product', '$$this' ]}}}"),
+            json("quizzes: [ 1, 2, 3, 4 ]")))
+            .isEqualTo(expectedDocument);
+
         assertThat((Collection<Object>) Expression.evaluate(
             json("$reduce: {input: '$quizzes',initialValue: [ 1, 2 ],in: {$concatArrays : ['$$value', '$$this']}}"),
             json("quizzes: [ [ 3, 4 ], [ 5, 6 ] ]")))
