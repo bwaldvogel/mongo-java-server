@@ -310,8 +310,8 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            double a = parameters.getFirst();
-            double b = parameters.getSecond();
+            double a = parameters.getFirstAsDouble();
+            double b = parameters.getSecondAsDouble();
             if (Double.compare(b, 0.0) == 0) {
                 throw new MongoServerError(16608, "can't " + name() + " by zero");
             }
@@ -706,8 +706,8 @@ public enum Expression implements ExpressionTraits {
             if (parameters == null) {
                 return null;
             }
-            double a = parameters.getFirst();
-            double b = parameters.getSecond();
+            double a = parameters.getFirstAsDouble();
+            double b = parameters.getSecondAsDouble();
             return a % b;
         }
     },
@@ -721,17 +721,47 @@ public enum Expression implements ExpressionTraits {
 
     $multiply {
         @Override
-        Object apply(List<?> expressionValue, Document document) {
+        Number apply(List<?> expressionValue, Document document) {
             TwoNumericParameters parameters = requireTwoNumericParameters(expressionValue, 16555);
 
             if (parameters == null) {
                 return null;
             }
 
-            double a = parameters.getFirst();
-            double b = parameters.getSecond();
+            Number first = parameters.getFirst();
+            Number second = parameters.getSecond();
+            if (isIntegerOrLong(first) && isIntegerOrLong(second)) {
+                return multiplyAsIntOrLong(first, second);
+            }
+
+            double a = parameters.getFirstAsDouble();
+            double b = parameters.getSecondAsDouble();
             return a * b;
         }
+
+        private Number multiplyAsIntOrLong(Number first, Number second) {
+            long result = first.longValue() * second.longValue();
+            if (isInteger(first) || isInteger(second)) {
+                int intResult = (int) result;
+                if (intResult == result) {
+                    return intResult;
+                }
+            }
+            return result;
+        }
+
+        private boolean isIntegerOrLong(Number number) {
+            return isInteger(number) || isLong(number);
+        }
+
+        private boolean isInteger(Number number) {
+            return number instanceof Integer;
+        }
+
+        private boolean isLong(Number number) {
+            return number instanceof Long;
+        }
+
     },
 
 

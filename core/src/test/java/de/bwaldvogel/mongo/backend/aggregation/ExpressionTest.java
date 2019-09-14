@@ -408,7 +408,7 @@ public class ExpressionTest {
 
         final Document expectedDocument = new Document();
         expectedDocument.put("sum", 15);
-        expectedDocument.put("product", 48.0);
+        expectedDocument.put("product", 48);
         assertThat(Expression.evaluate(
             json("$reduce: {input: '$quizzes', initialValue: { sum: 5, product: 2 }, in: {sum: {$add : ['$$value.sum', '$$this']},product: {$multiply: [ '$$value.product', '$$this' ]}}}"),
             json("quizzes: [ 1, 2, 3, 4 ]")))
@@ -531,12 +531,17 @@ public class ExpressionTest {
 
     @Test
     public void testEvaluateMultiply() throws Exception {
-        assertThat(Expression.evaluate(json("$multiply: ['$a', '$b']"), json("a: 8, b: 4"))).isEqualTo(32.0);
+        assertThat(Expression.evaluate(json("$multiply: ['$a', '$b']"), json("a: 8, b: 4"))).isEqualTo(32);
         assertThat(Expression.evaluate(json("$multiply: [4.5, 3]"), json(""))).isEqualTo(13.5);
+        assertThat(Expression.evaluate(json("$multiply: [5, 3.0]"), json(""))).isEqualTo(15.0);
         assertThat(Expression.evaluate(json("$multiply: [null, 3]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$multiply: [null, null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$multiply: [3, null]"), json(""))).isNull();
-        assertThat(Expression.evaluate(json("$multiply: [3, 0]"), json(""))).isEqualTo(0.0);
+        assertThat(Expression.evaluate(json("$multiply: [3, 0]"), json(""))).isEqualTo(0);
+        assertThat(Expression.evaluate(json("$multiply: [5000, 9000]"), json(""))).isEqualTo(45000000);
+        assertThat(Expression.evaluate(json("$multiply: [50000, 90000]"), json(""))).isEqualTo(4500000000L);
+        assertThat(Expression.evaluate(json("$multiply: [45000000000, 2]"), json(""))).isEqualTo(90000000000L);
+        assertThat(Expression.evaluate(json("$multiply: [-45000000000, 2]"), json(""))).isEqualTo(-90000000000L);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$multiply: []"), json("")))

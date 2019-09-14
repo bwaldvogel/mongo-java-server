@@ -10,11 +10,20 @@ class TwoNumericParameters {
         this.second = second;
     }
 
-    double getFirst() {
+    public Number getFirst() {
+        return first;
+    }
+
+    public Number getSecond() {
+        return second;
+    }
+
+    double getFirstAsDouble() {
         return first.doubleValue();
     }
 
-    double getSecond() {
+    double getSecondAsDouble() {
         return second.doubleValue();
     }
+
 }
