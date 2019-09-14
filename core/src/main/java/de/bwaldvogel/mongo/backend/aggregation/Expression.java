@@ -24,6 +24,7 @@ import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.LinkedTreeSet;
 import de.bwaldvogel.mongo.backend.Missing;
+import de.bwaldvogel.mongo.backend.NumericUtils;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
@@ -57,7 +58,7 @@ public enum Expression implements ExpressionTraits {
                     number = instant.toEpochMilli();
                     returnDate = true;
                 }
-                sum = Utils.addNumbers(sum, (Number) number);
+                sum = NumericUtils.addNumbers(sum, (Number) number);
             }
             if (returnDate) {
                 return Instant.ofEpochMilli(sum.longValue());
@@ -730,36 +731,7 @@ public enum Expression implements ExpressionTraits {
 
             Number first = parameters.getFirst();
             Number second = parameters.getSecond();
-            if (isIntegerOrLong(first) && isIntegerOrLong(second)) {
-                return multiplyAsIntOrLong(first, second);
-            }
-
-            double a = parameters.getFirstAsDouble();
-            double b = parameters.getSecondAsDouble();
-            return a * b;
-        }
-
-        private Number multiplyAsIntOrLong(Number first, Number second) {
-            long result = first.longValue() * second.longValue();
-            if (isInteger(first) || isInteger(second)) {
-                int intResult = (int) result;
-                if (intResult == result) {
-                    return intResult;
-                }
-            }
-            return result;
-        }
-
-        private boolean isIntegerOrLong(Number number) {
-            return isInteger(number) || isLong(number);
-        }
-
-        private boolean isInteger(Number number) {
-            return number instanceof Integer;
-        }
-
-        private boolean isLong(Number number) {
-            return number instanceof Long;
+            return NumericUtils.multiplyNumbers(first, second);
         }
 
     },
@@ -1135,7 +1107,7 @@ public enum Expression implements ExpressionTraits {
                     "cant " + name() + " a " + describeType(one) + " from a " + describeType(other));
             }
 
-            return Utils.subtractNumbers((Number) one, (Number) other);
+            return NumericUtils.subtractNumbers((Number) one, (Number) other);
         }
     },
 
@@ -1151,7 +1123,7 @@ public enum Expression implements ExpressionTraits {
             Number sum = 0;
             for (Object value : expressionValue) {
                 if (value instanceof Number) {
-                    sum = Utils.addNumbers(sum, (Number) value);
+                    sum = NumericUtils.addNumbers(sum, (Number) value);
                 }
             }
             return sum;

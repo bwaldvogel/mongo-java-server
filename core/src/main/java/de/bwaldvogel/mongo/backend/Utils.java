@@ -27,54 +27,6 @@ public class Utils {
     public static final String PATH_DELIMITER = ".";
     private static final Pattern PATH_DELIMITER_PATTERN = Pattern.compile(Pattern.quote(PATH_DELIMITER));
 
-    public static Number addNumbers(Number a, Number b) {
-        if (a instanceof Double || b instanceof Double) {
-            return Double.valueOf(a.doubleValue() + b.doubleValue());
-        } else if (a instanceof Float || b instanceof Float) {
-            return Float.valueOf(a.floatValue() + b.floatValue());
-        } else if (a instanceof Long || b instanceof Long) {
-            return Long.valueOf(a.longValue() + b.longValue());
-        } else if (a instanceof Integer || b instanceof Integer) {
-            return Integer.valueOf(a.intValue() + b.intValue());
-        } else if (a instanceof Short || b instanceof Short) {
-            return Short.valueOf((short) (a.shortValue() + b.shortValue()));
-        } else {
-            throw new UnsupportedOperationException("cannot add " + a + " and " + b);
-        }
-    }
-
-    public static Number subtractNumbers(Number a, Number b) {
-        if (a instanceof Double || b instanceof Double) {
-            return Double.valueOf(a.doubleValue() - b.doubleValue());
-        } else if (a instanceof Float || b instanceof Float) {
-            return Float.valueOf(a.floatValue() - b.floatValue());
-        } else if (a instanceof Long || b instanceof Long) {
-            return Long.valueOf(a.longValue() - b.longValue());
-        } else if (a instanceof Integer || b instanceof Integer) {
-            return Integer.valueOf(a.intValue() - b.intValue());
-        } else if (a instanceof Short || b instanceof Short) {
-            return Short.valueOf((short) (a.shortValue() - b.shortValue()));
-        } else {
-            throw new UnsupportedOperationException("cannot subtract " + a + " and " + b);
-        }
-    }
-
-    static Number multiplyNumbers(Number a, Number b) {
-        if (a instanceof Double || b instanceof Double) {
-            return Double.valueOf(a.doubleValue() * b.doubleValue());
-        } else if (a instanceof Float || b instanceof Float) {
-            return Float.valueOf(a.floatValue() * b.floatValue());
-        } else if (a instanceof Long || b instanceof Long) {
-            return Long.valueOf(a.longValue() * b.longValue());
-        } else if (a instanceof Integer || b instanceof Integer) {
-            return Integer.valueOf(a.intValue() * b.intValue());
-        } else if (a instanceof Short || b instanceof Short) {
-            return Short.valueOf((short) (a.shortValue() * b.shortValue()));
-        } else {
-            throw new UnsupportedOperationException("can not multiply " + a + " and " + b);
-        }
-    }
-
     private static void validateKey(String key) {
         if (key.endsWith(PATH_DELIMITER)) {
             throw new MongoServerError(40353, "FieldPath must not end with a '.'.");

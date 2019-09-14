@@ -4,7 +4,6 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,36 +14,6 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class UtilsTest {
-
-    @Test
-    public void testAddNumbers() {
-        assertThat(Utils.addNumbers(-4, 3)).isEqualTo(Integer.valueOf(-1));
-        assertThat(Utils.addNumbers(-0.1, 0.1)).isEqualTo(Double.valueOf(0.0));
-        assertThat(Utils.addNumbers(0.9, 0.1)).isEqualTo(Double.valueOf(1.0));
-        assertThat(Utils.addNumbers(4.3f, 7.1f)).isEqualTo(Float.valueOf(11.4f));
-        assertThat(Utils.addNumbers((short) 4, (short) 7)).isEqualTo(Short.valueOf((short) 11));
-        assertThat(Utils.addNumbers(4L, 7.3)).isEqualTo(Double.valueOf(11.3));
-        assertThat(Utils.addNumbers(100000000000000L, 100000000000000L)).isEqualTo(200000000000000L);
-
-        assertThatExceptionOfType(UnsupportedOperationException.class)
-            .isThrownBy(() -> Utils.addNumbers(new BigDecimal(1), new BigDecimal(1)))
-            .withMessage("cannot add 1 and 1");
-    }
-
-    @Test
-    public void testSubtractNumbers() {
-        assertThat(Utils.subtractNumbers(-4, 3)).isEqualTo(Integer.valueOf(-7));
-        assertThat(Utils.subtractNumbers(0.1, 0.1)).isEqualTo(Double.valueOf(0.0));
-        assertThat(Utils.subtractNumbers(1.1, 0.1)).isEqualTo(Double.valueOf(1.0));
-        assertThat(Utils.subtractNumbers(7.6f, 4.1f)).isEqualTo(Float.valueOf(3.5f));
-        assertThat(Utils.subtractNumbers((short) 4, (short) 7)).isEqualTo(Short.valueOf((short) -3));
-        assertThat(Utils.subtractNumbers(4L, 7.3)).isEqualTo(Double.valueOf(-3.3));
-        assertThat(Utils.subtractNumbers(100000000000000L, 1L)).isEqualTo(99999999999999L);
-
-        assertThatExceptionOfType(UnsupportedOperationException.class)
-            .isThrownBy(() -> Utils.subtractNumbers(new BigDecimal(1), new BigDecimal(1)))
-            .withMessage("cannot subtract 1 and 1");
-    }
 
     @Test
     public void testMarkOkay() throws Exception {

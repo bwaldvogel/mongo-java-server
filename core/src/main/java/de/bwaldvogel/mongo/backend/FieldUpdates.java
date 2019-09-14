@@ -276,9 +276,9 @@ class FieldUpdates {
         Number changeValue = (Number) changeObject;
         final Number newValue;
         if (updateOperator == UpdateOperator.INC) {
-            newValue = Utils.addNumbers(number, changeValue);
+            newValue = NumericUtils.addNumbers(number, changeValue);
         } else if (updateOperator == UpdateOperator.MUL) {
-            newValue = Utils.multiplyNumbers(number, changeValue);
+            newValue = NumericUtils.multiplyNumbers(number, changeValue);
         } else {
             throw new RuntimeException();
         }
