@@ -1329,4 +1329,73 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageContaining("Command failed with error 40393 (Location40393): '$arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: \"value\"}'");
     }
 
+    @Test
+    public void testAggregateWithReduceOperation() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        List<Document> pipeline = jsonList("$project: {}");
+
+        Utils.changeSubdocumentValue(pipeline.get(0), "$project.res",
+            json("$reduce: {input: ['a', 'b', 'c']," +
+                " initialValue: ''," +
+                " in: {$concat: ['$$value', '$$this'] }}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("_id: 1, res: 'abc'"));
+
+        Utils.changeSubdocumentValue(pipeline.get(0), "$project.res",
+            json("$reduce: {input: [1, 2, 3, 4]," +
+                " initialValue: { sum: 5, product: 2 }," +
+                " in: {\n" +
+                "     sum: {$add: ['$$value.sum', '$$this']},\n" +
+                "     product: {$multiply: ['$$value.product', '$$this']}\n" +
+                " }}"));
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(json("_id: 1, res: {sum: 15, product: 48}"));
+    }
+
+    @Test
+    public void testAggregateWithMatchProjectReduceConcatAndCond() throws Exception {
+        collection.insertOne(json("_id: 1, name: 'Melissa', hobbies: ['softball', 'drawing', 'reading']"));
+        collection.insertOne(json("_id: 2, name: 'Brad', hobbies: ['gaming', 'skateboarding']"));
+        collection.insertOne(json("_id: 3, name: 'Scott', hobbies: ['basketball', 'music', 'fishing']"));
+        collection.insertOne(json("_id: 4, name: 'Tracey', hobbies: ['acting', 'yoga']"));
+        collection.insertOne(json("_id: 5, name: 'Josh', hobbies: ['programming'] "));
+        collection.insertOne(json("_id: 6, name: 'Claire'"));
+
+        List<Document> pipeline = jsonList("$match: {hobbies: {$gt: []}}",
+            "$project: {\n" +
+            "  name: 1,\n" +
+            "  bio: {\n" +
+            "    $reduce: {\n" +
+            "      input: '$hobbies',\n" +
+            "      initialValue: 'My hobbies include:',\n" +
+            "      in: {\n" +
+            "        $concat: [\n" +
+            "          '$$value',\n" +
+            "          {\n" +
+            "            $cond: {\n" +
+            "              if: { $eq: ['$$value', 'My hobbies include:']},\n" +
+            "              then: ' ',\n" +
+            "              else: ', '\n" +
+            "            }\n" +
+            "          },\n" +
+            "          '$$this'\n" +
+            "        ]\n" +
+            "      }\n" +
+            "    }\n" +
+            "  }\n" +
+            "}");
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 1, name: 'Melissa', bio: 'My hobbies include: softball, drawing, reading'"),
+                json("_id: 2, name: 'Brad', bio: 'My hobbies include: gaming, skateboarding'"),
+                json("_id: 3, name: 'Scott', bio: 'My hobbies include: basketball, music, fishing'"),
+                json("_id: 4, name: 'Tracey', bio: 'My hobbies include: acting, yoga'"),
+                json("_id: 5, name: 'Josh', bio: 'My hobbies include: programming'")
+            );
+    }
+
 }

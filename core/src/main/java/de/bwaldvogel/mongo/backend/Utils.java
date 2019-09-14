@@ -372,7 +372,9 @@ public class Utils {
             }
             list.set(pos, obj);
         } else {
-            ((Document) document).put(key, obj);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> documentAsMap = (Map<String, Object>) document;
+            documentAsMap.put(key, obj);
         }
     }
 
