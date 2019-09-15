@@ -1244,14 +1244,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 6, item: 'zzz'"));
         collection.insertOne(json("_id: 7"));
         collection.insertOne(json("_id: 8, item: null"));
+        collection.insertOne(json("_id: 9, item: 'aaa'"));
+        collection.insertOne(json("_id: 10, item: 'abc'"));
 
         List<Document> pipeline = jsonList("$sortByCount: '$item'");
 
         assertThat(toArray(collection.aggregate(pipeline)))
             .containsExactly(
+                json("_id: 'abc', count: 3"),
                 json("_id: 'jkl', count: 3"),
                 json("_id: null, count: 2"),
-                json("_id: 'abc', count: 2"),
+                json("_id: 'aaa', count: 1"),
                 json("_id: 'zzz', count: 1")
             );
     }

@@ -116,7 +116,7 @@ public class Aggregation {
                 case "$sortByCount":
                     Object expression = stage.get(stageOperation);
                     aggregation.addStage(new GroupStage(new Document(ID_FIELD, expression).append("count", new Document("$sum", 1))));
-                    aggregation.addStage(new OrderByStage(new Document("count", -1)));
+                    aggregation.addStage(new OrderByStage(new Document("count", -1).append(ID_FIELD, 1)));
                     break;
                 case "$bucket":
                     Document bucket = (Document) stage.get(stageOperation);
