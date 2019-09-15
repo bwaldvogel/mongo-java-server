@@ -16,6 +16,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.BucketStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
@@ -116,6 +117,10 @@ public class Aggregation {
                     Object expression = stage.get(stageOperation);
                     aggregation.addStage(new GroupStage(new Document(ID_FIELD, expression).append("count", new Document("$sum", 1))));
                     aggregation.addStage(new OrderByStage(new Document("count", -1)));
+                    break;
+                case "$bucket":
+                    Document bucket = (Document) stage.get(stageOperation);
+                    aggregation.addStage(new BucketStage(bucket));
                     break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");

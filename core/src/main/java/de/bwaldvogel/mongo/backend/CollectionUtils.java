@@ -20,6 +20,11 @@ public final class CollectionUtils {
         return value;
     }
 
+    public static <T> T getLastElement(List<T> list) {
+        Assert.notEmpty(list);
+        return list.get(list.size() - 1);
+    }
+
     public static <T> T getSingleElement(Iterable<T> iterable, Supplier<? extends RuntimeException> exceptionSupplier) {
         Iterator<T> iterator = iterable.iterator();
         if (!iterator.hasNext()) {

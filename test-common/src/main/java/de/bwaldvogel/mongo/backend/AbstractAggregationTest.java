@@ -586,9 +586,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithMultipleMatches() throws Exception {
-        Document match1 = json("$match: {price: {$lt: 100}}");
-        Document match2 = json("$match: {quality: {$gt: 10}}");
-        List<Document> pipeline = Arrays.asList(match1, match2);
+        List<Document> pipeline = jsonList(
+            "$match: {price: {$lt: 100}}",
+            "$match: {quality: {$gt: 10}}"
+        );
 
         assertThat(toArray(collection.aggregate(pipeline))).isEmpty();
 
@@ -1361,7 +1362,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, name: 'Brad', hobbies: ['gaming', 'skateboarding']"));
         collection.insertOne(json("_id: 3, name: 'Scott', hobbies: ['basketball', 'music', 'fishing']"));
         collection.insertOne(json("_id: 4, name: 'Tracey', hobbies: ['acting', 'yoga']"));
-        collection.insertOne(json("_id: 5, name: 'Josh', hobbies: ['programming'] "));
+        collection.insertOne(json("_id: 5, name: 'Josh', hobbies: ['programming']"));
         collection.insertOne(json("_id: 6, name: 'Claire'"));
 
         List<Document> pipeline = jsonList("$match: {hobbies: {$gt: []}}",
@@ -1396,6 +1397,122 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 json("_id: 4, name: 'Tracey', bio: 'My hobbies include: acting, yoga'"),
                 json("_id: 5, name: 'Josh', bio: 'My hobbies include: programming'")
             );
+    }
+
+    @Test
+    public void testAggregateWithBucketStage() throws Exception {
+        collection.insertOne(json("_id: 1, title: 'The Pillars of Society', artist: 'Grosz', year: 1926, price: 199.99"));
+        collection.insertOne(json("_id: 2, title: 'Melancholy III', artist: 'Munch', year: 1902, price: 280.00"));
+        collection.insertOne(json("_id: 3, title: 'Dancer', artist: 'Miro', year: 1925, price: 76.04"));
+        collection.insertOne(json("_id: 4, title: 'The Great Wave off Kanagawa', artist: 'Hokusai', price: 167.30"));
+        collection.insertOne(json("_id: 5, title: 'The Persistence of Memory', artist: 'Dali', year: 1931, price: 483.00"));
+        collection.insertOne(json("_id: 6, title: 'Composition VII', artist: 'Kandinsky', year: 1913, price: 385.00"));
+        collection.insertOne(json("_id: 7, title: 'The Scream', artist: 'Munch', year: 1893"));
+        collection.insertOne(json("_id: 8, title: 'Blue Flower', artist: 'O’Keefe', year: 1918, price: 118.42"));
+
+        List<Document> pipeline = jsonList("$bucket: {\n" +
+            "  groupBy: '$price',\n" +
+            "  boundaries: [0, 200, 400],\n" +
+            "  default: 'Other',\n" +
+            "  output: {\n" +
+            "    count: { $sum: 1 },\n" +
+            "    titles: { $push: '$title' }\n" +
+            "  }\n" +
+            "}");
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("_id: 0, count: 4, titles: ['The Pillars of Society', 'Dancer', 'The Great Wave off Kanagawa', 'Blue Flower']"),
+                json("_id: 200, count: 2, titles: ['Melancholy III', 'Composition VII']"),
+                json("_id: 'Other', count: 2, titles: ['The Persistence of Memory', 'The Scream']")
+            );
+
+        List<Document> pipelineWithoutDefault = jsonList("$match: {price: {$lt: 400}}",
+            "$bucket: {\n" +
+                "  groupBy: '$price',\n" +
+                "  boundaries: [0, 200, 400],\n" +
+                "  output: {count: { $sum: 1 }}\n" +
+                "}");
+
+        assertThat(toArray(collection.aggregate(pipelineWithoutDefault)))
+            .containsExactly(
+                json("_id: 0, count: 4"),
+                json("_id: 200, count: 2")
+            );
+
+        List<Document> pipelineWithoutOutput = jsonList("$match: {price: {$lt: 400}}",
+            "$bucket: {\n" +
+                "  groupBy: '$price',\n" +
+                "  boundaries: [0, 200.0, 400]" +
+                "}");
+
+        assertThat(toArray(collection.aggregate(pipelineWithoutOutput)))
+            .containsExactly(
+                json("_id: 0, count: 4"),
+                json("_id: 200.0, count: 2")
+            );
+
+        List<Document> pipelineWithAlphabeticBoundaries = jsonList("$bucket: {\n" +
+            "  groupBy: {$toLower: '$artist'},\n" +
+            "  boundaries: ['a', 'd', 'g', 'j'],\n" +
+            "  default: null" +
+            "}");
+
+        assertThat(toArray(collection.aggregate(pipelineWithAlphabeticBoundaries)))
+            .containsExactly(
+                json("_id: null, count: 5"),
+                json("_id: 'd', count: 1"),
+                json("_id: 'g', count: 2")
+            );
+    }
+
+    @Test
+    public void testAggregateWithIllegalBucketStage() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [100, 200, 400]}"))))
+            .withMessageContaining("Command failed with error 40066 (Location40066): '$switch could not find a matching branch for an input, and no default was specified.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, 400], default: 200}"))))
+            .withMessageContaining("Command failed with error 40199 (Location40199): 'The $bucket 'default' field must be less than the lowest boundary or greater than or equal to the highest boundary.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, 400, 200]}"))))
+            .withMessageContaining("Command failed with error 40194 (Location40194): 'The 'boundaries' option to $bucket must be sorted, but elements 1 and 2 are not in ascending order (400 is not less than 200).'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, 400], output: 'a'}"))))
+            .withMessageContaining("Command failed with error 40196 (Location40196): 'The $bucket 'output' field must be an object, but found type: string.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0]}"))))
+            .withMessageContaining("Command failed with error 40192 (Location40192): 'The $bucket 'boundaries' field must have at least 2 values, but found 1 value(s).'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: 'abc'}"))))
+            .withMessageContaining("Command failed with error 40200 (Location40200): 'The $bucket 'boundaries' field must be an array, but found type: string.");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: [1, 2], boundaries: 'abc'}"))))
+            .withMessageContaining("Command failed with error 40202 (Location40202): 'The $bucket 'groupBy' field must be defined as a $-prefixed path or an expression, but found: [ 1, 2 ].'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id'}"))))
+            .withMessageContaining("Command failed with error 40198 (Location40198): '$bucket requires 'groupBy' and 'boundaries' to be specified.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {}"))))
+            .withMessageContaining("Command failed with error 40198 (Location40198): '$bucket requires 'groupBy' and 'boundaries' to be specified.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: ['abc', 123]}"))))
+            .withMessageContaining("Command failed with error 40193 (Location40193): 'All values in the the 'boundaries' option to $bucket must have the same type. Found conflicting types string and int.'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> toArray(collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, null]}"))))
+            .withMessageContaining("Command failed with error 40193 (Location40193): 'All values in the the 'boundaries' option to $bucket must have the same type. Found conflicting types int and null.'");
     }
 
 }

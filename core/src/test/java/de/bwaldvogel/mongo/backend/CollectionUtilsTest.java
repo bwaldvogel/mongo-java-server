@@ -32,6 +32,16 @@ public class CollectionUtilsTest {
     }
 
     @Test
+    public void testGetLastElement() throws Exception {
+        assertThat(CollectionUtils.getLastElement(Collections.singletonList(1))).isEqualTo(1);
+        assertThat(CollectionUtils.getLastElement(Arrays.asList(1, 2, 3))).isEqualTo(3);
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> CollectionUtils.getLastElement(Collections.emptyList()))
+            .withMessage("Given collection must not be empty");
+    }
+
+    @Test
     public void testGetSingleElement_exceptionSupplier() throws Exception {
         Supplier<RuntimeException> exceptionSupplier = () -> new MongoServerException("too many elements");
 
