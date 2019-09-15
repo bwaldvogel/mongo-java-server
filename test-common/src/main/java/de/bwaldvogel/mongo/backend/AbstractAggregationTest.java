@@ -1518,4 +1518,111 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageContaining("Command failed with error 40193 (Location40193): 'All values in the the 'boundaries' option to $bucket must have the same type. Found conflicting types int and null.'");
     }
 
+    @Test
+    public void testAggregateWithFacetStage() throws Exception {
+        collection.insertOne(json("_id: 1, title: 'The Pillars of Society', price: 199.99, tags: ['painting', 'Expressionism']"));
+        collection.insertOne(json("_id: 2, title: 'Melancholy III', price: 280.00, tags: ['Expressionism']"));
+        collection.insertOne(json("_id: 3, title: 'Dancer', price: 76.04, tags: ['oil', 'painting']"));
+        collection.insertOne(json("_id: 4, title: 'The Great Wave off Kanagawa', price: 167.30, tags: ['woodblock']"));
+        collection.insertOne(json("_id: 5, title: 'The Persistence of Memory', price: 483.00, tags: ['painting', 'oil']"));
+        collection.insertOne(json("_id: 6, title: 'Composition VII', price: 385.00, tags: ['oil', 'painting', 'abstract']"));
+        collection.insertOne(json("_id: 7, title: 'The Scream', tags: ['Expressionism', 'painting', 'oil']"));
+        collection.insertOne(json("_id: 8, title: 'Blue Flower', price: 118.42, tags: ['abstract', 'painting']"));
+
+        List<Document> pipeline = jsonList("$facet: {\n" +
+            "  'categorizedByTags': [\n" +
+            "    { $unwind: '$tags' },\n" +
+            "    { $sortByCount: '$tags' }\n" +
+            "  ],\n" +
+            "  'categorizedByPrice': [\n" +
+            "    { $match: { price: { $exists: 1 } } },\n" +
+            "    {\n" +
+            "      $bucket: {\n" +
+            "        groupBy: '$price',\n" +
+            "        boundaries: [0, 150, 200, 300, 400],\n" +
+            "        default: 'Other',\n" +
+            "        output: {\n" +
+            "          'count': { $sum: 1 },\n" +
+            "          'titles': { $push: '$title' }\n" +
+            "        }\n" +
+            "      }\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}");
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("'categorizedByPrice': [\n" +
+                    "    {\n" +
+                    "      _id: 0,\n" +
+                    "      count: 2,\n" +
+                    "      titles: ['Dancer', 'Blue Flower']\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      _id: 150,\n" +
+                    "      count: 2,\n" +
+                    "      titles: ['The Pillars of Society', 'The Great Wave off Kanagawa']\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      _id: 200,\n" +
+                    "      count: 1,\n" +
+                    "      titles: ['Melancholy III']\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      _id: 300,\n" +
+                    "      count: 1,\n" +
+                    "      titles: ['Composition VII']\n" +
+                    "    },\n" +
+                    "    {\n" +
+                    "      _id: 'Other',\n" +
+                    "      count: 1,\n" +
+                    "      titles: ['The Persistence of Memory']\n" +
+                    "    }\n" +
+                    "  ],\n" +
+                    "  'categorizedByTags': [\n" +
+                    "    { _id: 'painting', count: 6 },\n" +
+                    "    { _id: 'oil', count: 4 },\n" +
+                    "    { _id: 'Expressionism', count: 3 },\n" +
+                    "    { _id: 'abstract', count: 2 },\n" +
+                    "    { _id: 'woodblock', count: 1 }\n" +
+                    "  ]")
+            );
+    }
+
+    @Test
+    public void testAggregateWithMatchAndFacetStage() throws Exception {
+        collection.insertOne(json("_id: 1, title: 'The Pillars of Society', price: 199.99, tags: ['painting', 'Expressionism']"));
+        collection.insertOne(json("_id: 2, title: 'Melancholy III', price: 280.00, tags: ['Expressionism']"));
+        collection.insertOne(json("_id: 3, title: 'Dancer', price: 76.04, tags: ['oil', 'painting']"));
+        collection.insertOne(json("_id: 4, title: 'The Great Wave off Kanagawa', price: 167.30, tags: ['woodblock']"));
+        collection.insertOne(json("_id: 5, title: 'The Persistence of Memory', price: 483.00, tags: ['painting']"));
+        collection.insertOne(json("_id: 6, title: 'Composition VII', price: 385.00, tags: ['painting', 'abstract']"));
+        collection.insertOne(json("_id: 7, title: 'The Scream', tags: ['Expressionism', 'painting', 'oil']"));
+        collection.insertOne(json("_id: 8, title: 'Blue Flower', price: 118.42, tags: ['abstract', 'painting']"));
+
+        List<Document> pipeline = jsonList(
+            "$match: {price: {$gt: 300}}",
+            "$facet: {\n" +
+            "  'categorizedByTags': [\n" +
+            "    { $unwind: '$tags' },\n" +
+            "    { $sortByCount: '$tags' }\n" +
+            "  ],\n" +
+            "  'categorizedByPrice': [\n" +
+            "    {$bucket: {groupBy: '$price', boundaries: [300, 400, 500]}}\n" +
+            "  ]\n" +
+            "}");
+
+        assertThat(toArray(collection.aggregate(pipeline)))
+            .containsExactly(
+                json("'categorizedByPrice': [\n" +
+                    "    {_id: 300, count: 1},\n" +
+                    "    {_id: 400, count: 1}\n" +
+                    "  ],\n" +
+                    "  'categorizedByTags': [\n" +
+                    "    {_id: 'painting', count: 2},\n" +
+                    "    {_id: 'abstract', count: 1}\n" +
+                    "  ]")
+            );
+    }
+
 }

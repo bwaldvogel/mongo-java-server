@@ -17,6 +17,7 @@ import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.BucketStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.FacetStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
@@ -122,6 +123,10 @@ public class Aggregation {
                     Document bucket = (Document) stage.get(stageOperation);
                     aggregation.addStage(new BucketStage(bucket));
                     break;
+                case "$facet":
+                    Document facet = (Document) stage.get(stageOperation);
+                    aggregation.addStage(new FacetStage(facet, database, collection));
+                    break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
             }
@@ -131,7 +136,10 @@ public class Aggregation {
 
     private List<Document> runStages() {
         Spliterator<Document> documents = collection.queryAll().spliterator();
-        Stream<Document> stream = StreamSupport.stream(documents, false);
+        return runStages(StreamSupport.stream(documents, false));
+    }
+
+    public List<Document> runStages(Stream<Document> stream) {
         if (hasVariables()) {
             stream = stream.map(this::addAllVariables);
         }
