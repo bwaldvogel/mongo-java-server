@@ -5,7 +5,7 @@ com.fasterxml.jackson.core:jackson-annotations:2.9.0
 com.fasterxml.jackson.core:jackson-core:2.9.9
 com.fasterxml.jackson.core:jackson-databind:2.9.9.3
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9
-com.zaxxer:HikariCP:3.3.1
+com.zaxxer:HikariCP:3.4.0
 junit:junit:4.12
 net.bytebuddy:byte-buddy-agent:1.9.10
 net.bytebuddy:byte-buddy:1.9.10
