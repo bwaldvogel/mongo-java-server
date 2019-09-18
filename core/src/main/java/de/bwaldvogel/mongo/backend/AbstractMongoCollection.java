@@ -193,7 +193,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Object oldId = oldDocument.get(idField);
         Object newId = newDocument.get(idField);
 
-        if (newId != null && !Utils.nullAwareEquals(oldId, newId)) {
+        if (newId != null && oldId != null && !Utils.nullAwareEquals(oldId, newId)) {
             throw new ImmutableFieldException("After applying the update, the (immutable) field '_id' was found to have been altered to _id: " + newId);
         }
 
