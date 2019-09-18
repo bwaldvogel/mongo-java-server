@@ -2805,6 +2805,38 @@ public abstract class AbstractBackendTest extends AbstractTest {
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : \"someid\" }");
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/93
+    @Test
+    public void testReplaceOneWithId() throws Exception {
+        collection.replaceOne(json("_id: 1"), json("_id: 1, value: 'abc'"), new ReplaceOptions().upsert(true));
+
+        assertThat(toArray(collection.find()))
+            .containsExactly(json("_id: 1, value: 'abc'"));
+
+        collection.replaceOne(json("value: 'xyz'"), json("_id: 2, value: 'xyz'"), new ReplaceOptions().upsert(true));
+
+        assertThat(toArray(collection.find()))
+            .containsExactly(
+                json("_id: 1, value: 'abc'"),
+                json("_id: 2, value: 'xyz'")
+            );
+
+        assertMongoWriteException(() -> collection.replaceOne(json("value: 'z'"), json("_id: 2, value: 'z'"), new ReplaceOptions().upsert(true)),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 2 }");
+    }
+
+    @Test
+    public void testReplaceOneUpsertsWithGeneratedId() throws Exception {
+        collection.replaceOne(json("value: 'abc'"), json("value: 'abc'"), new ReplaceOptions().upsert(true));
+
+        assertThat(toArray(collection.find()))
+            .extracting(document -> document.get("value"))
+            .containsExactly("abc");
+
+        assertThat(collection.find().first().get("_id"))
+            .isInstanceOf(ObjectId.class);
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/41
     @Test
     public void testBulkUpsert() throws Exception {
@@ -4832,7 +4864,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
             collection.insertOne(json("x: 1"));
 
             assertThat(collection.find(json("x: 1")).first().get("_id"))
-                .isNotNull()
                 .isInstanceOf(ObjectId.class);
         }
 
