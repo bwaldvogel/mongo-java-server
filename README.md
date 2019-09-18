@@ -197,11 +197,13 @@ public class Application {
 
 }
 ```
-## Building a full .jar with all dependencies ##
-If you need to use a version that is not in the maven repository you can do the following:
-1. build a .jar with all dependencies using "gradlew clean shadowJar"
-2. take the .jar build/libs/ mongo-java-server-[version]-all.jar from build/libs and put it in a libs folder of your project.
-3. import that folder (e.g via gradle using `testCompile fileTree(dir: 'lib', include: '*.jar')`)
+## Building a "fat" JAR that contains all dependencies ##
+
+If you want to build a version that is not on Maven Central you can do the following:
+
+1. Build a "fat" JAR that includes all dependencies using "`gradlew clean shadowJar`"
+2. Copy `build/libs/mongo-java-server-[version]-all.jar` to your project, e.g. to the `libs` directory.
+3. Import that folder (e.g. via Gradle using `testCompile fileTree(dir: 'libs', include: '*.jar')`)
 
 ## Contributing ##
 
