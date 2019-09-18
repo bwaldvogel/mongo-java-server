@@ -228,6 +228,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 } else if (checkMatchesAnyValue(equalQuery, value)) {
                     return false;
                 }
+            } else if (queryOperator.equals(QueryOperator.SIZE.getValue())) {
+                Document sizeQuery = new Document(QueryOperator.SIZE.getValue(), subQuery);
+                return checkMatchesValue(sizeQuery, value);
             } else {
                 if (!checkMatchesAnyValue(queryValue, value) && !checkMatchesValue(queryValue, value)) {
                     return false;
@@ -363,7 +366,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkMatchesAllValues(Object queryValue, Object values) {
-
         if (!(queryValue instanceof Collection)) {
             return false;
         }

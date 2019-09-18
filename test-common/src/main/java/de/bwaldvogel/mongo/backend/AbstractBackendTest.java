@@ -1749,9 +1749,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 4, tags: ['C', 'D']"));
 
         assertThat(toArray(collection.find(json("$and: [{'tags': {$all: ['A']}}, {'tags': {$nin: ['B', 'C']}}]"))))
-            .containsExactly(
-                json("_id: 2, tags: ['A', 'D']")
-            );
+            .containsExactly(json("_id: 2, tags: ['A', 'D']"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/96
+    @Test
+    public void testAndQueryWithAllAndSize() throws Exception {
+        collection.insertOne(json("_id: 1, list: ['A', 'B']"));
+        collection.insertOne(json("_id: 2, list: ['A', 'B', 'C']"));
+
+        assertThat(toArray(collection.find(json("$and: [{list: {$size: 2}}, {list: {$all: ['A', 'B']}}]}"))))
+            .containsExactly(json("_id: 1, list: ['A', 'B']"));
+
+        assertThat(toArray(collection.find(json("list: {$all: ['A', 'B'], $size: 2}"))))
+            .containsExactly(json("_id: 1, list: ['A', 'B']"));
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/36

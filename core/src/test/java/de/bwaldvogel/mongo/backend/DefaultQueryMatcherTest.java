@@ -762,6 +762,18 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json("tags: ['C', 'D']"), query)).isFalse();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/96
+    @Test
+    public void testMatchesAllAndSize() throws Exception {
+        Document query = json("list: {$all: ['A', 'B'], $size: 2}");
+
+        assertThat(matcher.matches(json("list: ['A', 'B']"), query)).isTrue();
+        assertThat(matcher.matches(json("list: ['A', 'D']"), query)).isFalse();
+        assertThat(matcher.matches(json("list: ['A', 'B', 'C']"), query)).isFalse();
+        assertThat(matcher.matches(json("list: 123"), query)).isFalse();
+        assertThat(matcher.matches(json(""), query)).isFalse();
+    }
+
     @Test
     public void testMatchesElement() throws Exception {
         Document document1 = json("results: [82, 85, 88]");
