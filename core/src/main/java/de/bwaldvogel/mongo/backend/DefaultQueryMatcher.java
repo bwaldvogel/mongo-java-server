@@ -230,7 +230,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 }
             } else if (queryOperator.equals(QueryOperator.SIZE.getValue())) {
                 Document sizeQuery = new Document(QueryOperator.SIZE.getValue(), subQuery);
-                return checkMatchesValue(sizeQuery, value);
+                if (!checkMatchesValue(sizeQuery, value)) {
+                    return false;
+                }
             } else {
                 if (!checkMatchesAnyValue(queryValue, value) && !checkMatchesValue(queryValue, value)) {
                     return false;
