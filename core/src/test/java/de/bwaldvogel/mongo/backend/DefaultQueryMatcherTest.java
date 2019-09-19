@@ -444,6 +444,14 @@ public class DefaultQueryMatcherTest {
     }
 
     @Test
+    public void testMatchesNotEqualAndSize() throws Exception {
+        assertThat(matcher.matches(json("a: [1, 2]"), json("a: {$ne: [1, 3], $size: 2}"))).isTrue();
+        assertThat(matcher.matches(json("a: [1, 2]"), json("a: {$ne: [1, 2], $size: 2}"))).isFalse();
+        assertThat(matcher.matches(json("a: [1, 2]"), json("a: {$size: 2, $ne: [1, 2]}"))).isFalse();
+        assertThat(matcher.matches(json("a: [1, 2]"), json("a: {$ne: [2, 3], $size: 3}"))).isFalse();
+    }
+
+    @Test
     public void testMatchEqualArray() throws Exception {
         assertThat(matcher.matches(json("a: []"), json("a: {$eq: []}"))).isTrue();
         assertThat(matcher.matches(json("a: null"), json("a: {$eq: []}"))).isFalse();

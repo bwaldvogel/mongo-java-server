@@ -224,7 +224,9 @@ public class DefaultQueryMatcher implements QueryMatcher {
             } else if (queryOperator.equals(QueryOperator.NOT_EQUALS.getValue())) {
                 Document equalQuery = new Document(QueryOperator.EQUAL.getValue(), subQuery);
                 if (subQuery instanceof Collection) {
-                    return !checkMatchesValue(subQuery, value);
+                    if (checkMatchesValue(subQuery, value)) {
+                        return false;
+                    }
                 } else if (checkMatchesAnyValue(equalQuery, value)) {
                     return false;
                 }
