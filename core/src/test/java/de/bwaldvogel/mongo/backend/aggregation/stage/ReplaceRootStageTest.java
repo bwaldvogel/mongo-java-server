@@ -4,7 +4,6 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;

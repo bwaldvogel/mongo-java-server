@@ -1,10 +1,9 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static org.assertj.core.api.Assertions.assertThat;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -118,14 +117,6 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         Document statsAfter = db.runCommand(json("dbStats: 1, scale: 1"));
 
         assertThat(statsAfter).isEqualTo(statsBefore);
-    }
-
-    private static <T> List<T> toArray(Iterable<T> iterable) {
-        List<T> array = new ArrayList<>();
-        for (T obj : iterable) {
-            array.add(obj);
-        }
-        return array;
     }
 
 }

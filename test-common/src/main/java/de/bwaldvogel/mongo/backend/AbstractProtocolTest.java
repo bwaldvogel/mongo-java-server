@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;

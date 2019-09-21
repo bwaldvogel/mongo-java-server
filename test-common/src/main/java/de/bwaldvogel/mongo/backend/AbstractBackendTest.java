@@ -17,7 +17,6 @@ import static de.bwaldvogel.mongo.backend.TestUtils.date;
 import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 

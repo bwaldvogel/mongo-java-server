@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,6 +14,14 @@ import com.mongodb.client.MongoDatabase;
 public class TestUtils {
 
     private TestUtils() {
+    }
+
+    public static <T> List<T> toArray(Iterable<T> iterable) {
+        List<T> array = new ArrayList<>();
+        for (T obj : iterable) {
+            array.add(obj);
+        }
+        return array;
     }
 
     public static Document json(String string) {

@@ -4,7 +4,18 @@ import java.net.InetSocketAddress;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 
+import org.assertj.core.api.AbstractBooleanAssert;
+import org.assertj.core.api.AbstractDoubleAssert;
+import org.assertj.core.api.AbstractIntegerAssert;
+import org.assertj.core.api.AbstractLongAssert;
+import org.assertj.core.api.AbstractStringAssert;
+import org.assertj.core.api.AbstractThrowableAssert;
+import org.assertj.core.api.Assertions;
+import org.assertj.core.api.IterableAssert;
+import org.assertj.core.api.MapAssert;
+import org.assertj.core.api.ObjectAssert;
 import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -93,6 +104,44 @@ public abstract class AbstractTest {
     protected void restart() throws Exception {
         tearDown();
         setUp();
+    }
+
+    protected static MapAssert<String, Object> assertThat(Document actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static AbstractLongAssert<?> assertThat(Long actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static AbstractDoubleAssert<?> assertThat(Double actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static AbstractStringAssert<?> assertThat(String actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static <T> ObjectAssert<T> assertThat(T actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static AbstractIntegerAssert<?> assertThat(Integer actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static AbstractBooleanAssert<?> assertThat(Boolean actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static <T> IterableAssert<T> assertThat(Iterable<T> actual) {
+        // improve assertion array by collection entire array
+        List<T> values = TestUtils.toArray(actual);
+        return Assertions.assertThat((Iterable<? extends T>) values);
+    }
+
+    protected static AbstractThrowableAssert<?, ? extends Throwable> assertThat(Throwable actual) {
+        return Assertions.assertThat(actual);
     }
 
 }
