@@ -501,7 +501,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     }
                     document.put(key, newDocument.get(key));
                 }
-                handleUpdate(document);
+                handleUpdate(position, document);
             }
             return oldDocument;
         }
@@ -515,7 +515,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return CollectionUtils.getSingleElement(positions);
     }
 
-    protected abstract void handleUpdate(Document document);
+    protected abstract void handleUpdate(P position, Document document);
 
     private void cloneInto(Document targetDocument, Document sourceDocument) {
         for (String key : sourceDocument.keySet()) {

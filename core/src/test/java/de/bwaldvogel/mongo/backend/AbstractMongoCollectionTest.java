@@ -70,7 +70,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected void handleUpdate(Document document) {
+        protected void handleUpdate(Object position, Document document) {
             // noop
         }
 

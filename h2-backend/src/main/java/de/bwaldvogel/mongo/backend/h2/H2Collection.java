@@ -167,14 +167,8 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected void handleUpdate(Document document) {
-        Object key = getDocumentKey(document);
-        dataMap.put(Missing.ofNullable(key), document);
-    }
-
-    private Object getDocumentKey(Document document) {
-        Assert.notNull(idField);
-        return Utils.getSubdocumentValue(document, idField);
+    protected void handleUpdate(Object position, Document document) {
+        dataMap.put(Missing.ofNullable(position), document);
     }
 
 }
