@@ -98,7 +98,9 @@ public abstract class Index<P> {
 
     public abstract long getCount();
 
-    public abstract boolean isEmpty();
+    public boolean isEmpty() {
+        return getCount() == 0;
+    }
 
     public abstract long getDataSize();
 
