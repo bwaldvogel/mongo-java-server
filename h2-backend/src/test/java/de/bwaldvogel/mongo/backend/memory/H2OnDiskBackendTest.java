@@ -1,10 +1,10 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -60,7 +60,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
         restart();
 
-        assertThat(toArray(collection.find()))
+        assertThat(collection.find())
             .containsExactly(json("_id: 1"), json("_id: 2, x: 10"));
     }
 
@@ -95,11 +95,10 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
         restart();
 
-        assertThat(toArray(syncClient.listDatabaseNames())).isEqualTo(databaseNames);
+        assertThat(syncClient.listDatabaseNames()).containsExactlyElementsOf(databaseNames);
         assertThat(collection.countDocuments()).isEqualTo(2);
 
-        List<Document> indexesAfterRestart = toArray(collection.listIndexes());
-        assertThat(indexesAfterRestart).isEqualTo(indexes);
+        assertThat(collection.listIndexes()).containsExactlyElementsOf(indexes);
     }
 
     @Test
@@ -119,6 +118,14 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
         Document statsAfter = db.runCommand(json("dbStats: 1, scale: 1"));
 
         assertThat(statsAfter).isEqualTo(statsBefore);
+    }
+
+    private static <T> List<T> toArray(Iterable<T> iterable) {
+        List<T> array = new ArrayList<>();
+        for (T obj : iterable) {
+            array.add(obj);
+        }
+        return array;
     }
 
 }

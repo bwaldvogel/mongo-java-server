@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.postgresql;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -204,7 +203,7 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
                 "'E11000 duplicate key error collection: testdb.testcoll index: " +
                 "ERROR: could not create unique index \"testcoll_value_ASC\"\n  Detail: Key ((data ->> 'value'::text))=(b) is duplicated.'");
 
-        assertThat(toArray(collection.listIndexes()))
+        assertThat(collection.listIndexes())
             .containsExactly(json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"));
 
         collection.insertOne(json("_id: 5, value: 'a'"));

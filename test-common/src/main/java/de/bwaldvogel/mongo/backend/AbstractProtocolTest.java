@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
@@ -48,7 +47,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
         }
 
         awaitDocumentCount(() -> collection.estimatedDocumentCount() == 1);
-        assertThat(toArray(collection.find())).containsExactly(json("_id: 1"));
+        assertThat(collection.find()).containsExactly(json("_id: 1"));
     }
 
     @Test
@@ -116,7 +115,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
         }
 
         awaitDocumentCount(() -> collection.estimatedDocumentCount() == 2);
-        assertThat(toArray(collection.find())).containsExactly(
+        assertThat(collection.find()).containsExactly(
             json("_id: 2"),
             json("_id: 3")
         );
@@ -154,7 +153,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
         }
 
         awaitDocumentCount(() -> collection.countDocuments(json("a: 2")) == 2);
-        assertThat(toArray(collection.find())).containsExactly(
+        assertThat(collection.find()).containsExactly(
             json("_id: 1"),
             json("_id: 2, a: 2"),
             json("_id: 3, a: 2")

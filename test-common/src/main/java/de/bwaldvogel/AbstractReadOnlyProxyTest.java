@@ -1,7 +1,6 @@
 package de.bwaldvogel;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -75,9 +74,9 @@ public abstract class AbstractReadOnlyProxyTest {
     public void testListDatabaseNames() throws Exception {
         assertThat(readOnlyClient.listDatabaseNames()).isEmpty();
         writeClient.getDatabase("testdb").getCollection("testcollection").insertOne(new Document());
-        assertThat(toArray(readOnlyClient.listDatabaseNames())).containsExactly("testdb");
+        assertThat(readOnlyClient.listDatabaseNames()).containsExactly("testdb");
         writeClient.getDatabase("bar").getCollection("testcollection").insertOne(new Document());
-        assertThat(toArray(readOnlyClient.listDatabaseNames())).containsExactly("bar", "testdb");
+        assertThat(readOnlyClient.listDatabaseNames()).containsExactly("bar", "testdb");
     }
 
     @Test
@@ -106,7 +105,7 @@ public abstract class AbstractReadOnlyProxyTest {
         collection.insertOne(new Document("n", 2));
         collection.insertOne(new Document("n", 1));
         collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
-        assertThat(toArray(collection.distinct("n", Integer.class))).containsExactly(1, 2);
+        assertThat(collection.distinct("n", Integer.class)).containsExactly(1, 2);
     }
 
     @Test

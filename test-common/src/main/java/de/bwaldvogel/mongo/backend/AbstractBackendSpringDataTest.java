@@ -1,12 +1,10 @@
 package de.bwaldvogel.mongo.backend;
 
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
-import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -111,14 +109,12 @@ public abstract class AbstractBackendSpringDataTest {
         Person updatedPerson = personRepository.findOneByName(billy.getName());
         assertThat(updatedPerson.getAccounts()).hasSize(2);
 
-        List<String> databaseNames = toArray(mongoClient.listDatabaseNames());
-        assertThat(databaseNames).containsExactly(DATABASE_NAME);
+        assertThat(mongoClient.listDatabaseNames()).containsExactly(DATABASE_NAME);
 
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
-        List<String> collectionNames = toArray(database.listCollectionNames());
-        assertThat(collectionNames).containsExactlyInAnyOrder("person", "account", "test");
+        assertThat(database.listCollectionNames()).containsExactlyInAnyOrder("person", "account", "test");
 
-        assertThat(toArray(personRepository.findAll())).hasSize(2);
+        assertThat(personRepository.findAll()).hasSize(2);
         assertThat(personRepository.count()).isEqualTo(2);
         assertThat(accountRepository.count()).isEqualTo(3);
     }
