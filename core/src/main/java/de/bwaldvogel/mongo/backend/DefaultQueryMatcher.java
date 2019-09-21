@@ -203,10 +203,6 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 if (!checkMatchesAllValues(subQuery, value)) {
                     return false;
                 }
-            } else if (queryOperator.equals(QueryOperator.ELEM_MATCH.getValue())) {
-                if (!checkMatchesElemValues(subQuery, value)) {
-                    return false;
-                }
             } else if (queryOperator.equals(QueryOperator.IN.getValue())) {
                 Document inQuery = new Document(queryOperator, subQuery);
                 if (!checkMatchesAnyValue(inQuery, value)) {
@@ -407,6 +403,13 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkMatchesAnyValue(Object queryValue, Collection<?> values) {
+        if (queryValue instanceof Document) {
+            Document queryDocument = (Document) queryValue;
+            if (queryDocument.keySet().equals(Collections.singleton(QueryOperator.ELEM_MATCH.getValue()))) {
+                queryValue = queryDocument.get(QueryOperator.ELEM_MATCH.getValue());
+            }
+        }
+
         int i = 0;
         for (Object value : values) {
             if (checkMatchesValue(queryValue, value)) {

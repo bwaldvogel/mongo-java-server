@@ -3888,9 +3888,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 2, results: [75, 88, 89]"));
 
         assertThat(collection.find(json("results: {$elemMatch: {$gte: 80, $lt: 85}}")))
-            .containsExactly(
-                json("_id: 1, results: [82, 85, 88]")
-            );
+            .containsExactly(json("_id: 1, results: [82, 85, 88]"));
     }
 
     @Test
@@ -3933,6 +3931,36 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find(json("languages: {$elemMatch: {$nor: [{key: 'C'}, {key: 'C++'}, {key: 'Java'}]}}")))
             .containsExactly(
                 json("_id: 2, languages: [{key: 'Python'}]")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/97
+    @Test
+    public void testElemMatchAndAllQuery() throws Exception {
+        collection.insertOne(json("_id: 1, list: [{aa: 'bb'}, {cc: 'dd'}]"));
+        collection.insertOne(json("_id: 2, list: [{aa: 'bb'}, {cc: 'ee'}]"));
+        collection.insertOne(json("_id: 3, list: [{cc: 'dd'}]"));
+        collection.insertOne(json("_id: 4"));
+        collection.insertOne(json("_id: 5, list: []"));
+        collection.insertOne(json("_id: 6, list: [{aa: 'bb'}, {cc: 'dd'}, {ee: 'ff'}]"));
+        collection.insertOne(json("_id: 7, list: {aa: 'bb'}"));
+
+        assertThat(collection.find(json("list: {$all: [{$elemMatch: {aa: 'bb'}}, {$elemMatch: {cc: 'dd'}}], $size: 2}")))
+            .containsExactly(json("_id: 1, list: [{aa: 'bb'}, {cc: 'dd'}]"));
+
+        assertThat(collection.find(json("list: {$size: 2, $all: [{$elemMatch: {aa: 'bb'}}, {$elemMatch: {cc: 'dd'}}]}")))
+            .containsExactly(json("_id: 1, list: [{aa: 'bb'}, {cc: 'dd'}]"));
+
+        assertThat(collection.find(json("list: {$all: [{$elemMatch: {aa: 'bb'}}], $size: 2}")))
+            .containsExactly(
+                json("_id: 1, list: [{aa: 'bb'}, {cc: 'dd'}]"),
+                json("_id: 2, list: [{aa: 'bb'}, {cc: 'ee'}]")
+            );
+
+        assertThat(collection.find(json("list: {$all: [{$elemMatch: {$and: [{aa: {$ne: 'bb'}}, {cc: {$ne: 'dd'}}]}}]}")))
+            .containsExactly(
+                json("_id: 2, list: [{aa: 'bb'}, {cc: 'ee'}]"),
+                json("_id: 6, list: [{aa: 'bb'}, {cc: 'dd'}, {ee: 'ff'}]")
             );
     }
 

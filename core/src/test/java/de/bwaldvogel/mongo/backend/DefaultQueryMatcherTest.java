@@ -794,6 +794,17 @@ public class DefaultQueryMatcherTest {
         assertThat(matcher.matches(json(""), query)).isFalse();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/97
+    @Test
+    public void testMatchesAllElements() throws Exception {
+        Document document = json("list: [{a: 'b'}, {c: 'd'}]");
+
+        assertThat(matcher.matches(document, json("list: {$all: [{$elemMatch: {a: 'b'}}]}"))).isTrue();
+        assertThat(matcher.matches(document, json("list: {$all: [{$elemMatch: {a: 'b'}}, {$elemMatch: {c: 'd'}}]}"))).isTrue();
+        assertThat(matcher.matches(document, json("list: {$all: [{$elemMatch: {a: 'b'}}, {$elemMatch: {e: 'f'}}]}"))).isFalse();
+        assertThat(matcher.matches(document, json("list: {$all: [{$elemMatch: {a: 'b'}}, {$elemMatch: {c: 'd'}}, {$elemMatch: {e: 'f'}}]}"))).isFalse();
+    }
+
     @Test
     public void testMatchesElement() throws Exception {
         Document document1 = json("results: [82, 85, 88]");
