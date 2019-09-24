@@ -268,7 +268,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected void handleUpdate(Integer position, Document document) {
+    protected void handleUpdate(Integer position, Document oldDocument, Document newDocument) {
         // noop
     }
 

@@ -167,8 +167,8 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected void handleUpdate(Object position, Document document) {
-        dataMap.put(Missing.ofNullable(position), document);
+    protected void handleUpdate(Object position, Document oldDocument, Document newDocument) {
+        dataMap.put(Missing.ofNullable(position), newDocument);
     }
 
 }

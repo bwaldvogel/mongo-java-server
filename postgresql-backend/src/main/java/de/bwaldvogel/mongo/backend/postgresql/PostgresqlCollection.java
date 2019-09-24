@@ -255,12 +255,12 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected void handleUpdate(Long position, Document document) {
+    protected void handleUpdate(Long position, Document oldDocument, Document newDocument) {
         String sql = "UPDATE " + getQualifiedTablename() + " SET data = ?::json WHERE id = ?";
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, JsonConverter.toJson(document));
-            Object idValue = document.get(idField);
+            stmt.setString(1, JsonConverter.toJson(newDocument));
+            Object idValue = newDocument.get(idField);
             stmt.setLong(2, position);
             stmt.executeUpdate();
         } catch (SQLException e) {
