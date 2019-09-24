@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,7 +17,7 @@ import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.PathNotViableException;
-import de.bwaldvogel.mongo.wire.BsonEncoder;
+import de.bwaldvogel.mongo.wire.bson.BsonEncoder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -168,9 +167,9 @@ public class Utils {
     static int calculateSize(Document document) {
         ByteBuf buffer = Unpooled.buffer();
         try {
-            new BsonEncoder().encodeDocument(document, buffer);
+            BsonEncoder.encodeDocument(document, buffer);
             return buffer.writerIndex();
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             throw new MongoServerException("Failed to calculate document size", e);
         } finally {
             buffer.release();

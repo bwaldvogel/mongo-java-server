@@ -1,12 +1,12 @@
-package de.bwaldvogel.mongo.wire;
+package de.bwaldvogel.mongo.wire.bson;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import de.bwaldvogel.mongo.bson.BsonJavaScript;
@@ -17,11 +17,15 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.wire.BsonConstants;
 import io.netty.buffer.ByteBuf;
 
 public class BsonEncoder {
 
-    public void encodeDocument(Document document, ByteBuf out) throws IOException {
+    private BsonEncoder() {
+    }
+
+    public static void encodeDocument(Map<String, ?> document, ByteBuf out) {
         int indexBefore = out.writerIndex();
         out.writeIntLE(0); // total number of bytes will be written later
 
@@ -36,27 +40,27 @@ public class BsonEncoder {
         out.writerIndex(indexAfter);
     }
 
-    private void encodeCString(String data, ByteBuf buffer) {
+    private static void encodeCString(String data, ByteBuf buffer) {
         byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
         buffer.writeBytes(bytes);
         buffer.writeByte(BsonConstants.STRING_TERMINATION);
     }
 
-    private void encodeString(String data, ByteBuf buffer) {
+    private static void encodeString(String data, ByteBuf buffer) {
         byte[] bytes = data.getBytes(StandardCharsets.UTF_8);
         buffer.writeIntLE(bytes.length + 1);
         buffer.writeBytes(bytes);
         buffer.writeByte(BsonConstants.STRING_TERMINATION);
     }
 
-    private void encodeValue(String key, Object value, ByteBuf buffer) throws IOException {
+    private static void encodeValue(String key, Object value, ByteBuf buffer) {
         byte type = determineType(value);
         buffer.writeByte(type);
         encodeCString(key, buffer);
         encodeValue(type, value, buffer);
     }
 
-    private void encodeValue(byte type, Object value, ByteBuf buffer) throws IOException {
+    public static void encodeValue(byte type, Object value, ByteBuf buffer) {
         switch (type) {
             case BsonConstants.TYPE_DOUBLE:
                 buffer.writeLongLE(Double.doubleToRawLongBits(((Double) value).doubleValue()));
@@ -65,7 +69,9 @@ public class BsonEncoder {
                 encodeString(value.toString(), buffer);
                 break;
             case BsonConstants.TYPE_EMBEDDED_DOCUMENT:
-                encodeDocument((Document) value, buffer);
+                @SuppressWarnings("unchecked")
+                Map<String, ?> valueAsMap = (Map<String, ?>) value;
+                encodeDocument(valueAsMap, buffer);
                 break;
             case BsonConstants.TYPE_ARRAY:
                 Document document = new Document();
@@ -88,13 +94,13 @@ public class BsonEncoder {
                     buffer.writeLongLE(uuid.getMostSignificantBits());
                     buffer.writeLongLE(uuid.getLeastSignificantBits());
                 } else {
-                    throw new IOException("Unknown data: " + value.getClass());
+                    throw new IllegalArgumentException("Unknown data: " + value.getClass());
                 }
                 break;
             case BsonConstants.TYPE_OBJECT_ID:
                 byte[] bytes = ((ObjectId) value).toByteArray();
                 if (bytes.length != BsonConstants.LENGTH_OBJECTID) {
-                    throw new IOException("Illegal ObjectId: " + value);
+                    throw new IllegalArgumentException("Illegal ObjectId: " + value);
                 }
                 buffer.writeBytes(bytes);
                 break;
@@ -140,16 +146,16 @@ public class BsonEncoder {
                 encodeString(javaScript.getCode(), buffer);
                 break;
             case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
-                throw new IOException("unhandled type: " + value.getClass());
+                throw new IllegalArgumentException("unhandled type: " + value.getClass());
             default:
-                throw new IOException("unknown type: " + value.getClass());
+                throw new IllegalArgumentException("unknown type: " + value.getClass());
         }
     }
 
-    private byte determineType(Object value) throws IOException {
+    public static byte determineType(Object value) {
         if (value == null) {
             return BsonConstants.TYPE_NULL;
-        } else if (value instanceof Document) {
+        } else if (value instanceof Map) {
             return BsonConstants.TYPE_EMBEDDED_DOCUMENT;
         } else if (value instanceof ObjectId) {
             return BsonConstants.TYPE_OBJECT_ID;
@@ -184,7 +190,7 @@ public class BsonEncoder {
         } else if (value instanceof BsonJavaScript) {
             return BsonConstants.TYPE_JAVASCRIPT_CODE;
         } else {
-            throw new IOException("Unknown type: " + value.getClass());
+            throw new IllegalArgumentException("Unknown type: " + value.getClass());
         }
     }
 

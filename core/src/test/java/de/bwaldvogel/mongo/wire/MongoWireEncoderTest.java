@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,7 +39,7 @@ public class MongoWireEncoderTest {
         MessageHeader header = new MessageHeader(0, 0);
         MongoReply reply = new MongoReply(header, new Document("key", Missing.getInstance()));
 
-        assertThatExceptionOfType(IOException.class)
+        assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> mongoWireEncoder.encode(ctx, reply, Unpooled.buffer()))
             .withMessageContaining("Unknown type: class de.bwaldvogel.mongo.backend.Missing");
 

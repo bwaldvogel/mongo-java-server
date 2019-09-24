@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.wire;
+package de.bwaldvogel.mongo.wire.bson;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,7 +24,7 @@ public class BsonDecoderTest {
         try {
             buffer.writeBytes(bytes);
             buffer.writeByte(0);
-            assertThat(new BsonDecoder().decodeCString(buffer)).isEqualTo(string);
+            assertThat(BsonDecoder.decodeCString(buffer)).isEqualTo(string);
         } finally {
             buffer.release();
         }
@@ -39,8 +39,8 @@ public class BsonDecoderTest {
         for (Document document : objects) {
             ByteBuf buffer = Unpooled.buffer();
             try {
-                new BsonEncoder().encodeDocument(document, buffer);
-                Document decodedObject = new BsonDecoder().decodeBson(buffer);
+                BsonEncoder.encodeDocument(document, buffer);
+                Document decodedObject = BsonDecoder.decodeBson(buffer);
                 assertThat(decodedObject).isEqualTo(document);
             } finally {
                 buffer.release();
