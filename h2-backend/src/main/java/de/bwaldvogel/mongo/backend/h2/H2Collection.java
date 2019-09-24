@@ -104,31 +104,6 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Object> positions, Document orderBy, int numberToSkip, int numberToReturn) {
-
-        List<Document> matchedDocuments = new ArrayList<>();
-
-        for (Object position : positions) {
-            Document document = getDocument(position);
-            if (documentMatchesQuery(document, query)) {
-                matchedDocuments.add(document);
-            }
-        }
-
-        sortDocumentsInMemory(matchedDocuments, orderBy);
-
-        if (numberToSkip > 0) {
-            matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
-        }
-
-        if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            matchedDocuments = matchedDocuments.subList(0, numberToReturn);
-        }
-
-        return matchedDocuments;
-    }
-
-    @Override
     protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 

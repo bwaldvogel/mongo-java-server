@@ -57,33 +57,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Integer> positions, Document orderBy, int numberToSkip, int numberToReturn) {
-
-        List<Document> matchedDocuments = new ArrayList<>();
-
-        for (Integer position : positions) {
-            Document document = getDocument(position);
-            if (documentMatchesQuery(document, query)) {
-                matchedDocuments.add(document);
-            }
-        }
-
-        sortDocumentsInMemory(matchedDocuments, orderBy);
-
-        if (numberToSkip > 0) {
-            matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
-        }
-
-        if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            matchedDocuments = matchedDocuments.subList(0, numberToReturn);
-        }
-
-        return matchedDocuments;
-    }
-
-    @Override
-    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-            int numberToReturn) {
+    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         boolean ascending = true;
