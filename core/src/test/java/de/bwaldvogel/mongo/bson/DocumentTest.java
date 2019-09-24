@@ -2,11 +2,13 @@ package de.bwaldvogel.mongo.bson;
 
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -39,6 +41,13 @@ public class DocumentTest {
         assertThat(clone)
             .isNotSameAs(original)
             .isEqualTo(original);
+    }
+
+    @Test
+    public void testConstructor() throws Exception {
+        Map<String, Long> data = Collections.singletonMap("key", 123L);
+        Document document = new Document(data);
+        assertThat(document).containsExactly(entry("key", 123L));
     }
 
     @Test

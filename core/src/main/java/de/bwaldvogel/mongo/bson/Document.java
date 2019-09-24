@@ -25,7 +25,7 @@ public final class Document implements Map<String, Object>, Bson {
         append(key, value);
     }
 
-    public Document(Map<String, Object> map) {
+    public Document(Map<String, ?> map) {
         this();
         putAll(map);
     }
