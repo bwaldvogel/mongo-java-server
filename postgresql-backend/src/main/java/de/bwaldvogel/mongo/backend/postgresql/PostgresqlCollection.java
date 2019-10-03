@@ -211,8 +211,8 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
 
     @Override
     protected Long findDocumentPosition(Document document) {
-        if (!document.containsKey(idField)) {
-            throw new UnsupportedOperationException("not yet implemented");
+        if (idField == null || !document.containsKey(idField)) {
+            return super.findDocumentPosition(document);
         }
         String sql = "SELECT id FROM " + getQualifiedTablename() + " WHERE " + PostgresqlUtils.toDataKey(idField) + " = ?";
         try (Connection connection = backend.getConnection();

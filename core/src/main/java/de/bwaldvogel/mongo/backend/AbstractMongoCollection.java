@@ -706,7 +706,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract void removeDocument(P position);
 
-    protected abstract P findDocumentPosition(Document document);
+    protected P findDocumentPosition(Document document) {
+        return streamAllDocumentsWithPosition()
+            .filter(match -> documentMatchesQuery(match.getDocument(), document))
+            .map(DocumentWithPosition::getPosition)
+            .findFirst()
+            .orElse(null);
+    }
 
     protected abstract Stream<DocumentWithPosition<P>> streamAllDocumentsWithPosition();
 

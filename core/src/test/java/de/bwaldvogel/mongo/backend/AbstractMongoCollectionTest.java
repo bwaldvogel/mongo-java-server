@@ -44,11 +44,6 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Object findDocumentPosition(Document document) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
                                                     int numberToReturn) {
             throw new UnsupportedOperationException();

@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend.h2;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -86,16 +85,6 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         if (remove == null) {
             throw new NoSuchElementException("No document with key " + position);
         }
-    }
-
-    @Override
-    protected Object findDocumentPosition(Document document) {
-        for (Entry<Object, Document> entry : dataMap.entrySet()) {
-            if (entry.getValue().equals(document)) {
-                return entry.getKey();
-            }
-        }
-        return null;
     }
 
     @Override
