@@ -276,7 +276,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             }
         }
 
-        Document newDocument = new Document(idField, oldDocument.get(idField));
+        Document newDocument = new Document();
+        if (idField != null) {
+            newDocument.put(idField, oldDocument.get(idField));
+        }
 
         if (numStartsWithDollar == update.keySet().size()) {
             validateUpdateQuery(update);
@@ -543,6 +546,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     private P getSinglePosition(Document document) {
+        if (indexes.isEmpty()) {
+            return findDocumentPosition(document);
+        }
         Set<P> positions = indexes.stream()
             .map(index -> index.getPosition(document))
             .filter(Objects::nonNull)

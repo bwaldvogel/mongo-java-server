@@ -3552,16 +3552,27 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testRenameCollection() throws Exception {
-        collection.insertOne(json("_id: 1"));
-        collection.insertOne(json("_id: 2"));
-        collection.insertOne(json("_id: 3"));
+        collection.insertOne(json("_id: 1, a: 10"));
+        collection.insertOne(json("_id: 2, a: 20"));
+        collection.insertOne(json("_id: 3, a: 30"));
+
+        collection.createIndex(new Document("a", 1), new IndexOptions().unique(true));
 
         collection.renameCollection(new MongoNamespace(collection.getNamespace().getDatabaseName(), "other-collection-name"));
 
         assertThat(db.listCollectionNames())
             .containsExactly("other-collection-name");
 
-        assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(3);
+        MongoCollection<Document> otherCollection = getCollection("other-collection-name");
+        assertThat(otherCollection.countDocuments()).isEqualTo(3);
+
+        assertThat(otherCollection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("name: '_id_', ns: 'testdb.other-collection-name', key: {_id: 1}, v: 2"),
+                json("name: 'a_1', ns: 'testdb.other-collection-name', key: {a: 1}, unique: true, v: 2")
+            );
+
+        assertThat(collection.listIndexes()).isEmpty();
     }
 
     @Test

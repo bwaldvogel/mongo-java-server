@@ -927,6 +927,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @Override
     public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName) {
+        String oldFullName = collection.getFullName();
         oldDatabase.unregisterCollection(collection.getCollectionName());
         collection.renameTo(this, newCollectionName);
         // TODO resolve cast
@@ -935,6 +936,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         collections.put(newCollectionName, newCollection);
         List<Document> newDocuments = new ArrayList<>();
         newDocuments.add(new Document("name", collection.getFullName()));
+
+        indexes.get().updateDocuments(new Document("ns", oldFullName),
+            new Document("$set", new Document("ns", newCollection.getFullName())),
+            ArrayFilters.empty(), true, false);
+
         namespaces.insertDocuments(newDocuments);
     }
 
