@@ -26,5 +26,11 @@ public class ObjectIdTest {
         assertThat(new ObjectId().toString()).matches(expectedPattern);
     }
 
+    @Test
+    public void testToHexStringAndBack() throws Exception {
+        ObjectId objectId = new ObjectId();
+        ObjectId clone = new ObjectId(objectId.getHexData());
+        assertThat(clone).isEqualTo(objectId);
+    }
 
 }
