@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.postgresql;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
@@ -200,8 +199,8 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         assertThatExceptionOfType(DuplicateKeyException.class)
             .isThrownBy(() -> collection.createIndex(json("value: 1"), new IndexOptions().unique(true)))
             .withMessage("Write failed with error code 11000 and error message " +
-                "'E11000 duplicate key error collection: testdb.testcoll index: " +
-                "ERROR: could not create unique index \"testcoll_value_ASC\"\n  Detail: Key ((data ->> 'value'::text))=(b) is duplicated.'");
+                "'E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: " +
+                "ERROR: could not create unique index \"testcoll_value_1\"\n  Detail: Key ((data ->> 'value'::text))=(b) is duplicated.'");
 
         assertThat(collection.listIndexes())
             .containsExactly(json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"));

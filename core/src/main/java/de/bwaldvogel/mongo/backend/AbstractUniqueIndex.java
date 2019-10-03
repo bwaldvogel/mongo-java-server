@@ -12,6 +12,9 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
@@ -20,8 +23,10 @@ import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
 public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
-    protected AbstractUniqueIndex(List<IndexKey> keys, boolean sparse) {
-        super(keys, sparse);
+    private static final Logger log = LoggerFactory.getLogger(AbstractUniqueIndex.class);
+
+    protected AbstractUniqueIndex(String name, List<IndexKey> keys, boolean sparse) {
+        super(name, keys, sparse);
     }
 
     protected abstract P removeDocument(KeyValue keyValue);
@@ -248,6 +253,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         } else {
             throw new UnsupportedOperationException("unsupported query expression: " + operator);
         }
+    }
+
+    @Override
+    public void drop() {
+        log.debug("Dropping {}", this);
     }
 
 }

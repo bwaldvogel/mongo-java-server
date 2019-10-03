@@ -7,18 +7,21 @@ import java.util.stream.Collectors;
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
-import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class H2Database extends AbstractMongoDatabase<Object> {
+
+    private static final Logger log = LoggerFactory.getLogger(H2Database.class);
 
     private static final String META_PREFIX = "meta.";
     static final String DATABASES_PREFIX = "databases.";
@@ -32,9 +35,21 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     @Override
-    protected Index<Object> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys, boolean sparse) {
-        MVMap<KeyValue, Object> mvMap = mvStore.openMap(databaseName + "." + collectionName + "._index_" + indexName(keys));
-        return new H2UniqueIndex(mvMap, keys, sparse);
+    protected Index<Object> openOrCreateUniqueIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse) {
+        MVMap<KeyValue, Object> mvMap = mvStore.openMap(mapNameForIndex(collectionName, indexName));
+        return new H2UniqueIndex(mvMap, indexName, keys, sparse);
+    }
+
+    @Override
+    protected void dropIndex(MongoCollection<Object> collection, String indexName) {
+        super.dropIndex(collection, indexName);
+        String name = mapNameForIndex(collection.getCollectionName(), indexName);
+        log.debug("Removing map '{}'", name);
+        mvStore.removeMap(name);
+    }
+
+    private String mapNameForIndex(String collectionName, String indexName) {
+        return databaseName + "." + collectionName + "._index_" + indexName;
     }
 
     @Override
@@ -52,13 +67,6 @@ public class H2Database extends AbstractMongoDatabase<Object> {
         for (MVMap<?, ?> map : maps) {
             mvStore.removeMap(map);
         }
-    }
-
-    static String indexName(List<IndexKey> keys) {
-        Assert.notEmpty(keys, () -> "No keys");
-        return keys.stream()
-            .map(k -> k.getKey() + "." + (k.isAscending() ? "ASC" : "DESC"))
-            .collect(Collectors.joining("_"));
     }
 
     @Override

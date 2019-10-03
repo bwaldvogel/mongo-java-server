@@ -16,7 +16,7 @@ public class IndexTest {
 
     @Test
     public void testGetKeyValues_simple() throws Exception {
-        Index<?> index = new MemoryUniqueIndex(Collections.singletonList(new IndexKey("x", true)), false);
+        Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("x", true)), false);
 
         assertThat(index.getKeyValues(new Document("x", 1))).containsExactly(new KeyValue(1.0));
         assertThat(index.getKeyValues(new Document("x", "abc"))).containsExactly(new KeyValue("abc"));
@@ -24,7 +24,7 @@ public class IndexTest {
 
     @Test
     public void testGetKeyValues_compound() throws Exception {
-        Index<?> index = new MemoryUniqueIndex(Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("index", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true)), false);
 
@@ -35,7 +35,7 @@ public class IndexTest {
 
     @Test
     public void testGetKeyValues_Subdocument() throws Exception {
-        Index<?> index = new MemoryUniqueIndex(Collections.singletonList(new IndexKey("a.b", true)), false);
+        Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("a.b", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", 1))).containsExactly(new KeyValue((Object) null));
         assertThat(index.getKeyValues(new Document("a", new Document("b", 1)))).containsExactly(new KeyValue(1.0));
@@ -45,7 +45,7 @@ public class IndexTest {
 
     @Test
     public void testGetKeyValues_multiKey() throws Exception {
-        Index<?> index = new MemoryUniqueIndex(Collections.singletonList(new IndexKey("a", true)), false);
+        Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("a", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", Arrays.asList(1, 2, 3, 2))))
             .containsExactly(
@@ -56,7 +56,7 @@ public class IndexTest {
 
     @Test
     public void testGetKeyValues_compoundMultiKey() throws Exception {
-        Index<?> index = new MemoryUniqueIndex(Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("index", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true),
             new IndexKey("c", true)
@@ -71,7 +71,7 @@ public class IndexTest {
 
     @Test
     public void testGetKeyValues_compoundMultiKey_tooManyCollections() throws Exception {
-        Index<?> index = new MemoryUniqueIndex(Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("index", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true)
         ), false);
@@ -83,7 +83,7 @@ public class IndexTest {
 
     @Test
     public void testGetKeyValues_multiKey_document() throws Exception {
-        Index<?> index = new MemoryUniqueIndex(Collections.singletonList(new IndexKey("a.b", true)), false);
+        Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("a.b", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", Arrays.asList(new Document("b", 1), new Document("b", 2)))))
             .containsExactly(

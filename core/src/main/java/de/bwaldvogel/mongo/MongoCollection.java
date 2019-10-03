@@ -20,6 +20,8 @@ public interface MongoCollection<P> {
 
     void addIndex(Index<P> index);
 
+    void dropIndex(String indexName);
+
     void addDocument(Document document);
 
     void removeDocument(Document document);

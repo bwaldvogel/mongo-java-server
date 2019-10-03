@@ -334,6 +334,53 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testDropAndRecreateIndex() throws Exception {
+        collection.createIndex(new Document("n", 1));
+        collection.createIndex(new Document("b", 1));
+        collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
+
+        collection.dropIndex(new Document("n", 1));
+
+        collection.insertOne(json("_id: 1, c: 10"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.dropIndex(new Document("n", 1)))
+            .withMessageContaining("Command failed with error 27 (IndexNotFound): 'can't find index with key: { n: 1 }'");
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 2, c: 10")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: c_1 dup key: { : 10 }");
+
+        collection.dropIndex(new Document("c", 1));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.dropIndex(new Document("c", 1)))
+            .withMessageContaining("Command failed with error 27 (IndexNotFound): 'can't find index with key: { c: 1 }'");
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+            );
+
+        collection.insertOne(json("_id: 2, c: 10"));
+
+        assertThatExceptionOfType(DuplicateKeyException.class)
+            .isThrownBy(() -> collection.createIndex(new Document("c", 1), new IndexOptions().unique(true)))
+            .withMessageContaining("Write failed with error code 11000 and error message " +
+                "'E11000 duplicate key error collection: testdb.testcoll index: c_1 dup key:");
+
+        collection.deleteOne(json("_id: 1"));
+        collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2),
+                json("key: {c: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "c_1").append("unique", true).append("v", 2)
+            );
+    }
+
+    @Test
     public void testCurrentOperations() throws Exception {
         Document currentOperations = getAdminDb().getCollection("$cmd.sys.inprog").find().first();
         assertThat(currentOperations).isNotNull();

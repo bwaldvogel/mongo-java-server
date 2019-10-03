@@ -179,6 +179,20 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         indexes.add(index);
     }
 
+    @Override
+    public void dropIndex(String indexName) {
+        log.info("Dropping index '{}'", indexName);
+        List<Index<P>> indexesToDrop = indexes.stream()
+            .filter(index -> index.getName().equals(indexName))
+            .collect(Collectors.toList());
+        if (indexesToDrop.isEmpty()) {
+            return;
+        }
+        Index<P> indexToDrop = CollectionUtils.getSingleElement(indexesToDrop);
+        indexToDrop.drop();
+        indexes.remove(indexToDrop);
+    }
+
     private void modifyField(Document document, String modifier, Document update, ArrayFilters arrayFilters,
                              Integer matchPos, boolean isUpsert) {
         Document change = (Document) update.get(modifier);

@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend.postgresql.index;
 
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,8 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.bwaldvogel.mongo.MongoCollection;
-import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.KeyValue;
@@ -28,35 +29,52 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class PostgresUniqueIndex extends Index<Long> {
 
+    private static final Logger log = LoggerFactory.getLogger(PostgresUniqueIndex.class);
+
     private static final String SQL_ERROR_DUPLICATE_KEY = "23505";
 
     private final PostgresqlBackend backend;
     private final String databaseName;
     private final String collectionName;
     private final String fullCollectionName;
-    private final String indexName;
 
-    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, List<IndexKey> keys, boolean sparse) {
-        super(keys, sparse);
+    public PostgresUniqueIndex(PostgresqlBackend backend, String databaseName, String collectionName, String indexName,
+                               List<IndexKey> keys, boolean sparse) {
+        super(indexName, keys, sparse);
         this.backend = backend;
         this.databaseName = databaseName;
         this.collectionName = collectionName;
         this.fullCollectionName = PostgresqlCollection.getQualifiedTablename(databaseName, collectionName);
-        this.indexName = collectionName + "_" + indexName(keys);
+    }
+
+    private String getIndexName() {
+        return collectionName + "_" + getName();
     }
 
     public void initialize() {
         String columns = keyColumns(getKeys());
-        String sql = "CREATE UNIQUE INDEX IF NOT EXISTS \"" + indexName + "\" ON " + fullCollectionName + " (" + columns + ")";
+        String sql = "CREATE UNIQUE INDEX IF NOT EXISTS \"" + getIndexName() + "\" ON " + fullCollectionName + " (" + columns + ")";
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {
             if (e.getSQLState().equals(SQL_ERROR_DUPLICATE_KEY)) {
-                throw new DuplicateKeyError(databaseName + "." + collectionName, e.getMessage());
+                throw new DuplicateKeyError(databaseName + "." + collectionName, getName() + " dup key: " + e.getMessage());
             } else {
-                throw new MongoServerException("failed to create unique index on " + fullCollectionName, e);
+                throw new MongoServerException("failed to create " + this + " on " + fullCollectionName, e);
             }
+        }
+    }
+
+    @Override
+    public void drop() {
+        log.debug("Dropping index '{}'", getIndexName());
+        String sql = "DROP INDEX \"" + databaseName + "\".\"" + getIndexName() + "\"";
+        try (Connection connection = backend.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new MongoServerException("failed to drop " + this + " on " + fullCollectionName, e);
         }
     }
 
@@ -64,13 +82,6 @@ public class PostgresUniqueIndex extends Index<Long> {
         return keys.stream()
             .map(key -> "(" + PostgresqlUtils.toDataKey(key.getKey()) + ") " + (key.isAscending() ? "ASC" : "DESC"))
             .collect(Collectors.joining(", "));
-    }
-
-    private static String indexName(List<IndexKey> keys) {
-        Assert.notEmpty(keys, () -> "No keys");
-        return keys.stream()
-            .map(k -> k.getKey() + "_" + (k.isAscending() ? "ASC" : "DESC"))
-            .collect(Collectors.joining("_"));
     }
 
     @Override
@@ -89,7 +100,7 @@ public class PostgresUniqueIndex extends Index<Long> {
                     throw new DuplicateKeyError(this, collection, new KeyValue(keyValues.values()));
                 }
             }
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             throw new MongoServerException("failed to " + operation + " document to " + fullCollectionName, e);
         }
     }
@@ -115,7 +126,7 @@ public class PostgresUniqueIndex extends Index<Long> {
         return getPosition(document);
     }
 
-    private void fillStrings(PreparedStatement statement, Map<String, Object> keyValues) throws SQLException, IOException {
+    private void fillStrings(PreparedStatement statement, Map<String, Object> keyValues) throws SQLException {
         int pos = 1;
         for (Object keyValue : keyValues.values()) {
             if (keyValue != null) {
@@ -199,7 +210,7 @@ public class PostgresUniqueIndex extends Index<Long> {
                 }
                 return Long.valueOf(position);
             }
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) {
             throw new MongoServerException("failed to get document position from " + fullCollectionName, e);
         }
     }

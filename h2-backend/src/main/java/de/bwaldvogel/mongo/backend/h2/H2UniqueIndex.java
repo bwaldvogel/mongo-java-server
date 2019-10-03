@@ -14,8 +14,8 @@ public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
     private MVMap<KeyValue, Object> mvMap;
 
-    H2UniqueIndex(MVMap<KeyValue, Object> mvMap, List<IndexKey> keys, boolean sparse) {
-        super(keys, sparse);
+    H2UniqueIndex(MVMap<KeyValue, Object> mvMap, String name, List<IndexKey> keys, boolean sparse) {
+        super(name, keys, sparse);
         this.mvMap = mvMap;
     }
 

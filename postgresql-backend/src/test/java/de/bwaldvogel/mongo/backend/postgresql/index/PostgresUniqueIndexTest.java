@@ -18,7 +18,7 @@ public class PostgresUniqueIndexTest {
         List<IndexKey> keys = new ArrayList<>();
         keys.add(new IndexKey("a", true));
         keys.add(new IndexKey("b", true));
-        PostgresUniqueIndex postgresUniqueIndex = new PostgresUniqueIndex(null, "db", "coll", keys, false);
+        PostgresUniqueIndex postgresUniqueIndex = new PostgresUniqueIndex(null, "db", "coll", "idx1", keys, false);
         Map<String, Object> keyValues = new LinkedHashMap<>();
         keyValues.put("a", "some-value");
         keyValues.put("b", null);
@@ -31,7 +31,7 @@ public class PostgresUniqueIndexTest {
         List<IndexKey> keys = new ArrayList<>();
         keys.add(new IndexKey("a", true));
         keys.add(new IndexKey("b", true));
-        PostgresUniqueIndex postgresUniqueIndex = new PostgresUniqueIndex(null, "db", "coll", keys, true);
+        PostgresUniqueIndex postgresUniqueIndex = new PostgresUniqueIndex(null, "db", "coll", "idx1", keys, true);
         Map<String, Object> keyValues = new LinkedHashMap<>();
         keyValues.put("a", "some-value");
         keyValues.put("b", null);

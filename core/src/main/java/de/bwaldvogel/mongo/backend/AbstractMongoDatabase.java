@@ -25,6 +25,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
+import de.bwaldvogel.mongo.exception.IndexNotFoundException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -136,6 +137,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             return commandDrop(query);
         } else if (command.equalsIgnoreCase("dropDatabase")) {
             return commandDropDatabase();
+        } else if (command.equalsIgnoreCase("dropIndexes")) {
+            return commandDropIndexes(query);
         } else if (command.equalsIgnoreCase("dbstats")) {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
@@ -372,6 +375,31 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         response.put("numIndexesAfter", Integer.valueOf(indexesAfter));
         Utils.markOkay(response);
         return response;
+    }
+
+    private Document commandDropIndexes(Document query) {
+        String collectionName = (String) query.get("dropIndexes");
+        MongoCollection<P> collection = resolveCollection(collectionName, true);
+        Document indexKeys = (Document) query.get("index");
+        Document indexQuery = new Document("key", indexKeys);
+        MongoCollection<P> indexCollection = indexes.get();
+        Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
+            () -> new IndexNotFoundException(indexKeys));
+        dropIndex(collection, indexToDrop);
+        int numDeleted = indexCollection.deleteDocuments(indexToDrop, -1);
+        Assert.equals(numDeleted, 1, () -> "Expected one deleted document");
+        Document response = new Document();
+        Utils.markOkay(response);
+        return response;
+    }
+
+    private void dropIndex(MongoCollection<P> collection, Document indexDescription) {
+        String indexName = (String) indexDescription.get("name");
+        dropIndex(collection, indexName);
+    }
+
+    protected void dropIndex(MongoCollection<P> collection, String indexName) {
+        collection.dropIndex(indexName);
     }
 
     private int countIndexes() {
@@ -723,10 +751,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
 
+        String indexName = (String) indexDescription.get("name");
         Document key = (Document) indexDescription.get("key");
         if (key.keySet().equals(Collections.singleton(ID_FIELD))) {
             boolean ascending = isAscending(key.get(ID_FIELD));
-            collection.addIndex(openOrCreateIdIndex(collectionName, ascending));
+            collection.addIndex(openOrCreateIdIndex(collectionName, indexName, ascending));
             log.info("adding unique _id index for collection {}", collectionName);
         } else if (Utils.isTrue(indexDescription.get("unique"))) {
             List<IndexKey> keys = new ArrayList<>();
@@ -739,7 +768,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             boolean sparse = Utils.isTrue(indexDescription.get("sparse"));
             log.info("adding {} unique index {} for collection {}", sparse ? "sparse" : "non-sparse", keys, collectionName);
 
-            collection.addIndex(openOrCreateUniqueIndex(collectionName, keys, sparse));
+            collection.addIndex(openOrCreateUniqueIndex(collectionName, indexName, keys, sparse));
         } else {
             // TODO: non-unique non-id indexes not yet implemented
             log.warn("adding non-unique non-id index with key {} is not yet implemented", key);
@@ -750,11 +779,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return Objects.equals(Utils.normalizeValue(keyValue), Double.valueOf(1.0));
     }
 
-    private Index<P> openOrCreateIdIndex(String collectionName, boolean ascending) {
-        return openOrCreateUniqueIndex(collectionName, Collections.singletonList(new IndexKey(ID_FIELD, ascending)), false);
+    private Index<P> openOrCreateIdIndex(String collectionName, String indexName, boolean ascending) {
+        return openOrCreateUniqueIndex(collectionName, indexName, Collections.singletonList(new IndexKey(ID_FIELD, ascending)), false);
     }
 
-    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, List<IndexKey> keys, boolean sparse);
+    protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse);
 
     private void insertDocuments(Channel channel, String collectionName, List<Document> documents) {
         clearLastStatus(channel);

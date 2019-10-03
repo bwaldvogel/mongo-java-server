@@ -16,10 +16,12 @@ import de.bwaldvogel.mongo.exception.KeyConstraintError;
 
 public abstract class Index<P> {
 
+    private final String name;
     private final List<IndexKey> keys;
     private final boolean sparse;
 
-    protected Index(List<IndexKey> keys, boolean sparse) {
+    protected Index(String name, List<IndexKey> keys, boolean sparse) {
+        this.name = name;
         this.keys = keys;
         this.sparse = sparse;
     }
@@ -33,12 +35,7 @@ public abstract class Index<P> {
     }
 
     public String getName() {
-        if (keys.size() == 1 && CollectionUtils.getSingleElement(keys).getKey().equals(Constants.ID_FIELD)) {
-            return Constants.ID_INDEX_NAME;
-        }
-        return keys.stream()
-            .map(indexKey -> indexKey.getKey() + "_" + (indexKey.isAscending() ? "1" : "-1"))
-            .collect(Collectors.joining("_"));
+        return name;
     }
 
     protected List<String> keys() {
@@ -117,4 +114,12 @@ public abstract class Index<P> {
         Set<KeyValue> newKeyValues = getKeyValues(newDocument);
         return Utils.nullAwareEquals(oldKeyValues, newKeyValues);
     }
+
+    public abstract void drop();
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "[name=" + getName() + "]";
+    }
+
 }
