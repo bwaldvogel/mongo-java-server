@@ -67,7 +67,8 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ClientRequest object) throws Exception {
         if (object instanceof MongoQuery) {
-            ctx.channel().writeAndFlush(handleQuery((MongoQuery) object));
+            MongoQuery mongoQuery = (MongoQuery) object;
+            ctx.channel().writeAndFlush(handleQuery(mongoQuery));
         } else if (object instanceof MongoInsert) {
             MongoInsert insert = (MongoInsert) object;
             mongoBackend.handleInsert(insert);

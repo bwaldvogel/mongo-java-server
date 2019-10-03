@@ -56,6 +56,7 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
 
     @Override
     public void dropCollection(String collectionName) {
+        super.dropCollection(collectionName);
         String fullCollectionName = PostgresqlCollection.getQualifiedTablename(getDatabaseName(), collectionName);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("DROP TABLE " + fullCollectionName + "")) {
@@ -63,7 +64,6 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
         } catch (SQLException e) {
             throw new MongoServerException("failed to drop collection " + collectionName, e);
         }
-        super.dropCollection(collectionName);
     }
 
     @Override

@@ -180,8 +180,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
+    public void drop() {
+        log.debug("Dropping collection {}", getFullName());
+        Assert.isEmpty(indexes);
+    }
+
+    @Override
     public void dropIndex(String indexName) {
-        log.info("Dropping index '{}'", indexName);
+        log.debug("Dropping index '{}'", indexName);
         List<Index<P>> indexesToDrop = indexes.stream()
             .filter(index -> index.getName().equals(indexName))
             .collect(Collectors.toList());

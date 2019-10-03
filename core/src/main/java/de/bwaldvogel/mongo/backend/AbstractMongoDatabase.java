@@ -385,17 +385,17 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         MongoCollection<P> indexCollection = indexes.get();
         Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
             () -> new IndexNotFoundException(indexKeys));
-        dropIndex(collection, indexToDrop);
-        int numDeleted = indexCollection.deleteDocuments(indexToDrop, -1);
+        int numDeleted = dropIndex(collection, indexToDrop);
         Assert.equals(numDeleted, 1, () -> "Expected one deleted document");
         Document response = new Document();
         Utils.markOkay(response);
         return response;
     }
 
-    private void dropIndex(MongoCollection<P> collection, Document indexDescription) {
+    private int dropIndex(MongoCollection<P> collection, Document indexDescription) {
         String indexName = (String) indexDescription.get("name");
         dropIndex(collection, indexName);
+        return indexes.get().deleteDocuments(indexDescription, -1);
     }
 
     protected void dropIndex(MongoCollection<P> collection, String indexName) {
@@ -468,18 +468,19 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document commandDrop(Document query) {
         String collectionName = query.get("drop").toString();
-        MongoCollection<P> collection = collections.remove(collectionName);
 
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
             throw new MongoSilentServerException("ns not found");
         }
+
+        int numIndexes = collection.getNumIndexes();
+        dropCollection(collectionName);
         Document response = new Document();
-        namespaces.removeDocument(new Document("name", collection.getFullName()));
-        response.put("nIndexesWas", Integer.valueOf(collection.getNumIndexes()));
+        response.put("nIndexesWas", Integer.valueOf(numIndexes));
         response.put("ns", collection.getFullName());
         Utils.markOkay(response);
         return response;
-
     }
 
     private Document commandGetLastError(Channel channel, String command, Document query) {
@@ -916,7 +917,24 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @Override
     public void dropCollection(String collectionName) {
+        MongoCollection<P> collection = resolveCollection(collectionName, true);
+        dropAllIndexes(collection);
+        collection.drop();
         unregisterCollection(collectionName);
+    }
+
+    private void dropAllIndexes(MongoCollection<P> collection) {
+        MongoCollection<P> indexCollection = indexes.get();
+        if (indexCollection == null) {
+            return;
+        }
+        List<Document> indexesToDrop = new ArrayList<>();
+        for (Document index : indexCollection.handleQuery(new Document("ns", collection.getFullName()))) {
+            indexesToDrop.add(index);
+        }
+        for (Document indexToDrop : indexesToDrop) {
+            dropIndex(collection, indexToDrop);
+        }
     }
 
     @Override

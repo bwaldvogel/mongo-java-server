@@ -63,4 +63,6 @@ public interface MongoCollection<P> {
 
     void renameTo(MongoDatabase newDatabase, String newCollectionName);
 
+    void drop();
+
 }

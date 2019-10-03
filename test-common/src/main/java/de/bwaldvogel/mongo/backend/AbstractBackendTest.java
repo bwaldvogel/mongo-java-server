@@ -702,10 +702,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testDropCollection() throws Exception {
+        collection.createIndex(new Document("n", 1));
+        collection.createIndex(new Document("b", 1));
+
         collection.insertOne(json(""));
         assertThat(db.listCollectionNames()).contains(getCollectionName());
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {n: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "n_1").append("v", 2),
+                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+            );
+
         collection.drop();
         assertThat(db.listCollectionNames()).doesNotContain(getCollectionName());
+
+        assertThat(collection.listIndexes()).isEmpty();
     }
 
     @Test
