@@ -10,9 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
@@ -20,8 +17,6 @@ import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class MemoryCollection extends AbstractMongoCollection<Integer> {
-
-    private static final Logger log = LoggerFactory.getLogger(MemoryCollection.class);
 
     private List<Document> documents = new ArrayList<>();
     private Queue<Integer> emptyPositions = new LinkedList<>();
