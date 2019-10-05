@@ -15,7 +15,7 @@ allprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
 
-    version = '1.21.0'
+    version = '1.22.0-SNAPSHOT'
 
     group = 'de.bwaldvogel'
 
