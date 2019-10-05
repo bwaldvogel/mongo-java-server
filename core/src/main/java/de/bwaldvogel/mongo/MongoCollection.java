@@ -14,7 +14,9 @@ public interface MongoCollection<P> {
         return getDatabase().getDatabaseName();
     }
 
-    String getFullName();
+    default String getFullName() {
+        return getDatabaseName() + "." + getCollectionName();
+    }
 
     String getCollectionName();
 

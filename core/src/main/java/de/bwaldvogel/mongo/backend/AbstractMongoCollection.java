@@ -147,11 +147,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public String getFullName() {
-        return getDatabaseName() + "." + getCollectionName();
-    }
-
-    @Override
     public String getCollectionName() {
         return collectionName;
     }
