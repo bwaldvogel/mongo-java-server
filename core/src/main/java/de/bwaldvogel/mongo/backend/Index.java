@@ -55,30 +55,36 @@ public abstract class Index<P> {
     }
 
     Set<KeyValue> getKeyValues(Document document, boolean normalize) {
-        Map<String, Object> valuesPerKey = new LinkedHashMap<>();
-        for (String key : keys()) {
-            Object value = Utils.getSubdocumentValueCollectionAware(document, key);
-            if (normalize) {
-                value = Utils.normalizeValue(value);
-            }
-            valuesPerKey.put(key, value);
+        Map<String, Object> valuesPerKey = collectValuesPerKey(document);
+        if (normalize) {
+            valuesPerKey.replaceAll((key, value) -> Utils.normalizeValue(value));
         }
 
-        Map<String, Object> collectionValues = valuesPerKey.entrySet().stream()
-            .filter(entry -> entry.getValue() instanceof Collection)
-            .collect(StreamUtils.toLinkedHashMap());
+        List<Collection<?>> collectionValues = valuesPerKey.values().stream()
+            .filter(value -> value instanceof Collection)
+            .map(value -> (Collection<?>) value)
+            .collect(Collectors.toList());
 
         if (collectionValues.size() == 1) {
             @SuppressWarnings("unchecked")
-            Collection<Object> collectionValue = (Collection<Object>) CollectionUtils.getSingleElement(collectionValues.values());
+            Collection<Object> collectionValue = (Collection<Object>) CollectionUtils.getSingleElement(collectionValues);
             return CollectionUtils.multiplyWithOtherElements(valuesPerKey.values(), collectionValue).stream()
                 .map(KeyValue::new)
                 .collect(StreamUtils.toLinkedHashSet());
         } else if (collectionValues.size() > 1) {
-            throw new CannotIndexParallelArraysError(collectionValues.keySet());
+            throw new CannotIndexParallelArraysError(keys());
         } else {
             return Collections.singleton(new KeyValue(valuesPerKey.values()));
         }
+    }
+
+    private Map<String, Object> collectValuesPerKey(Document document) {
+        Map<String, Object> valuesPerKey = new LinkedHashMap<>();
+        for (String key : keys()) {
+            Object value = Utils.getSubdocumentValueCollectionAware(document, key);
+            valuesPerKey.put(key, value);
+        }
+        return valuesPerKey;
     }
 
     public abstract P getPosition(Document document);
