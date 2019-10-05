@@ -258,4 +258,15 @@ public class UtilsTest {
         assertThat(Utils.joinTail(Arrays.asList("a", "b", "c", "d"))).isEqualTo("b.c.d");
     }
 
+    @Test
+    public void testCollectCommonPathFragments() throws Exception {
+        assertThat(Utils.collectCommonPathFragments("a", "b")).isEmpty();
+        assertThat(Utils.collectCommonPathFragments("aaa", "a.aab")).isEmpty();
+        assertThat(Utils.collectCommonPathFragments("a.a", "a.b")).containsExactly("a");
+        assertThat(Utils.collectCommonPathFragments("a.a", "a.a.b")).containsExactly("a", "a");
+        assertThat(Utils.collectCommonPathFragments("foo.bar", "foo.bar.bla")).containsExactly("foo", "bar");
+        assertThat(Utils.collectCommonPathFragments("a.a", "a.b.c")).containsExactly("a");
+        assertThat(Utils.collectCommonPathFragments("ab.c", "a.b.c")).isEmpty();
+    }
+
 }

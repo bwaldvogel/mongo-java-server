@@ -508,6 +508,20 @@ public class Utils {
         }
         List<String> fragments1 = splitPath(path1);
         List<String> fragments2 = splitPath(path2);
+        List<String> commonFragments = collectCommonPathFragments(fragments1, fragments2);
+        if (commonFragments.size() != fragments1.size() && commonFragments.size() != fragments2.size()) {
+            return null;
+        }
+        return joinPath(commonFragments);
+    }
+
+    public static List<String> collectCommonPathFragments(String path1, String path2) {
+        List<String> fragments1 = splitPath(path1);
+        List<String> fragments2 = splitPath(path2);
+        return collectCommonPathFragments(fragments1, fragments2);
+    }
+
+    private static List<String> collectCommonPathFragments(List<String> fragments1, List<String> fragments2) {
         List<String> commonFragments = new ArrayList<>();
         for (int i = 0; i < Math.min(fragments1.size(), fragments2.size()); i++) {
             String fragment1 = fragments1.get(i);
@@ -515,11 +529,10 @@ public class Utils {
             if (fragment1.equals(fragment2)) {
                 commonFragments.add(fragment1);
             } else {
-                return null;
+                break;
             }
         }
-        Assert.notEmpty(commonFragments);
-        return joinPath(commonFragments);
+        return commonFragments;
     }
 
     static String getLastFragment(String path) {
