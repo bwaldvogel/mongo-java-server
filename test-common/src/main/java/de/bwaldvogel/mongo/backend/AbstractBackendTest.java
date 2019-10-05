@@ -5295,4 +5295,36 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessageContaining("Command failed with error 14 (TypeMismatch): 'Cannot apply $inc to a value of non-numeric type. {_id: 1} has the field '0' of non-numeric type array");
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/98
+    @Test
+    public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
+        collection.createIndex(json("'stock.size': 1, 'stock.quantity': 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("stock: [{size: 'S', quantity: 10}]"));
+        collection.insertOne(json("stock: [{size: 'M', quantity: 10}, {size: 'L', quantity: 10}]"));
+        collection.insertOne(json("stock: [{size: 'S', quantity: 20}]"));
+        collection.insertOne(json("stock: [{quantity: 20}]"));
+        collection.insertOne(json("stock: [{size: 'M'}]"));
+        collection.insertOne(json("stock: {size: ['XL', 'XXL']}"));
+
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(() -> collection.insertOne(json("stock: {size: ['S', 'M'], quantity: [30, 40]}")))
+            .withMessage("cannot index parallel arrays [quantity] [size]");
+
+        assertMongoWriteException(() -> collection.insertOne(json("stock: {size: 'S', quantity: 10}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"S\", : 10 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("stock: [{size: 'XL', quantity: 7}, {size: 'M', quantity: 10}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"M\", : 10 }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("stock: [{size: 'M'}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"M\", : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("stock: {size: 'XL'}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"XL\", : null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("stock: [{quantity: 20}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : null, : 20 }");
+    }
+
 }

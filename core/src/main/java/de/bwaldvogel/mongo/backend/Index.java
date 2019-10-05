@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -50,7 +51,7 @@ public abstract class Index<P> {
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    Set<KeyValue> getKeyValues(Document document) {
+    public Set<KeyValue> getKeyValues(Document document) {
         return getKeyValues(document, true);
     }
 
@@ -72,10 +73,46 @@ public abstract class Index<P> {
                 .map(KeyValue::new)
                 .collect(StreamUtils.toLinkedHashSet());
         } else if (collectionValues.size() > 1) {
-            throw new CannotIndexParallelArraysError(keys());
+            validateHasNoParallelArrays(document);
+            return collectCollectionValues(collectionValues);
         } else {
             return Collections.singleton(new KeyValue(valuesPerKey.values()));
         }
+    }
+
+    private void validateHasNoParallelArrays(Document document) {
+        Set<List<String>> arrayPaths = new LinkedHashSet<>();
+        for (String key : keys()) {
+            List<String> pathToFirstCollection = getPathToFirstCollection(document, key);
+            if (pathToFirstCollection != null) {
+                arrayPaths.add(pathToFirstCollection);
+            }
+        }
+        if (arrayPaths.size() > 1) {
+            List<String> parallelArraysPaths = arrayPaths.stream()
+                .map(path -> path.get(path.size() - 1))
+                .collect(Collectors.toList());
+            throw new CannotIndexParallelArraysError(parallelArraysPaths);
+        }
+    }
+
+    private static List<String> getPathToFirstCollection(Document document, String key) {
+        List<String> fragments = Utils.splitPath(key);
+        List<String> remainingFragments = Utils.getTail(fragments);
+        return getPathToFirstCollection(document, remainingFragments, Collections.singletonList(fragments.get(0)));
+    }
+
+    private static List<String> getPathToFirstCollection(Document document, List<String> remainingFragments, List<String> path) {
+        Object value = Utils.getSubdocumentValue(document, Utils.joinPath(path));
+        if (value instanceof Collection) {
+            return path;
+        }
+        if (remainingFragments.isEmpty()) {
+            return null;
+        }
+        List<String> newPath = new ArrayList<>(path);
+        newPath.add(remainingFragments.get(0));
+        return getPathToFirstCollection(document, Utils.getTail(remainingFragments), newPath);
     }
 
     private Map<String, Object> collectValuesPerKey(Document document) {
@@ -85,6 +122,19 @@ public abstract class Index<P> {
             valuesPerKey.put(key, value);
         }
         return valuesPerKey;
+    }
+
+    private static Set<KeyValue> collectCollectionValues(List<Collection<?>> collectionValues) {
+        int size = collectionValues.get(0).size();
+        Set<KeyValue> keyValues = new LinkedHashSet<>();
+        for (int i = 0; i < size; i++) {
+            int pos = i;
+            List<Object> values = collectionValues.stream()
+                .map(collection -> CollectionUtils.getElementAtPosition(collection, pos))
+                .collect(Collectors.toList());
+            keyValues.add(new KeyValue(values));
+        }
+        return keyValues;
     }
 
     public abstract P getPosition(Document document);

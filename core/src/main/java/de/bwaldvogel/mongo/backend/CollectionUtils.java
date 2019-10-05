@@ -61,4 +61,18 @@ public final class CollectionUtils {
         return map;
     }
 
+    static <T> T getElementAtPosition(Iterable<T> iterable, int pos) {
+        if (iterable instanceof List) {
+            List<T> list = (List<T>) iterable;
+            return list.get(pos);
+        } else {
+            Iterator<T> iterator = iterable.iterator();
+            T element = iterator.next();
+            for (int i = 0; i < pos; i++) {
+                element = iterator.next();
+            }
+            return element;
+        }
+    }
+
 }

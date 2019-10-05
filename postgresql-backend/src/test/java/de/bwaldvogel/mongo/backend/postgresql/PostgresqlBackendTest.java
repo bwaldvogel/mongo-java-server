@@ -208,6 +208,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         collection.insertOne(json("_id: 5, value: 'a'"));
     }
 
+    @Override
+    public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
+        assumeStrictTests();
+        super.testGetKeyValues_multiKey_document_nested_objects();
+    }
+
     private void assumeStrictTests() {
         Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
