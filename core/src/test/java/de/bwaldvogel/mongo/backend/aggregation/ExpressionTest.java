@@ -1365,6 +1365,89 @@ public class ExpressionTest {
     }
 
     @Test
+	public void testDateToString() throws Exception {
+        Instant instant = Instant.parse("2011-12-19T10:15:20.250Z");
+
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a'}"), json(""))).isNull();
+        // default format
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a'}"), new Document("a", instant))).isEqualTo("2011-12-19T10:15:20.250Z");
+
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', timezone: '+01:00'}"), new Document("a", instant))).isEqualTo("2011-12-19T11:15:20.250Z");
+
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', onNull: '1970-01-01T00:00:00Z'}"), new Document("a", null))).isEqualTo("1970-01-01T00:00:00Z");
+
+        // test different formats
+        // day of month
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%d'}"), new Document("a", instant))).isEqualTo("19");
+
+        // year (ISO)
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%G'}"), new Document("a", instant))).isEqualTo("2011");
+
+        // hour
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%H'}"), new Document("a", instant))).isEqualTo("10");
+
+        // day of year
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%j'}"), new Document("a", instant))).isEqualTo("353");
+
+        // millisecond
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%L'}"), new Document("a", instant))).isEqualTo("250");
+
+        // month
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%m'}"), new Document("a", instant))).isEqualTo("12");
+
+        // minute
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%M'}"), new Document("a", instant))).isEqualTo("15");
+
+        // second
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%S'}"), new Document("a", instant))).isEqualTo("20");
+
+        // not yet supported: day of week (1-sunday, 7-saturday)
+        // assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%w'}"), new Document("a", instant))).isEqualTo("2");
+
+        // day of week (1-monday, 7-sunday)
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%u'}"), new Document("a", instant))).isEqualTo("1");
+
+        // not yet supported: week of year (00-53)
+        // assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%U'}"), new Document("a", instant))).isEqualTo("51");
+
+        // week of year (ISO, 01-53)
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%V'}"), new Document("a", instant))).isEqualTo("51");
+
+        // year
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%Y'}"), new Document("a", instant))).isEqualTo("2011");
+
+        // timezone offset (+/-[hh][mm])
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%z'}"), new Document("a", instant))).isEqualTo("+0000");
+
+        // not yet supported: timezone offset (+/-mmm)
+        // assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%Z'}"), new Document("a", instant))).isEqualTo("+000");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: ''"), json("")))
+            .withMessage("[Error 18629] $dateToString only supports an object as its argument");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: {}"), json("")))
+            .withMessage("[Error 18628] Missing 'date' parameter to $dateToString");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: null, foo: 1}"), json("")))
+             .withMessage("[Error 18534] Unrecognized parameter to $dateToString: foo");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: null, format: 1}"), json("")))
+            .withMessage("[Error 18533] $dateToString requires that 'format' be a string, found: int with value 1");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: null, format: '', timezone: 'foo'}"), json("")))
+            .withMessage("[Error 40485] $dateToString unrecognized time zone identifier: foo");
+
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: 'foo'}"), json("")))
+            .withMessage("[Error 16006] can't convert from string to Date");
+	}
+
+    @Test
     public void testEvaluateDivide() throws Exception {
         assertThat(Expression.evaluate(json("$divide: ['$a', '$b']"), json("a: 8, b: 4"))).isEqualTo(2.0);
         assertThat(Expression.evaluate(json("$divide: [4.5, 3]"), json(""))).isEqualTo(1.5);
