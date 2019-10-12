@@ -5,9 +5,15 @@ import static de.bwaldvogel.mongo.backend.Utils.describeType;
 import static de.bwaldvogel.mongo.bson.Json.toJsonValue;
 
 import java.nio.charset.StandardCharsets;
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -299,6 +305,118 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             return evaluateDate(expressionValue, LocalDate::getDayOfYear, document);
+        }
+    },
+
+    $dateToString {
+        @Override
+        Object apply(Object expressionValue, Document document) {
+            Document dateToStringDocument = requireDocument(expressionValue, 18629);
+
+            // validate mandatory 'date' expression parameter
+            if (!dateToStringDocument.containsKey("date")) {
+                throw new MongoServerError(18628, "Missing 'date' parameter to " + name());
+            }
+
+            // validate unsupported parameters
+            List<String> supportedKeys = Arrays.asList("date", "format", "timezone", "onNull");
+            for (String key : dateToStringDocument.keySet()) {
+                if (!supportedKeys.contains(key)) {
+                    throw new MongoServerError(18534, "Unrecognized parameter to " + name() + ": " + key);
+                }
+            }
+
+            // validate optional 'format' parameter
+            String format = "%Y-%m-%dT%H:%M:%S.%LZ";
+            Object formatDocument = dateToStringDocument.get("format");
+            if (formatDocument != null) {
+                if (!(formatDocument instanceof String)) {
+                    throw new MongoServerError(18533, name() + " requires that 'format' be a string, found: " + describeType(formatDocument) + " with value " + formatDocument.toString());
+                }
+                format = (String) formatDocument;
+            }
+
+            // validate optional 'timezone' parameter
+            ZoneId timezone = ZoneId.of("UTC");
+            Object timezoneValue = Expression.evaluate(dateToStringDocument.get("timezone"), document);
+            if (timezoneValue != null) {
+                try {
+                    timezone = ZoneId.of(timezoneValue.toString());
+                } catch (DateTimeException e) {
+                    throw new MongoServerError(40485, name() + " unrecognized time zone identifier: " + timezoneValue);
+                }
+            }
+
+            // optional parameter 'onNull'
+            Object onNullValue = Expression.evaluate(dateToStringDocument.get("onNull"), document);
+
+            // get zoned date time
+            Object dateExpression = dateToStringDocument.get("date");
+            Object dateValue = Expression.evaluate(dateExpression, document);
+            if(Missing.isNullOrMissing(dateValue)) {
+                if(onNullValue != null) {
+                    return onNullValue;
+                }
+                return null;
+            }
+            if (!(dateValue instanceof Instant)) {
+                throw new MongoServerError(16006, "can't convert from " + describeType(dateValue) + " to Date");
+            }
+            ZonedDateTime dateTime = ZonedDateTime.ofInstant((Instant) dateValue, timezone);
+
+            // format
+            return dateTime.format(builder(format).toFormatter());
+        }
+
+        private DateTimeFormatterBuilder builder(String format) {
+            DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
+            for (String part : format.split("%")) {
+                if(part.startsWith("d")) {
+                    builder.appendValue(ChronoField.DAY_OF_MONTH, 2);
+                } else if(part.startsWith("G")) {
+                    builder.appendValue(ChronoField.YEAR, 4);
+                } else if(part.startsWith("H")) {
+                    builder.appendValue(ChronoField.HOUR_OF_DAY, 2);
+                } else if(part.startsWith("j")) {
+                    builder.appendValue(ChronoField.DAY_OF_YEAR, 3);
+                } else if(part.startsWith("L")) {
+                    builder.appendValue(ChronoField.MILLI_OF_SECOND, 3);
+                } else if(part.startsWith("m")) {
+                    builder.appendValue(ChronoField.MONTH_OF_YEAR, 2);
+                } else if(part.startsWith("M")) {
+                    builder.appendValue(ChronoField.MINUTE_OF_HOUR, 2);
+                } else if(part.startsWith("S")) {
+                    builder.appendValue(ChronoField.SECOND_OF_MINUTE, 2);
+                } else if(part.startsWith("w")) {
+                    // not yet supported
+                } else if(part.startsWith("u")) {
+                    builder.appendValue(ChronoField.DAY_OF_WEEK, 1);
+                } else if(part.startsWith("U")) {
+                    // not yet supported
+                } else if(part.startsWith("V")) {
+                    builder.appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR, 2);
+                } else if(part.startsWith("Y")) {
+                    builder.appendValue(ChronoField.YEAR, 4);
+                } else if(part.startsWith("z")) {
+                    builder.optionalStart();
+                    builder.appendOffset("+HHMM", "+0000");
+                } else if(part.startsWith("Z")) {
+                    // not yet supported
+                }
+
+                // % literal not yet supported
+
+                // append literals (every specifier has a length of 1)
+                if(part.length() > 1) {
+                    builder.appendLiteral(part.substring(1, part.length()));
+                }
+            }
+            return builder;
+        }
+
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            throw new UnsupportedOperationException("must not be invoked");
         }
     },
 
