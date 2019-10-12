@@ -388,11 +388,11 @@ public enum Expression implements ExpressionTraits {
                 } else if(part.startsWith("S")) {
                     builder.appendValue(ChronoField.SECOND_OF_MINUTE, 2);
                 } else if(part.startsWith("w")) {
-                    // not yet supported
+                    throw new MongoServerError(18536, "Not yet supported format character '%w' in $dateToString format string");
                 } else if(part.startsWith("u")) {
                     builder.appendValue(ChronoField.DAY_OF_WEEK, 1);
                 } else if(part.startsWith("U")) {
-                    // not yet supported
+                    throw new MongoServerError(18536, "Not yet supported format character '%U' in $dateToString format string");
                 } else if(part.startsWith("V")) {
                     builder.appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR, 2);
                 } else if(part.startsWith("Y")) {
@@ -401,7 +401,7 @@ public enum Expression implements ExpressionTraits {
                     builder.optionalStart();
                     builder.appendOffset("+HHMM", "+0000");
                 } else if(part.startsWith("Z")) {
-                    // not yet supported
+                    throw new MongoServerError(18536, "Not yet supported format character '%Z' in $dateToString format string");
                 }
 
                 // % literal not yet supported
