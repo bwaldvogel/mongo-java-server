@@ -370,7 +370,7 @@ public enum Expression implements ExpressionTraits {
 
         private DateTimeFormatterBuilder builder(String format) {
             DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
-            for (String part : format.split("%")) {
+            for (String part : format.split("%(?=.)")) {
                 if(part.startsWith("d")) {
                     builder.appendValue(ChronoField.DAY_OF_MONTH, 2);
                 } else if(part.startsWith("G")) {
@@ -398,13 +398,12 @@ public enum Expression implements ExpressionTraits {
                 } else if(part.startsWith("Y")) {
                     builder.appendValue(ChronoField.YEAR, 4);
                 } else if(part.startsWith("z")) {
-                    builder.optionalStart();
                     builder.appendOffset("+HHMM", "+0000");
                 } else if(part.startsWith("Z")) {
                     throw new MongoServerError(18536, "Not yet supported format character '%Z' in $dateToString format string");
+                } else if(part.startsWith("%")) {
+                    builder.appendLiteral("%");
                 }
-
-                // % literal not yet supported
 
                 // append literals (every specifier has a length of 1)
                 if(part.length() > 1) {

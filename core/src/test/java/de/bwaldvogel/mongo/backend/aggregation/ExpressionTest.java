@@ -1399,6 +1399,7 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: '$a', format: '%Z'}"), new Document("a", instant)))
             .withMessage("[Error 18536] Not yet supported format character '%Z' in $dateToString format string");
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%%'}"), new Document("a", instant))).isEqualTo("%");
 
         // validation errors
         assertThatExceptionOfType(MongoServerError.class)
