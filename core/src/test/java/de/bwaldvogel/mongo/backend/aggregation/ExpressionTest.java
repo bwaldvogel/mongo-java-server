@@ -1373,6 +1373,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$dateToString: {date: '$a'}"), new Document("a", instant))).isEqualTo("2011-12-19T10:15:20.250Z");
         assertThat(Expression.evaluate(json("$dateToString: {date: '$a', timezone: '+01:00'}"), new Document("a", instant))).isEqualTo("2011-12-19T11:15:20.250Z");
         assertThat(Expression.evaluate(json("$dateToString: {date: '$a', onNull: '1970-01-01T00:00:00Z'}"), new Document("a", null))).isEqualTo("1970-01-01T00:00:00Z");
+        assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: 'foo'}"), new Document("a", instant))).isEqualTo("foo");
 
         // test different formats (https://docs.mongodb.com/manual/reference/operator/aggregation/dateToString/#format-specifiers)
         assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%d'}"), new Document("a", instant))).isEqualTo("19");
@@ -1400,6 +1401,14 @@ public class ExpressionTest {
             .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: '$a', format: '%Z'}"), new Document("a", instant)))
             .withMessage("[Error 18536] Not yet supported format character '%Z' in $dateToString format string");
         assertThat(Expression.evaluate(json("$dateToString: {date: '$a', format: '%%'}"), new Document("a", instant))).isEqualTo("%");
+        // empty format specifier
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: '$a', format: '%'}"), new Document("a", instant)))
+            .withMessage("[Error 18535] Unmatched '%' at end of $dateToString format string");
+        // invalid format specifier
+        assertThatExceptionOfType(MongoServerError.class)
+            .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: '$a', format: '% '}"), new Document("a", instant)))
+            .withMessage("[Error 18536] Invalid format character '% ' in $dateToString format string");
 
         // validation errors
         assertThatExceptionOfType(MongoServerError.class)
