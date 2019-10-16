@@ -370,45 +370,55 @@ public enum Expression implements ExpressionTraits {
 
         private DateTimeFormatterBuilder builder(String format) {
             DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
-            for (String part : format.split("%")) {
-                if(part.startsWith("d")) {
+            for (String part : format.split("(?=%.)")) {
+                boolean hasFormatSpecifier = true;
+                if(part.equals("%")) {
+                    // empty format specifier
+                    throw new MongoServerError(18535, "Unmatched '%' at end of $dateToString format string");
+                } else if(part.startsWith("%d")) {
                     builder.appendValue(ChronoField.DAY_OF_MONTH, 2);
-                } else if(part.startsWith("G")) {
+                } else if(part.startsWith("%G")) {
                     builder.appendValue(ChronoField.YEAR, 4);
-                } else if(part.startsWith("H")) {
+                } else if(part.startsWith("%H")) {
                     builder.appendValue(ChronoField.HOUR_OF_DAY, 2);
-                } else if(part.startsWith("j")) {
+                } else if(part.startsWith("%j")) {
                     builder.appendValue(ChronoField.DAY_OF_YEAR, 3);
-                } else if(part.startsWith("L")) {
+                } else if(part.startsWith("%L")) {
                     builder.appendValue(ChronoField.MILLI_OF_SECOND, 3);
-                } else if(part.startsWith("m")) {
+                } else if(part.startsWith("%m")) {
                     builder.appendValue(ChronoField.MONTH_OF_YEAR, 2);
-                } else if(part.startsWith("M")) {
+                } else if(part.startsWith("%M")) {
                     builder.appendValue(ChronoField.MINUTE_OF_HOUR, 2);
-                } else if(part.startsWith("S")) {
+                } else if(part.startsWith("%S")) {
                     builder.appendValue(ChronoField.SECOND_OF_MINUTE, 2);
-                } else if(part.startsWith("w")) {
-                    // not yet supported
-                } else if(part.startsWith("u")) {
+                } else if(part.startsWith("%w")) {
+                    throw new MongoServerError(18536, "Not yet supported format character '%w' in $dateToString format string");
+                } else if(part.startsWith("%u")) {
                     builder.appendValue(ChronoField.DAY_OF_WEEK, 1);
-                } else if(part.startsWith("U")) {
-                    // not yet supported
-                } else if(part.startsWith("V")) {
+                } else if(part.startsWith("%U")) {
+                    throw new MongoServerError(18536, "Not yet supported format character '%U' in $dateToString format string");
+                } else if(part.startsWith("%V")) {
                     builder.appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR, 2);
-                } else if(part.startsWith("Y")) {
+                } else if(part.startsWith("%Y")) {
                     builder.appendValue(ChronoField.YEAR, 4);
-                } else if(part.startsWith("z")) {
-                    builder.optionalStart();
+                } else if(part.startsWith("%z")) {
                     builder.appendOffset("+HHMM", "+0000");
-                } else if(part.startsWith("Z")) {
-                    // not yet supported
+                } else if(part.startsWith("%Z")) {
+                    throw new MongoServerError(18536, "Not yet supported format character '%Z' in $dateToString format string");
+                } else if(part.startsWith("%%")) {
+                    builder.appendLiteral("%");
+                } else if(part.startsWith("%")) {
+                    // invalid format specifier
+                    throw new MongoServerError(18536, "Invalid format character '" + part + "' in $dateToString format string");
+                } else {
+                    // literals (without format specifier)
+                    hasFormatSpecifier = false;
+                    builder.appendLiteral(part);
                 }
 
-                // % literal not yet supported
-
-                // append literals (every specifier has a length of 1)
-                if(part.length() > 1) {
-                    builder.appendLiteral(part.substring(1, part.length()));
+                // append literals (after format specifier)
+                if(hasFormatSpecifier && part.length() > 2) {
+                    builder.appendLiteral(part.substring(2, part.length()));
                 }
             }
             return builder;
