@@ -7,10 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-import de.bwaldvogel.mongo.bson.BsonRegularExpression;
-import de.bwaldvogel.mongo.bson.Decimal128;
-import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.bson.*;
 
 public class ValueComparator implements Comparator<Object> {
 
@@ -48,6 +45,7 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(ObjectId.class);
         SORT_PRIORITY.add(Boolean.class);
         SORT_PRIORITY.add(Instant.class);
+        SORT_PRIORITY.add(BsonTimestamp.class);
         SORT_PRIORITY.add(BsonRegularExpression.class);
     }
 
@@ -133,6 +131,12 @@ public class ValueComparator implements Comparator<Object> {
             Instant date1 = (Instant) value1;
             Instant date2 = (Instant) value2;
             return date1.compareTo(date2);
+        }
+
+        if(BsonTimestamp.class.isAssignableFrom(clazz)) {
+            BsonTimestamp bt1 = (BsonTimestamp) value1;
+            BsonTimestamp bt2 = (BsonTimestamp) value2;
+            return Long.compare(bt1.getTimestamp(), bt2.getTimestamp());
         }
 
         if (Boolean.class.isAssignableFrom(clazz)) {
