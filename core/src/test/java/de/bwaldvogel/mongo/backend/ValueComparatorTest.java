@@ -110,7 +110,7 @@ public class ValueComparatorTest {
     public void testCompareTimestamps() {
         BsonTimestamp bsonTimestamp = new BsonTimestamp(12345L);
         BsonTimestamp bsonTimestamp2 = new BsonTimestamp(67890L);
-        assertComparesTheSame(bsonTimestamp, bsonTimestamp);
+        assertComparesTheSame(bsonTimestamp, new BsonTimestamp(12345L));
         assertFirstValueBeforeSecondValue(bsonTimestamp,bsonTimestamp2);
     }
 
