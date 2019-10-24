@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.UUID;
 
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Decimal128;
@@ -103,6 +104,14 @@ public class ValueComparatorTest {
         assertFirstValueBeforeSecondValue(58.9999, 59);
         assertFirstValueBeforeSecondValue(null, 27);
         assertComparesTheSame(-0.0, 0.0);
+    }
+
+    @Test
+    public void testCompareTimestamps() {
+        BsonTimestamp bsonTimestamp = new BsonTimestamp(12345L);
+        BsonTimestamp bsonTimestamp2 = new BsonTimestamp(67890L);
+        assertComparesTheSame(bsonTimestamp, new BsonTimestamp(12345L));
+        assertFirstValueBeforeSecondValue(bsonTimestamp,bsonTimestamp2);
     }
 
     @Test
