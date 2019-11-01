@@ -4104,6 +4104,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 4, students: [{name: 'barney', school: 102, age: 7}]")
             );
     }
+    // https://github.com/bwaldvogel/mongo-java-server/issues/104
+    @Test
+    public void testQueryWithProjection_elemMatchAndPositionalOperator() throws Exception {
+        collection.insertOne(json("_id: 1, states: [{state: 'A', key: 'abc'}, {state: 'B', key: 'efg'}]"));
+        collection.insertOne(json("_id: 2, states: [{state: 'B', key: 'abc'}, {state: 'B', key: 'efg'}]"));
+
+        assertThat(collection.find(json("states: {$elemMatch: {state: {$eq: 'A'}, key: {$eq: 'abc'}}}")).
+            projection(json("'states.$': 1")))
+            .containsExactly(json("_id: 1, states: [{state: 'A', key: 'abc'}]"));
+    }
 
     @Test
     public void testProjectionWithSlice() throws Exception {
