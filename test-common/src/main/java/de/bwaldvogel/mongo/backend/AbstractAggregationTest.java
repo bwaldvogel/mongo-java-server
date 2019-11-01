@@ -136,6 +136,72 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsExactly(json("_id: null, minOfA: null, maxOfB: null"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/104#issuecomment-548151945
+    @Test
+    public void testMinMaxAvgProjectionOfArrayValues() throws Exception {
+        List<Document> pipeline = jsonList("$project: {min: {$min: '$v'}, max: {$max: '$v'}, avg: {$avg: '$v'}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, v: [10, 20, 30]"));
+        collection.insertOne(json("_id: 2, v: [3, 40]"));
+        collection.insertOne(json("_id: 3, v: [11, 25]"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("_id: 1, min: 10, max: 30, avg: 20.0"),
+                json("_id: 2, min: 3, max: 40, avg: 21.5"),
+                json("_id: 3, min: 11, max: 25, avg: 18.0"));
+    }
+
+    @Test
+    public void testMinMaxAvgProjectionOfNonArrayValue() throws Exception {
+        List<Document> pipeline = jsonList("$project: {min: {$min: '$v'}, max: {$max: '$v'}, avg: {$avg: '$v'}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, v: 'abc'"));
+        collection.insertOne(json("_id: 2"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("_id: 1, min: 'abc', max: 'abc', avg: null"),
+                json("_id: 2, min: null, max: null, avg: null")
+            );
+    }
+
+    @Test
+    public void testMinMaxAvgProjectionWithTwoParameters() throws Exception {
+        List<Document> pipeline = jsonList("$project: {min: {$min: ['$v', 2]}, max: {$max: ['$v', 2]}, avg: {$avg: ['$v', 2]}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, v: 10"));
+        collection.insertOne(json("_id: 2, v: 0"));
+        collection.insertOne(json("_id: 3"));
+        collection.insertOne(json("_id: 4, v: 'abc'"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("_id: 1, min: 2, max: 10, avg: 6.0"),
+                json("_id: 2, min: 0, max: 2, avg: 1.0"),
+                json("_id: 3, min: 2, max: 2, avg: 2.0"),
+                json("_id: 4, min: 2, max: 'abc', avg: 2.0")
+            );
+    }
+
+    @Test
+    public void testMinMaxAvgProjectionWithOneParameter() throws Exception {
+        List<Document> pipeline = jsonList("$project: {min: {$min: 'abc'}, max: {$max: 'def'}, avg: {$avg: 10}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(json("_id: 1, min: 'abc', max: 'def', avg: 10.0"));
+    }
+
     @Test
     public void testAggregateWithUnknownGroupOperator() throws Exception {
         Document query = json("_id: null, n: {$foo: 1}");

@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
+import static de.bwaldvogel.mongo.backend.Missing.isNeitherNullNorMissing;
 import static de.bwaldvogel.mongo.backend.Missing.isNullOrMissing;
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
 import static de.bwaldvogel.mongo.bson.Json.toJsonValue;
@@ -21,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -194,6 +196,23 @@ public enum Expression implements ExpressionTraits {
                 }
             }
             return result;
+        }
+    },
+
+    $avg {
+        @Override
+        Double apply(List<?> expressionValue, Document document) {
+            Collection<?> values = getValues(expressionValue);
+            OptionalDouble averageValue = values.stream()
+                .filter(Number.class::isInstance)
+                .map(Number.class::cast)
+                .mapToDouble(Number::doubleValue)
+                .average();
+            if (averageValue.isPresent()) {
+                return Double.valueOf(averageValue.getAsDouble());
+            } else {
+                return null;
+            }
         }
     },
 
@@ -547,7 +566,7 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
             Object expression = parameters.getFirst();
-            if (!isNullOrMissing(expression)) {
+            if (isNeitherNullNorMissing(expression)) {
                 return expression;
             } else {
                 return parameters.getSecond();
@@ -803,6 +822,17 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $max {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            Collection<?> values = getValues(expressionValue);
+            return values.stream()
+                .filter(Missing::isNeitherNullNorMissing)
+                .max(ValueComparator.asc())
+                .orElse(null);
+        }
+    },
+
     $mergeObjects {
         @Override
         Object apply(List<?> expressionValue, Document document) {
@@ -818,6 +848,17 @@ public enum Expression implements ExpressionTraits {
                 result.putAll((Document) value);
             }
             return result;
+        }
+    },
+
+    $min {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            Collection<?> values = getValues(expressionValue);
+            return values.stream()
+                .filter(Missing::isNeitherNullNorMissing)
+                .min(ValueComparator.asc())
+                .orElse(null);
         }
     },
 
@@ -1393,6 +1434,16 @@ public enum Expression implements ExpressionTraits {
     },
 
     ;
+
+    private static Collection<?> getValues(List<?> expressionValue) {
+        Collection<?> values = expressionValue;
+        if (expressionValue.size() == 1) {
+            if (expressionValue.get(0) instanceof Collection) {
+                values = (Collection<?>) expressionValue.get(0);
+            }
+        }
+        return values;
+    }
 
     Object apply(Object expressionValue, Document document) {
         List<Object> evaluatedValues = new ArrayList<>();

@@ -384,7 +384,7 @@ public class Utils {
         Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document || subObject instanceof List<?>) {
             changeSubdocumentValue(subObject, subKey, newValue, mainKey, matchPos);
-        } else if (!Missing.isNullOrMissing(subObject)) {
+        } else if (Missing.isNeitherNullNorMissing(subObject)) {
             String element = new Document(mainKey, subObject).toString(true);
             String subKeyFirst = Utils.splitPath(subKey).get(0);
             throw new PathNotViableException("Cannot create field '" + subKeyFirst + "' in element " + element);
