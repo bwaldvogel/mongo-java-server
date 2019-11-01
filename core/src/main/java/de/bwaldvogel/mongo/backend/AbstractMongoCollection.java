@@ -411,10 +411,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             orderBy = null;
         }
 
-        if (count() == 0) {
-            return Collections.emptyList();
-        }
-
         Iterable<Document> objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
