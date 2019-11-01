@@ -207,4 +207,26 @@ public class LinkedTreeSetTest {
         assertThat(set1.containsAll(set2)).isTrue();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/109
+    @Test
+    public void testSizeAfterRemoveAll() throws Exception {
+        Set<Object> set = new LinkedTreeSet<>(Arrays.asList("A", "B"));
+
+        set.removeAll(Arrays.asList("B", "C", "D"));
+
+        assertThat(set).containsExactly("A");
+        assertThat(set).hasSize(1);
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/109
+    @Test
+    public void testSizeAfterRetainAll() throws Exception {
+        Set<Object> set = new LinkedTreeSet<>(Arrays.asList("A", "B", "C"));
+
+        set.retainAll(Arrays.asList("B", "C"));
+
+        assertThat(set).containsExactly("B", "C");
+        assertThat(set).hasSize(2);
+    }
+
 }
