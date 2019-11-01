@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.assertj.core.data.Offset;
@@ -1110,6 +1111,16 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$subtract: [7.5, 3]"), json(""))).isEqualTo(4.5);
         assertThat(Expression.evaluate(json("$subtract: [null, 3]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$subtract: [3, null]"), json(""))).isNull();
+
+        // subtract two instants
+        assertThat(Expression.evaluate(new Document("$subtract",
+            Arrays.asList(Instant.ofEpochMilli(3000), Instant.ofEpochMilli(1000))), json("")))
+            .isEqualTo(2000L);
+
+        // subtract milliseconds from instant
+        assertThat(Expression.evaluate(new Document("$subtract",
+            Arrays.asList(Instant.ofEpochMilli(3000), 1000)), json("")))
+            .isEqualTo(Instant.ofEpochMilli(2000));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: []"), json("")))

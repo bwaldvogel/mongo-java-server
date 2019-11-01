@@ -72,6 +72,21 @@ public class ProjectionTest {
     }
 
     @Test
+    public void testProjectListValuesWithPositionalOperator() throws Exception {
+        Document document = json("_id: 1, students: [" +
+            "{name: 'john', school: 'A', age: 10}, " +
+            "{name: 'jess', school: 'B', age: 12}, " +
+            "{name: 'jeff', school: 'A', age: 12}" +
+            "]");
+
+        assertThat(Projection.projectDocument(document, json("'students.$': 1"), "_id"))
+            .isEqualTo(json("_id: 1, students: [{name: 'john', school: 'A', age: 10}]"));
+
+        assertThat(Projection.projectDocument(document, json("'unknown.$': 1"), "_id"))
+            .isEqualTo(json("_id: 1"));
+    }
+
+    @Test
     public void testProjectWithElemMatch() throws Exception {
         Document document = json("_id: 1, students: [" +
             "{name: 'john', school: 'A', age: 10}, " +
