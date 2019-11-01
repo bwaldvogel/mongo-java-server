@@ -117,7 +117,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized void addDocument(Document document) {
-
         if (document.get(ID_FIELD) instanceof Collection) {
             throw new BadValueException("can't use an array for _id");
         }
@@ -158,6 +157,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public void addIndex(Index<P> index) {
+        if (indexes.stream().anyMatch(idx -> idx.getName().equals(index.getName()))) {
+            log.debug("Index with name '{}' already exists", index.getName());
+            return;
+        }
         if (index.isEmpty()) {
             streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
                 Document document = documentWithPosition.getDocument();

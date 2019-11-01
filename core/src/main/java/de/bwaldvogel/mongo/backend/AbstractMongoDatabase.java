@@ -756,8 +756,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Document key = (Document) indexDescription.get("key");
         if (key.keySet().equals(Collections.singleton(ID_FIELD))) {
             boolean ascending = isAscending(key.get(ID_FIELD));
-            collection.addIndex(openOrCreateIdIndex(collectionName, indexName, ascending));
+            Index<P> index = openOrCreateIdIndex(collectionName, indexName, ascending);
             log.info("adding unique _id index for collection {}", collectionName);
+            collection.addIndex(index);
         } else if (Utils.isTrue(indexDescription.get("unique"))) {
             List<IndexKey> keys = new ArrayList<>();
             for (Entry<String, Object> entry : key.entrySet()) {
@@ -769,7 +770,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             boolean sparse = Utils.isTrue(indexDescription.get("sparse"));
             log.info("adding {} unique index {} for collection {}", sparse ? "sparse" : "non-sparse", keys, collectionName);
 
-            collection.addIndex(openOrCreateUniqueIndex(collectionName, indexName, keys, sparse));
+            Index<P> index = openOrCreateUniqueIndex(collectionName, indexName, keys, sparse);
+            collection.addIndex(index);
         } else {
             // TODO: non-unique non-id indexes not yet implemented
             log.warn("adding non-unique non-id index with key {} is not yet implemented", key);

@@ -752,6 +752,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection2.insertOne(json("_id: 1"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/107
+    @Test
+    public void testDropDatabaseAfterAddingIndexMultipleTimes() throws Exception {
+        collection.insertOne(json("_id: 1, a: 10"));
+        for (int i = 0; i < 3; i++) {
+            collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+        }
+        syncClient.dropDatabase(db.getName());
+    }
+
     @Test
     public void testEmbeddedSort() {
         collection.insertOne(json("_id: 1"));
@@ -1256,7 +1266,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 3"),
                 json("$set: {'a.b.$[].0.$[].c': 'abc'}")))
-            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: 1}");    }
+            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: 1}");
+    }
 
     @Test
     public void testFindAndRemoveFromEmbeddedList() {
@@ -3539,7 +3550,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}")
-        ));
+            ));
     }
 
     @Test
@@ -4104,6 +4115,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 4, students: [{name: 'barney', school: 102, age: 7}]")
             );
     }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/104
     @Test
     public void testQueryWithProjection_elemMatchAndPositionalOperator() throws Exception {
