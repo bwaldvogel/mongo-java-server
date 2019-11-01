@@ -1376,7 +1376,7 @@ public class ExpressionTest {
     }
 
     @Test
-	public void testDateToString() throws Exception {
+    public void testDateToString() throws Exception {
         Instant instant = Instant.parse("2011-12-19T10:15:20.250Z");
 
         assertThat(Expression.evaluate(json("$dateToString: {date: '$a'}"), json(""))).isNull();
@@ -1432,7 +1432,7 @@ public class ExpressionTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: null, foo: 1}"), json("")))
-             .withMessage("[Error 18534] Unrecognized parameter to $dateToString: foo");
+            .withMessage("[Error 18534] Unrecognized parameter to $dateToString: foo");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: null, format: 1}"), json("")))
@@ -1445,7 +1445,7 @@ public class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$dateToString: {date: 'foo'}"), json("")))
             .withMessage("[Error 16006] can't convert from string to Date");
-	}
+    }
 
     @Test
     public void testEvaluateDivide() throws Exception {

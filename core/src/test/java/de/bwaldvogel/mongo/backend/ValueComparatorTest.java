@@ -10,9 +10,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.UUID;
 
-import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
@@ -111,7 +111,7 @@ public class ValueComparatorTest {
         BsonTimestamp bsonTimestamp = new BsonTimestamp(12345L);
         BsonTimestamp bsonTimestamp2 = new BsonTimestamp(67890L);
         assertComparesTheSame(bsonTimestamp, new BsonTimestamp(12345L));
-        assertFirstValueBeforeSecondValue(bsonTimestamp,bsonTimestamp2);
+        assertFirstValueBeforeSecondValue(bsonTimestamp, bsonTimestamp2);
     }
 
     @Test

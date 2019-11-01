@@ -133,7 +133,7 @@ public class ValueComparator implements Comparator<Object> {
             return date1.compareTo(date2);
         }
 
-        if(BsonTimestamp.class.isAssignableFrom(clazz)) {
+        if (BsonTimestamp.class.isAssignableFrom(clazz)) {
             BsonTimestamp bt1 = (BsonTimestamp) value1;
             BsonTimestamp bt2 = (BsonTimestamp) value2;
             return Long.compare(bt1.getTimestamp(), bt2.getTimestamp());
@@ -217,7 +217,7 @@ public class ValueComparator implements Comparator<Object> {
 
     private Object getListValueForComparison(Object value) {
         if (value instanceof Collection) {
-            List<Object> values = new ArrayList<> ((Collection<Object>) value);
+            List<Object> values = new ArrayList<>((Collection<Object>) value);
             if (values.isEmpty()) {
                 return Missing.getInstance();
             }

@@ -353,8 +353,8 @@ public enum Expression implements ExpressionTraits {
             // get zoned date time
             Object dateExpression = dateToStringDocument.get("date");
             Object dateValue = Expression.evaluate(dateExpression, document);
-            if(Missing.isNullOrMissing(dateValue)) {
-                if(onNullValue != null) {
+            if (Missing.isNullOrMissing(dateValue)) {
+                if (onNullValue != null) {
                     return onNullValue;
                 }
                 return null;
@@ -372,42 +372,42 @@ public enum Expression implements ExpressionTraits {
             DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
             for (String part : format.split("(?=%.)")) {
                 boolean hasFormatSpecifier = true;
-                if(part.equals("%")) {
+                if (part.equals("%")) {
                     // empty format specifier
                     throw new MongoServerError(18535, "Unmatched '%' at end of $dateToString format string");
-                } else if(part.startsWith("%d")) {
+                } else if (part.startsWith("%d")) {
                     builder.appendValue(ChronoField.DAY_OF_MONTH, 2);
-                } else if(part.startsWith("%G")) {
+                } else if (part.startsWith("%G")) {
                     builder.appendValue(ChronoField.YEAR, 4);
-                } else if(part.startsWith("%H")) {
+                } else if (part.startsWith("%H")) {
                     builder.appendValue(ChronoField.HOUR_OF_DAY, 2);
-                } else if(part.startsWith("%j")) {
+                } else if (part.startsWith("%j")) {
                     builder.appendValue(ChronoField.DAY_OF_YEAR, 3);
-                } else if(part.startsWith("%L")) {
+                } else if (part.startsWith("%L")) {
                     builder.appendValue(ChronoField.MILLI_OF_SECOND, 3);
-                } else if(part.startsWith("%m")) {
+                } else if (part.startsWith("%m")) {
                     builder.appendValue(ChronoField.MONTH_OF_YEAR, 2);
-                } else if(part.startsWith("%M")) {
+                } else if (part.startsWith("%M")) {
                     builder.appendValue(ChronoField.MINUTE_OF_HOUR, 2);
-                } else if(part.startsWith("%S")) {
+                } else if (part.startsWith("%S")) {
                     builder.appendValue(ChronoField.SECOND_OF_MINUTE, 2);
-                } else if(part.startsWith("%w")) {
+                } else if (part.startsWith("%w")) {
                     throw new MongoServerError(18536, "Not yet supported format character '%w' in $dateToString format string");
-                } else if(part.startsWith("%u")) {
+                } else if (part.startsWith("%u")) {
                     builder.appendValue(ChronoField.DAY_OF_WEEK, 1);
-                } else if(part.startsWith("%U")) {
+                } else if (part.startsWith("%U")) {
                     throw new MongoServerError(18536, "Not yet supported format character '%U' in $dateToString format string");
-                } else if(part.startsWith("%V")) {
+                } else if (part.startsWith("%V")) {
                     builder.appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR, 2);
-                } else if(part.startsWith("%Y")) {
+                } else if (part.startsWith("%Y")) {
                     builder.appendValue(ChronoField.YEAR, 4);
-                } else if(part.startsWith("%z")) {
+                } else if (part.startsWith("%z")) {
                     builder.appendOffset("+HHMM", "+0000");
-                } else if(part.startsWith("%Z")) {
+                } else if (part.startsWith("%Z")) {
                     throw new MongoServerError(18536, "Not yet supported format character '%Z' in $dateToString format string");
-                } else if(part.startsWith("%%")) {
+                } else if (part.startsWith("%%")) {
                     builder.appendLiteral("%");
-                } else if(part.startsWith("%")) {
+                } else if (part.startsWith("%")) {
                     // invalid format specifier
                     throw new MongoServerError(18536, "Invalid format character '" + part + "' in $dateToString format string");
                 } else {
@@ -417,7 +417,7 @@ public enum Expression implements ExpressionTraits {
                 }
 
                 // append literals (after format specifier)
-                if(hasFormatSpecifier && part.length() > 2) {
+                if (hasFormatSpecifier && part.length() > 2) {
                     builder.appendLiteral(part.substring(2, part.length()));
                 }
             }
@@ -1234,13 +1234,13 @@ public enum Expression implements ExpressionTraits {
                 return NumericUtils.subtractNumbers((Number) one, (Number) other);
             }
 
-            if(one instanceof Instant) {
+            if (one instanceof Instant) {
                 // subtract two instants (returns the difference in milliseconds)
-                if(other instanceof Instant) {
+                if (other instanceof Instant) {
                     return ((Instant) one).toEpochMilli() - ((Instant) other).toEpochMilli();
                 }
                 // subtract milliseconds from instant
-                if(other instanceof Number) {
+                if (other instanceof Number) {
                     return Instant.ofEpochMilli(((Instant) one).toEpochMilli() - ((Number) other).longValue());
                 }
             }

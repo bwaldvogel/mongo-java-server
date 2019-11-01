@@ -87,10 +87,10 @@ public class Projection {
                 boolean wasEmpty = projectedValues.isEmpty();
                 int idx = 0;
 
-                if("$".equals(subKey) && !values.isEmpty()) {
+                if ("$".equals(subKey) && !values.isEmpty()) {
                     Object firstValue = values.get(0);
-                    if(firstValue instanceof Document) {
-                        projectedValues.add((Document)firstValue);
+                    if (firstValue instanceof Document) {
+                        projectedValues.add((Document) firstValue);
                     }
                 } else {
                     for (Object value : values) {
