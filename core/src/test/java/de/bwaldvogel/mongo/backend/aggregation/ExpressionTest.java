@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.assertj.core.data.Offset;
@@ -1110,6 +1111,23 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$subtract: [7.5, 3]"), json(""))).isEqualTo(4.5);
         assertThat(Expression.evaluate(json("$subtract: [null, 3]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$subtract: [3, null]"), json(""))).isNull();
+
+        // subtract two dates
+        assertThat(Expression.evaluate(json("$subtract: ['$a', '$b']"), json("a: ISODate('2019-11-01T08:10:20.300Z'), b: ISODate('2019-11-01T08:10:20.200Z')"))).isEqualTo(100L);
+        assertThat(Expression.evaluate(json("$subtract: [{$date: 2000}, {$date: 1000}]"), json(""))).isEqualTo(1000L);
+
+        // subtract milliseconds from date
+        assertThat(Expression.evaluate(json("$subtract: [{$date: 2000}, 1000]"), json(""))).isEqualTo(new Date(1000));
+
+        // subtract two instants
+        assertThat(Expression.evaluate(new Document("$subtract",
+            Arrays.asList(Instant.ofEpochMilli(3000), Instant.ofEpochMilli(1000))), json("")))
+            .isEqualTo(2000L);
+
+        // subtract milliseconds from instant
+        assertThat(Expression.evaluate(new Document("$subtract",
+            Arrays.asList(Instant.ofEpochMilli(3000), 1000)), json("")))
+            .isEqualTo(Instant.ofEpochMilli(2000));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$subtract: []"), json("")))
