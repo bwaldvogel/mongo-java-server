@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -1233,17 +1232,6 @@ public enum Expression implements ExpressionTraits {
 
             if (one instanceof Number && other instanceof Number) {
                 return NumericUtils.subtractNumbers((Number) one, (Number) other);
-            }
-
-            if (one instanceof Date) {
-                // subtract two dates (returns the difference in milliseconds)
-                if (other instanceof Date) {
-                    return ((Date) one).getTime() - ((Date) other).getTime();
-                }
-                // subtract milliseconds from date
-                if (other instanceof Number) {
-                    return new Date(((Date) one).getTime() - ((Number) other).longValue());
-                }
             }
 
             if(one instanceof Instant) {
