@@ -211,6 +211,11 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
+    public synchronized boolean isEmpty() {
+        return documents.isEmpty() || super.isEmpty();
+    }
+
+    @Override
     protected Integer findDocumentPosition(Document document) {
         int position = documents.indexOf(document);
         if (position < 0) {

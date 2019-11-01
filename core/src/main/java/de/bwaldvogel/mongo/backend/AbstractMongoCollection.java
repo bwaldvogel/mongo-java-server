@@ -642,14 +642,15 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     @Override
     public Document getStats() {
         int dataSize = getDataSize();
+        int count = count();
 
         Document response = new Document("ns", getFullName());
-        response.put("count", Integer.valueOf(count()));
+        response.put("count", Integer.valueOf(count));
         response.put("size", Integer.valueOf(dataSize));
 
         int averageSize = 0;
-        if (count() > 0) {
-            averageSize = dataSize / count();
+        if (count > 0) {
+            averageSize = dataSize / count;
         }
         response.put("avgObjSize", Integer.valueOf(averageSize));
         response.put("storageSize", Integer.valueOf(0));

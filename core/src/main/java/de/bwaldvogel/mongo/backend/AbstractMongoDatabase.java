@@ -64,7 +64,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         this.namespaces = openOrCreateCollection(NAMESPACES_COLLECTION_NAME, "name");
         this.collections.put(namespaces.getCollectionName(), namespaces);
 
-        if (this.namespaces.count() > 0) {
+        if (!namespaces.isEmpty()) {
             for (Document namespace : namespaces.queryAll()) {
                 String name = namespace.get("name").toString();
                 log.debug("opening {}", name);

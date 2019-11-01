@@ -59,6 +59,10 @@ public interface MongoCollection<P> {
 
     int count(Document query, int skip, int limit);
 
+    default boolean isEmpty() {
+        return count() == 0;
+    }
+
     int count();
 
     int getNumIndexes();

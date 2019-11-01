@@ -75,6 +75,11 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
+    public boolean isEmpty() {
+        return dataMap.isEmpty();
+    }
+
+    @Override
     protected Document getDocument(Object position) {
         return dataMap.get(position);
     }
