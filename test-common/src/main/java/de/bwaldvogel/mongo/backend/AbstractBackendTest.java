@@ -762,6 +762,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
         syncClient.dropDatabase(db.getName());
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/107
+    @Test
+    public void testAddIndexAgainWithDifferentOptions() throws Exception {
+        collection.insertOne(json("_id: 1, a: 10"));
+        collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.createIndex(json("a: 1"), new IndexOptions().unique(true).sparse(true)))
+            .withMessageContaining("Command failed with error 85 (IndexOptionsConflict): 'Index with name: a_1 already exists with different options'");
+    }
+
     @Test
     public void testEmbeddedSort() {
         collection.insertOne(json("_id: 1"));

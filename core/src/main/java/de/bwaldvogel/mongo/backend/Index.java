@@ -35,6 +35,10 @@ public abstract class Index<P> {
         return keys;
     }
 
+    public boolean hasSameOptions(Index<?> other) {
+        return sparse == other.sparse;
+    }
+
     public String getName() {
         return name;
     }

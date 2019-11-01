@@ -27,6 +27,7 @@ import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
+import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -157,7 +158,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public void addIndex(Index<P> index) {
-        if (indexes.stream().anyMatch(idx -> idx.getName().equals(index.getName()))) {
+        Index<P> existingIndex = findByName(index.getName());
+        if (existingIndex != null) {
+            if (!existingIndex.hasSameOptions(index)) {
+                throw new IndexOptionsConflictException(existingIndex);
+            }
             log.debug("Index with name '{}' already exists", index.getName());
             return;
         }
@@ -175,6 +180,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             log.debug("Index is not empty");
         }
         indexes.add(index);
+    }
+
+    private Index<P> findByName(String indexName) {
+        return indexes.stream()
+            .filter(index -> index.getName().equals(indexName))
+            .findFirst()
+            .orElse(null);
     }
 
     @Override
