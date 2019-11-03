@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.slf4j.Logger;
@@ -78,11 +79,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     private Document handleAdminCommand(String command, Document query) {
-
         if (command.equalsIgnoreCase("listdatabases")) {
             Document response = new Document();
             List<Document> dbs = new ArrayList<>();
-            for (MongoDatabase db : databases.values()) {
+            for (String databaseName : listDatabaseNames()) {
+                MongoDatabase db = openOrCreateDatabase(databaseName);
                 Document dbObj = new Document("name", db.getDatabaseName());
                 dbObj.put("empty", Boolean.valueOf(db.isEmpty()));
                 dbs.add(dbObj);
@@ -112,6 +113,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else {
             throw new NoSuchCommandException(command);
         }
+    }
+
+    @VisibleForExternalBackends
+    protected Set<String> listDatabaseNames() {
+        return databases.keySet();
     }
 
     private Document handleRenameCollection(String command, Document query) {
