@@ -1,6 +1,9 @@
 package de.bwaldvogel.mongo;
 
 import java.util.List;
+import java.util.Spliterator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
@@ -32,8 +35,18 @@ public interface MongoCollection<P> {
         return handleQuery(new Document());
     }
 
+    default Stream<Document> queryAllAsStream() {
+        Spliterator<Document> documents = queryAll().spliterator();
+        return StreamSupport.stream(documents, false);
+    }
+
     default Iterable<Document> handleQuery(Document query) {
         return handleQuery(query, 0, 0);
+    }
+
+    default Stream<Document> handleQueryAsStream(Document query) {
+        Spliterator<Document> documents = handleQuery(query).spliterator();
+        return StreamSupport.stream(documents, false);
     }
 
     default Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn) {

@@ -1,12 +1,10 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
 import static de.bwaldvogel.mongo.TestUtils.json;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.Test;
@@ -126,10 +124,7 @@ public class LookupStageTest extends AbstractLookupStageTest {
     }
 
     private void configureAuthorsCollection(String expectedJsonQuery, String... authors) {
-        List<Document> documents = Stream.of(authors)
-            .map(TestUtils::json)
-            .collect(toList());
-        when(authorsCollection.handleQuery(json(expectedJsonQuery)))
-            .thenReturn(documents);
+        when(authorsCollection.handleQueryAsStream(json(expectedJsonQuery)))
+            .thenAnswer(invocation -> Stream.of(authors).map(TestUtils::json));
     }
 }

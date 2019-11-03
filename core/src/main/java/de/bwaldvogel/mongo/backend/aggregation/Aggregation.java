@@ -1,15 +1,13 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
-import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+import static de.bwaldvogel.mongo.backend.Constants.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Spliterator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
@@ -135,8 +133,7 @@ public class Aggregation {
     }
 
     private List<Document> runStages() {
-        Spliterator<Document> documents = collection.queryAll().spliterator();
-        return runStages(StreamSupport.stream(documents, false));
+        return runStages(collection.queryAllAsStream());
     }
 
     public List<Document> runStages(Stream<Document> stream) {

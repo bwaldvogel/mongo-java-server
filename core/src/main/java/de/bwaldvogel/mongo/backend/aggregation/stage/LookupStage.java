@@ -1,12 +1,11 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
@@ -61,8 +60,6 @@ public class LookupStage extends AbstractLookupStage {
                 .collect(toList());
         }
         Document query = new Document(foreignField, value);
-        Iterable<Document> queryResult = collection.handleQuery(query);
-        return StreamSupport.stream(queryResult.spliterator(), false)
-            .collect(toList());
+        return collection.handleQueryAsStream(query).collect(toList());
     }
 }
