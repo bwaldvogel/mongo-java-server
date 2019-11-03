@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.h2;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.Assert;
-import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
@@ -107,32 +105,8 @@ public class H2Collection extends AbstractMongoCollection<Object> {
             }
         }
 
-        if (orderBy != null && !orderBy.keySet().isEmpty()) {
-            if (orderBy.keySet().iterator().next().equals("$natural")) {
-                int sortValue = ((Integer) orderBy.get("$natural")).intValue();
-                if (sortValue == 1) {
-                    // already sorted
-                } else if (sortValue == -1) {
-                    Collections.reverse(matchedDocuments);
-                }
-            } else {
-                matchedDocuments.sort(new DocumentComparator(orderBy));
-            }
-        }
-
-        if (numberToSkip > 0) {
-            if (numberToSkip < matchedDocuments.size()) {
-                matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
-            } else {
-                return Collections.emptyList();
-            }
-        }
-
-        if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            matchedDocuments = matchedDocuments.subList(0, numberToReturn);
-        }
-
-        return matchedDocuments;
+        sortDocumentsInMemory(matchedDocuments, orderBy);
+        return applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     @Override

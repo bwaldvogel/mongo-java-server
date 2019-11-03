@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
-import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+import static de.bwaldvogel.mongo.backend.Constants.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,19 +65,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected void sortDocumentsInMemory(List<Document> documents, Document orderBy) {
-        if (orderBy != null && !orderBy.keySet().isEmpty()) {
-            if (orderBy.keySet().iterator().next().equals("$natural")) {
-                int sortValue = ((Integer) orderBy.get("$natural")).intValue();
-                if (sortValue == 1) {
-                    // keep it as is
-                } else if (sortValue == -1) {
-                    Collections.reverse(documents);
-                } else {
-                    throw new IllegalArgumentException("Illegal sort value: " + sortValue);
-                }
-            } else {
-                documents.sort(new DocumentComparator(orderBy));
-            }
+        DocumentComparator documentComparator = deriveComparator(orderBy);
+        if (documentComparator != null) {
+            documents.sort(documentComparator);
+        } else if (isNaturalDescending(orderBy)) {
+            Collections.reverse(documents);
         }
     }
 
@@ -106,6 +98,33 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         return matchedDocuments;
+    }
+
+    protected static boolean isNaturalDescending(Document orderBy) {
+        if (orderBy != null && !orderBy.keySet().isEmpty()) {
+            if (orderBy.keySet().iterator().next().equals("$natural")) {
+                Number sortValue = (Number) orderBy.get("$natural");
+                if (sortValue.intValue() == -1) {
+                    return true;
+                }
+
+                if (sortValue.intValue() != 1) {
+                    throw new IllegalArgumentException("Illegal sort value: " + sortValue);
+                }
+            }
+        }
+        return false;
+    }
+
+    protected static DocumentComparator deriveComparator(Document orderBy) {
+        if (orderBy != null && !orderBy.keySet().isEmpty()) {
+            if (orderBy.keySet().iterator().next().equals("$natural")) {
+                // already sorted
+            } else {
+                return new DocumentComparator(orderBy);
+            }
+        }
+        return null;
     }
 
     protected abstract Document getDocument(P position);
@@ -738,6 +757,22 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract void removeDocument(P position);
+
+    protected static Iterable<Document> applySkipAndLimit(List<Document> documents, int numberToSkip, int numberToReturn) {
+        if (numberToSkip > 0) {
+            if (numberToSkip < documents.size()) {
+                documents = documents.subList(numberToSkip, documents.size());
+            } else {
+                return Collections.emptyList();
+            }
+        }
+
+        if (numberToReturn > 0 && documents.size() > numberToReturn) {
+            documents = documents.subList(0, numberToReturn);
+        }
+
+        return documents;
+    }
 
     protected P findDocumentPosition(Document document) {
         return streamAllDocumentsWithPosition()

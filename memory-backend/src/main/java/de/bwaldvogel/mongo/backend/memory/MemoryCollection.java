@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,43 +54,18 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
-        boolean ascending = true;
-        if (orderBy != null && !orderBy.keySet().isEmpty()) {
-            if (orderBy.keySet().iterator().next().equals("$natural")) {
-                int sortValue = ((Integer) orderBy.get("$natural")).intValue();
-                if (sortValue == -1) {
-                    ascending = false;
-                }
-            }
-        }
-
-        for (Document document : iterateAllDocuments(ascending)) {
+        for (Document document : iterateAllDocuments(orderBy)) {
             if (documentMatchesQuery(document, query)) {
                 matchedDocuments.add(document);
             }
         }
 
-        if (orderBy != null && !orderBy.keySet().isEmpty()) {
-            if (orderBy.keySet().iterator().next().equals("$natural")) {
-                // already sorted
-            } else {
-                matchedDocuments.sort(new DocumentComparator(orderBy));
-            }
+        DocumentComparator documentComparator = deriveComparator(orderBy);
+        if (documentComparator != null) {
+            matchedDocuments.sort(documentComparator);
         }
 
-        if (numberToSkip > 0) {
-            if (numberToSkip < matchedDocuments.size()) {
-                matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
-            } else {
-                return Collections.emptyList();
-            }
-        }
-
-        if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            matchedDocuments = matchedDocuments.subList(0, numberToReturn);
-        }
-
-        return matchedDocuments;
+        return applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     private static abstract class AbstractDocumentIterator implements Iterator<Document> {
@@ -197,11 +171,11 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
     }
 
-    private Iterable<Document> iterateAllDocuments(boolean ascending) {
-        if (ascending) {
-            return new DocumentIterable(documents);
-        } else {
+    private Iterable<Document> iterateAllDocuments(Document orderBy) {
+        if (isNaturalDescending(orderBy)) {
             return new ReverseDocumentIterable(documents);
+        } else {
+            return new DocumentIterable(documents);
         }
     }
 
