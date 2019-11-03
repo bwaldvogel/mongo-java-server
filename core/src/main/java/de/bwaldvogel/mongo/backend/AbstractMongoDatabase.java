@@ -880,7 +880,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         results.set(results.size() - 1, result);
     }
 
-    private MongoCollection<P> createCollection(String collectionName) {
+    @VisibleForExternalBackends
+    protected MongoCollection<P> createCollection(String collectionName) {
         checkCollectionName(collectionName);
         if (collectionName.contains("$")) {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
