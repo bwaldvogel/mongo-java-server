@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
-import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+import static de.bwaldvogel.mongo.backend.Constants.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,8 +65,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         this.collections.put(namespaces.getCollectionName(), namespaces);
 
         if (!namespaces.isEmpty()) {
-            for (Document namespace : namespaces.queryAll()) {
-                String name = namespace.get("name").toString();
+            for (String name : listCollectionNamespaces()) {
                 log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
                 MongoCollection<P> collection = openOrCreateCollection(collectionName, ID_FIELD);
@@ -167,13 +166,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document listCollections() {
         List<Document> firstBatch = new ArrayList<>();
-        for (Document collection : namespaces.queryAll()) {
-            Document collectionDescription = new Document();
-            Document collectionOptions = new Document();
-            String namespace = (String) collection.get("name");
+        for (String namespace : listCollectionNamespaces()) {
             if (namespace.endsWith(INDEXES_COLLECTION_NAME)) {
                 continue;
             }
+            Document collectionDescription = new Document();
+            Document collectionOptions = new Document();
             String collectionName = extractCollectionNameFromNamespace(namespace);
             collectionDescription.put("name", collectionName);
             collectionDescription.put("options", collectionOptions);
@@ -188,6 +186,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
 
         return Utils.cursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
+    }
+
+    private Iterable<String> listCollectionNamespaces() {
+        return namespaces.queryAllAsStream()
+            .map(document -> document.get("name").toString())
+            ::iterator;
     }
 
     private Document listIndexes(String collectionName) {
@@ -666,7 +670,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private void checkCollectionName(String collectionName) {
-
         if (collectionName.length() > Constants.MAX_NS_LENGTH) {
             throw new MongoServerError(10080, "ns name too long, max size is " + Constants.MAX_NS_LENGTH);
         }
