@@ -55,7 +55,11 @@ public interface MongoCollection<P> {
 
     Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
 
-    void insertDocuments(List<Document> documents);
+    default void insertDocuments(List<Document> documents) {
+        for (Document document : documents) {
+            addDocument(document);
+        }
+    }
 
     Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
                              boolean isMulti, boolean isUpsert);

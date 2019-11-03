@@ -475,9 +475,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized void insertDocuments(List<Document> documents) {
-        for (Document document : documents) {
-            addDocument(document);
-        }
+        MongoCollection.super.insertDocuments(documents);
     }
 
     @Override
