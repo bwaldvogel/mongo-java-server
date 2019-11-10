@@ -17,3 +17,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  sonarqube:
+    image: sonarqube
+    container_name: mongo-java-server-sonarqube
+    ports:
+      - 127.0.0.1:9000:9000
