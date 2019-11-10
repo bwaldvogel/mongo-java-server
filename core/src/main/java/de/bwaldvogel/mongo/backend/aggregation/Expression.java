@@ -592,13 +592,8 @@ public enum Expression implements ExpressionTraits {
     $indexOfArray {
         @Override
         Object apply(List<?> expressionValue, Document document) {
-            if (expressionValue.size() < 2 || expressionValue.size() > 4) {
-                throw new MongoServerError(28667,
-                    "Expression " + name() + " takes at least 2 arguments, and at most 4, but " + expressionValue.size() + " were passed in.");
-            }
-
-            Object first = expressionValue.get(0);
-            if (isNullOrMissing(first)) {
+            Object first = assertTwoToFourArguments(expressionValue);
+            if (first == null) {
                 return null;
             }
             if (!(first instanceof List<?>)) {
@@ -607,27 +602,16 @@ public enum Expression implements ExpressionTraits {
             }
             List<?> elementsToSearchIn = (List<?>) first;
 
-            int start = 0;
-            if (expressionValue.size() >= 3) {
-                Object startValue = expressionValue.get(2);
-                start = requireIntegral(startValue, "starting index");
-                start = Math.min(start, elementsToSearchIn.size());
-            }
+            Range range = indexOf(expressionValue, elementsToSearchIn.size());
 
-            int end = elementsToSearchIn.size();
-            if (expressionValue.size() >= 4) {
-                Object endValue = expressionValue.get(3);
-                end = requireIntegral(endValue, "ending index");
-                end = Math.min(Math.max(start, end), elementsToSearchIn.size());
-            }
-
-            elementsToSearchIn = elementsToSearchIn.subList(start, end);
+            elementsToSearchIn = elementsToSearchIn.subList(range.getStart(), range.getEnd());
             int index = elementsToSearchIn.indexOf(expressionValue.get(1));
             if (index >= 0) {
-                return index + start;
+                return index + range.getStart();
             }
             return index;
         }
+
     },
 
     $indexOfBytes {
