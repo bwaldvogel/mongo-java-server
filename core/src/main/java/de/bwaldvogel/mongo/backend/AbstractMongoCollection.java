@@ -533,45 +533,43 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private Document updateDocument(Document document, Document updateQuery,
                                     ArrayFilters arrayFilters, Integer matchPos) {
-        synchronized (document) {
-            // copy document
-            Document oldDocument = new Document();
-            cloneInto(oldDocument, document);
+        // copy document
+        Document oldDocument = new Document();
+        cloneInto(oldDocument, document);
 
-            Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, matchPos, false);
+        Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, matchPos, false);
 
-            if (!newDocument.equals(oldDocument)) {
-                for (Index<P> index : indexes) {
-                    index.checkUpdate(oldDocument, newDocument, this);
-                }
-                P position = getSinglePosition(oldDocument);
-                for (Index<P> index : indexes) {
-                    index.updateInPlace(oldDocument, newDocument, position, this);
-                }
-
-                int oldSize = Utils.calculateSize(oldDocument);
-                int newSize = Utils.calculateSize(newDocument);
-                updateDataSize(newSize - oldSize);
-
-                // only keep fields that are also in the updated document
-                Set<String> fields = new LinkedHashSet<>(document.keySet());
-                fields.removeAll(newDocument.keySet());
-                for (String key : fields) {
-                    document.remove(key);
-                }
-
-                // update the fields
-                for (String key : newDocument.keySet()) {
-                    if (key.contains(".")) {
-                        throw new MongoServerException(
-                                "illegal field name. must not happen as it must be caught by the driver");
-                    }
-                    document.put(key, newDocument.get(key));
-                }
-                handleUpdate(position, oldDocument, document);
+        if (!newDocument.equals(oldDocument)) {
+            for (Index<P> index : indexes) {
+                index.checkUpdate(oldDocument, newDocument, this);
             }
-            return oldDocument;
+            P position = getSinglePosition(oldDocument);
+            for (Index<P> index : indexes) {
+                index.updateInPlace(oldDocument, newDocument, position, this);
+            }
+
+            int oldSize = Utils.calculateSize(oldDocument);
+            int newSize = Utils.calculateSize(newDocument);
+            updateDataSize(newSize - oldSize);
+
+            // only keep fields that are also in the updated document
+            Set<String> fields = new LinkedHashSet<>(document.keySet());
+            fields.removeAll(newDocument.keySet());
+            for (String key : fields) {
+                document.remove(key);
+            }
+
+            // update the fields
+            for (String key : newDocument.keySet()) {
+                if (key.contains(".")) {
+                    throw new MongoServerException(
+                        "illegal field name. must not happen as it must be caught by the driver");
+                }
+                document.put(key, newDocument.get(key));
+            }
+            handleUpdate(position, oldDocument, document);
         }
+        return oldDocument;
     }
 
     private P getSinglePosition(Document document) {
