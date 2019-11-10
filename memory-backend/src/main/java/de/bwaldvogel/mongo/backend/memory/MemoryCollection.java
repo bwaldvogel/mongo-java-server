@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -68,114 +67,12 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
         return applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
     }
 
-    private static abstract class AbstractDocumentIterator implements Iterator<Document> {
-
-        protected int pos;
-        protected final List<Document> documents;
-        protected Document current;
-
-        protected AbstractDocumentIterator(List<Document> documents, int pos) {
-            this.documents = documents;
-            this.pos = pos;
-        }
-
-        protected abstract Document getNext();
-
-        @Override
-        public boolean hasNext() {
-            if (current == null) {
-                current = getNext();
-            }
-            return (current != null);
-        }
-
-        @Override
-        public Document next() {
-            Document document = current;
-            current = getNext();
-            return document;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
-    }
-
-    private static class DocumentIterator extends AbstractDocumentIterator {
-
-        protected DocumentIterator(List<Document> documents) {
-            super(documents, 0);
-        }
-
-        @Override
-        protected Document getNext() {
-            while (pos < documents.size()) {
-                Document document = documents.get(pos++);
-                if (document != null) {
-                    return document;
-                }
-            }
-            return null;
-        }
-
-    }
-
-    private static class ReverseDocumentIterator extends AbstractDocumentIterator {
-
-        protected ReverseDocumentIterator(List<Document> documents) {
-            super(documents, documents.size() - 1);
-        }
-
-        @Override
-        protected Document getNext() {
-            while (pos >= 0) {
-                Document document = documents.get(pos--);
-                if (document != null) {
-                    return document;
-                }
-            }
-            return null;
-        }
-
-    }
-
-    private static class DocumentIterable implements Iterable<Document> {
-
-        private List<Document> documents;
-
-        public DocumentIterable(List<Document> documents) {
-            this.documents = documents;
-        }
-
-        @Override
-        public Iterator<Document> iterator() {
-            return new DocumentIterator(documents);
-        }
-
-    }
-
-    private static class ReverseDocumentIterable implements Iterable<Document> {
-
-        private List<Document> documents;
-
-        public ReverseDocumentIterable(List<Document> documents) {
-            this.documents = documents;
-        }
-
-        @Override
-        public Iterator<Document> iterator() {
-            return new ReverseDocumentIterator(documents);
-        }
-
-    }
-
     private Iterable<Document> iterateAllDocuments(Document orderBy) {
+        DocumentIterable documentIterable = new DocumentIterable(this.documents);
         if (isNaturalDescending(orderBy)) {
-            return new ReverseDocumentIterable(documents);
+            return documentIterable.reversed();
         } else {
-            return new DocumentIterable(documents);
+            return documentIterable;
         }
     }
 
