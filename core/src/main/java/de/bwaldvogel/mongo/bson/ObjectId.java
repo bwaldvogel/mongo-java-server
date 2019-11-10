@@ -21,7 +21,7 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
 
     public ObjectId(String hexString) {
         int len = hexString.length();
-        Assert.equals(hexString.length(), data.length * 2);
+        Assert.equals(hexString.length(), data.length * 2L);
         for (int i = 0; i < len; i += 2) {
             int first = Character.digit(hexString.charAt(i), 16) << 4;
             int second = Character.digit(hexString.charAt(i + 1), 16);

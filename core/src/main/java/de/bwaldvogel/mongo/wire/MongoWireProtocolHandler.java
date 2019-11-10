@@ -65,7 +65,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         }
         in = in.readSlice(totalLength - lengthFieldLength);
         int readable = in.readableBytes();
-        Assert.equals(readable, totalLength - lengthFieldLength);
+        Assert.equals(readable, (long) totalLength - lengthFieldLength);
 
         final int requestID = in.readIntLE();
         final int responseTo = in.readIntLE();
@@ -81,20 +81,20 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         final ClientRequest request;
 
         switch (opCode) {
-        case OP_QUERY:
-            request = handleQuery(channel, header, in);
-            break;
-        case OP_INSERT:
-            request = handleInsert(channel, header, in);
-            break;
-        case OP_DELETE:
-            request = handleDelete(channel, header, in);
-            break;
-        case OP_UPDATE:
-            request = handleUpdate(channel, header, in);
-            break;
-        default:
-            throw new UnsupportedOperationException("unsupported opcode: " + opCode);
+            case OP_QUERY:
+                request = handleQuery(channel, header, in);
+                break;
+            case OP_INSERT:
+                request = handleInsert(channel, header, in);
+                break;
+            case OP_DELETE:
+                request = handleDelete(channel, header, in);
+                break;
+            case OP_UPDATE:
+                request = handleUpdate(channel, header, in);
+                break;
+            default:
+                throw new UnsupportedOperationException("unsupported opcode: " + opCode);
         }
 
         if (in.isReadable()) {
@@ -176,7 +176,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         }
 
         MongoQuery mongoQuery = new MongoQuery(channel, header, fullCollectionName, numberToSkip, numberToReturn,
-                query, returnFieldSelector);
+            query, returnFieldSelector);
 
         if (QueryFlag.SLAVE_OK.isSet(flags)) {
             flags = QueryFlag.SLAVE_OK.removeFrom(flags);

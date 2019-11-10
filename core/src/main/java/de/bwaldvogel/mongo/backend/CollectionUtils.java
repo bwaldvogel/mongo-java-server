@@ -37,17 +37,17 @@ public final class CollectionUtils {
         return value;
     }
 
-    static <T> List<List<T>> multiplyWithOtherElements(Collection<T> allValues, Collection<T> collectionValues) {
+    static <T> List<List<T>> multiplyWithOtherElements(Collection<?> allValues, Collection<T> collectionValues) {
         Assert.isTrue(allValues.contains(collectionValues), () -> "Expected " + collectionValues + " to be part of " + allValues);
         List<List<T>> result = new ArrayList<>();
         for (T collectionValue : collectionValues) {
             List<T> values = new ArrayList<>();
 
-            for (T value : allValues) {
+            for (Object value : allValues) {
                 if (value == collectionValues) {
                     values.add(collectionValue);
                 } else {
-                    values.add(value);
+                    values.add((T) value);
                 }
             }
 

@@ -1008,7 +1008,7 @@ public enum Expression implements ExpressionTraits {
                     values.add(i);
                 }
             } else {
-                for (int i = start; i > end; i += step) {
+                for (int i = start; i > end; i -= Math.abs(step)) {
                     values.add(i);
                 }
             }
