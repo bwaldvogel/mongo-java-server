@@ -53,9 +53,31 @@ public class GraphLookupStage extends AbstractLookupStage implements Aggregation
         connectFromField = readStringConfigurationProperty(configuration, CONNECT_FROM_FIELD);
         connectToField = readStringConfigurationProperty(configuration, CONNECT_TO_FIELD);
         asField = readStringConfigurationProperty(configuration, AS);
-        maxDepth = (Integer)configuration.get(MAX_DEPTH);
-        depthField = (String)configuration.get(DEPTH_FIELD);
+        maxDepth = readOptionalIntegerConfigurationProperty(configuration, MAX_DEPTH);
+        depthField = readOptionalStringConfigurationProperty(configuration, DEPTH_FIELD);
         ensureAllConfigurationPropertiesAreKnown(configuration, CONFIGURATION_KEYS);
+    }
+
+    Integer readOptionalIntegerConfigurationProperty(Document configuration, String name) {
+        Object value = configuration.get(name);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Integer) {
+            return (Integer) value;
+        }
+        throw new FailedToParseException("'" + name + "' option to \" + stageName + \" must be a integer, but was type " + Utils.describeType(value));
+    }
+
+    String readOptionalStringConfigurationProperty(Document configuration, String name) {
+        Object value = configuration.get(name);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String) {
+            return (String) value;
+        }
+        throw new FailedToParseException("'" + name + "' option to \" + stageName + \" must be a string, but was type " + Utils.describeType(value));
     }
 
     String readVariableConfigurationProperty(Document configuration, String name) {
