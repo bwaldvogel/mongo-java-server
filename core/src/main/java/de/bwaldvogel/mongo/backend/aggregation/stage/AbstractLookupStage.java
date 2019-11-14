@@ -21,7 +21,7 @@ abstract class AbstractLookupStage implements AggregationStage {
         if (value instanceof String) {
             return (String) value;
         }
-        throw new FailedToParseException("'" + name + "' option to \" + stageName + \" must be a string, but was type " + Utils.describeType(value));
+        throw new FailedToParseException("'" + name + "' option to " + stageName + " must be a string, but was type " + Utils.describeType(value));
     }
 
     Document readOptionalDocumentArgument(Document configuration, String name) {
