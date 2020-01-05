@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.assertj.core.data.Offset;
@@ -1856,6 +1855,12 @@ public class ExpressionTest {
     public void testEvaluateDocument_SimpleExpression() throws Exception {
         Object evaluatedDocument = Expression.evaluateDocument(json("key: '$key2'"), json("key2: 123"));
         assertThat(evaluatedDocument).isEqualTo(json("key: 123"));
+    }
+
+    @Test
+    public void testEvaluateDocument_NullValue() throws Exception {
+        Object evaluatedDocument = Expression.evaluateDocument(json("key: '$value'"), json("value: null"));
+        assertThat(evaluatedDocument).isEqualTo(json("key: null"));
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/111
