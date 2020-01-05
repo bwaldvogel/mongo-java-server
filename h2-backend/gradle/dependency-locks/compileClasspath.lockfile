@@ -2,4 +2,4 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 com.h2database:h2:1.4.200
-org.slf4j:slf4j-api:1.7.29
+org.slf4j:slf4j-api:1.7.30
