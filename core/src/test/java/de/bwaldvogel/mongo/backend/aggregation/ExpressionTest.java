@@ -1852,6 +1852,19 @@ public class ExpressionTest {
             .withMessage("[Error 168] Unrecognized expression '$foo'");
     }
 
+    @Test
+    public void testEvaluateDocument_SimpleExpression() throws Exception {
+        Object evaluatedDocument = Expression.evaluateDocument(json("key: '$key2'"), json("key2: 123"));
+        assertThat(evaluatedDocument).isEqualTo(json("key: 123"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/111
+    @Test
+    public void testEvaluateDocument_MissingValue() throws Exception {
+        Object evaluatedDocument = Expression.evaluateDocument(json("key: '$missing'"), json(""));
+        assertThat(evaluatedDocument).isEqualTo(json(""));
+    }
+
     private static Instant toDate(String instant) {
         return Instant.parse(instant);
     }

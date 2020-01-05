@@ -471,6 +471,27 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsExactly(json("_id: 1, set: [ ]"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/111
+    @Test
+    public void testAggregateWithAddToSetAndMissingValue() throws Exception {
+        List<Document> pipeline = jsonList("$group: {\n" +
+            "    _id: '$_id', \n" +
+            "    sources: {\n" +
+            "        $addToSet: {\n" +
+            "            key: '$content.key',\n" +
+            "            missing: '$content.missing'\n" +
+            "        }\n" +
+            "    }\n" +
+            "}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, content: {key: 'value', key2: 'value2'}"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(json("_id: 1, sources: [{key: 'value'}]"));
+    }
+
     @Test
     public void testAggregateWithAdd() throws Exception {
         List<Document> pipeline = jsonList("$project: { item: 1, total: { $add: [ '$price', '$fee' ] } }");

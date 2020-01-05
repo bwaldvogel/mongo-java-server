@@ -1451,7 +1451,10 @@ public enum Expression implements ExpressionTraits {
             for (Entry<String, Object> entry : projectedDocument.entrySet()) {
                 String field = entry.getKey();
                 Object expression = entry.getValue();
-                result.put(field, evaluate(expression, document));
+                Object value = evaluate(expression, document);
+                if (!(value instanceof Missing)) {
+                    result.put(field, value);
+                }
             }
             return result;
         } else {
