@@ -36,6 +36,7 @@ public class ValueComparator implements Comparator<Object> {
         /*
          * https://docs.mongodb.com/manual/reference/bson-type-comparison-order/
          */
+        SORT_PRIORITY.add(MinKey.class);
         SORT_PRIORITY.add(Number.class);
         SORT_PRIORITY.add(String.class);
         SORT_PRIORITY.add(Document.class);
@@ -47,6 +48,7 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(Instant.class);
         SORT_PRIORITY.add(BsonTimestamp.class);
         SORT_PRIORITY.add(BsonRegularExpression.class);
+        SORT_PRIORITY.add(MaxKey.class);
     }
 
     private ValueComparator(boolean ascending) {
@@ -106,6 +108,10 @@ public class ValueComparator implements Comparator<Object> {
         }
 
         Class<?> clazz = value1.getClass();
+
+        if (MinKey.class.isAssignableFrom(clazz)) {
+            return (value2 instanceof MinKey) ? 0 : -1;
+        }
 
         if (ObjectId.class.isAssignableFrom(clazz)) {
             return ((ObjectId) value1).compareTo((ObjectId) value2);
@@ -175,6 +181,10 @@ public class ValueComparator implements Comparator<Object> {
             UUID uuid1 = (UUID) value1;
             UUID uuid2 = (UUID) value2;
             return uuid1.compareTo(uuid2);
+        }
+
+        if (MaxKey.class.isAssignableFrom(clazz)) {
+            return (value2 instanceof MaxKey) ? 0 : 1;
         }
 
         throw new UnsupportedOperationException("can't compare " + clazz);
