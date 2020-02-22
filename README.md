@@ -165,7 +165,7 @@ Postgres and each MongoDB collection is stored as a table.
 For integration tests, a PostgreSQL instance can be created in a docker container:
 
 ```
-$ docker-compose up -d
+$ docker-compose up -d postgres
 ```
 
 or manually with:
