@@ -15,6 +15,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class PostgresqlCollection extends AbstractMongoCollection<Long> {
@@ -179,6 +180,9 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
             stmt.setString(1, documentAsJson);
             return querySingleValue(stmt);
         } catch (SQLException e) {
+            if (PostgresqlUtils.isErrorDuplicateKey(e)) {
+                throw new DuplicateKeyError(getDatabaseName() + "." + getCollectionName(), e.getMessage());
+            }
             throw new MongoServerException("failed to insert " + document, e);
         }
     }

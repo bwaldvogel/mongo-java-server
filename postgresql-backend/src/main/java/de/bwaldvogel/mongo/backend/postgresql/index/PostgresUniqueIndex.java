@@ -31,8 +31,6 @@ public class PostgresUniqueIndex extends Index<Long> {
 
     private static final Logger log = LoggerFactory.getLogger(PostgresUniqueIndex.class);
 
-    private static final String SQL_ERROR_DUPLICATE_KEY = "23505";
-
     private final PostgresqlBackend backend;
     private final String databaseName;
     private final String collectionName;
@@ -58,7 +56,7 @@ public class PostgresUniqueIndex extends Index<Long> {
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.executeUpdate();
         } catch (SQLException e) {
-            if (e.getSQLState().equals(SQL_ERROR_DUPLICATE_KEY)) {
+            if (PostgresqlUtils.isErrorDuplicateKey(e)) {
                 throw new DuplicateKeyError(databaseName + "." + collectionName, getName() + " dup key: " + e.getMessage());
             } else {
                 throw new MongoServerException("failed to create " + this + " on " + fullCollectionName, e);

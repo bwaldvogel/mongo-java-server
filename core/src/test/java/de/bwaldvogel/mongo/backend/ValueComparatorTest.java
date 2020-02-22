@@ -14,6 +14,7 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
+import de.bwaldvogel.mongo.bson.LegacyUUID;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.bson.ObjectId;
@@ -169,6 +170,22 @@ public class ValueComparatorTest {
         assertFirstValueBeforeSecondValue(null, new UUID(1, 2));
         assertFirstValueBeforeSecondValue(new UUID(0, 1), new UUID(1, 1));
         assertFirstValueBeforeSecondValue(new byte[0], new UUID(0, 1));
+        assertFirstValueBeforeSecondValue(UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"), UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
+
+        byte[] highBytes = new byte[16];
+        Arrays.fill(highBytes, (byte) 0xFF);
+
+        assertFirstValueBeforeSecondValue(new byte[0], highBytes);
+        assertFirstValueBeforeSecondValue(highBytes, new UUID(0, 1));
+    }
+
+    @Test
+    public void testCompareLegacyUuids() throws Exception {
+        assertComparesTheSame(new LegacyUUID( 1, 1), new LegacyUUID(1, 1));
+        assertFirstValueBeforeSecondValue(null, new LegacyUUID(1, 2));
+        assertFirstValueBeforeSecondValue(new LegacyUUID(0, 1), new LegacyUUID(1, 1));
+        assertFirstValueBeforeSecondValue(LegacyUUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), LegacyUUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
+        assertFirstValueBeforeSecondValue(new byte[0], new LegacyUUID(0, 1));
 
         byte[] highBytes = new byte[16];
         Arrays.fill(highBytes, (byte) 0xFF);

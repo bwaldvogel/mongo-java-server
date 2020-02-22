@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.LegacyUUID;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -35,6 +36,8 @@ final class JsonConverter {
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
         objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(), DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY);
+
+        objectMapper.addMixIn(LegacyUUID.class, LegacyUUIDJsonMixIn.class);
 
         objectMapper.registerSubtypes(ObjectId.class);
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);

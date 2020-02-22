@@ -46,8 +46,11 @@ import org.bson.BsonObjectId;
 import org.bson.BsonString;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.bson.UuidRepresentation;
 import org.bson.codecs.DocumentCodec;
+import org.bson.codecs.UuidCodec;
 import org.bson.codecs.configuration.CodecRegistries;
+import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.bson.types.Code;
@@ -126,6 +129,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     private String getCollectionName() {
         return collection.getNamespace().getCollectionName();
+    }
+
+    protected static MongoClient getClientWithStandardUuid() {
+        CodecRegistry standardUuidCodec = CodecRegistries.fromCodecs(new UuidCodec(UuidRepresentation.STANDARD));
+        MongoClientOptions options = MongoClientOptions.builder()
+            .codecRegistry(CodecRegistries.fromRegistries(standardUuidCodec, MongoClient.getDefaultCodecRegistry()))
+            .build();
+        return new MongoClient(new ServerAddress(serverAddress), options);
     }
 
     @Test
@@ -531,7 +542,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/44
     @Test
-    public void testDistinctUuids() throws Exception {
+    public void testDistinctUuids_legacy() throws Exception {
         collection.insertOne(json("_id: 1, n: null"));
         collection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
         collection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
@@ -547,6 +558,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 new UUID(0, 2),
                 new UUID(1, 1)
             );
+    }
+
+    @Test
+    public void testDistinctUuids() throws Exception {
+        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
+            MongoCollection<Document> standardUuidCollection = standardUuidClient.getDatabase(collection.getNamespace().getDatabaseName()).getCollection(collection.getNamespace().getCollectionName());
+            standardUuidCollection.insertOne(json("_id: 1, n: null"));
+            standardUuidCollection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
+            standardUuidCollection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
+            standardUuidCollection.insertOne(json("_id: 4").append("n", new UUID(0, 2)));
+            standardUuidCollection.insertOne(json("_id: 5").append("n", new UUID(1, 1)));
+            standardUuidCollection.insertOne(json("_id: 6").append("n", new UUID(1, 0)));
+
+            assertThat(standardUuidCollection.distinct("n", UUID.class))
+                .containsExactly(
+                    null,
+                    new UUID(0, 1),
+                    new UUID(1, 0),
+                    new UUID(0, 2),
+                    new UUID(1, 1)
+                );
+        }
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/70
@@ -576,9 +609,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testInsertQueryAndSortBinaryTypes() throws Exception {
         byte[] highBytes = new byte[16];
-        for (int i = 0; i < highBytes.length; i++) {
-            highBytes[i] = (byte) 0xFF;
-        }
+        Arrays.fill(highBytes, (byte) 0xFF);
 
         collection.insertOne(json("_id: 1, n: null"));
         collection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
@@ -4985,16 +5016,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @FunctionalInterface
-    private interface Callable {
+    protected interface Callable {
         void call();
     }
 
-    private static void assertMongoWriteException(Callable callable, int expectedErrorCode, String expectedMessage) {
+    protected static void assertMongoWriteException(Callable callable, int expectedErrorCode, String expectedMessage) {
         assertMongoWriteException(callable, expectedErrorCode, "Location" + expectedErrorCode, expectedMessage);
     }
 
-    private static void assertMongoWriteException(Callable callable, int expectedErrorCode, String expectedCodeName,
-                                                  String expectedMessage) {
+    protected static void assertMongoWriteException(Callable callable, int expectedErrorCode, String expectedCodeName,
+                                                    String expectedMessage) {
         try {
             callable.call();
             fail("MongoWriteException expected");
@@ -5443,6 +5474,45 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 4"),
                 json("_id: 5").append("value", new MinKey())
             );
+    }
+
+    @Test
+    public void testOldAndNewUuidTypes() throws Exception {
+        Document document1 = new Document("_id", UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
+        collection.insertOne(document1);
+
+        assertMongoWriteException(() -> collection.insertOne(document1),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : BinData(3, A2963378B9CB425580BCE16A3BF156B4) }");
+        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
+            MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName()).getCollection(AbstractTest.collection.getNamespace().getCollectionName());
+
+            collectionStandardUuid.insertOne(document1);
+
+            assertMongoWriteException(() -> collectionStandardUuid.insertOne(document1),
+                11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : UUID(\"5542cbb9-7833-96a2-b456-f13b6ae1bc80\") }");
+
+            Document document2 = new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
+            collectionStandardUuid.insertOne(document2);
+
+            collection.deleteOne(document1);
+
+            assertThat(collectionStandardUuid.find().sort(json("_id: 1")))
+                .containsExactly(
+                    document1,
+                    document2
+                );
+        }
+    }
+
+    @Test
+    public void testNewUuidType() throws Exception {
+        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
+            MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName()).getCollection(AbstractTest.collection.getNamespace().getCollectionName());
+
+            collectionStandardUuid.insertOne(new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-000000000001")));
+            collectionStandardUuid.insertOne(new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-000000000002")));
+            collectionStandardUuid.insertOne(new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-000000000003")));
+        }
     }
 
 }

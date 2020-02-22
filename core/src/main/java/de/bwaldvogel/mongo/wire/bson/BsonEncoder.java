@@ -14,6 +14,7 @@ import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.LegacyUUID;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.bson.ObjectId;
@@ -87,12 +88,21 @@ public class BsonEncoder {
                     buffer.writeIntLE(data.length);
                     buffer.writeByte(BsonConstants.BINARY_SUBTYPE_GENERIC);
                     buffer.writeBytes(data);
-                } else if (value instanceof UUID) {
+                } else if (value instanceof UUID || value instanceof LegacyUUID) {
                     buffer.writeIntLE(BsonConstants.LENGTH_UUID);
-                    buffer.writeByte(BsonConstants.BINARY_SUBTYPE_OLD_UUID);
-                    UUID uuid = (UUID) value;
-                    buffer.writeLongLE(uuid.getMostSignificantBits());
-                    buffer.writeLongLE(uuid.getLeastSignificantBits());
+
+                    final UUID uuid;
+                    if (value instanceof LegacyUUID) {
+                        buffer.writeByte(BsonConstants.BINARY_SUBTYPE_OLD_UUID);
+                        uuid = ((LegacyUUID) value).getUuid();
+                        buffer.writeLongLE(uuid.getMostSignificantBits());
+                        buffer.writeLongLE(uuid.getLeastSignificantBits());
+                    } else {
+                        buffer.writeByte(BsonConstants.BINARY_SUBTYPE_UUID);
+                        uuid = (UUID) value;
+                        buffer.writeLong(uuid.getMostSignificantBits());
+                        buffer.writeLong(uuid.getLeastSignificantBits());
+                    }
                 } else {
                     throw new IllegalArgumentException("Unknown data: " + value.getClass());
                 }
@@ -171,7 +181,7 @@ public class BsonEncoder {
             return BsonConstants.TYPE_UTF8_STRING;
         } else if (value instanceof Boolean) {
             return BsonConstants.TYPE_BOOLEAN;
-        } else if (value instanceof byte[]) {
+        } else if (value instanceof byte[] || value instanceof UUID || value instanceof LegacyUUID) {
             return BsonConstants.TYPE_DATA;
         } else if (value instanceof Collection<?> || value instanceof String[]) {
             return BsonConstants.TYPE_ARRAY;
@@ -185,8 +195,6 @@ public class BsonEncoder {
             return BsonConstants.TYPE_MAX_KEY;
         } else if (value instanceof MinKey) {
             return BsonConstants.TYPE_MIN_KEY;
-        } else if (value instanceof UUID) {
-            return BsonConstants.TYPE_DATA;
         } else if (value instanceof BsonJavaScript) {
             return BsonConstants.TYPE_JAVASCRIPT_CODE;
         } else {

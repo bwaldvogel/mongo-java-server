@@ -4,13 +4,17 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
+import java.util.UUID;
 
+import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexOptions;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -18,6 +22,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
+import de.bwaldvogel.mongo.backend.AbstractTest;
 
 public class PostgresqlBackendTest extends AbstractBackendTest {
 
@@ -212,6 +217,34 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
         assumeStrictTests();
         super.testGetKeyValues_multiKey_document_nested_objects();
+    }
+
+    @Override
+    public void testOldAndNewUuidTypes() throws Exception {
+        assumeStrictTests();
+    }
+
+    @Test
+    public void testNewUuidDuplicate() throws Exception {
+        Document document1 = new Document("_id", UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
+        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
+            MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName()).getCollection(AbstractTest.collection.getNamespace().getCollectionName());
+
+            collectionStandardUuid.insertOne(document1);
+
+            assertMongoWriteException(() -> collectionStandardUuid.insertOne(document1),
+                11000, null, "E11000 duplicate key error collection: testdb.testcoll index: ERROR: duplicate key value violates unique constraint \"testcoll__id_\"\n" +
+                    "  Detail: Key ((data ->> '_id'::text))=([\"java.util.UUID\",\"5542cbb9-7833-96a2-b456-f13b6ae1bc80\"]) already exists.");
+
+            Document document2 = new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
+            collectionStandardUuid.insertOne(document2);
+
+            assertThat(collectionStandardUuid.find())
+                .containsExactlyInAnyOrder(
+                    document1,
+                    document2
+                );
+        }
     }
 
     private void assumeStrictTests() {

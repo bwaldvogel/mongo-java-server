@@ -11,6 +11,7 @@ import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.LegacyUUID;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.bson.ObjectId;
@@ -144,12 +145,17 @@ public final class BsonDecoder {
                 buffer.readBytes(data);
                 return data;
             }
-            case BsonConstants.BINARY_SUBTYPE_OLD_UUID:
+            case BsonConstants.BINARY_SUBTYPE_OLD_UUID: {
+                if (length != BsonConstants.LENGTH_UUID) {
+                    throw new IllegalArgumentException("Illegal length: " + length);
+                }
+                return new LegacyUUID(buffer.readLongLE(), buffer.readLongLE());
+            }
             case BsonConstants.BINARY_SUBTYPE_UUID: {
                 if (length != BsonConstants.LENGTH_UUID) {
                     throw new IllegalArgumentException("Illegal length: " + length);
                 }
-                return new UUID(buffer.readLongLE(), buffer.readLongLE());
+                return new UUID(buffer.readLong(), buffer.readLong());
             }
             default:
                 throw new IllegalArgumentException("Unknown subtype: " + subtype);

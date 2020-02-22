@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.postgresql;
 
 import static de.bwaldvogel.mongo.backend.postgresql.JsonConverter.toJson;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,8 @@ import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
 
 public final class PostgresqlUtils {
+
+    private static final String SQL_ERROR_DUPLICATE_KEY = "23505";
 
     private PostgresqlUtils() {
     }
@@ -65,6 +68,10 @@ public final class PostgresqlUtils {
     private static String toJsonWithClass(Object queryValue) {
         String valueAsJson = toJson(queryValue);
         return valueAsJson.replaceFirst("\\{", "\\{\"@class\":\"" + queryValue.getClass().getName() + "\",");
+    }
+
+    public static boolean isErrorDuplicateKey(SQLException e) {
+        return e.getSQLState().equals(SQL_ERROR_DUPLICATE_KEY);
     }
 
 }
