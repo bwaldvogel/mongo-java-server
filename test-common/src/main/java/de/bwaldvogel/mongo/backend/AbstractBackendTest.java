@@ -5360,4 +5360,35 @@ public abstract class AbstractBackendTest extends AbstractTest {
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : null, : 20 }");
     }
 
+    @Test
+    public void testComparisons() throws Exception {
+        collection.insertOne(json("_id: 1, a: 'x'"));
+        collection.insertOne(json("_id: 2, a: 10"));
+        collection.insertOne(json("_id: 3, a: 1"));
+        collection.insertOne(json("_id: 4, a: null"));
+        collection.insertOne(json("_id: 5"));
+
+        assertThat(collection.find(json("a: {$gt: 1}")))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, a: 10")
+            );
+
+        assertThat(collection.find(json("a: {$gte: 1}")))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, a: 10"),
+                json("_id: 3, a: 1")
+            );
+
+        assertThat(collection.find(json("a: {$lt: 10}")))
+            .containsExactlyInAnyOrder(
+                json("_id: 3, a: 1")
+            );
+
+        assertThat(collection.find(json("a: {$lte: 10}")))
+            .containsExactlyInAnyOrder(
+                json("_id: 2, a: 10"),
+                json("_id: 3, a: 1")
+            );
+    }
+
 }
