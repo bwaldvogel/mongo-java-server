@@ -36,7 +36,6 @@ public class ValueComparator implements Comparator<Object> {
         /*
          * https://docs.mongodb.com/manual/reference/bson-type-comparison-order/
          */
-        SORT_PRIORITY.add(MinKey.class);
         SORT_PRIORITY.add(Number.class);
         SORT_PRIORITY.add(String.class);
         SORT_PRIORITY.add(Document.class);
@@ -98,6 +97,12 @@ public class ValueComparator implements Comparator<Object> {
             return compareLists(value1, value2);
         }
 
+        if (value1 instanceof MinKey) {
+            return (value2 instanceof MinKey) ? 0 : -1;
+        } else if (value2 instanceof MinKey) {
+            return 1;
+        }
+
         if (Missing.isNullOrMissing(value1) && Missing.isNullOrMissing(value2)) {
             return 0;
         }
@@ -108,10 +113,6 @@ public class ValueComparator implements Comparator<Object> {
         }
 
         Class<?> clazz = value1.getClass();
-
-        if (MinKey.class.isAssignableFrom(clazz)) {
-            return (value2 instanceof MinKey) ? 0 : -1;
-        }
 
         if (ObjectId.class.isAssignableFrom(clazz)) {
             return ((ObjectId) value1).compareTo((ObjectId) value2);

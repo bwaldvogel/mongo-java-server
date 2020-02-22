@@ -4,8 +4,6 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.bwaldvogel.mongo.bson.MaxKey;
-import de.bwaldvogel.mongo.bson.MinKey;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -16,6 +14,8 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
+import de.bwaldvogel.mongo.bson.MaxKey;
+import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -43,6 +43,7 @@ public class ValueComparatorTest {
         assertComparesTheSame(MinKey.getInstance(), MinKey.getInstance());
         assertFirstValueBeforeSecondValue(MinKey.getInstance(), MaxKey.getInstance());
         assertFirstValueBeforeSecondValue(MinKey.getInstance(), "abc");
+        assertFirstValueBeforeSecondValue(MinKey.getInstance(), null);
         assertFirstValueBeforeSecondValue(MinKey.getInstance(), Long.MIN_VALUE);
         assertFirstValueBeforeSecondValue("abc", MaxKey.getInstance());
         assertFirstValueBeforeSecondValue(Long.MAX_VALUE, MaxKey.getInstance());

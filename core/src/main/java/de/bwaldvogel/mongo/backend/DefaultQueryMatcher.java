@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.MaxKey;
+import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -537,13 +539,16 @@ public class DefaultQueryMatcher implements QueryMatcher {
         return type.matches(value);
     }
 
-    private boolean comparableTypes(Object value1, Object value2) {
-        value1 = Utils.normalizeValue(value1);
-        value2 = Utils.normalizeValue(value2);
-        if (value1 == null || value2 == null) {
+    private boolean comparableTypes(Object value, Object expressionValue) {
+        if (expressionValue instanceof MinKey || expressionValue instanceof MaxKey) {
+            return true;
+        }
+        value = Utils.normalizeValue(value);
+        expressionValue = Utils.normalizeValue(expressionValue);
+        if (value == null || expressionValue == null) {
             return false;
         }
 
-        return value1.getClass().equals(value2.getClass());
+        return value.getClass().equals(expressionValue.getClass());
     }
 }

@@ -51,6 +51,8 @@ import org.bson.codecs.configuration.CodecRegistries;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.bson.types.Code;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.mockito.AdditionalAnswers;
@@ -5388,6 +5390,58 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactlyInAnyOrder(
                 json("_id: 2, a: 10"),
                 json("_id: 3, a: 1")
+            );
+    }
+
+    @Test
+    public void testMinKeyComparison() {
+        collection.insertOne(json("_id: 1, value: null"));
+        collection.insertOne(json("_id: 2, value: 123"));
+        collection.insertOne(json("_id: 3").append("value", new MinKey()));
+        collection.insertOne(json("_id: 4"));
+        collection.insertOne(json("_id: 5").append("value", new MaxKey()));
+
+        assertThat(collection.find(new Document("value", new Document("$gt", new MinKey()))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, value: null"),
+                json("_id: 2, value: 123"),
+                json("_id: 4"),
+                json("_id: 5").append("value", new MaxKey())
+            );
+
+        assertThat(collection.find(new Document("value", new Document("$gte", new MinKey()))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, value: null"),
+                json("_id: 2, value: 123"),
+                json("_id: 3").append("value", new MinKey()),
+                json("_id: 4"),
+                json("_id: 5").append("value", new MaxKey())
+            );
+    }
+
+    @Test
+    public void testMaxKeyComparison() {
+        collection.insertOne(json("_id: 1, value: null"));
+        collection.insertOne(json("_id: 2, value: 123"));
+        collection.insertOne(json("_id: 3").append("value", new MaxKey()));
+        collection.insertOne(json("_id: 4"));
+        collection.insertOne(json("_id: 5").append("value", new MinKey()));
+
+        assertThat(collection.find(new Document("value", new Document("$lt", new MaxKey()))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, value: null"),
+                json("_id: 2, value: 123"),
+                json("_id: 4"),
+                json("_id: 5").append("value", new MinKey())
+            );
+
+        assertThat(collection.find(new Document("value", new Document("$lte", new MaxKey()))))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, value: null"),
+                json("_id: 2, value: 123"),
+                json("_id: 3").append("value", new MaxKey()),
+                json("_id: 4"),
+                json("_id: 5").append("value", new MinKey())
             );
     }
 
