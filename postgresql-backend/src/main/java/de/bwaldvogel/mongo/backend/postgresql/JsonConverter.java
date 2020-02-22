@@ -32,8 +32,9 @@ final class JsonConverter {
     private static ObjectMapper objectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
-        objectMapper.enableDefaultTyping(DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY);
+        objectMapper.activateDefaultTyping(objectMapper.getPolymorphicTypeValidator(), DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY);
 
         objectMapper.registerSubtypes(ObjectId.class);
         objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE);
