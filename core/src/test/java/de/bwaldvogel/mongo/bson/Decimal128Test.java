@@ -50,7 +50,7 @@ public class Decimal128Test {
         assertThat(Decimal128.ONE.floatValue()).isEqualTo(1.0f);
         assertThat(Decimal128.POSITIVE_ZERO.floatValue()).isEqualTo(0.0f);
         assertThat(Decimal128.NEGATIVE_ZERO.floatValue()).isEqualTo(0.0f);
-        assertThat(Decimal128.NaN.floatValue()).isEqualTo(Float.NaN);
+        assertThat(Decimal128.NaN.floatValue()).isNaN();
         assertThat(Decimal128.POSITIVE_INFINITY.floatValue()).isEqualTo(Float.POSITIVE_INFINITY);
         assertThat(Decimal128.NEGATIVE_INFINITY.floatValue()).isEqualTo(Float.NEGATIVE_INFINITY);
     }
@@ -60,7 +60,7 @@ public class Decimal128Test {
         assertThat(Decimal128.ONE.doubleValue()).isEqualTo(1.0);
         assertThat(Decimal128.POSITIVE_ZERO.doubleValue()).isEqualTo(0.0);
         assertThat(Decimal128.NEGATIVE_ZERO.doubleValue()).isEqualTo(0.0);
-        assertThat(Decimal128.NaN.doubleValue()).isEqualTo(Double.NaN);
+        assertThat(Decimal128.NaN.doubleValue()).isNaN();
         assertThat(Decimal128.POSITIVE_INFINITY.doubleValue()).isEqualTo(Double.POSITIVE_INFINITY);
         assertThat(Decimal128.NEGATIVE_INFINITY.doubleValue()).isEqualTo(Double.NEGATIVE_INFINITY);
     }
