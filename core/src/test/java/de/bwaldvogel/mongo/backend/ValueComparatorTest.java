@@ -171,9 +171,7 @@ public class ValueComparatorTest {
         assertFirstValueBeforeSecondValue(new byte[0], new UUID(0, 1));
 
         byte[] highBytes = new byte[16];
-        for (int i = 0; i < highBytes.length; i++) {
-            highBytes[i] = (byte) 0xFF;
-        }
+        Arrays.fill(highBytes, (byte) 0xFF);
 
         assertFirstValueBeforeSecondValue(new byte[0], highBytes);
         assertFirstValueBeforeSecondValue(highBytes, new UUID(0, 1));
