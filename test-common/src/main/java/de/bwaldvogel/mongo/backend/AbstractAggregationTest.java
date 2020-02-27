@@ -1710,4 +1710,26 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testAggregateWithUnsetStage() throws Exception {
+        List<Document> pipeline = jsonList("$unset: ['field1', 'fields.field2']");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, field1: 'value1', field2: 'value2'"));
+        collection.insertOne(json("_id: 2, field1: 'value1', fields: { field2: 'value2'}"));
+        collection.insertOne(json("_id: 3, fields: { field1: 'value1', field2: 'value2'}"));
+        collection.insertOne(json("_id: 4, fields: {}"));
+        collection.insertOne(json("_id: 5"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("_id: 1, field2: 'value2'"),
+                json("_id: 2, fields: {}"),
+                json("_id: 3, fields: { field1: 'value1' }"),
+                json("_id: 4, fields: {}"),
+                json("_id: 5")
+            );
+    }
+
 }
