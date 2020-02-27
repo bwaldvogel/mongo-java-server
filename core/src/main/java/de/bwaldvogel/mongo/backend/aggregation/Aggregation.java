@@ -127,7 +127,7 @@ public class Aggregation {
                     aggregation.addStage(new FacetStage(facet, database, collection));
                     break;
                 case "$unset":
-                    Document unset = (Document) stage.get(stageOperation);
+                    Object unset = stage.get(stageOperation);
                     aggregation.addStage(new UnsetStage(unset));
                     break;
                 default:
