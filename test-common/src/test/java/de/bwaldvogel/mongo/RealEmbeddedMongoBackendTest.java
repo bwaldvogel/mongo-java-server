@@ -1,7 +1,5 @@
 package de.bwaldvogel.mongo;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.util.Date;
 
 import org.bson.Document;
