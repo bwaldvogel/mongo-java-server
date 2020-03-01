@@ -2792,6 +2792,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(json("_id: 1, a: [{x: 1, y: 1}, {x: 3, y: 3, foo: 1, foo2: 1}, {x: 3, y: 3}]"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/113
+    @Test
+    public void testUpdateArrayMatch_updateMany() throws Exception {
+        collection.insertOne(json("_id: 1, grades: [{id: 1, value: 90}]"));
+        collection.insertOne(json("_id: 2, grades: [{id: 1, value: 85}, {id: 2, value: 80}, {id: 3, value: 80}]"));
+        collection.insertOne(json("_id: 3, grades: [{id: 1, value: 50}, {id: 1, value: 80}]"));
+        collection.insertOne(json("_id: 4"));
+
+        collection.updateMany(json("'grades.value': 80"), json("$set: {'grades.$.value': 82, 'grades.$.changed': true}"));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactly(
+                json("_id: 1, grades: [{id: 1, value: 90}]"),
+                json("_id: 2, grades: [{id: 1, value: 85}, {id: 2, value: 82, changed: true}, {id: 3, value: 80}]"),
+                json("_id: 3, grades: [{id: 1, value: 50}, {id: 1, value: 82, changed: true}]"),
+                json("_id: 4")
+            );
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/32
     @Test
     public void testUpdateWithNotAndSizeOperator() throws Exception {
