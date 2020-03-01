@@ -2811,12 +2811,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testMultiUpdateArrayMatch() throws Exception {
-        collection.insertOne(json(""));
-        collection.insertOne(json("x: [1, 2, 3]"));
-        collection.insertOne(json("x: 99"));
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, x: [1, 2, 3]"));
+        collection.insertOne(json("_id: 3, x: 99"));
 
         collection.updateMany(json("x: 2"), json("$inc: {'x.$': 1}"));
-        assertThat(collection.find(json("x: 1")).first().get("x")).isEqualTo(Arrays.asList(1, 3, 3));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactly(
+                json("_id: 1"),
+                json("_id: 2, x: [1, 3, 3]"),
+                json("_id: 3, x: 99")
+            );
     }
 
     @Test
