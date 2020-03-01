@@ -15,5 +15,5 @@ dependencies {
 
     runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
 
-    testImplementation group: 'de.flapdoodle.embed', name: 'de.flapdoodle.embed.mongo', version: 'latest.release'
+    testImplementation "org.testcontainers:testcontainers:latest.release"
 }

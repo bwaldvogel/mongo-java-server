@@ -1,31 +1,41 @@
 package de.bwaldvogel.mongo;
 
+import java.net.InetSocketAddress;
 import java.util.Date;
 
 import org.bson.Document;
 import org.junit.AfterClass;
 import org.junit.Assume;
+import org.junit.BeforeClass;
+import org.testcontainers.containers.GenericContainer;
 
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 
-public class RealEmbeddedMongoBackendTest extends AbstractBackendTest {
+public class RealMongoBackendTest extends AbstractBackendTest {
 
-    private static final RealEmbeddedMongo realEmbeddedMongo = new RealEmbeddedMongo();
+    private static GenericContainer<?> mongoContainer;
+
+    @BeforeClass
+    public static void setUpMongoContainer() {
+        mongoContainer = RealMongoContainer.start();
+    }
 
     @Override
     protected void setUpBackend() throws Exception {
-        serverAddress = realEmbeddedMongo.setUp();
+        serverAddress = new InetSocketAddress(mongoContainer.getFirstMappedPort());
     }
 
     @AfterClass
     public static void tearDownServer() {
-        realEmbeddedMongo.stop();
+        mongoContainer.stop();
+        mongoContainer = null;
     }
 
     @Override
     protected void restart() throws Exception {
         tearDown();
         tearDownServer();
+        setUpMongoContainer();
         setUp();
     }
 

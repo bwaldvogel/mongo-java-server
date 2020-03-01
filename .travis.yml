@@ -8,6 +8,7 @@ jdk:
 
 services:
     - postgresql
+    - docker
 
 before_script:
     - psql -c $'create role "mongo-java-server-test" login password \'mongo-java-server-test\';' -U postgres

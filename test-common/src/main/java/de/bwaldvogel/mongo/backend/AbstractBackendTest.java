@@ -2013,7 +2013,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         for (String dbName : new String[] { "admin", "local", "test" }) {
             Document result = syncClient.getDatabase(dbName).runCommand(new Document("whatsmyuri", 1));
             assertThat(result.get("you")).isNotNull();
-            assertThat(result.get("you").toString()).startsWith("127.0.0.1:");
+            assertThat(result.get("you").toString()).matches("\\d+\\.\\d+\\.\\d+\\.\\d+:\\d*");
         }
     }
 
