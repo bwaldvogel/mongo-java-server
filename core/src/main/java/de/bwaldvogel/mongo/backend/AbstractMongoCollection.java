@@ -242,7 +242,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         try {
             op = UpdateOperator.fromValue(modifier);
         } catch (IllegalArgumentException e) {
-            throw new FailedToParseException("Unknown modifier: " + modifier);
+            throw new FailedToParseException("Unknown modifier: " + modifier + ". Expected a valid update modifier or pipeline-style update specified as an array");
         }
 
         if (op != UpdateOperator.UNSET) {

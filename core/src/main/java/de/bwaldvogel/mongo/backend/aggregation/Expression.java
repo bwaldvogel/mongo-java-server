@@ -36,6 +36,7 @@ import de.bwaldvogel.mongo.backend.NumericUtils;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public enum Expression implements ExpressionTraits {
@@ -160,18 +161,18 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValues, Document document) {
             Object values = requireSingleValue(expressionValues);
             if ((!(values instanceof Collection))) {
-                throw new MongoServerError(40386, name() + " requires an array input, found: " + describeType(values));
+                throw new FailedToOptimizePipelineError(40386, name() + " requires an array input, found: " + describeType(values));
             }
             Document result = new Document();
             for (Object keyValueObject : (Collection<?>) values) {
                 if (keyValueObject instanceof List) {
                     List<?> keyValue = (List<?>) keyValueObject;
                     if (keyValue.size() != 2) {
-                        throw new MongoServerError(40397, name() + " requires an array of size 2 arrays,found array of size: " + keyValue.size());
+                        throw new FailedToOptimizePipelineError(40397, name() + " requires an array of size 2 arrays,found array of size: " + keyValue.size());
                     }
                     Object keyObject = keyValue.get(0);
                     if (!(keyObject instanceof String)) {
-                        throw new MongoServerError(40395, name() + " requires an array of key-value pairs, where the key must be of type string. Found key type: " + describeType(keyObject));
+                        throw new FailedToOptimizePipelineError(40395, name() + " requires an array of key-value pairs, where the key must be of type string. Found key type: " + describeType(keyObject));
                     }
                     String key = (String) keyObject;
                     Object value = keyValue.get(1);
@@ -179,20 +180,20 @@ public enum Expression implements ExpressionTraits {
                 } else if (keyValueObject instanceof Document) {
                     Document keyValue = (Document) keyValueObject;
                     if (keyValue.size() != 2) {
-                        throw new MongoServerError(40392, name() + " requires an object keys of 'k' and 'v'. Found incorrect number of keys:" + keyValue.size());
+                        throw new FailedToOptimizePipelineError(40392, name() + " requires an object keys of 'k' and 'v'. Found incorrect number of keys:" + keyValue.size());
                     }
                     if (!(keyValue.containsKey("k") && keyValue.containsKey("v"))) {
-                        throw new MongoServerError(40393, name() + " requires an object with keys 'k' and 'v'. Missing either or both keys from: " + keyValue.toString(true));
+                        throw new FailedToOptimizePipelineError(40393, name() + " requires an object with keys 'k' and 'v'. Missing either or both keys from: " + keyValue.toString(true));
                     }
                     Object keyObject = keyValue.get("k");
                     if (!(keyObject instanceof String)) {
-                        throw new MongoServerError(40394, name() + " requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: " + describeType(keyObject));
+                        throw new FailedToOptimizePipelineError(40394, name() + " requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: " + describeType(keyObject));
                     }
                     String key = (String) keyObject;
                     Object value = keyValue.get("v");
                     result.put(key, value);
                 } else {
-                    throw new MongoServerError(40398, "Unrecognised input type format for " + name() + ": " + describeType(keyValueObject));
+                    throw new FailedToOptimizePipelineError(40398, "Unrecognised input type format for " + name() + ": " + describeType(keyValueObject));
                 }
             }
             return result;
@@ -1336,14 +1337,14 @@ public enum Expression implements ExpressionTraits {
 
             Object startValue = expressionValue.get(1);
             if (!(startValue instanceof Number)) {
-                throw new MongoServerError(16034, name() + ":  starting index must be a numeric type (is BSON type " + describeType(startValue) + ")");
+                throw new FailedToOptimizePipelineError(16034, name() + ":  starting index must be a numeric type (is BSON type " + describeType(startValue) + ")");
             }
             int startIndex = Math.max(0, ((Number) startValue).intValue());
             startIndex = Math.min(bytes.length, startIndex);
 
             Object lengthValue = expressionValue.get(2);
             if (!(lengthValue instanceof Number)) {
-                throw new MongoServerError(16035, name() + ":  length must be a numeric type (is BSON type " + describeType(lengthValue) + ")");
+                throw new FailedToOptimizePipelineError(16035, name() + ":  length must be a numeric type (is BSON type " + describeType(lengthValue) + ")");
             }
             int length = ((Number) lengthValue).intValue();
             if (length < 0) {
@@ -1364,14 +1365,14 @@ public enum Expression implements ExpressionTraits {
             }
             Object startValue = expressionValue.get(1);
             if (!(startValue instanceof Number)) {
-                throw new MongoServerError(34450, name() + ": starting index must be a numeric type (is BSON type " + describeType(startValue) + ")");
+                throw new FailedToOptimizePipelineError(34450, name() + ": starting index must be a numeric type (is BSON type " + describeType(startValue) + ")");
             }
             int startIndex = Math.max(0, ((Number) startValue).intValue());
             startIndex = Math.min(value.length(), startIndex);
 
             Object lengthValue = expressionValue.get(2);
             if (!(lengthValue instanceof Number)) {
-                throw new MongoServerError(34452, name() + ": length must be a numeric type (is BSON type " + describeType(lengthValue) + ")");
+                throw new FailedToOptimizePipelineError(34452, name() + ": length must be a numeric type (is BSON type " + describeType(lengthValue) + ")");
             }
             int length = ((Number) lengthValue).intValue();
             if (length < 0) {

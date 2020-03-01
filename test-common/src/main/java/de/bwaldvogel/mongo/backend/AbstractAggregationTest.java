@@ -14,6 +14,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 
+import com.mongodb.Function;
 import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
 
@@ -438,7 +439,9 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     public void testAggregateWithAddToSet() throws Exception {
-        List<Document> pipeline = jsonList("$group: {_id: { day: { $dayOfYear: '$date'}, year: { $year: '$date' } }, itemsSold: { $addToSet: '$item' }}");
+        List<Document> pipeline = jsonList(
+            "$group: {_id: { day: { $dayOfYear: '$date'}, year: { $year: '$date' } }, itemsSold: { $addToSet: '$item' }}",
+            "$sort: {_id: 1}");
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -449,11 +452,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 5, item: 'abc', price: 10, quantity: 10").append("date", instant("2014-02-15T08:00:00Z")));
         collection.insertOne(json("_id: 6, item: 'xyz', price:  5, quantity: 10").append("date", instant("2014-02-15T09:12:00Z")));
 
-        assertThat(collection.aggregate(pipeline))
+        assertThat(collection.aggregate(pipeline).map(withSortedStringList( "itemsSold")))
             .containsExactlyInAnyOrder(
                 json("_id: { day:  1, year: 2014 }, itemsSold: [ 'abc' ]"),
-                json("_id: { day: 34, year: 2014 }, itemsSold: [ 'xyz', 'jkl' ]"),
-                json("_id: { day: 46, year: 2014 }, itemsSold: [ 'xyz', 'abc', 'zzz' ]")
+                json("_id: { day: 34, year: 2014 }, itemsSold: [ 'jkl', 'xyz' ]"),
+                json("_id: { day: 46, year: 2014 }, itemsSold: [ 'abc', 'xyz', 'zzz' ]")
             );
     }
 
@@ -615,11 +618,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: ['abc', 'abc', 3]}}")).first())
-            .withMessageContaining("Command failed with error 16034 (Location16034): '$substrBytes:  starting index must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command failed with error 16034 (Location16034): 'Failed to optimize pipeline :: caused by :: $substrBytes:  starting index must be a numeric type (is BSON type string)");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: ['abc', 3, 'abc']}}")).first())
-            .withMessageContaining("Command failed with error 16035 (Location16035): '$substrBytes:  length must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command failed with error 16035 (Location16035): 'Failed to optimize pipeline :: caused by :: $substrBytes:  length must be a numeric type (is BSON type string)");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: 'abc'}}")).first())
@@ -627,11 +630,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: ['abc', 'abc', 3]}}")).first())
-            .withMessageContaining("Command failed with error 34450 (Location34450): '$substrCP: starting index must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command failed with error 34450 (Location34450): 'Failed to optimize pipeline :: caused by :: $substrCP: starting index must be a numeric type (is BSON type string)");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: ['abc', 3, 'abc']}}")).first())
-            .withMessageContaining("Command failed with error 34452 (Location34452): '$substrCP: length must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command failed with error 34452 (Location34452): 'Failed to optimize pipeline :: caused by :: $substrCP: length must be a numeric type (is BSON type string)");
     }
 
     @Test
@@ -1326,21 +1329,20 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 3, item: 'jkl', 'price': 20, ordered: 7"));
         collection.insertOne(json("_id: 4, item: 'jkl', 'price': 40, ordered: 3"));
         collection.insertOne(json("_id: 5, item: 'abc', 'price': 90, ordered: 5"));
-        collection.insertOne(json("_id: 6, item: 'zzz'"));
-        collection.insertOne(json("_id: 7"));
-        collection.insertOne(json("_id: 8, item: null"));
-        collection.insertOne(json("_id: 9, item: 'aaa'"));
+        collection.insertOne(json("_id: 6"));
+        collection.insertOne(json("_id: 7, item: null"));
+        collection.insertOne(json("_id: 8, item: 'aaa'"));
+        collection.insertOne(json("_id: 9, item: 'abc'"));
         collection.insertOne(json("_id: 10, item: 'abc'"));
 
         List<Document> pipeline = jsonList("$sortByCount: '$item'");
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
-                json("_id: 'abc', count: 3"),
+                json("_id: 'abc', count: 4"),
                 json("_id: 'jkl', count: 3"),
                 json("_id: null, count: 2"),
-                json("_id: 'aaa', count: 1"),
-                json("_id: 'zzz', count: 1")
+                json("_id: 'aaa', count: 1")
             );
     }
 
@@ -1387,7 +1389,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: 'illegal-type'}}")).first())
-            .withMessageContaining("Command failed with error 40386 (Location40386): '$arrayToObject requires an array input, found: string'");
+            .withMessageContaining("Command failed with error 40386 (Location40386): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array input, found: string'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: []}}")).first())
@@ -1395,27 +1397,27 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [['foo']]}}}}")).first())
-            .withMessageContaining("Command failed with error 40397 (Location40397): '$arrayToObject requires an array of size 2 arrays,found array of size: 1'");
+            .withMessageContaining("Command failed with error 40397 (Location40397): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of size 2 arrays,found array of size: 1'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [123, 456]}}}}")).first())
-            .withMessageContaining("Command failed with error 40398 (Location40398): 'Unrecognised input type format for $arrayToObject: int'");
+            .withMessageContaining("Command failed with error 40398 (Location40398): 'Failed to optimize pipeline :: caused by :: Unrecognised input type format for $arrayToObject: int'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [[123, 456]]}}}}")).first())
-            .withMessageContaining("Command failed with error 40395 (Location40395): '$arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int'");
+            .withMessageContaining("Command failed with error 40395 (Location40395): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{}]}}}}")).first())
-            .withMessageContaining("Command failed with error 40392 (Location40392): '$arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0'");
+            .withMessageContaining("Command failed with error 40392 (Location40392): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 123, v: 'value'}]}}}}")).first())
-            .withMessageContaining("Command failed with error 40394 (Location40394): '$arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int'");
+            .withMessageContaining("Command failed with error 40394 (Location40394): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 'key', z: 'value'}]}}}}")).first())
-            .withMessageContaining("Command failed with error 40393 (Location40393): '$arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: \"value\"}'");
+            .withMessageContaining("Command failed with error 40393 (Location40393): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: \"value\"}'");
     }
 
     @Test
@@ -1708,6 +1710,15 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                     "    {_id: 'abstract', count: 1}\n" +
                     "  ]")
             );
+    }
+
+    private static Function<Document, Document> withSortedStringList(String key) {
+        return document -> {
+            @SuppressWarnings("unchecked")
+            List<String> itemsSold = (List<String>) document.get(key);
+            itemsSold.sort(ValueComparator.asc());
+            return document;
+        };
     }
 
 }

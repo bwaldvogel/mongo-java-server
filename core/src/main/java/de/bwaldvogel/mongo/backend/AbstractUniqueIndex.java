@@ -85,7 +85,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
         for (KeyValue key : getKeyValues(document, false)) {
             KeyValue normalizedKey = key.normalized();
             if (containsKey(normalizedKey)) {
-                throw new DuplicateKeyError(this, collection, key);
+                throw new DuplicateKeyError(this, collection, getKeys(), key);
             }
         }
     }
@@ -116,7 +116,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
             KeyValue normalizedKey = key.normalized();
             P position = getPosition(normalizedKey);
             if (position != null && !position.equals(oldPosition)) {
-                throw new DuplicateKeyError(this, collection, key);
+                throw new DuplicateKeyError(this, collection, getKeys(), key);
             }
         }
     }

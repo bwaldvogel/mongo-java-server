@@ -171,7 +171,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUnsupportedModifier() throws Exception {
         collection.insertOne(json(""));
         assertMongoWriteException(() -> collection.updateOne(json(""), json("$foo: {}")),
-            9, "FailedToParse", "Unknown modifier: $foo");
+            9, "FailedToParse", "Unknown modifier: $foo. Expected a valid update modifier or pipeline-style update specified as an array");
     }
 
     @Test
@@ -198,13 +198,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testCollectionStats_newCollection() throws Exception {
+        Document stats = getCollStats();
+        assertThat(stats.getDouble("ok")).isEqualTo(1.0);
+        assertThat(stats.getInteger("count")).isEqualTo(0);
+        assertThat(stats.getInteger("size")).isEqualTo(0);
+        assertThat(stats).doesNotContainKey("avgObjSize");
+
+        assertThat(db.listCollectionNames()).doesNotContain(getCollectionName());
+    }
+
+    @Test
     public void testCollectionStats() throws Exception {
-        db.createCollection("other-collection");
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(this::getCollStats)
-            .withMessageContaining("Command failed with error -1: 'Collection [testdb.testcoll] not found.'");
-
         collection.insertOne(json(""));
         collection.insertOne(json("abc: 'foo'"));
 
@@ -361,7 +366,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessageContaining("Command failed with error 27 (IndexNotFound): 'can't find index with key: { n: 1 }'");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 2, c: 10")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: c_1 dup key: { : 10 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: c_1 dup key: { c: 10 }");
 
         collection.dropIndex(new Document("c", 1));
 
@@ -657,11 +662,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.insertOne(new Document("_id", new UUID(0, 1))),
             11000, "DuplicateKey",
-            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : BinData(3, 00000000000000000100000000000000) }");
+            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(3, 00000000000000000100000000000000) }");
 
         assertMongoWriteException(() -> collection.insertOne(new Document("_id", new UUID(999999, 128))),
             11000, "DuplicateKey",
-            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : BinData(3, 3F420F00000000008000000000000000) }");
+            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(3, 3F420F00000000008000000000000000) }");
 
         collection.deleteOne(new Document("_id", new UUID(0, 2)));
 
@@ -1470,7 +1475,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result.getObjectId(Constants.ID_FIELD)).isNull();
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: null")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: null }");
 
         assertThat(collection.countDocuments()).isEqualTo(1);
         assertThat(collection.find(json("_id: null")).first()).isEqualTo(json("_id: null, name: 'test'"));
@@ -1578,7 +1583,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.countDocuments()).isEqualTo(1);
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 1.0")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1.0 }");
 
         assertThat(collection.countDocuments()).isEqualTo(1);
     }
@@ -2960,7 +2965,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document update = json("$set: { _id: 'someid', somekey: 'some value' }");
 
         assertMongoWriteException(() -> collection.updateOne(query, update, new UpdateOptions().upsert(true)),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : \"someid\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: \"someid\" }");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/93
@@ -2980,7 +2985,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
 
         assertMongoWriteException(() -> collection.replaceOne(json("value: 'z'"), json("_id: 2, value: 'z'"), new ReplaceOptions().upsert(true)),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 2 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 2 }");
     }
 
     @Test
@@ -3120,13 +3125,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("uniqueKeyField: 'abc3', afield: 'avalue'"));
 
         assertMongoWriteException(() -> collection.insertOne(json("uniqueKeyField: 'abc2', afield: 'avalue'")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: uniqueKeyField_1 dup key: { : \"abc2\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: uniqueKeyField_1 dup key: { uniqueKeyField: \"abc2\" }");
 
         collection.insertOne(json("uniqueKeyField: 1"));
         collection.insertOne(json("uniqueKeyField: 1.1"));
 
         assertMongoWriteException(() -> collection.insertOne(json("uniqueKeyField: 1.0")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: uniqueKeyField_1 dup key: { : 1.0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: uniqueKeyField_1 dup key: { uniqueKeyField: 1.0 }");
     }
 
     @Test
@@ -3145,7 +3150,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 4, action: {actionId: 3}"));
 
         assertMongoWriteException(() -> collection.insertOne(json("action: {actionId: 1.0}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: action.actionId_1 dup key: { : 1.0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: action.actionId_1 dup key: { action.actionId: 1.0 }");
 
         assertThat(collection.find(json("action: 'abc1'")))
             .containsExactly(json("_id: 1, action: 'abc1'"));
@@ -3174,19 +3179,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 9, a: {c: 1}"));
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: 0}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: 0 } }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: { b: 0 } }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: 0.00}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: 0.0 } }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: { b: 0.0 } }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: -0.0}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: -0.0 } }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: { b: -0.0 } }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1.0}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: { c: 1.0 } } }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: { b: { c: 1.0 } } }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1, d: 1.0}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : { b: { c: 1, d: 1.0 } } }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: { b: { c: 1, d: 1.0 } } }");
     }
 
     // see https://github.com/bwaldvogel/mongo-java-server/issues/39
@@ -3199,16 +3204,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 3"));
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 4")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { text: null }");
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), new Document("$set", json("text: 'def'"))),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : \"def\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { text: \"def\" }");
 
         collection.updateOne(json("_id: 1"), new Document("$set", json("text: 'xyz'")));
         collection.updateOne(json("_id: 2"), new Document("$set", json("text: 'abc'")));
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 2"), new Document("$set", json("text: null"))),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { text: null }");
 
         collection.deleteOne(json("text: 'xyz'"));
 
@@ -3231,13 +3236,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 5, text: null"));
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 6, text: null")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { text: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 7, text: 'abc'")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : \"abc\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { text: \"abc\" }");
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 2"), new Document("$set", json("text: null"))),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: text_1 dup key: { text: null }");
 
         collection.deleteOne(json("_id: 5"));
 
@@ -3262,10 +3267,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 6, a: null"));
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 7, a: null")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : null, : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: null, b: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 7, b: null")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : null, : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: null, b: null }");
 
         collection.deleteMany(json("a: null, b: null"));
 
@@ -3292,10 +3297,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 9"));
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 10, a: {x: 1.0}, b: {x: 2.0}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.x_1_b.x_1 dup key: { : 1.0, : 2.0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.x_1_b.x_1 dup key: { a.x: 1.0, b.x: 2.0 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 11, a: {x: null}, b: {x: null}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.x_1_b.x_1 dup key: { : null, : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.x_1_b.x_1 dup key: { a.x: null, b.x: null }");
 
         collection.deleteMany(json("a: {x: null}, b: {x: null}"));
         collection.deleteMany(json("a: 10"));
@@ -3323,7 +3328,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(json("_id: 2"), json("$set: {a: 'y'}"));
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$set: {a: 'y'}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : \"y\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: \"y\" }");
 
         collection.updateOne(json("_id: 2"), json("$unset: {a: 1}"));
         collection.updateOne(json("_id: 1"), json("$set: {a: 'y'}"));
@@ -3348,19 +3353,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("a: {b: {c: {d: null}}}"));
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: 1 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: null}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1, x: 100}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: 1 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: {d: 1}}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : { d: 1 } }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: { d: 1 } }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: {d: null}}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : { d: null } }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: { d: null } }");
     }
 
     @Test
@@ -3429,13 +3434,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 8, a: {x: 1, y: 2}, b: 'foo'"));
 
         assertMongoWriteException(() -> collection.insertOne(json("a: 'foo', b: 'foo'")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : \"foo\", : \"foo\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: \"foo\", b: \"foo\" }");
 
         assertMongoWriteException(() -> collection.insertOne(json("b: 'foo'")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : null, : \"foo\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: null, b: \"foo\" }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {x: 1, y: 1}, b: 'foo'")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : { x: 1, y: 1 }, : \"foo\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: { x: 1, y: 1 }, b: \"foo\" }");
 
         assertThat(collection.find(json("a: 'bar'")))
             .containsExactly(json("_id: 6, a: 'bar', b: 'foo'"));
@@ -3461,7 +3466,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 4, a: 'bar', b: {c: 2}"));
 
         assertMongoWriteException(() -> collection.insertOne(json("a: 'bar', b: {c: 1}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b.c_1 dup key: { : \"bar\", : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b.c_1 dup key: { a: \"bar\", b.c: 1 }");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/80
@@ -3489,7 +3494,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.createIndex(json("value: 1"), new IndexOptions().unique(true));
 
         assertMongoWriteException(() -> collection.insertOne(json("value: 'c'")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : \"c\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { value: \"c\" }");
 
         collection.insertOne(json("_id: 4, value: 'd'"));
     }
@@ -3504,7 +3509,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThatExceptionOfType(DuplicateKeyException.class)
             .isThrownBy(() -> collection.createIndex(json("value: 1"), new IndexOptions().unique(true)))
             .withMessage("Write failed with error code 11000 and error message " +
-                "'E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : \"b\" }'");
+                "'E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { value: \"b\" }'");
 
         assertThat(collection.listIndexes())
             .containsExactly(json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"));
@@ -4314,7 +4319,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
-            .withMessageContaining("E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
+            .withMessageContaining("E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1.0 }");
 
         Document lastError = db.runCommand(json("getlasterror: 1"));
         assertThat(lastError.get("code")).isEqualTo(11000);
@@ -4324,36 +4329,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testGetPrevError() throws Exception {
-        restart();
-
-        collection.insertOne(json("_id: 1"));
-
-        assertThat(db.runCommand(json("getpreverror: 1")))
-            .isEqualTo(json("n: 0, nPrev: -1, err: null, ok: 1.0"));
-
-        assertMongoWriteException(() -> collection.insertOne(json("_id: 1.0")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
-
-        Document lastError = db.runCommand(json("getpreverror: 1"));
-        assertThat(lastError.get("code")).isEqualTo(11000);
-        assertThat(lastError.getString("err")).contains("duplicate key");
-        assertThat(lastError.getDouble("ok")).isEqualTo(1.0);
-    }
-
-    @Test
     public void testResetError() throws Exception {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
-            .withMessageContaining("duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1.0 }");
+            .withMessageContaining("duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1.0 }");
 
         assertThat(db.runCommand(json("reseterror: 1")))
             .isEqualTo(json("ok: 1.0"));
-
-        assertThat(db.runCommand(json("getpreverror: 1")))
-            .isEqualTo(json("nPrev: -1, err: null, n: 0, ok: 1.0"));
 
         assertThat(db.runCommand(json("getlasterror: 1")))
             .containsAllEntriesOf(json("err: null, n: 0, ok: 1.0"));
@@ -4730,13 +4714,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1, value: -0.0"));
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 2, value: 0.0")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : 0.0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { value: 0.0 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 3, value: -0.0")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : -0.0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { value: -0.0 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 4, value: 0")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { : 0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { value: 0 }");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/45
@@ -4748,7 +4732,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: {'$numberDecimal': '200000000000000000000000000000000.5'}"));
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: {'$numberDecimal': '1'}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1 }");
 
         assertThat(collection.find(json("_id: {$eq: {'$numberDecimal': '3'}}")))
             .containsExactly(
@@ -5127,28 +5111,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 7, a: [[2, 1], [4, 3]]"));
 
         assertMongoWriteException(() -> collection.insertOne(json("a: [1]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: 1 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: [6, 1]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: 1 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: [2.0, 4.0]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : 2.0 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: 2.0 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: [[1, 4], [3, 4]]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : [ 3, 4 ] }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: [ 3, 4 ] }");
 
         collection.deleteOne(json("_id: 3"));
         collection.insertOne(json("_id: 8, a: [2, 3]"));
 
         assertMongoWriteException(() -> collection.replaceOne(json("_id: 1"), json("_id: 1, a: [3, 4]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : 3 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: 3 }");
 
         collection.replaceOne(json("_id: 4"), json("_id: 4, a: ['x', 'y']"));
         collection.insertOne(json("_id: 9, a: [4, 6]"));
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 9"), json("$push: {a: 2}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { : 2 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: 2 }");
 
         Document result = collection.findOneAndUpdate(json("_id: 8"), json("$pull: {a: 2}"),
             new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
@@ -5174,10 +5158,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 5, a: [1, 2, 3, 4, 5], b: 2"));
 
         assertMongoWriteException(() -> collection.insertOne(json("a: [1]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : 1, : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: 1, b: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: [6, 2], b: 1")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : 2, : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: 2, b: 1 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: ['abc'], b: [1, 2, 3]")),
             171, "CannotIndexParallelArrays", "cannot index parallel arrays [b] [a]");
@@ -5186,7 +5170,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 6, a: [2, 3], b: 1"));
 
         assertMongoWriteException(() -> collection.replaceOne(json("_id: 1"), json("_id: 1, a: [3, 4], b: 1")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { : 3, : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1_b_1 dup key: { a: 3, b: 1 }");
 
         collection.replaceOne(json("_id: 4"), json("_id: 4, a: ['x', 'y'], b: 1"));
         collection.insertOne(json("_id: 7, a: [4, 6], b: 1"));
@@ -5214,16 +5198,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 7, item: 'xyz', stock: [1, 2, 3]"));
 
         assertMongoWriteException(() -> collection.insertOne(json("item: 'abc'")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { item: \"abc\", stock.size: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{color: 'black'}]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { item: \"abc\", stock.size: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{size: 'S'}]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : \"S\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { item: \"abc\", stock.size: \"S\" }");
 
         assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{size: 'XL'}]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { : \"abc\", : \"XL\" }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1 dup key: { item: \"abc\", stock.size: \"XL\" }");
     }
 
     @Test
@@ -5237,22 +5221,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 5, a: [{b: [{c: 5}, {c: 6}]}, {b: [{c: 7}, {c: 8}]}]"));
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: 1}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: [{b: 1}, {b: 2}]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 1}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: 1 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: [1, 2]}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 1 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: 1 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 4}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 4 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: 4 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: {c: 8}}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { : 8 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: 8 }");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/82
@@ -5432,19 +5416,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessage("cannot index parallel arrays [quantity] [size]");
 
         assertMongoWriteException(() -> collection.insertOne(json("stock: {size: 'S', quantity: 10}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"S\", : 10 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { stock.size: \"S\", stock.quantity: 10 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("stock: [{size: 'XL', quantity: 7}, {size: 'M', quantity: 10}]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"M\", : 10 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { stock.size: \"M\", stock.quantity: 10 }");
 
         assertMongoWriteException(() -> collection.insertOne(json("stock: [{size: 'M'}]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"M\", : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { stock.size: \"M\", stock.quantity: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("stock: {size: 'XL'}")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : \"XL\", : null }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { stock.size: \"XL\", stock.quantity: null }");
 
         assertMongoWriteException(() -> collection.insertOne(json("stock: [{quantity: 20}]")),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { : null, : 20 }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { stock.size: null, stock.quantity: 20 }");
     }
 
     @Test
@@ -5536,14 +5520,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(document1);
 
         assertMongoWriteException(() -> collection.insertOne(document1),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : BinData(3, A2963378B9CB425580BCE16A3BF156B4) }");
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(3, A2963378B9CB425580BCE16A3BF156B4) }");
         try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
             MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName()).getCollection(AbstractTest.collection.getNamespace().getCollectionName());
 
             collectionStandardUuid.insertOne(document1);
 
             assertMongoWriteException(() -> collectionStandardUuid.insertOne(document1),
-                11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { : UUID(\"5542cbb9-7833-96a2-b456-f13b6ae1bc80\") }");
+                11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: UUID(\"5542cbb9-7833-96a2-b456-f13b6ae1bc80\") }");
 
             Document document2 = new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
             collectionStandardUuid.insertOne(document2);

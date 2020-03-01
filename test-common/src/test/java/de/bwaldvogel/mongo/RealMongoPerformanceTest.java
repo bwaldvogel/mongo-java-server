@@ -14,7 +14,7 @@ public class RealMongoPerformanceTest extends AbstractPerformanceTest {
 
     @BeforeClass
     public static void setUpMongoContainer() {
-        mongoContainer = RealMongoContainer.start("4.2.3");
+        mongoContainer = RealMongoContainer.start();
     }
 
     @Override

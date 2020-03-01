@@ -17,6 +17,7 @@ import org.junit.Test;
 
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ExpressionTest {
@@ -174,37 +175,37 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [['k', 'v']]")))
             .isEqualTo(json("k: 'v'"));
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: 'str'"), json("")))
-            .withMessage("[Error 40386] $arrayToObject requires an array input, found: string");
+            .withMessage("[Error 40386] Failed to optimize pipeline :: caused by :: $arrayToObject requires an array input, found: string");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [1, 2]")))
-            .withMessage("[Error 40398] Unrecognised input type format for $arrayToObject: int");
+            .withMessage("[Error 40398] Failed to optimize pipeline :: caused by :: Unrecognised input type format for $arrayToObject: int");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [[1, 2, 3]]")))
-            .withMessage("[Error 40397] $arrayToObject requires an array of size 2 arrays,found array of size: 3");
+            .withMessage("[Error 40397] Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of size 2 arrays,found array of size: 3");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [[1, 2]]")))
-            .withMessage("[Error 40395] $arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int");
+            .withMessage("[Error 40395] Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: 1")))
-            .withMessage("[Error 40386] $arrayToObject requires an array input, found: int");
+            .withMessage("[Error 40386] Failed to optimize pipeline :: caused by :: $arrayToObject requires an array input, found: int");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [{}]")))
-            .withMessage("[Error 40392] $arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0");
+            .withMessage("[Error 40392] Failed to optimize pipeline :: caused by :: $arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [{k: 1, v: 2}]")))
-            .withMessage("[Error 40394] $arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int");
+            .withMessage("[Error 40394] Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayToObject: '$kv'"), json("kv: [{k: 'key', z: 2}]")))
-            .withMessage("[Error 40393] $arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: 2}");
+            .withMessage("[Error 40393] Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: 2}");
     }
 
     @Test
@@ -1295,13 +1296,13 @@ public class ExpressionTest {
             .isThrownBy(() -> Expression.evaluate(json("$substrBytes: [123]"), json("")))
             .withMessage("[Error 16020] Expression $substrBytes takes exactly 3 arguments. 1 were passed in.");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$substrBytes: [123, 'abc', 'def']"), json("")))
-            .withMessage("[Error 16034] $substrBytes:  starting index must be a numeric type (is BSON type string)");
+            .withMessage("[Error 16034] Failed to optimize pipeline :: caused by :: $substrBytes:  starting index must be a numeric type (is BSON type string)");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$substrBytes: [123, 0, 'def']"), json("")))
-            .withMessage("[Error 16035] $substrBytes:  length must be a numeric type (is BSON type string)");
+            .withMessage("[Error 16035] Failed to optimize pipeline :: caused by :: $substrBytes:  length must be a numeric type (is BSON type string)");
     }
 
     @Test
@@ -1320,13 +1321,13 @@ public class ExpressionTest {
             .isThrownBy(() -> Expression.evaluate(json("$substrCP: [123]"), json("")))
             .withMessage("[Error 16020] Expression $substrCP takes exactly 3 arguments. 1 were passed in.");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$substrCP: [123, 'abc', 'def']"), json("")))
-            .withMessage("[Error 34450] $substrCP: starting index must be a numeric type (is BSON type string)");
+            .withMessage("[Error 34450] Failed to optimize pipeline :: caused by :: $substrCP: starting index must be a numeric type (is BSON type string)");
 
-        assertThatExceptionOfType(MongoServerError.class)
+        assertThatExceptionOfType(FailedToOptimizePipelineError.class)
             .isThrownBy(() -> Expression.evaluate(json("$substrCP: [123, 0, 'def']"), json("")))
-            .withMessage("[Error 34452] $substrCP: length must be a numeric type (is BSON type string)");
+            .withMessage("[Error 34452] Failed to optimize pipeline :: caused by :: $substrCP: length must be a numeric type (is BSON type string)");
     }
 
     @Test

@@ -105,8 +105,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
-        } else if (command.equalsIgnoreCase("getpreverror")) {
-            return commandGetPrevError(channel);
         } else if (command.equalsIgnoreCase("reseterror")) {
             return commandResetError(channel);
         }
@@ -141,8 +139,16 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("dbstats")) {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
-            MongoCollection<P> collection = resolveCollection(command, query, true);
-            return collection.getStats();
+            MongoCollection<P> collection = resolveCollection(command, query, false);
+            if (collection == null) {
+                Document emptyStats = new Document()
+                    .append("count", 0)
+                    .append("size", 0);
+                Utils.markOkay(emptyStats);
+                return emptyStats;
+            } else {
+                return collection.getStats();
+            }
         } else if (command.equalsIgnoreCase("validate")) {
             MongoCollection<P> collection = resolveCollection(command, query, false);
             if (collection == null) {
@@ -526,40 +532,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 result.remove("writeErrors");
             }
         }
-        Utils.markOkay(result);
-        return result;
-    }
-
-    private Document commandGetPrevError(Channel channel) {
-        List<Document> results = lastResults.get(channel);
-
-        if (results != null) {
-            for (int i = 1; i < results.size(); i++) {
-                Document result = results.get(results.size() - i);
-                if (result == null) {
-                    continue;
-                }
-
-                boolean isRelevant = false;
-                if (result.get("err") != null) {
-                    isRelevant = true;
-                } else if (((Number) result.get("n")).intValue() > 0) {
-                    isRelevant = true;
-                }
-
-                if (isRelevant) {
-                    result.put("nPrev", Integer.valueOf(i));
-                    Utils.markOkay(result);
-                    return result;
-                }
-            }
-        }
-
-        // found no prev error
-        Document result = new Document();
-        result.put("nPrev", -1);
-        result.put("n", 0);
-        result.put("err", null);
         Utils.markOkay(result);
         return result;
     }
