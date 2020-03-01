@@ -140,6 +140,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     @Override
+    public void testDecimal128_Inc() throws Exception {
+        assumeStrictTests();
+        super.testDecimal128_Inc();
+    }
+
+    @Override
     public void testArrayNe() throws Exception {
         assumeStrictTests();
         super.testArrayNe();

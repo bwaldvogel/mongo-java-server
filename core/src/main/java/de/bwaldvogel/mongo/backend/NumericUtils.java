@@ -1,6 +1,15 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.math.BigDecimal;
+
+import de.bwaldvogel.mongo.bson.Decimal128;
+
 public class NumericUtils {
+
+    @FunctionalInterface
+    public interface BigDecimalCalculation {
+        BigDecimal apply(BigDecimal a, BigDecimal b);
+    }
 
     @FunctionalInterface
     public interface DoubleCalculation {
@@ -13,8 +22,13 @@ public class NumericUtils {
     }
 
     private static Number calculate(Number a, Number b,
-                                    LongCalculation longCalculation, DoubleCalculation doubleCalculation) {
-        if (a instanceof Double || b instanceof Double) {
+                                    LongCalculation longCalculation,
+                                    DoubleCalculation doubleCalculation,
+                                    BigDecimalCalculation bigDecimalCalculation) {
+        if (a instanceof Decimal128 || b instanceof Decimal128) {
+            BigDecimal result = bigDecimalCalculation.apply(toBigDecimal(a), toBigDecimal(b));
+            return new Decimal128(result);
+        } else if (a instanceof Double || b instanceof Double) {
             return Double.valueOf(doubleCalculation.apply(a.doubleValue(), b.doubleValue()));
         } else if (a instanceof Float || b instanceof Float) {
             double result = doubleCalculation.apply(a.doubleValue(), b.doubleValue());
@@ -42,16 +56,20 @@ public class NumericUtils {
         }
     }
 
+    private static BigDecimal toBigDecimal(Number value) {
+        return Decimal128.fromNumber(value).toBigDecimal();
+    }
+
     public static Number addNumbers(Number one, Number other) {
-        return calculate(one, other, Long::sum, Double::sum);
+        return calculate(one, other, Long::sum, Double::sum, BigDecimal::add);
     }
 
     public static Number subtractNumbers(Number one, Number other) {
-        return calculate(one, other, (a, b) -> a - b, (a, b) -> a - b);
+        return calculate(one, other, (a, b) -> a - b, (a, b) -> a - b, BigDecimal::subtract);
     }
 
     public static Number multiplyNumbers(Number one, Number other) {
-        return calculate(one, other, (a, b) -> a * b, (a, b) -> a * b);
+        return calculate(one, other, (a, b) -> a * b, (a, b) -> a * b, BigDecimal::multiply);
     }
 
 }

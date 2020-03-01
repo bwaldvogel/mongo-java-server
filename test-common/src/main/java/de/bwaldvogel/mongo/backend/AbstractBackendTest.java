@@ -4736,6 +4736,35 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/112
+    @Test
+    public void testDecimal128_Inc() throws Exception {
+        collection.insertOne(json("_id: 1, value: {'$numberDecimal': '1'}"));
+        collection.insertOne(json("_id: 2, value: {'$numberDecimal': '2'}"));
+        collection.insertOne(json("_id: 3, value: {'$numberDecimal': '3.0'}"));
+        collection.insertOne(json("_id: 4, value: {'$numberDecimal': '200000000000000000000000000000000.5'}"));
+
+        collection.updateMany(json(""), json("$inc: {value: 1}"));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactly(
+                json("_id: 1, value: {'$numberDecimal': '2'}"),
+                json("_id: 2, value: {'$numberDecimal': '3'}"),
+                json("_id: 3, value: {'$numberDecimal': '4.0'}"),
+                json("_id: 4, value: {'$numberDecimal': '200000000000000000000000000000001.5'}")
+            );
+
+        collection.updateMany(json(""), json("$inc: {value: {'$numberDecimal': '2.5'}}"));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactly(
+                json("_id: 1, value: {'$numberDecimal': '4.5'}"),
+                json("_id: 2, value: {'$numberDecimal': '5.5'}"),
+                json("_id: 3, value: {'$numberDecimal': '6.5'}"),
+                json("_id: 4, value: {'$numberDecimal': '200000000000000000000000000000004.0'}")
+            );
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/45
     @Test
     public void testArrayNe() throws Exception {

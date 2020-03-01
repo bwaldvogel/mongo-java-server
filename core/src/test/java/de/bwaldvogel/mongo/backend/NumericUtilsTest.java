@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 import org.assertj.core.data.Offset;
 import org.junit.Test;
 
+import de.bwaldvogel.mongo.bson.Decimal128;
+
 public class NumericUtilsTest {
 
     @Test
@@ -21,6 +23,7 @@ public class NumericUtilsTest {
         assertThat(NumericUtils.addNumbers(4L, 7.3)).isEqualTo(11.3);
         assertThat(NumericUtils.addNumbers(100000000000000L, 100000000000000L)).isEqualTo(200000000000000L);
         assertThat(NumericUtils.addNumbers(2000000000, 2000000000)).isEqualTo(4000000000L);
+        assertThat(NumericUtils.addNumbers(Decimal128.fromNumber(1L), Decimal128.fromNumber(2.5))).isEqualTo(Decimal128.fromNumber(3.5));
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
             .isThrownBy(() -> NumericUtils.addNumbers(new BigDecimal(1), new BigDecimal(1)))
@@ -38,6 +41,7 @@ public class NumericUtilsTest {
         assertThat(NumericUtils.subtractNumbers(4L, 7.3)).isEqualTo(-3.3);
         assertThat(NumericUtils.subtractNumbers(100000000000000L, 1L)).isEqualTo(99999999999999L);
         assertThat(NumericUtils.subtractNumbers(-2000000000, 2000000000)).isEqualTo(-4000000000L);
+        assertThat(NumericUtils.subtractNumbers(Decimal128.fromNumber(1005L), Decimal128.fromNumber(2.5))).isEqualTo(Decimal128.fromNumber(1002.5));
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
             .isThrownBy(() -> NumericUtils.subtractNumbers(new BigDecimal(1), new BigDecimal(1)))
@@ -54,6 +58,7 @@ public class NumericUtilsTest {
         assertThat(NumericUtils.multiplyNumbers((short) 400, (short) 700)).isEqualTo(280000L);
         assertThat(NumericUtils.multiplyNumbers(100000000000000L, 10)).isEqualTo(1000000000000000L);
         assertThat(NumericUtils.multiplyNumbers(50000, 100000)).isEqualTo(5000000000L);
+        assertThat(NumericUtils.multiplyNumbers(Decimal128.fromNumber(1000), Decimal128.fromNumber(2000.5))).isEqualTo(Decimal128.fromNumber(2000500.0));
 
         assertThatExceptionOfType(UnsupportedOperationException.class)
             .isThrownBy(() -> NumericUtils.multiplyNumbers(new BigDecimal(1), new BigDecimal(1)))
