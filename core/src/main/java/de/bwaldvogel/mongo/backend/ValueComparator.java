@@ -15,10 +15,11 @@ public class ValueComparator implements Comparator<Object> {
 
     private static final ValueComparator ASCENDING = new ValueComparator(true);
     private static final ValueComparator DESCENDING = new ValueComparator(false);
-    private static final ValueComparator ASCENDING_NO_LIST_HANDLING = new ValueComparator(true, false);
+    private static final ValueComparator ASCENDING_NO_LIST_HANDLING = new ValueComparator(true, false, false);
 
     private final boolean ascending;
     private final boolean handleLists;
+    private final boolean useDefaultComparatorForUuids;
 
     public static ValueComparator asc() {
         return ASCENDING;
@@ -52,12 +53,17 @@ public class ValueComparator implements Comparator<Object> {
     }
 
     private ValueComparator(boolean ascending) {
-        this(ascending, true);
+        this(ascending, true, false);
     }
 
-    private ValueComparator(boolean ascending, boolean handleLists) {
+    private ValueComparator(boolean ascending, boolean handleLists, boolean useDefaultComparatorForUuids) {
         this.ascending = ascending;
         this.handleLists = handleLists;
+        this.useDefaultComparatorForUuids = useDefaultComparatorForUuids;
+    }
+
+    public ValueComparator withDefaultComparatorForUuids() {
+        return new ValueComparator(ascending, handleLists, true);
     }
 
     @Override
@@ -182,11 +188,15 @@ public class ValueComparator implements Comparator<Object> {
         if (UUID.class.isAssignableFrom(clazz)) {
             UUID uuid1 = (UUID) value1;
             UUID uuid2 = (UUID) value2;
-            int cmp1 = Long.compare(uuid1.getLeastSignificantBits(), uuid2.getLeastSignificantBits());
-            if (cmp1 != 0) {
-                return cmp1;
+            if (useDefaultComparatorForUuids) {
+                return uuid1.compareTo(uuid2);
+            } else {
+                int cmp1 = Long.compare(uuid1.getLeastSignificantBits(), uuid2.getLeastSignificantBits());
+                if (cmp1 != 0) {
+                    return cmp1;
+                }
+                return Long.compare(uuid1.getMostSignificantBits(), uuid2.getMostSignificantBits());
             }
-            return Long.compare(uuid1.getMostSignificantBits(), uuid2.getMostSignificantBits());
         }
 
         if (LegacyUUID.class.isAssignableFrom(clazz)) {

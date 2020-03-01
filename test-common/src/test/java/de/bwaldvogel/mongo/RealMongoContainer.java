@@ -8,7 +8,7 @@ public final class RealMongoContainer {
     }
 
     public static GenericContainer<?> start() {
-        return start("4.0.13");
+        return start("4.0.14");
     }
 
     public static GenericContainer<?> start(String version) {

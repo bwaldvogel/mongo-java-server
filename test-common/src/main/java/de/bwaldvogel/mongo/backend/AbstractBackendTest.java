@@ -529,10 +529,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 8, n: 0"));
 
         assertThat(collection.distinct("n", Integer.class))
-            .containsExactly(null, 3, 1, 2, 0);
+            .containsExactly(null, 0, 1, 2, 3);
 
         assertThat(collection.distinct("n", json("n: {$gt: 1}"), Integer.class))
-            .containsExactly(3, 2);
+            .containsExactly(2, 3);
 
         assertThat(collection.distinct("foobar", String.class)).isEmpty();
 
@@ -554,8 +554,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(
                 null,
                 new UUID(0, 1),
-                new UUID(1, 0),
                 new UUID(0, 2),
+                new UUID(1, 0),
                 new UUID(1, 1)
             );
     }
@@ -575,8 +575,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 .containsExactly(
                     null,
                     new UUID(0, 1),
-                    new UUID(1, 0),
                     new UUID(0, 2),
+                    new UUID(1, 0),
                     new UUID(1, 1)
                 );
         }
@@ -728,7 +728,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("a: null"));
 
         assertThat(collection.distinct("a.b", Integer.class))
-            .containsExactly(1, 2, 3, null);
+            .containsExactly(null, 1, 2, 3);
 
         assertThat(collection.distinct("a.c", Integer.class)).isEmpty();
     }

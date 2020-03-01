@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
-import static de.bwaldvogel.mongo.backend.Constants.*;
+import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -455,7 +456,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     public synchronized Document handleDistinct(Document query) {
         String key = (String) query.get("key");
         Document filter = (Document) query.getOrDefault("query", new Document());
-        Set<Object> values = new LinkedTreeSet<>();
+        Set<Object> values = new TreeSet<>(ValueComparator.ascWithoutListHandling().withDefaultComparatorForUuids());
 
         for (Document document : queryDocuments(filter, null, 0, 0)) {
             Object value = Utils.getSubdocumentValueCollectionAware(document, key);
