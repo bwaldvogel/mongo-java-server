@@ -14,25 +14,22 @@ public class UnsetStage implements AggregationStage {
     private List<String> unsetPaths = new ArrayList<>();
 
     public UnsetStage(Object input) {
-        if (!(input instanceof String) && !(input instanceof Collection<?>)) {
-            // FIXME
-            throw new MongoServerError(0, "");
-        }
-
         if (input instanceof String) {
             unsetPaths.add((String) input);
-        }
-
-        if (input instanceof Collection<?>) {
+        } else if (input instanceof Collection<?>) {
             for (Object fieldPath : (Collection<?>) input) {
-                if (fieldPath instanceof String) {
-                    unsetPaths.add((String) fieldPath);
-                } else {
-                    // FIXME
-                    throw new MongoServerError(0, "");
+                if (!(fieldPath instanceof String)) {
+                    throw mustBeStringOrStringArrayError();
                 }
+                unsetPaths.add((String) fieldPath);
             }
+        } else {
+            throw mustBeStringOrStringArrayError();
         }
+    }
+
+    private static MongoServerError mustBeStringOrStringArrayError() {
+        return new MongoServerError(31120, "$unset specification must be a string or an array containing only string values");
     }
 
     @Override

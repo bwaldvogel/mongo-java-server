@@ -1734,6 +1734,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    public void testAggregateWithUnsetStage_illegalInput() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$unset: [123]")).first())
+            .withMessageStartingWith("Command failed with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$unset: ['field1', 123]")).first())
+            .withMessageStartingWith("Command failed with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
+    }
+
     private static Function<Document, Document> withSortedStringList(String key) {
         return document -> {
             @SuppressWarnings("unchecked")
