@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -66,28 +65,23 @@ public class UnsetStageTest {
             );
     }
 
-    private List<Document> unset(Object input, Document... documents) {
-        return new UnsetStage(input).apply(Stream.of(documents)).collect(Collectors.toList());
-    }
-
-    @Ignore
     @Test
     public void testIllegalUnset() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new UnsetStage(""))
-            .withMessage("FIXME empty input");
+            .withMessage("[Error 40352] Invalid $project :: caused by :: FieldPath cannot be constructed with empty string");
 
         assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> new UnsetStage("{}"))
-            .withMessage("FIXME unsupported input type");
+            .isThrownBy(() -> new UnsetStage(Arrays.asList(123, 456)))
+            .withMessage("[Error 31120] $unset specification must be a string or an array containing only string values");
 
         assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> new UnsetStage("[\"\"]"))
-            .withMessage("FIXME empty input inside list");
+            .isThrownBy(() -> new UnsetStage(123))
+            .withMessage("[Error 31120] $unset specification must be a string or an array containing only string values");
+    }
 
-        assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> new UnsetStage("[{}]"))
-            .withMessage("FIXME unsupported input type inside list");
+    private List<Document> unset(Object input, Document... documents) {
+        return new UnsetStage(input).apply(Stream.of(documents)).collect(Collectors.toList());
     }
 
 }

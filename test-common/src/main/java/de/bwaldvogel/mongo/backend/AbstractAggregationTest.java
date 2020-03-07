@@ -1743,6 +1743,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageStartingWith("Command failed with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
 
         assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$unset: ['']")).first())
+            .withMessageStartingWith("Command failed with error 40352 (Location40352): 'Invalid $project :: caused by :: FieldPath cannot be constructed with empty string'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$unset: ['field1', 123]")).first())
             .withMessageStartingWith("Command failed with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
     }

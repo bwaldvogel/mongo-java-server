@@ -11,25 +11,27 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class UnsetStage implements AggregationStage {
 
-    private List<String> unsetPaths = new ArrayList<>();
+    private final List<String> unsetPaths = new ArrayList<>();
 
     public UnsetStage(Object input) {
-        if (input instanceof String) {
-            unsetPaths.add((String) input);
-        } else if (input instanceof Collection<?>) {
+        if (input instanceof Collection<?>) {
             for (Object fieldPath : (Collection<?>) input) {
-                if (!(fieldPath instanceof String)) {
-                    throw mustBeStringOrStringArrayError();
-                }
-                unsetPaths.add((String) fieldPath);
+                addFieldPath(fieldPath);
             }
         } else {
-            throw mustBeStringOrStringArrayError();
+            addFieldPath(input);
         }
     }
 
-    private static MongoServerError mustBeStringOrStringArrayError() {
-        return new MongoServerError(31120, "$unset specification must be a string or an array containing only string values");
+    private void addFieldPath(Object fieldPath) {
+        if (!(fieldPath instanceof String)) {
+            throw new MongoServerError(31120, "$unset specification must be a string or an array containing only string values");
+        }
+        String fieldPathString = (String) fieldPath;
+        if (fieldPathString.isEmpty()) {
+            throw new MongoServerError(40352, "Invalid $project :: caused by :: FieldPath cannot be constructed with empty string");
+        }
+        unsetPaths.add(fieldPathString);
     }
 
     @Override
@@ -37,7 +39,7 @@ public class UnsetStage implements AggregationStage {
         return stream.map(this::unsetDocumentFields);
     }
 
-    Document unsetDocumentFields(Document document) {
+    private Document unsetDocumentFields(Document document) {
         Document result = document.cloneDeeply();
         for (String unsetPath : unsetPaths) {
             Utils.removeSubdocumentValue(result, unsetPath);
