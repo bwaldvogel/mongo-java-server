@@ -374,10 +374,7 @@ public enum Expression implements ExpressionTraits {
             Object dateExpression = dateToStringDocument.get("date");
             Object dateValue = Expression.evaluate(dateExpression, document);
             if (Missing.isNullOrMissing(dateValue)) {
-                if (onNullValue != null) {
-                    return onNullValue;
-                }
-                return null;
+                return onNullValue;
             }
             if (!(dateValue instanceof Instant)) {
                 throw new MongoServerError(16006, "can't convert from " + describeType(dateValue) + " to Date");
