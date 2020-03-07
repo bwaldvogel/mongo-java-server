@@ -15,9 +15,6 @@ import org.junit.Test;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-/**
- * @author Mark Bigler
- */
 public class UnsetStageTest {
 
 	@Test

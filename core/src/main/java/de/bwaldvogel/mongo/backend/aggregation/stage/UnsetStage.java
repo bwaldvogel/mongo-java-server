@@ -9,9 +9,6 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-/**
- * @author Mark Bigler
- */
 public class UnsetStage implements AggregationStage {
 
 	private List<String> unsetPaths = new ArrayList<>();
