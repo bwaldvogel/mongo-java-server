@@ -25,6 +25,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.UnsetStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -124,6 +125,10 @@ public class Aggregation {
                 case "$facet":
                     Document facet = (Document) stage.get(stageOperation);
                     aggregation.addStage(new FacetStage(facet, database, collection));
+                    break;
+                case "$unset":
+                    Object unset = stage.get(stageOperation);
+                    aggregation.addStage(new UnsetStage(unset));
                     break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
