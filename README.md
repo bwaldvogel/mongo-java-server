@@ -201,7 +201,7 @@ public class Application {
 
 If you want to build a version that is not on Maven Central you can do the following:
 
-1. Build a "fat" JAR that includes all dependencies using "`gradlew clean shadowJar`"
+1. Build a "fat" JAR that includes all dependencies using "`./gradlew shadowJar`"
 2. Copy `build/libs/mongo-java-server-[version]-all.jar` to your project, e.g. to the `libs` directory.
 3. Import that folder (e.g. via Gradle using `testCompile fileTree(dir: 'libs', include: '*.jar')`)
 
