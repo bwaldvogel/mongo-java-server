@@ -2254,6 +2254,50 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testUpdatePushSort() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: [1, 5, 6, 3], $sort: -1}}"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, value: [6, 5, 3, 1]"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: [{value: 1}, {value: 3}, {value: 2}], $sort: {value: 1}}}"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, value: [6, 5, 3, 1, {value: 1}, {value: 2}, {value: 3}]"));
+    }
+
+    @Test
+    public void testUpdatePushSortAndSlice() throws Exception {
+        collection.insertOne(json("_id: 1, quizzes: [{wk: 2, score: 9}, {wk: 1, score: 10}]"));
+
+        collection.updateOne(json(""), json("$push: {quizzes: {" +
+            "$each: [{wk: 5, score: 8}, {wk: 6, score: 7}, {wk: 7, score: 6}]," +
+            "$sort: { score: -1 }," +
+            "$slice: 3}}"));
+
+        assertThat(collection.find())
+            .containsExactly(
+                json("_id: 1, quizzes: [" +
+                    "{wk: 1, score: 10}," +
+                    "{wk: 2, score: 9}," +
+                    "{wk: 5, score: 8}" +
+                    "]")
+            );
+    }
+
+    @Test
+    public void testUpdatePushPosition() throws Exception {
+        collection.insertOne(json("_id: 1, value: [1, 2]"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: [3, 4], $position: 10}}"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, value: [1, 2, 3, 4]"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: ['x'], $position: 2}}"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, value: [1, 2, 'x', 3, 4]"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: ['y'], $position: -2}}"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, value: [1, 2, 'x', 'y', 3, 4]"));
+    }
+
+    @Test
     public void testUpdatePushEach_unknownModifier() throws Exception {
         collection.insertOne(json("_id: 1"));
 
@@ -2273,6 +2317,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $slice: 'abc'}}")),
             2, "BadValue", "The value for $slice must be an integer value but was given type: string");
+
+        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $sort: 'abc'}}")),
+            2, "BadValue", "The $sort is invalid: use 1/-1 to sort the whole element, or {field:1/-1} to sort embedded fields");
+
+        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $position: 'abc'}}")),
+            2, "BadValue", "The value for $position must be an integer value, not of type: string");
     }
 
     @Test
