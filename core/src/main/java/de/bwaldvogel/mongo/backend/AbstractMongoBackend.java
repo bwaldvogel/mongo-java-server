@@ -160,12 +160,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return null;
         }
 
-        MongoCollection<?> collection = database.resolveCollection(collectionName, false);
-        if (collection == null) {
-            return null;
-        }
-
-        return collection;
+        return database.resolveCollection(collectionName, false);
     }
 
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
