@@ -245,18 +245,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             throw new FailedToParseException("Unknown modifier: " + modifier + ". Expected a valid update modifier or pipeline-style update specified as an array");
         }
 
-        if (op != UpdateOperator.UNSET) {
-            for (String key : change.keySet()) {
-                if (key.startsWith("$") && !key.startsWith("$[")) {
-                    throw new MongoServerError(15896, "Modified field name may not start with $");
-                }
-            }
-        }
         return op;
     }
 
     private void applyUpdate(Document oldDocument, Document newDocument) {
-
         if (newDocument.equals(oldDocument)) {
             return;
         }
@@ -329,6 +321,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             throw new MongoServerException("illegal update: " + update);
         }
 
+        Utils.validateFieldNames(newDocument);
         return newDocument;
     }
 

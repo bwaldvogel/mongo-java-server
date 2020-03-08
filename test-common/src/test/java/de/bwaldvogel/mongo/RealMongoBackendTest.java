@@ -107,12 +107,6 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    public void testUpdatePushAll() throws Exception {
-        assumeStrictMode();
-        super.testUpdatePushAll();
-    }
-
-    @Override
     public void testUpdateInSystemNamespace() throws Exception {
         assumeStrictMode();
         super.testUpdateInSystemNamespace();
@@ -122,12 +116,6 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     public void testGetLogStartupWarnings() throws Exception {
         assumeStrictMode();
         super.testGetLogStartupWarnings();
-    }
-
-    @Override
-    public void testUpdateIllegalFieldName() throws Exception {
-        assumeStrictMode();
-        super.testUpdateIllegalFieldName();
     }
 
     @Override

@@ -79,9 +79,8 @@ class FieldUpdates {
                 break;
 
             case PUSH:
-            case PUSH_ALL:
             case ADD_TO_SET:
-                handlePushAllAddToSet(key, value);
+                handlePushAndAddToSet(key, value);
                 break;
 
             case PULL:
@@ -116,7 +115,7 @@ class FieldUpdates {
         }
     }
 
-    private void handlePushAllAddToSet(String key, Object changeValue) {
+    private void handlePushAndAddToSet(String key, Object changeValue) {
         // http://docs.mongodb.org/manual/reference/operator/push/
         Object value = getSubdocumentValue(document, key);
         final List<Object> newValue;
@@ -128,7 +127,7 @@ class FieldUpdates {
             if (updateOperator == UpdateOperator.ADD_TO_SET) {
                 throw new MongoServerError(10141,
                     "Cannot apply $addToSet to non-array field. Field named '" + key + "' has non-array type " + describeType(value));
-            } else if (updateOperator == UpdateOperator.PUSH_ALL || updateOperator == UpdateOperator.PUSH) {
+            } else if (updateOperator == UpdateOperator.PUSH) {
                 throw new BadValueException("The field '" + key + "' must be an array but is of type " + describeType(value)
                     + " in document {" + ID_FIELD + ": " + document.get(ID_FIELD) + "}");
             } else {
@@ -136,40 +135,31 @@ class FieldUpdates {
             }
         }
 
-        if (updateOperator == UpdateOperator.PUSH_ALL) {
-            if (!(changeValue instanceof Collection<?>)) {
-                throw new MongoServerError(10153, "Modifier " + updateOperator + " allowed for arrays only");
-            }
+        Collection<Object> pushValues = new ArrayList<>();
+        if (changeValue instanceof Document && ((Document) changeValue).containsKey("$each")) {
+            Document pushDocument = (Document) changeValue;
             @SuppressWarnings("unchecked")
-            Collection<Object> valueList = (Collection<Object>) changeValue;
-            newValue.addAll(valueList);
-        } else {
-            Collection<Object> pushValues = new ArrayList<>();
-            if (changeValue instanceof Document && ((Document) changeValue).containsKey("$each")) {
-                Document pushDocument = (Document) changeValue;
-                @SuppressWarnings("unchecked")
-                Collection<Object> values = (Collection<Object>) pushDocument.get("$each");
-                for (String pushClause : pushDocument.keySet()) {
-                    if (!pushClause.equals("$each")) {
-                        throw new BadValueException("Unrecognized clause in $push: " + pushClause);
-                    }
+            Collection<Object> values = (Collection<Object>) pushDocument.get("$each");
+            for (String pushClause : pushDocument.keySet()) {
+                if (!pushClause.equals("$each")) {
+                    throw new BadValueException("Unrecognized clause in $push: " + pushClause);
                 }
-                pushValues.addAll(values);
-            } else {
-                pushValues.add(changeValue);
             }
+            pushValues.addAll(values);
+        } else {
+            pushValues.add(changeValue);
+        }
 
-            for (Object val : pushValues) {
-                if (updateOperator == UpdateOperator.PUSH) {
+        for (Object val : pushValues) {
+            if (updateOperator == UpdateOperator.PUSH) {
+                newValue.add(val);
+            } else if (updateOperator == UpdateOperator.ADD_TO_SET) {
+                if (!newValue.contains(val)) {
                     newValue.add(val);
-                } else if (updateOperator == UpdateOperator.ADD_TO_SET) {
-                    if (!newValue.contains(val)) {
-                        newValue.add(val);
-                    }
-                } else {
-                    throw new MongoServerException(
-                        "internal server error. illegal modifier here: " + updateOperator);
                 }
+            } else {
+                throw new MongoServerException(
+                    "internal server error. illegal modifier here: " + updateOperator);
             }
         }
         changeSubdocumentValue(document, key, newValue);

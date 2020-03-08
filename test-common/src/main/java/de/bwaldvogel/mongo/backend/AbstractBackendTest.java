@@ -2147,7 +2147,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testUpdateIllegalFieldName() throws Exception {
-
         // Disallow $ in field names - SERVER-3730
 
         collection.insertOne(json("x: 1"));
@@ -2155,16 +2154,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(json("x: 1"), json("$set: {y: 1}")); // ok
 
         assertMongoWriteException(() -> collection.updateOne(json("x: 1"), json("$set: {$z: 1}")),
-            15896, "Modified field name may not start with $");
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not valid for storage.");
 
         // unset ok to remove bad fields
         collection.updateOne(json("x: 1"), json("$unset: {$z: 1}"));
 
         assertMongoWriteException(() -> collection.updateOne(json("x: 1"), json("$inc: {$z: 1}")),
-            15896, "Modified field name may not start with $");
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not valid for storage.");
 
-        assertMongoWriteException(() -> collection.updateOne(json("x: 1"), json("$pushAll: {$z: [1, 2, 3]}")),
-            15896, "Modified field name may not start with $");
+        assertMongoWriteException(() -> collection.updateOne(json("x: 1"), json("$push: {$z: [1, 2, 3]}")),
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not valid for storage.");
     }
 
     @Test
@@ -2259,13 +2258,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testUpdatePushAll() throws Exception {
-        Document idObj = json("_id: 1");
-        collection.insertOne(idObj);
-        assertMongoWriteException(() -> collection.updateOne(idObj, json("$pushAll: {field: 'value'}")),
-            10153, "Modifier $pushAll allowed for arrays only");
+        collection.insertOne(json("_id: 1"));
 
-        collection.updateOne(idObj, json("$pushAll: {field: ['value', 'value2']}"));
-        assertThat(collection.find(idObj).first()).isEqualTo(json("_id: 1, field: ['value', 'value2']"));
+        assertMongoWriteException(() -> collection.updateOne(json(""), json("$pushAll: {field: 'value'}")),
+            9, "FailedToParse", "Unknown modifier: $pushAll. Expected a valid update modifier or pipeline-style update specified as an array");
     }
 
     @Test

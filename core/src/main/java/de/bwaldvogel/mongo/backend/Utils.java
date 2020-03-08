@@ -375,7 +375,6 @@ public class Utils {
     }
 
     private static void changeSubdocumentValue(Object document, String key, Object newValue, String previousKey, AtomicReference<Integer> matchPos) {
-        validateFieldNames(newValue, key);
         List<String> pathFragments = splitPath(key);
         String mainKey = pathFragments.get(0);
         if (pathFragments.size() == 1) {
@@ -397,15 +396,20 @@ public class Utils {
         }
     }
 
+    public static void validateFieldNames(Document document) {
+        validateFieldNames(document, null);
+    }
+
     private static void validateFieldNames(Object value, String path) {
         if (value instanceof Document) {
             Document document = (Document) value;
             for (Entry<String, Object> entry : document.entrySet()) {
                 String key = entry.getKey();
-                if (key.startsWith("$")) {
-                    throw new DollarPrefixedFieldNameException("The dollar ($) prefixed field '" + key + "' in '" + path + "." + key + "' is not valid for storage.");
+                String nextPath = path != null ? path + "." + key : key;
+                if (key.startsWith("$") && !Constants.REFERENCE_KEYS.contains(key)) {
+                    throw new DollarPrefixedFieldNameException("The dollar ($) prefixed field '" + key + "' in '" + nextPath + "' is not valid for storage.");
                 }
-                validateFieldNames(entry.getValue(), path + "." + key);
+                validateFieldNames(entry.getValue(), nextPath);
             }
         } else if (value instanceof Collection<?>) {
             Collection<?> values = (Collection<?>) value;
