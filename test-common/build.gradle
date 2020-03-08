@@ -1,7 +1,7 @@
 dependencies {
     api project(':mongo-java-server-core')
     api group: 'org.mongodb', name: 'mongo-java-driver', version: 'latest.release'
-    api group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: 'latest.release'
+    api group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: '1.13.0'
 
     api "org.springframework:spring-core:latest.release"
     api "org.springframework:spring-beans:latest.release"
