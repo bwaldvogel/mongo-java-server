@@ -80,7 +80,7 @@ ext {
 
 jar {
     manifest {
-        attributes 'Implementation-Title': title, 'Implementation-Version': version
+        attributes 'Implementation-Title': title, 'Implementation-Version': archiveVersion
     }
 }
 
@@ -166,7 +166,7 @@ allprojects {
 }
 
 wrapper {
-    gradleVersion = "6.1.1"
+    gradleVersion = "6.2.2"
     distributionType = Wrapper.DistributionType.ALL
 }
 
