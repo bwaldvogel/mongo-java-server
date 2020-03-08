@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -562,6 +564,14 @@ public class Utils {
     static String getLastFragment(String path) {
         List<String> fragments = splitPath(path);
         return fragments.get(fragments.size() - 1);
+    }
+
+    public static String getHostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            return e.toString();
+        }
     }
 
 }

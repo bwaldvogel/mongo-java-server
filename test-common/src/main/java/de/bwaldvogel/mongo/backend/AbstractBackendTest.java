@@ -5677,4 +5677,24 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
     }
 
+    @Test
+    void testConnectionStatus() throws Exception {
+        Document result = runCommand("connectionStatus");
+        assertThat(result).isEqualTo(json("ok: 1.0, authInfo: {authenticatedUsers: [], authenticatedUserRoles: []}"));
+    }
+
+    @Test
+    void testHostInfo() throws Exception {
+        Document result = runCommand("hostInfo");
+        assertThat(result.get("ok")).isEqualTo(1.0);
+        assertThat(result).containsKeys("os", "system", "extra");
+    }
+
+    @Test
+    void testGetCmdLineOpts() throws Exception {
+        Document result = runCommand("getCmdLineOpts");
+        assertThat(result.get("ok")).isEqualTo(1.0);
+        assertThat(result).containsOnlyKeys("ok", "argv", "parsed");
+    }
+
 }

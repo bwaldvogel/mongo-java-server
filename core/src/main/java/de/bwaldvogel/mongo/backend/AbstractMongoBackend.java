@@ -110,9 +110,48 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             log.debug("getLastError on admin database");
             Utils.markOkay(response);
             return response;
+        } else if (command.equalsIgnoreCase("connectionStatus")) {
+            Document response = new Document();
+            response.append("authInfo", new Document()
+                .append("authenticatedUsers", Collections.emptyList())
+                .append("authenticatedUserRoles", Collections.emptyList())
+            );
+            Utils.markOkay(response);
+            return response;
+        } else if (command.equalsIgnoreCase("hostInfo")) {
+            return handleHostInfo();
+        } else if (command.equalsIgnoreCase("getCmdLineOpts")) {
+            return handleGetCmdLineOpts();
         } else {
             throw new NoSuchCommandException(command);
         }
+    }
+
+    private Document handleHostInfo() {
+        Document response = new Document();
+        String osName = System.getProperty("os.name");
+        String osVersion = System.getProperty("os.version");
+        response.append("os", new Document()
+            .append("type", osName)
+            .append("version", osVersion)
+        );
+        response.append("system", new Document()
+            .append("currentTime", Instant.now())
+            .append("hostname", Utils.getHostName())
+        );
+        response.append("extra", new Document()
+            .append("versionString", osName + " " + osVersion)
+            .append("kernelVersion", osVersion));
+        Utils.markOkay(response);
+        return response;
+    }
+
+    private Document handleGetCmdLineOpts() {
+        Document response = new Document();
+        response.append("argv", Collections.emptyList());
+        response.append("parsed", new Document());
+        Utils.markOkay(response);
+        return response;
     }
 
     @VisibleForExternalBackends
