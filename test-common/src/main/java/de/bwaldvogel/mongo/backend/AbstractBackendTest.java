@@ -279,9 +279,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testCountCommand() {
-        assertThat(collection.count()).isZero();
+        assertThat(db.runCommand(new Document("count", getCollectionName())))
+            .isEqualTo(json("ok: 1.0, n: 0"));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3"));
+
+        assertThat(db.runCommand(new Document("count", getCollectionName()).append("query", json("_id: 2"))))
+            .isEqualTo(json("ok: 1.0, n: 1"));
+
+        assertThat(db.runCommand(new Document("count", getCollectionName()).append("query", json(""))))
+            .isEqualTo(json("ok: 1.0, n: 3"));
+
+        assertThat(db.runCommand(new Document("count", getCollectionName()).append("query", json("_id: 4"))))
+            .isEqualTo(json("ok: 1.0, n: 0"));
+
+        assertThat(db.runCommand(new Document("count", getCollectionName()).append("maxTimeMS", 5000)))
+            .isEqualTo(json("ok: 1.0, n: 3"));
     }
 
     @Test

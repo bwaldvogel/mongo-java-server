@@ -639,7 +639,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public int count(Document query, int skip, int limit) {
-        if (query.keySet().isEmpty()) {
+        if (query == null || query.keySet().isEmpty()) {
             int count = count();
             if (skip > 0) {
                 count = Math.max(0, count - skip);
