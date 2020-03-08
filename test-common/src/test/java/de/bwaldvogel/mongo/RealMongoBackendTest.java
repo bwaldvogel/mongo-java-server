@@ -7,28 +7,50 @@ import org.bson.Document;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 
 public class RealMongoBackendTest extends AbstractBackendTest {
 
+    private static final Logger log = LoggerFactory.getLogger(RealMongoBackendTest.class);
+
     private static GenericContainer<?> mongoContainer;
 
     @BeforeAll
     public static void setUpMongoContainer() {
+        if (Boolean.getBoolean("mongo-java-server-use-existing-container")) {
+            log.info("Not starting a testcontainer in favor of an existing container.");
+            return;
+        }
         mongoContainer = RealMongoContainer.start();
     }
 
     @Override
+    @BeforeEach
+    public void setUp() throws Exception {
+        super.setUp();
+        dropAllDatabases();
+    }
+
+    @Override
     protected void setUpBackend() throws Exception {
-        serverAddress = new InetSocketAddress(mongoContainer.getFirstMappedPort());
+        if (mongoContainer != null) {
+            serverAddress = new InetSocketAddress(mongoContainer.getFirstMappedPort());
+        } else {
+            serverAddress = new InetSocketAddress("127.0.0.1", 27018);
+        }
     }
 
     @AfterAll
     public static void tearDownServer() {
-        mongoContainer.stop();
-        mongoContainer = null;
+        if (mongoContainer != null) {
+            mongoContainer.stop();
+            mongoContainer = null;
+        }
     }
 
     @Override

@@ -1,6 +1,19 @@
 version: '2.1'
 
 services:
+  mongodb:
+    image: mongo:4.2.3
+    container_name: mongo-java-server-test
+    tmpfs:
+      - /data:rw
+    ports:
+      - 127.0.0.1:27018:27017
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres:
     image: postgres:9.6-alpine
     container_name: postgres-mongo-java-server-test

@@ -55,7 +55,7 @@ public abstract class AbstractTest {
         }
     }
 
-    private void dropAllDatabases() {
+    protected void dropAllDatabases() {
         for (String databaseName : syncClient.listDatabaseNames()) {
             if (databaseName.equals("admin") || databaseName.equals("local")) {
                 continue;
