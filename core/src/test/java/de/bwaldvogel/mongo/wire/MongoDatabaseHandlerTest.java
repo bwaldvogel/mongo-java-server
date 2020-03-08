@@ -4,7 +4,7 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.bson.Document;
@@ -14,7 +14,7 @@ import io.netty.channel.Channel;
 public class MongoDatabaseHandlerTest {
 
     @Test
-    public void testWrappedCommand() {
+    void testWrappedCommand() {
         final MongoBackend backend = mock(MongoBackend.class);
         final Channel channel = mock(Channel.class);
 
@@ -30,7 +30,7 @@ public class MongoDatabaseHandlerTest {
     }
 
     @Test
-    public void testNonWrappedCommand() {
+    void testNonWrappedCommand() {
         final MongoBackend backend = mock(MongoBackend.class);
         final Channel channel = mock(Channel.class);
 

@@ -4,14 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class MaxAccumulatorTest {
 
     private ComparingAccumulator accumulator = new MaxAccumulator(null, null);
 
     @Test
-    public void testAccumulateNumbers() throws Exception {
+    void testAccumulateNumbers() throws Exception {
         accumulator.aggregate(1);
         accumulator.aggregate(5);
         accumulator.aggregate(3);
@@ -21,7 +21,7 @@ public class MaxAccumulatorTest {
     }
 
     @Test
-    public void testAccumulateArrays() throws Exception {
+    void testAccumulateArrays() throws Exception {
         accumulator.aggregate(Arrays.asList(10, 20, 30));
         accumulator.aggregate(Arrays.asList(3, 40));
         accumulator.aggregate(Arrays.asList(11, 25));
@@ -31,7 +31,7 @@ public class MaxAccumulatorTest {
     }
 
     @Test
-    public void testAccumulateArraysAndNonArray() throws Exception {
+    void testAccumulateArraysAndNonArray() throws Exception {
         accumulator.aggregate(Arrays.asList(3, 40));
         accumulator.aggregate(Arrays.asList(10, 20, 30));
         accumulator.aggregate(50);
@@ -41,7 +41,7 @@ public class MaxAccumulatorTest {
     }
 
     @Test
-    public void testAccumulateNothing() throws Exception {
+    void testAccumulateNothing() throws Exception {
         Object result = accumulator.getResult();
         assertThat(result).isNull();
     }

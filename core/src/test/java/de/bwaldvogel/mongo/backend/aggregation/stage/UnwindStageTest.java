@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -16,7 +16,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class UnwindStageTest {
 
     @Test
-    public void testUnwind() throws Exception {
+    void testUnwind() throws Exception {
         assertThat(unwind("$field",
             json("_id: 1, field: [1, 2, 3]"),
             json("_id: 2, field: [2, 3]"),
@@ -37,7 +37,7 @@ public class UnwindStageTest {
     }
 
     @Test
-    public void testUnwindWithSubdocument() throws Exception {
+    void testUnwindWithSubdocument() throws Exception {
         assertThat(unwind("$field.values",
             json("_id: 1, field: {values: [1, 2, 3]}"),
             json("_id: 2, field: {values: [2, 3]}")))
@@ -66,7 +66,7 @@ public class UnwindStageTest {
     }
 
     @Test
-    public void testIllegalParameter() throws Exception {
+    void testIllegalParameter() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new UnwindStage("illegalField"))
             .withMessage("[Error 28818] path option to $unwind stage should be prefixed with a '$': illegalField");

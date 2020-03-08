@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
@@ -26,20 +26,20 @@ public class ValueComparatorTest {
     private Comparator<Object> comparator = ValueComparator.asc();
 
     @Test
-    public void testReverse() throws Exception {
+    void testReverse() throws Exception {
         assertThat(ValueComparator.asc().reversed()).isSameAs(ValueComparator.desc());
         assertThat(ValueComparator.desc().reversed()).isSameAs(ValueComparator.asc());
     }
 
     @Test
-    public void testCompareNullsAndMissings() {
+    void testCompareNullsAndMissings() {
         assertComparesTheSame(null, null);
         assertComparesTheSame(Missing.getInstance(), Missing.getInstance());
         assertComparesTheSame(null, Missing.getInstance());
     }
 
     @Test
-    public void testCompareMinMaxKeys() {
+    void testCompareMinMaxKeys() {
         assertComparesTheSame(MaxKey.getInstance(), MaxKey.getInstance());
         assertComparesTheSame(MinKey.getInstance(), MinKey.getInstance());
         assertFirstValueBeforeSecondValue(MinKey.getInstance(), MaxKey.getInstance());
@@ -53,19 +53,19 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareNullWithValue() throws Exception {
+    void testCompareNullWithValue() throws Exception {
         assertFirstValueBeforeSecondValue(null, 1.0);
     }
 
     @Test
-    public void testCompareList() throws Exception {
+    void testCompareList() throws Exception {
         assertThat(ValueComparator.ascWithoutListHandling().compare(Arrays.asList(1, 2), Arrays.asList(1))).isGreaterThan(0);
         assertThat(ValueComparator.ascWithoutListHandling().compare(Arrays.asList(1, 2), Arrays.asList(1, 2))).isZero();
         assertThat(ValueComparator.ascWithoutListHandling().compare(Arrays.asList(1, 2.0), Arrays.asList(1.0, 2))).isZero();
     }
 
     @Test
-    public void testCompareListsInAscendingOrder() throws Exception {
+    void testCompareListsInAscendingOrder() throws Exception {
         assertComparesTheSame(1, Arrays.asList(1, 2));
         assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), "abc");
         assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), json("a: 1"));
@@ -88,7 +88,7 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareListsInDescendingOrder() throws Exception {
+    void testCompareListsInDescendingOrder() throws Exception {
         assertThat(ValueComparator.desc().compare(Arrays.asList(2, 3), Arrays.asList(1, 2))).isLessThan(0);
 
         assertThat(ValueComparator.desc().compare(Arrays.asList(1, "abc", 2), Collections.singletonList(3))).isLessThan(0);
@@ -96,26 +96,26 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareMissingWithValue() throws Exception {
+    void testCompareMissingWithValue() throws Exception {
         assertFirstValueBeforeSecondValue(Missing.getInstance(), 1.0);
     }
 
     @Test
-    public void testCompareObjectIds() {
+    void testCompareObjectIds() {
         assertComparesTheSame(objectId(123000), objectId(123000));
         assertFirstValueBeforeSecondValue(objectId(123000), objectId(223000));
         assertFirstValueBeforeSecondValue(objectId(123000), objectId(124000));
     }
 
     @Test
-    public void testCompareStringValues() {
+    void testCompareStringValues() {
         assertComparesTheSame("abc", "abc");
         assertFirstValueBeforeSecondValue("abc", "zzz");
         assertFirstValueBeforeSecondValue(null, "abc");
     }
 
     @Test
-    public void testCompareNumberValues() {
+    void testCompareNumberValues() {
         assertComparesTheSame(123, 123.0);
         assertFirstValueBeforeSecondValue(17L, 17.3);
         assertFirstValueBeforeSecondValue(58.9999, 59);
@@ -124,7 +124,7 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareTimestamps() {
+    void testCompareTimestamps() {
         BsonTimestamp bsonTimestamp = new BsonTimestamp(12345L);
         BsonTimestamp bsonTimestamp2 = new BsonTimestamp(67890L);
         assertComparesTheSame(bsonTimestamp, new BsonTimestamp(12345L));
@@ -132,14 +132,14 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareDateValues() {
+    void testCompareDateValues() {
         assertComparesTheSame(Instant.ofEpochSecond(17), Instant.ofEpochSecond(17));
         assertFirstValueBeforeSecondValue(Instant.ofEpochSecond(28), Instant.ofEpochSecond(29));
         assertFirstValueBeforeSecondValue(null, Instant.now());
     }
 
     @Test
-    public void testCompareByteArrayValues() {
+    void testCompareByteArrayValues() {
         assertComparesTheSame(new byte[] { 1 }, new byte[] { 1 });
         assertFirstValueBeforeSecondValue(new byte[] { 1 }, new byte[] { 1, 2 });
         assertFirstValueBeforeSecondValue(new byte[] { 0x00 }, new byte[] { (byte) 0xFF });
@@ -147,7 +147,7 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareDocuments() throws Exception {
+    void testCompareDocuments() throws Exception {
         assertComparesTheSame(json("a: 1"), json("a: 1.0"));
         assertComparesTheSame(json("a: 0"), json("a: -0.0"));
         assertComparesTheSame(json("a: {b: 1}"), json("a: {b: 1.0}"));
@@ -165,7 +165,7 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareUuids() throws Exception {
+    void testCompareUuids() throws Exception {
         assertComparesTheSame(new UUID(1, 1), new UUID(1, 1));
         assertFirstValueBeforeSecondValue(null, new UUID(1, 2));
         assertFirstValueBeforeSecondValue(new UUID(0, 1), new UUID(1, 1));
@@ -180,7 +180,7 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareLegacyUuids() throws Exception {
+    void testCompareLegacyUuids() throws Exception {
         assertComparesTheSame(new LegacyUUID( 1, 1), new LegacyUUID(1, 1));
         assertFirstValueBeforeSecondValue(null, new LegacyUUID(1, 2));
         assertFirstValueBeforeSecondValue(new LegacyUUID(0, 1), new LegacyUUID(1, 1));
@@ -195,7 +195,7 @@ public class ValueComparatorTest {
     }
 
     @Test
-    public void testCompareDecimal128() throws Exception {
+    void testCompareDecimal128() throws Exception {
         assertComparesTheSame(Decimal128.ONE, Decimal128.ONE);
         assertComparesTheSame(Decimal128.ONE, 1);
         assertComparesTheSame(Decimal128.ONE, 1L);

@@ -9,12 +9,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class StreamUtilsTest {
 
     @Test
-    public void testToLinkedHashMap() throws Exception {
+    void testToLinkedHashMap() throws Exception {
         Map<String, String> result = Stream.of("a", "b", "c")
             .map(value -> new SimpleEntry<>(value, value))
             .collect(StreamUtils.toLinkedHashMap());
@@ -27,7 +27,7 @@ public class StreamUtilsTest {
     }
 
     @Test
-    public void testToLinkedHashMap_duplicates() throws Exception {
+    void testToLinkedHashMap_duplicates() throws Exception {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> Stream.of("a", "b", "c", "b")
                 .map(value -> new SimpleEntry<>(value, value))
@@ -36,7 +36,7 @@ public class StreamUtilsTest {
     }
 
     @Test
-    public void testToLinkedHashSet() throws Exception {
+    void testToLinkedHashSet() throws Exception {
         Set<String> result = Stream.of("a", "b", "c", "b")
             .collect(StreamUtils.toLinkedHashSet());
         assertThat(result).containsExactly("a", "b", "c");

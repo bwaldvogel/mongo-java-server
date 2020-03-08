@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Arrays;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
@@ -16,7 +16,7 @@ import io.netty.buffer.Unpooled;
 public class BsonEncoderTest {
 
     @Test
-    public void testEncodeEmptyDocument() throws Exception {
+    void testEncodeEmptyDocument() throws Exception {
         Document document = new Document();
 
         ByteBuf buffer = Unpooled.buffer();
@@ -32,7 +32,7 @@ public class BsonEncoderTest {
     }
 
     @Test
-    public void testEncodeDecodeRoundtrip() throws Exception {
+    void testEncodeDecodeRoundtrip() throws Exception {
         Document document = new Document();
         document.put("key1", "value");
         document.put("key2", 123.0);

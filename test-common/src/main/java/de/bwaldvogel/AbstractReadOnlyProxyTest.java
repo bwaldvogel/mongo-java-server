@@ -5,9 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import org.bson.Document;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
@@ -29,7 +29,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
     protected abstract MongoBackend createBackend() throws Exception;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MongoBackend mongoBackend = createBackend();
         writeableServer = new MongoServer(mongoBackend);
@@ -39,7 +39,7 @@ public abstract class AbstractReadOnlyProxyTest {
         readOnlyClient = new MongoClient(new ServerAddress(mongoServer.bind()));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         writeClient.close();
         readOnlyClient.close();
@@ -48,30 +48,30 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testMaxBsonSize() throws Exception {
+    void testMaxBsonSize() throws Exception {
         int maxBsonObjectSize = readOnlyClient.getMaxBsonObjectSize();
         assertThat(maxBsonObjectSize).isEqualTo(16777216);
     }
 
     @Test
-    public void testServerStatus() throws Exception {
+    void testServerStatus() throws Exception {
         readOnlyClient.getDatabase("admin").runCommand(new Document("serverStatus", 1));
     }
 
     @Test
-    public void testCurrentOperations() throws Exception {
+    void testCurrentOperations() throws Exception {
         Document currentOperations = readOnlyClient.getDatabase("admin").getCollection("$cmd.sys.inprog").find().first();
         assertThat(currentOperations).isNotNull();
     }
 
     @Test
-    public void testStats() throws Exception {
+    void testStats() throws Exception {
         Document stats = readOnlyClient.getDatabase("testdb").runCommand(json("dbStats:1"));
         assertThat(((Number) stats.get("objects")).longValue()).isZero();
     }
 
     @Test
-    public void testListDatabaseNames() throws Exception {
+    void testListDatabaseNames() throws Exception {
         assertThat(readOnlyClient.listDatabaseNames()).isEmpty();
         writeClient.getDatabase("testdb").getCollection("testcollection").insertOne(new Document());
         assertThat(readOnlyClient.listDatabaseNames()).containsExactly("testdb");
@@ -80,7 +80,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testIllegalCommand() throws Exception {
+    void testIllegalCommand() throws Exception {
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> readOnlyClient.getDatabase("testdb").runCommand(json("foo:1")))
             .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
@@ -91,7 +91,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testQuery() throws Exception {
+    void testQuery() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
         Document obj = collection.find(json("_id: 1")).first();
         assertThat(obj).isNull();
@@ -99,7 +99,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testDistinctQuery() {
+    void testDistinctQuery() {
         MongoCollection<Document> collection = writeClient.getDatabase("testdb").getCollection("testcollection");
         collection.insertOne(new Document("n", 1));
         collection.insertOne(new Document("n", 2));
@@ -109,7 +109,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testInsert() throws Exception {
+    void testInsert() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
         assertThat(collection.count()).isZero();
 
@@ -118,7 +118,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testUpdate() throws Exception {
+    void testUpdate() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
         Document object = new Document("_id", 1);
         Document newObject = new Document("_id", 1);
@@ -129,7 +129,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testUpsert() throws Exception {
+    void testUpsert() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
 
         assertThatExceptionOfType(MongoException.class)
@@ -138,13 +138,13 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    public void testDropDatabase() throws Exception {
+    void testDropDatabase() throws Exception {
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> readOnlyClient.dropDatabase("testdb"));
     }
 
     @Test
-    public void testDropCollection() throws Exception {
+    void testDropCollection() throws Exception {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("foo");
 
         assertThatExceptionOfType(MongoException.class)

@@ -2,14 +2,14 @@ package de.bwaldvogel.mongo.bson;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.wire.BsonConstants;
 
 public class ObjectIdTest {
 
     @Test
-    public void testHashCodeEquals() throws Exception {
+    void testHashCodeEquals() throws Exception {
         ObjectId objectId = new ObjectId();
         ObjectId other = new ObjectId();
         assertThat(objectId).isEqualTo(objectId);
@@ -21,13 +21,13 @@ public class ObjectIdTest {
     }
 
     @Test
-    public void testToString() throws Exception {
+    void testToString() throws Exception {
         String expectedPattern = "^ObjectId\\[[a-f0-9]{" + 2 * BsonConstants.LENGTH_OBJECTID + "}\\]$";
         assertThat(new ObjectId().toString()).matches(expectedPattern);
     }
 
     @Test
-    public void testToHexStringAndBack() throws Exception {
+    void testToHexStringAndBack() throws Exception {
         ObjectId objectId = new ObjectId();
         ObjectId clone = new ObjectId(objectId.getHexData());
         assertThat(clone).isEqualTo(objectId);

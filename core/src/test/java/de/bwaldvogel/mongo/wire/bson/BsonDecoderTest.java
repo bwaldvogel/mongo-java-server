@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
@@ -17,7 +17,7 @@ import io.netty.buffer.Unpooled;
 public class BsonDecoderTest {
 
     @Test
-    public void testDecodeStringUnicode() throws Exception {
+    void testDecodeStringUnicode() throws Exception {
         String string = "\u0442\u0435\u0441\u0442";
         byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
         ByteBuf buffer = Unpooled.buffer();
@@ -31,7 +31,7 @@ public class BsonDecoderTest {
     }
 
     @Test
-    public void testEncodeDecodeRoundtrip() throws Exception {
+    void testEncodeDecodeRoundtrip() throws Exception {
         List<Document> objects = new ArrayList<>();
         objects.add(new Document("key", MaxKey.getInstance()).append("foo", "bar"));
         objects.add(new Document("key", MinKey.getInstance()).append("test", MaxKey.getInstance()));

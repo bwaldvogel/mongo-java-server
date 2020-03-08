@@ -4,11 +4,11 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
@@ -18,7 +18,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class MongoWireEncoderTest {
 
     @Mock
@@ -27,13 +27,13 @@ public class MongoWireEncoderTest {
     @Mock
     private Channel channel;
 
-    @Before
-    public void setUpContext() throws Exception {
+    @BeforeEach
+    void setUpContext() throws Exception {
         when(ctx.channel()).thenReturn(channel);
     }
 
     @Test
-    public void testExceptionHandling() throws Exception {
+    void testExceptionHandling() throws Exception {
         MongoWireEncoder mongoWireEncoder = new MongoWireEncoder();
 
         MessageHeader header = new MessageHeader(0, 0);

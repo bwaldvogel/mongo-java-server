@@ -11,14 +11,14 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class CollectionUtilsTest {
 
     @Test
-    public void testGetSingleElement() throws Exception {
+    void testGetSingleElement() throws Exception {
         assertThat(CollectionUtils.getSingleElement(Collections.singletonList(1))).isEqualTo(1);
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -35,7 +35,7 @@ public class CollectionUtilsTest {
     }
 
     @Test
-    public void testGetLastElement() throws Exception {
+    void testGetLastElement() throws Exception {
         assertThat(CollectionUtils.getLastElement(Collections.singletonList(1))).isEqualTo(1);
         assertThat(CollectionUtils.getLastElement(Arrays.asList(1, 2, 3))).isEqualTo(3);
 
@@ -45,7 +45,7 @@ public class CollectionUtilsTest {
     }
 
     @Test
-    public void testGetSingleElement_exceptionSupplier() throws Exception {
+    void testGetSingleElement_exceptionSupplier() throws Exception {
         Supplier<RuntimeException> exceptionSupplier = () -> new MongoServerException("too many elements");
 
         assertThat(CollectionUtils.getSingleElement(Collections.singletonList(1), exceptionSupplier)).isEqualTo(1);
@@ -60,7 +60,7 @@ public class CollectionUtilsTest {
     }
 
     @Test
-    public void testMultiplyWithOtherElements() throws Exception {
+    void testMultiplyWithOtherElements() throws Exception {
         List<Object> values = Arrays.asList(1, 2);
         List<Object> collection = Arrays.asList("abc", "def", values);
 
@@ -76,7 +76,7 @@ public class CollectionUtilsTest {
     }
 
     @Test
-    public void testGetElementAtPosition_list() throws Exception {
+    void testGetElementAtPosition_list() throws Exception {
         List<String> list = Arrays.asList("a", "b", "c");
         assertThat(CollectionUtils.getElementAtPosition(list, 0)).isEqualTo("a");
         assertThat(CollectionUtils.getElementAtPosition(list, 1)).isEqualTo("b");
@@ -93,7 +93,7 @@ public class CollectionUtilsTest {
     }
 
     @Test
-    public void testGetElementAtPosition_set() throws Exception {
+    void testGetElementAtPosition_set() throws Exception {
         Set<String> set = new LinkedHashSet<>();
         set.add("a");
         set.add("b");

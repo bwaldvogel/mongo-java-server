@@ -4,9 +4,9 @@ import java.net.InetSocketAddress;
 import java.util.Date;
 
 import org.bson.Document;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
 
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
@@ -15,7 +15,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
 
     private static GenericContainer<?> mongoContainer;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpMongoContainer() {
         mongoContainer = RealMongoContainer.start();
     }
@@ -25,7 +25,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
         serverAddress = new InetSocketAddress(mongoContainer.getFirstMappedPort());
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownServer() {
         mongoContainer.stop();
         mongoContainer = null;
@@ -45,7 +45,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     }
 
     private void assumeStrictMode() {
-        Assume.assumeTrue(Boolean.getBoolean(getClass().getSimpleName() + ".strict"));
+        Assumptions.assumeTrue(Boolean.getBoolean(getClass().getSimpleName() + ".strict"));
     }
 
     @Override

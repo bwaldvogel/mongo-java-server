@@ -1,17 +1,17 @@
 package de.bwaldvogel.mongo.backend.memory;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Collections;
 import java.util.NoSuchElementException;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DocumentIterableTest {
 
     @Test
-    public void testIterateEmptyList() {
+    void testIterateEmptyList() {
         DocumentIterable documentIterable = new DocumentIterable(Collections.emptyList());
         assertThat(documentIterable.iterator().hasNext()).isFalse();
 

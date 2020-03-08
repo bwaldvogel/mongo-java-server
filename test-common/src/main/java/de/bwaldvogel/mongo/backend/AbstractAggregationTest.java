@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.mongodb.Function;
 import com.mongodb.MongoCommandException;

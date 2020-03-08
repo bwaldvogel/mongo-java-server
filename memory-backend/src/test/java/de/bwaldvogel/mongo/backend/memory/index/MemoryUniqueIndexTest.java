@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.util.Arrays;
 import java.util.Map.Entry;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
@@ -18,7 +18,7 @@ import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 public class MemoryUniqueIndexTest {
 
     @Test
-    public void testGetKeyValues_multiKey_simpleCase() throws Exception {
+    void testGetKeyValues_multiKey_simpleCase() throws Exception {
         Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true)
@@ -29,7 +29,7 @@ public class MemoryUniqueIndexTest {
     }
 
     @Test
-    public void testGetKeyValues_multiKey_cannotIndexParallelArrays() throws Exception {
+    void testGetKeyValues_multiKey_cannotIndexParallelArrays() throws Exception {
         Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true)
@@ -42,7 +42,7 @@ public class MemoryUniqueIndexTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
     @Test
-    public void testGetKeyValues_multiKey_document_nested_objects_cannotIndexParallelArrays() throws Exception {
+    void testGetKeyValues_multiKey_document_nested_objects_cannotIndexParallelArrays() throws Exception {
         Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
             new IndexKey("stock.size", true),
             new IndexKey("stock.quantity", true)
@@ -55,7 +55,7 @@ public class MemoryUniqueIndexTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
     @Test
-    public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
+    void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
         Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
             new IndexKey("stock.size", true),
             new IndexKey("stock.quantity", true)

@@ -3,14 +3,14 @@ package de.bwaldvogel.mongo.backend.projection;
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 
 public class ProjectionTest {
 
     @Test
-    public void testProjectDocument() throws Exception {
+    void testProjectDocument() throws Exception {
         assertThat(Projection.projectDocument(null, new Document(), null)).isNull();
 
         assertThat(Projection.projectDocument(json("_id: 100"), json("_id: 1"), "_id"))
@@ -42,7 +42,7 @@ public class ProjectionTest {
     }
 
     @Test
-    public void testProjectMissingValue() throws Exception {
+    void testProjectMissingValue() throws Exception {
         assertThat(Projection.projectDocument(json("_id: 1"), json("'a.b': 1"), "_id"))
             .isEqualTo(json("_id: 1"));
 
@@ -57,7 +57,7 @@ public class ProjectionTest {
     }
 
     @Test
-    public void testProjectListValues() throws Exception {
+    void testProjectListValues() throws Exception {
         assertThat(Projection.projectDocument(json("_id: 1, a: [1, 2, 3]"), json("'a.c': 1"), "_id"))
             .isEqualTo(json("_id: 1, a: []"));
 
@@ -72,7 +72,7 @@ public class ProjectionTest {
     }
 
     @Test
-    public void testProjectListValuesWithPositionalOperator() throws Exception {
+    void testProjectListValuesWithPositionalOperator() throws Exception {
         Document document = json("_id: 1, students: [" +
             "{name: 'john', school: 'A', age: 10}, " +
             "{name: 'jess', school: 'B', age: 12}, " +
@@ -87,7 +87,7 @@ public class ProjectionTest {
     }
 
     @Test
-    public void testProjectWithElemMatch() throws Exception {
+    void testProjectWithElemMatch() throws Exception {
         Document document = json("_id: 1, students: [" +
             "{name: 'john', school: 'A', age: 10}, " +
             "{name: 'jess', school: 'B', age: 12}, " +
@@ -114,7 +114,7 @@ public class ProjectionTest {
     }
 
     @Test
-    public void testProjectWithSlice() throws Exception {
+    void testProjectWithSlice() throws Exception {
         Document document = json("_id: 1, values: [1, 2, 3, 4], value: 'other'");
 
         assertThat(Projection.projectDocument(document, json("values: {$slice: 2}"), "_id"))

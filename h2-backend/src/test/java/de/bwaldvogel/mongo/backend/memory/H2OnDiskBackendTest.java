@@ -3,14 +3,13 @@ package de.bwaldvogel.mongo.backend.memory;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 
 import org.bson.Document;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,17 +21,17 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
     private static final Logger log = LoggerFactory.getLogger(H2OnDiskBackendTest.class);
 
-    @ClassRule
-    public static TemporaryFolder tempFolder = new TemporaryFolder();
-
     private static H2Backend backend;
 
-    private static File tempFile;
+    @TempDir
+    static Path tempFolder;
+
+    private static Path tempFile;
 
     @Override
     protected void setUpBackend() throws Exception {
         if (tempFile == null) {
-            tempFile = tempFolder.newFile(getClass().getSimpleName() + ".mv");
+            tempFile = tempFolder.resolve(getClass().getSimpleName() + ".mv");
             log.debug("created {} for testing", tempFile);
         }
         super.setUpBackend();
@@ -46,7 +45,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Test
-    public void testShutdownAndRestart() throws Exception {
+    void testShutdownAndRestart() throws Exception {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
 
@@ -64,7 +63,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Test
-    public void testShutdownAndRestartOpensDatabasesAndCollections() throws Exception {
+    void testShutdownAndRestartOpensDatabasesAndCollections() throws Exception {
         List<String> dbs = Arrays.asList("testdb1", "testdb2");
         for (String db : dbs) {
             for (String coll : new String[] { "collection1", "collection2" }) {
@@ -81,7 +80,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Test
-    public void testShutdownAndRestartOpensIndexes() throws Exception {
+    void testShutdownAndRestartOpensIndexes() throws Exception {
         collection.createIndex(json("a: 1"));
         collection.createIndex(json("b: 1"));
         List<Document> indexes = toArray(collection.listIndexes());
@@ -101,7 +100,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Test
-    public void testShutdownAndRestartKeepsStatistics() throws Exception {
+    void testShutdownAndRestartKeepsStatistics() throws Exception {
         collection.createIndex(json("a: 1"));
         collection.createIndex(json("b: 1"));
 

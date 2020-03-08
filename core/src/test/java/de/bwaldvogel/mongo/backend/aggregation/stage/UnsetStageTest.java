@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -17,7 +17,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class UnsetStageTest {
 
     @Test
-    public void testUnset() throws Exception {
+    void testUnset() throws Exception {
         assertThat(unset("field1",
             json("_id: 1, field1: 'value1'"),
             json("_id: 2, field1: 'value1', field2: 'value2'"),
@@ -32,7 +32,7 @@ public class UnsetStageTest {
     }
 
     @Test
-    public void testUnsetMultipleFields() throws Exception {
+    void testUnsetMultipleFields() throws Exception {
         assertThat(unset(Arrays.asList("field1", "field2"),
             json("_id: 1, field1: 'value1'"),
             json("_id: 2, field1: 'value1', field2: 'value2'"),
@@ -49,7 +49,7 @@ public class UnsetStageTest {
     }
 
     @Test
-    public void testUnsetWithSubdocument() throws Exception {
+    void testUnsetWithSubdocument() throws Exception {
         assertThat(unset("fields.field1",
             json("_id: 1, fields: { field1: 'value1' }"),
             json("_id: 2, fields: { field1: 'value1', field2: 'value2' }"),
@@ -66,7 +66,7 @@ public class UnsetStageTest {
     }
 
     @Test
-    public void testIllegalUnset() throws Exception {
+    void testIllegalUnset() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new UnsetStage(""))
             .withMessage("[Error 40352] Invalid $project :: caused by :: FieldPath cannot be constructed with empty string");

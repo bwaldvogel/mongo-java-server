@@ -6,18 +6,18 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.regex.Pattern;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class BsonRegularExpressionTest {
 
     @Test
-    public void testToString() throws Exception {
+    void testToString() throws Exception {
         assertThat(new BsonRegularExpression(".*")).hasToString("{\"$regex\" : \".*\"}");
         assertThat(new BsonRegularExpression(".*", "im")).hasToString("{\"$regex\" : \".*\", \"$options\" : \"im\"}");
     }
 
     @Test
-    public void testConvertToRegularExpressionWithoutOptions() throws Exception {
+    void testConvertToRegularExpressionWithoutOptions() throws Exception {
         BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(json("$regex: 'a.*z'"));
         assertThat(regularExpression.getPattern()).isEqualTo("a.*z");
         assertThat(regularExpression.getOptions()).isEqualTo("");
@@ -28,7 +28,7 @@ public class BsonRegularExpressionTest {
     }
 
     @Test
-    public void testConvertToRegularExpressionWithOptions() throws Exception {
+    void testConvertToRegularExpressionWithOptions() throws Exception {
         BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(new Document("$regex", "a.*z").append("$options", "usxmi"));
         assertThat(regularExpression.getPattern()).isEqualTo("a.*z");
         assertThat(regularExpression.getOptions()).isEqualTo("usxmi");
@@ -39,7 +39,7 @@ public class BsonRegularExpressionTest {
     }
 
     @Test
-    public void testConvertToRegularExpressionWithIllegalArgument() throws Exception {
+    void testConvertToRegularExpressionWithIllegalArgument() throws Exception {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> BsonRegularExpression.convertToRegularExpression("abc"))
             .withMessage("'abc' is not a regular expression");

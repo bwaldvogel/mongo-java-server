@@ -1,20 +1,20 @@
 package de.bwaldvogel.mongo.backend.postgresql.index;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.IndexKey;
 
 public class PostgresUniqueIndexTest {
 
     @Test
-    public void testCreateSelectStatement() throws Exception {
+    void testCreateSelectStatement() throws Exception {
         List<IndexKey> keys = new ArrayList<>();
         keys.add(new IndexKey("a", true));
         keys.add(new IndexKey("b", true));
@@ -27,7 +27,7 @@ public class PostgresUniqueIndexTest {
     }
 
     @Test
-    public void testCreateSelectStatement_SparseIndex() throws Exception {
+    void testCreateSelectStatement_SparseIndex() throws Exception {
         List<IndexKey> keys = new ArrayList<>();
         keys.add(new IndexKey("a", true));
         keys.add(new IndexKey("b", true));

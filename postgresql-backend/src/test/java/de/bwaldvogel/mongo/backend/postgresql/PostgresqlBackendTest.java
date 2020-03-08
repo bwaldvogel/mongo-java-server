@@ -7,10 +7,10 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import org.bson.Document;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
@@ -28,8 +28,8 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
 
     private static HikariDataSource dataSource;
 
-    @BeforeClass
-    public static void initializeDataSource() {
+    @BeforeAll
+    static void initializeDataSource() {
         HikariConfig config = new HikariConfig();
 
         config.setJdbcUrl("jdbc:postgresql://localhost/mongo-java-server-test");
@@ -40,8 +40,8 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         dataSource = new HikariDataSource(config);
     }
 
-    @AfterClass
-    public static void closeDataSource() {
+    @AfterAll
+    static void closeDataSource() {
         dataSource.close();
     }
 
@@ -254,7 +254,7 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     private void assumeStrictTests() {
-        Assume.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
+        Assumptions.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
 
 }

@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 import de.bwaldvogel.mongo.bson.Document;
@@ -15,7 +15,7 @@ import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 public class IndexTest {
 
     @Test
-    public void testGetKeyValues_simple() throws Exception {
+    void testGetKeyValues_simple() throws Exception {
         Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("x", true)), false);
 
         assertThat(index.getKeyValues(new Document("x", 1))).containsExactly(new KeyValue(1.0));
@@ -23,7 +23,7 @@ public class IndexTest {
     }
 
     @Test
-    public void testGetKeyValues_compound() throws Exception {
+    void testGetKeyValues_compound() throws Exception {
         Index<?> index = new MemoryUniqueIndex("index", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true)), false);
@@ -34,7 +34,7 @@ public class IndexTest {
     }
 
     @Test
-    public void testGetKeyValues_Subdocument() throws Exception {
+    void testGetKeyValues_Subdocument() throws Exception {
         Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("a.b", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", 1))).containsExactly(new KeyValue((Object) null));
@@ -44,7 +44,7 @@ public class IndexTest {
     }
 
     @Test
-    public void testGetKeyValues_multiKey() throws Exception {
+    void testGetKeyValues_multiKey() throws Exception {
         Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("a", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", Arrays.asList(1, 2, 3, 2))))
@@ -55,7 +55,7 @@ public class IndexTest {
     }
 
     @Test
-    public void testGetKeyValues_compoundMultiKey() throws Exception {
+    void testGetKeyValues_compoundMultiKey() throws Exception {
         Index<?> index = new MemoryUniqueIndex("index", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true),
@@ -70,7 +70,7 @@ public class IndexTest {
     }
 
     @Test
-    public void testGetKeyValues_compoundMultiKey_tooManyCollections() throws Exception {
+    void testGetKeyValues_compoundMultiKey_tooManyCollections() throws Exception {
         Index<?> index = new MemoryUniqueIndex("index", Arrays.asList(
             new IndexKey("a", true),
             new IndexKey("b", true)
@@ -82,7 +82,7 @@ public class IndexTest {
     }
 
     @Test
-    public void testGetKeyValues_multiKey_document() throws Exception {
+    void testGetKeyValues_multiKey_document() throws Exception {
         Index<?> index = new MemoryUniqueIndex("index", Collections.singletonList(new IndexKey("a.b", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", Arrays.asList(new Document("b", 1), new Document("b", 2)))))

@@ -3,7 +3,7 @@ package de.bwaldvogel.mongo.backend.postgresql;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.TestUtils;
 import de.bwaldvogel.mongo.bson.Document;
@@ -11,7 +11,7 @@ import de.bwaldvogel.mongo.bson.Document;
 public class PostgresqlCollectionTest {
 
     @Test
-    public void testConvertOrderByToSql() throws Exception {
+    void testConvertOrderByToSql() throws Exception {
         assertThat(PostgresqlCollection.convertOrderByToSql(json(""))).isEqualTo("");
 
         assertThat(PostgresqlCollection.convertOrderByToSql(json("key: 1")))

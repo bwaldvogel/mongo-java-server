@@ -8,14 +8,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 
 public class DocumentComparatorTest {
 
     @Test
-    public void testCompareSingleKey() {
+    void testCompareSingleKey() {
         DocumentComparator comparator = new DocumentComparator(json("a: 1"));
 
         List<Document> list = Arrays.asList(
@@ -33,7 +33,7 @@ public class DocumentComparatorTest {
     }
 
     @Test
-    public void testCompareMultiKey() {
+    void testCompareMultiKey() {
         DocumentComparator comparator = new DocumentComparator(json("a: 1, b: -1"));
 
         List<Document> list = Arrays.asList(
@@ -61,7 +61,7 @@ public class DocumentComparatorTest {
     }
 
     @Test
-    public void testCompareCompoundKey() throws Exception {
+    void testCompareCompoundKey() throws Exception {
         DocumentComparator comparator = new DocumentComparator(json("'a.b': 1, c: -1"));
 
         Document a = json("a: {b: 10}");

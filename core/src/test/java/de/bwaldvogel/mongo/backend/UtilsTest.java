@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -16,14 +16,14 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 public class UtilsTest {
 
     @Test
-    public void testMarkOkay() throws Exception {
+    void testMarkOkay() throws Exception {
         Document obj = new Document();
         Utils.markOkay(obj);
         assertThat(obj.get("ok")).isEqualTo(Double.valueOf(1.0));
     }
 
     @Test
-    public void testIsTrue() throws Exception {
+    void testIsTrue() throws Exception {
         assertThat(Utils.isTrue("foo")).isTrue();
         assertThat(Utils.isTrue(null)).isFalse();
         assertThat(Utils.isTrue(true)).isTrue();
@@ -34,7 +34,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testNormalizeValue() {
+    void testNormalizeValue() {
         assertThat(Utils.normalizeValue(null)).isNull();
         assertThat(Utils.normalizeValue(Integer.valueOf(4))).isEqualTo(4.0);
         assertThat(Utils.normalizeValue(-0.0)).isEqualTo(0.0);
@@ -50,7 +50,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testNormalizeNumber() throws Exception {
+    void testNormalizeNumber() throws Exception {
         assertThat(Utils.normalizeNumber(null)).isNull();
         assertThat(Utils.normalizeNumber(0)).isEqualTo(0);
         assertThat(Utils.normalizeNumber(1.0)).isEqualTo(1);
@@ -61,7 +61,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testNullAwareEquals() {
+    void testNullAwareEquals() {
         assertThat(Utils.nullAwareEquals(null, null)).isTrue();
         assertThat(Utils.nullAwareEquals(null, Missing.getInstance())).isTrue();
         assertThat(Utils.nullAwareEquals(Missing.getInstance(), null)).isTrue();
@@ -86,13 +86,13 @@ public class UtilsTest {
     }
 
     @Test
-    public void testCalculateSize() throws Exception {
+    void testCalculateSize() throws Exception {
         assertThat(Utils.calculateSize(new Document())).isEqualTo(5);
         assertThat(Utils.calculateSize(new Document("_id", 7))).isEqualTo(14);
     }
 
     @Test
-    public void testGetSubdocumentValue() throws Exception {
+    void testGetSubdocumentValue() throws Exception {
         Document document = json("foo: 25");
         assertThat(Utils.getSubdocumentValue(document, "foo")).isEqualTo(25);
         assertThat(Utils.getSubdocumentValue(document, "foo.bar")).isInstanceOf(Missing.class);
@@ -120,7 +120,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testGetFieldValueListSafe() throws Exception {
+    void testGetFieldValueListSafe() throws Exception {
         assertThat(Utils.getFieldValueListSafe(Missing.getInstance(), "foo")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(null, "foo")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(json(""), "foo")).isInstanceOf(Missing.class);
@@ -132,7 +132,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testHasFieldValueListSafe() throws Exception {
+    void testHasFieldValueListSafe() throws Exception {
         assertThat(Utils.hasFieldValueListSafe(null, "foo")).isFalse();
         Document document = json("foo: 25");
         assertThat(Utils.hasFieldValueListSafe(document, "foo")).isTrue();
@@ -146,19 +146,19 @@ public class UtilsTest {
     }
 
     @Test
-    public void testGetDatabaseNameFromFullName() throws Exception {
+    void testGetDatabaseNameFromFullName() throws Exception {
         assertThat(Utils.getDatabaseNameFromFullName("foo.bar")).isEqualTo("foo");
         assertThat(Utils.getDatabaseNameFromFullName("foo.bar.bla")).isEqualTo("foo");
     }
 
     @Test
-    public void testGetCollectionNameFromFullName() throws Exception {
+    void testGetCollectionNameFromFullName() throws Exception {
         assertThat(Utils.getCollectionNameFromFullName("foo.bar")).isEqualTo("bar");
         assertThat(Utils.getCollectionNameFromFullName("foo.bar.bla")).isEqualTo("bar.bla");
     }
 
     @Test
-    public void testChangeSubdocumentValue() throws Exception {
+    void testChangeSubdocumentValue() throws Exception {
         Document document = json("_id: 1, foo: {bar: 1, bla: 2}");
 
         Utils.changeSubdocumentValue(document, "foo.bar", 3);
@@ -175,7 +175,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testRemoveSubdocumentValue() throws Exception {
+    void testRemoveSubdocumentValue() throws Exception {
         Document document = json("_id: 1, foo: {bar: 1, bla: 2}, baz: { bar: { a: 1, b: 2 } }");
 
         Object removedValue = Utils.removeSubdocumentValue(document, "foo.bar");
@@ -204,7 +204,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testCanFullyTraverseSubkeyForRename() {
+    void testCanFullyTraverseSubkeyForRename() {
         Document document = json("_id: 1, foo: {bar: 1, bla: 2}, baz: { bar: [ { a:1, b:2} , 2, 3] }");
 
         boolean ableToTraverse = Utils.canFullyTraverseSubkeyForRename(document, "foo.bar");
@@ -236,7 +236,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testShorterPathIfPrefix() throws Exception {
+    void testShorterPathIfPrefix() throws Exception {
         assertThat(Utils.getShorterPathIfPrefix("a", "b")).isNull();
         assertThat(Utils.getShorterPathIfPrefix("a.b", "b.c")).isNull();
         assertThat(Utils.getShorterPathIfPrefix("a.b.c", "a.b.d")).isNull();
@@ -250,7 +250,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testJoinTail() throws Exception {
+    void testJoinTail() throws Exception {
         assertThat(Utils.joinTail(Collections.singletonList("a"))).isEqualTo("");
         assertThat(Utils.joinTail(Collections.emptyList())).isEqualTo("");
         assertThat(Utils.joinTail(Arrays.asList("a", "b"))).isEqualTo("b");
@@ -259,7 +259,7 @@ public class UtilsTest {
     }
 
     @Test
-    public void testCollectCommonPathFragments() throws Exception {
+    void testCollectCommonPathFragments() throws Exception {
         assertThat(Utils.collectCommonPathFragments("a", "b")).isEmpty();
         assertThat(Utils.collectCommonPathFragments("aaa", "a.aab")).isEmpty();
         assertThat(Utils.collectCommonPathFragments("a.a", "a.b")).containsExactly("a");

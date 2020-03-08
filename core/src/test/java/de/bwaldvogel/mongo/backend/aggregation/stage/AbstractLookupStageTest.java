@@ -1,29 +1,15 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import static org.mockito.Mockito.when;
-
-import org.junit.Before;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public abstract class AbstractLookupStageTest {
 
     @Mock
     MongoDatabase database;
-
-    @Mock
-    @SuppressWarnings("rawtypes")
-    MongoCollection authorsCollection;
-
-    @Before
-    @SuppressWarnings("unchecked")
-    public void setUp() {
-        when(database.resolveCollection("authors", false)).thenReturn(authorsCollection);
-    }
 
 }

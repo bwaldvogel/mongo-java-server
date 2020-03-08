@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class AssertTest {
 
     @Test
-    public void testIsEmpty() throws Exception {
+    void testIsEmpty() throws Exception {
         Assert.isEmpty(Collections.emptyList());
         Assert.isEmpty(Collections.emptySet());
         Assert.isEmpty(new ArrayList<>());
@@ -26,7 +26,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testNotEmpty() throws Exception {
+    void testNotEmpty() throws Exception {
         Assert.notEmpty(Arrays.asList("a", "b", "c"));
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -39,7 +39,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testHasSize() throws Exception {
+    void testHasSize() throws Exception {
         Assert.hasSize(Arrays.asList("a", "b", "c"), 3);
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -52,7 +52,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testEquals() throws Exception {
+    void testEquals() throws Exception {
         Assert.equals(null, null);
         Assert.equals("a", "a");
         Assert.equals(123, 123);
@@ -75,7 +75,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testIsTrue() throws Exception {
+    void testIsTrue() throws Exception {
         Assert.isTrue(true, () -> "");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -84,7 +84,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testIsFalse() throws Exception {
+    void testIsFalse() throws Exception {
         Assert.isFalse(false, () -> "");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -93,7 +93,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testIsNull() throws Exception {
+    void testIsNull() throws Exception {
         Assert.isNull(null);
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -106,7 +106,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testNotNull() throws Exception {
+    void testNotNull() throws Exception {
         Assert.notNull("");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -119,7 +119,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testStartsWith() throws Exception {
+    void testStartsWith() throws Exception {
         Assert.startsWith("abc", "ab");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -132,7 +132,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testDoesNotStartWith() throws Exception {
+    void testDoesNotStartWith() throws Exception {
         Assert.doesNotStartWith("a", "b");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -145,7 +145,7 @@ public class AssertTest {
     }
 
     @Test
-    public void testNotNullOrEmpty() throws Exception {
+    void testNotNullOrEmpty() throws Exception {
         Assert.notNullOrEmpty("a");
 
         assertThatExceptionOfType(IllegalArgumentException.class)

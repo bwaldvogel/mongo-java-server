@@ -5,7 +5,7 @@ import java.net.InetSocketAddress;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;

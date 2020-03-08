@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.assertj.core.data.Offset;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.Document;
@@ -23,7 +23,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class ExpressionTest {
 
     @Test
-    public void testEvaluateSimpleValue() throws Exception {
+    void testEvaluateSimpleValue() throws Exception {
         assertThat(Expression.evaluate(1, json(""))).isEqualTo(1);
         assertThat(Expression.evaluate(null, json(""))).isNull();
         assertThat(Expression.evaluate("abc", json(""))).isEqualTo("abc");
@@ -34,7 +34,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateAbs() throws Exception {
+    void testEvaluateAbs() throws Exception {
         assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -2"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$abs: '$a'"), json("a: -2.5"))).isEqualTo(2.5);
         assertThat(Expression.evaluate(json("$abs: ['$a']"), json("a: -2.5"))).isEqualTo(2.5);
@@ -52,7 +52,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateAdd() throws Exception {
+    void testEvaluateAdd() throws Exception {
         assertThat(Expression.evaluate(json("$add: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(12);
         assertThat(Expression.evaluate(json("$add: ['$doesNotExist', 5]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$add: [7.5, 3]"), json(""))).isEqualTo(10.5);
@@ -70,7 +70,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateAnd() throws Exception {
+    void testEvaluateAnd() throws Exception {
         assertThat(Expression.evaluate(json("$and: [1, 'green']"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$and: []"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$and: [[null], [false], [0]]"), json(""))).isEqualTo(true);
@@ -87,7 +87,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateAnyElementTrue() throws Exception {
+    void testEvaluateAnyElementTrue() throws Exception {
         assertThat(Expression.evaluate(json("$anyElementTrue: [[true, false]]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$anyElementTrue: ['$items']"), json("items: [false, true]"))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$anyElementTrue: [[[false]]]"), json(""))).isEqualTo(true);
@@ -113,7 +113,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateAllElementsTrue() throws Exception {
+    void testEvaluateAllElementsTrue() throws Exception {
         assertThat(Expression.evaluate(json("$allElementsTrue: [[true, 1, 'someString']]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$allElementsTrue: [[[false]]]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$allElementsTrue: [[]]"), json(""))).isEqualTo(true);
@@ -138,7 +138,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateArrayElemAt() throws Exception {
+    void testEvaluateArrayElemAt() throws Exception {
         assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], 0]"), json(""))).isEqualTo(1);
         assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], 1.0]"), json(""))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], -2]"), json(""))).isEqualTo(2);
@@ -165,7 +165,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateArrayToObject() throws Exception {
+    void testEvaluateArrayToObject() throws Exception {
         assertThat(Expression.evaluate(json("$arrayToObject: {$literal: [['item', 'abc123'], ['qty', 25]]}"), json("")))
             .isEqualTo(json("item: 'abc123', qty: 25"));
 
@@ -209,7 +209,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateCeil() throws Exception {
+    void testEvaluateCeil() throws Exception {
         assertThat(Expression.evaluate(json("$ceil: '$a'"), json("a: 2.5"))).isEqualTo(3.0);
         assertThat(Expression.evaluate(json("$ceil: 42"), json(""))).isEqualTo(42.0);
         assertThat(Expression.evaluate(json("$ceil: [5.4]"), json(""))).isEqualTo(6.0);
@@ -229,7 +229,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateCmp() throws Exception {
+    void testEvaluateCmp() throws Exception {
         assertThat(Expression.evaluate(json("$cmp: [20, 10]"), json(""))).isEqualTo(1);
         assertThat(Expression.evaluate(json("$cmp: [20, 20]"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$cmp: [10, 20]"), json(""))).isEqualTo(-1);
@@ -249,7 +249,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateConcat() throws Exception {
+    void testEvaluateConcat() throws Exception {
         assertThat(Expression.evaluate(json("$concat: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$concat: ['A', 'B', 'C']"), json(""))).isEqualTo("ABC");
         assertThat(Expression.evaluate(json("$concat: ['$a', '-', '$b']"), json("a: 'A', b: 'B'"))).isEqualTo("A-B");
@@ -269,7 +269,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateConcatArrays() throws Exception {
+    void testEvaluateConcatArrays() throws Exception {
         assertThat(Expression.evaluate(json("$concatArrays: null"), json(""))).isNull();
 
         assertThat(Expression.evaluate(json("$concatArrays: [['hello', ' '], ['world']]"), json("")))
@@ -294,7 +294,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateCond() throws Exception {
+    void testEvaluateCond() throws Exception {
         assertThat(Expression.evaluate(json("$cond: {if: {$gte: ['$qty', 250]}, then: 30, else: 20}"), json("qty: 100")))
             .isEqualTo(20);
 
@@ -337,7 +337,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateEq() throws Exception {
+    void testEvaluateEq() throws Exception {
         assertThat(Expression.evaluate(json("$eq: [20, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$eq: [20, 10]"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$eq: [null, null]"), json(""))).isEqualTo(true);
@@ -355,7 +355,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateMap() throws Exception {
+    void testEvaluateMap() throws Exception {
         assertThat((Collection<Object>) Expression.evaluate(
             json("$map: {input: '$quizzes', as: 'grade', in: {$add: ['$$grade', 2]}}"),
             json("quizzes: [5, 6, 7]")))
@@ -401,7 +401,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateReduce() throws Exception {
+    void testEvaluateReduce() throws Exception {
         assertThat((Integer) Expression.evaluate(
             json("$reduce: {input: '$quizzes', initialValue: 0, in: {$add: ['$$this', '$$value']}}"),
             json("quizzes: [5, 6, 7]")))
@@ -464,7 +464,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateMergeObjects() throws Exception {
+    void testEvaluateMergeObjects() throws Exception {
         assertThat(Expression.evaluate(json("$mergeObjects: [{a: 1}, null]"), json(""))).isEqualTo(json("a: 1"));
         assertThat(Expression.evaluate(json("$mergeObjects: [null, null]"), json(""))).isEqualTo(json(""));
         assertThat(Expression.evaluate(json("$mergeObjects: ['$a', '$b']"), json(""))).isEqualTo(json(""));
@@ -488,7 +488,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateMinute() throws Exception {
+    void testEvaluateMinute() throws Exception {
         assertThat(Expression.evaluate(json("$minute: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$minute: '$a'"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(10);
 
@@ -498,7 +498,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateMod() throws Exception {
+    void testEvaluateMod() throws Exception {
         assertThat(Expression.evaluate(json("$mod: [10, 2]"), json(""))).isEqualTo(0.0);
         assertThat(Expression.evaluate(json("$mod: [3, 2]"), json(""))).isEqualTo(1.0);
         assertThat(Expression.evaluate(json("$mod: [3.5, 3]"), json(""))).isEqualTo(0.5);
@@ -521,7 +521,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateMonth() throws Exception {
+    void testEvaluateMonth() throws Exception {
         assertThat(Expression.evaluate(json("$month: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$month: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(7);
 
@@ -531,7 +531,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateMultiply() throws Exception {
+    void testEvaluateMultiply() throws Exception {
         assertThat(Expression.evaluate(json("$multiply: ['$a', '$b']"), json("a: 8, b: 4"))).isEqualTo(32);
         assertThat(Expression.evaluate(json("$multiply: [4.5, 3]"), json(""))).isEqualTo(13.5);
         assertThat(Expression.evaluate(json("$multiply: [5, 3.0]"), json(""))).isEqualTo(15.0);
@@ -562,7 +562,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateNe() throws Exception {
+    void testEvaluateNe() throws Exception {
         assertThat(Expression.evaluate(json("$ne: [20, 20]"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$ne: [20, 10]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$ne: [20, 'a']"), json(""))).isEqualTo(true);
@@ -580,7 +580,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateNot() throws Exception {
+    void testEvaluateNot() throws Exception {
         assertThat(Expression.evaluate(json("$not: false"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$not: true"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$not: 1"), json(""))).isEqualTo(false);
@@ -597,7 +597,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateOr() throws Exception {
+    void testEvaluateOr() throws Exception {
         assertThat(Expression.evaluate(json("$or: [1, 'green']"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$or: []"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$or: [[null], [false], [0]]"), json(""))).isEqualTo(true);
@@ -617,7 +617,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateObjectToArray() throws Exception {
+    void testEvaluateObjectToArray() throws Exception {
         assertThat((List<Document>) Expression.evaluate(json("$objectToArray: '$v'"), json("v: {a: 1, b: 2}")))
             .containsExactly(
                 json("{k: 'a', v: 1}"),
@@ -634,7 +634,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluatePow() throws Exception {
+    void testEvaluatePow() throws Exception {
         assertThat(Expression.evaluate(json("$pow: ['$a', '$b']"), json("a: 8, b: 4"))).isEqualTo(4096.0);
         assertThat(Expression.evaluate(json("$pow: [4.5, 3]"), json(""))).isEqualTo(91.125);
         assertThat(Expression.evaluate(json("$pow: [null, 3]"), json(""))).isNull();
@@ -665,7 +665,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateRange() throws Exception {
+    void testEvaluateRange() throws Exception {
         assertThat(Expression.evaluate(json("$range: [0, 5]"), json(""))).isEqualTo(Arrays.asList(0, 1, 2, 3, 4));
         assertThat(Expression.evaluate(json("$range: [0, 10, 2]"), json(""))).isEqualTo(Arrays.asList(0, 2, 4, 6, 8));
         assertThat(Expression.evaluate(json("$range: [0, 1.0, 2]"), json(""))).isEqualTo(Collections.singletonList(0));
@@ -711,7 +711,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateReverseArray() throws Exception {
+    void testEvaluateReverseArray() throws Exception {
         assertThat(Expression.evaluate(json("$reverseArray: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$reverseArray: '$a'"), json(""))).isNull();
 
@@ -741,7 +741,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateGt() throws Exception {
+    void testEvaluateGt() throws Exception {
         assertThat(Expression.evaluate(json("$gt: [20, 10]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$gt: [20, 20]"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$gt: ['$a', '$b']"), json("a: 10, b: 5"))).isEqualTo(true);
@@ -760,7 +760,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateGte() throws Exception {
+    void testEvaluateGte() throws Exception {
         assertThat(Expression.evaluate(json("$gte: [20, 10]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$gte: [20, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$gte: [20, 21]"), json(""))).isEqualTo(false);
@@ -777,7 +777,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateHour() throws Exception {
+    void testEvaluateHour() throws Exception {
         assertThat(Expression.evaluate(json("$hour: '$a'"), json(""))).isNull();
         int expectedHour = ZonedDateTime.ofInstant(Instant.parse("2018-07-03T14:10:00Z"), ZoneId.systemDefault()).toLocalTime().getHour();
         assertThat(Expression.evaluate(json("$hour: '$a'"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(expectedHour);
@@ -795,7 +795,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateLt() throws Exception {
+    void testEvaluateLt() throws Exception {
         assertThat(Expression.evaluate(json("$lt: [10, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$lt: [20, 20]"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$lt: ['$qty', 250]"), json("qty: 100"))).isEqualTo(true);
@@ -811,7 +811,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateLte() throws Exception {
+    void testEvaluateLte() throws Exception {
         assertThat(Expression.evaluate(json("$lte: [10, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$lte: [20, 20]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$lte: [21, 20]"), json(""))).isEqualTo(false);
@@ -828,7 +828,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSecond() throws Exception {
+    void testEvaluateSecond() throws Exception {
         assertThat(Expression.evaluate(json("$second: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$second: '$a'"), new Document("a", toDate("2018-07-03T14:10:23Z")))).isEqualTo(23);
 
@@ -838,7 +838,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSetDifference() throws Exception {
+    void testEvaluateSetDifference() throws Exception {
         assertThat(Expression.evaluate(json("$setDifference: [null, null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setDifference: [[], null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setDifference: [null, []]"), json(""))).isNull();
@@ -868,7 +868,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSetEquals() throws Exception {
+    void testEvaluateSetEquals() throws Exception {
         assertThat(Expression.evaluate(json("$setEquals: [['a', 'b', 'a'], ['b']]"), json("")))
             .isEqualTo(false);
 
@@ -909,7 +909,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSetIntersection() throws Exception {
+    void testEvaluateSetIntersection() throws Exception {
         assertThat(Expression.evaluate(json("$setIntersection: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setIntersection: '$field'"), json(""))).isNull();
         assertThat((Collection<?>) Expression.evaluate(json("$setIntersection: []"), json(""))).isEmpty();
@@ -942,7 +942,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSetIsSubset() throws Exception {
+    void testEvaluateSetIsSubset() throws Exception {
         assertThat(Expression.evaluate(json("$setIsSubset: [['a', 'b', 'a'], ['b', 'a']]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$setIsSubset: [['a', 'b'], [['a', 'b']]]"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$setIsSubset: ['$a', '$b']"), json("a: [1, 2], b: [1, 2, 3, 4]"))).isEqualTo(true);
@@ -978,7 +978,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSetUnion() throws Exception {
+    void testEvaluateSetUnion() throws Exception {
         assertThat(Expression.evaluate(json("$setUnion: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setUnion: '$a'"), json(""))).isNull();
 
@@ -998,7 +998,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSize() throws Exception {
+    void testEvaluateSize() throws Exception {
         assertThat(Expression.evaluate(json("$size: [['$a', '$b']]"), json("a: 7, b: 5"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$size: [[7.5, 3]]"), json(""))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$size: {$literal: [7.5, 3]}"), json(""))).isEqualTo(2);
@@ -1017,7 +1017,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSlice() throws Exception {
+    void testEvaluateSlice() throws Exception {
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], 1, 1]"), json("")))
             .isEqualTo(Collections.singletonList(2));
 
@@ -1078,7 +1078,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSplit() throws Exception {
+    void testEvaluateSplit() throws Exception {
         assertThat((String[]) Expression.evaluate(json("$split: ['June-15-2013', '-']"), json(""))).containsExactly("June", "15", "2013");
         assertThat((String[]) Expression.evaluate(json("$split: ['$a', '$b']"), json("a: 'foo bar', b: ' '"))).containsExactly("foo", "bar");
         assertThat(Expression.evaluate(json("$split: [null, ' ']"), json(""))).isNull();
@@ -1106,7 +1106,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSubtract() throws Exception {
+    void testEvaluateSubtract() throws Exception {
         assertThat(Expression.evaluate(json("$subtract: ['$a', '$b']"), json("a: 7, b: 5"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$subtract: [7.5, 3]"), json(""))).isEqualTo(4.5);
         assertThat(Expression.evaluate(json("$subtract: [null, 3]"), json(""))).isNull();
@@ -1140,7 +1140,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSum() throws Exception {
+    void testEvaluateSum() throws Exception {
         assertThat(Expression.evaluate(json("$sum: null"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$sum: ''"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$sum: 5"), json(""))).isEqualTo(5);
@@ -1153,7 +1153,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateToLower() throws Exception {
+    void testEvaluateToLower() throws Exception {
         assertThat(Expression.evaluate(json("$toLower: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$toLower: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$toLower: '$a'"), json("a: 'FOO'"))).isEqualTo("foo");
@@ -1169,7 +1169,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateToUpper() throws Exception {
+    void testEvaluateToUpper() throws Exception {
         assertThat(Expression.evaluate(json("$toUpper: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$toUpper: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$toUpper: '$a'"), json("a: 'foo'"))).isEqualTo("FOO");
@@ -1185,7 +1185,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateTrunc() throws Exception {
+    void testEvaluateTrunc() throws Exception {
         assertThat(Expression.evaluate(json("$trunc: '$a'"), json("a: 2.5"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$trunc: 42"), json(""))).isEqualTo(42);
         assertThat(Expression.evaluate(json("$trunc: NaN"), json(""))).isEqualTo(Double.NaN);
@@ -1206,7 +1206,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateToString() throws Exception {
+    void testEvaluateToString() throws Exception {
         assertThat(Expression.evaluate(json("$toString: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$toString: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$toString: '$a'"), json("a: 'foo'"))).isEqualTo("foo");
@@ -1223,7 +1223,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSqrt() throws Exception {
+    void testEvaluateSqrt() throws Exception {
         assertThat((double) Expression.evaluate(json("$sqrt: '$a'"), json("a: 2.5"))).isEqualTo(1.581, Offset.offset(0.001));
         assertThat(Expression.evaluate(json("$sqrt: 16"), json(""))).isEqualTo(4.0);
         assertThat(Expression.evaluate(json("$sqrt: [25]"), json(""))).isEqualTo(5.0);
@@ -1239,7 +1239,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateStrLenBytes() throws Exception {
+    void testEvaluateStrLenBytes() throws Exception {
         assertThat(Expression.evaluate(json("$strLenBytes: ''"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$strLenBytes: '$a'"), json("a: 'value'"))).isEqualTo(5);
         assertThat(Expression.evaluate(json("$strLenBytes: 'cafétéria'"), json(""))).isEqualTo(11);
@@ -1260,7 +1260,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateStrLenCP() throws Exception {
+    void testEvaluateStrLenCP() throws Exception {
         assertThat(Expression.evaluate(json("$strLenCP: ''"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$strLenCP: '$a'"), json("a: 'value'"))).isEqualTo(5);
         assertThat(Expression.evaluate(json("$strLenCP: 'cafétéria'"), json(""))).isEqualTo(9);
@@ -1281,7 +1281,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSubstrBytes() throws Exception {
+    void testEvaluateSubstrBytes() throws Exception {
         assertThat(Expression.evaluate(json("$substrBytes: ['', -1, -1]"), json(""))).isEqualTo("");
         assertThat(Expression.evaluate(json("$substrBytes: ['$a', 0, -1]"), json("a: 'value'"))).isEqualTo("value");
         assertThat(Expression.evaluate(json("$substrBytes: ['$a', 0, 5]"), json("a: 'cafétéria'"))).isEqualTo("café");
@@ -1306,7 +1306,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateSubstrCP() throws Exception {
+    void testEvaluateSubstrCP() throws Exception {
         assertThat(Expression.evaluate(json("$substrCP: ['', -1, -1]"), json(""))).isEqualTo("");
         assertThat(Expression.evaluate(json("$substrCP: ['$a', 0, -1]"), json("a: 'value'"))).isEqualTo("value");
         assertThat(Expression.evaluate(json("$substrCP: ['$a', 0, 5]"), json("a: 'cafétéria'"))).isEqualTo("cafét");
@@ -1331,7 +1331,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateYear() throws Exception {
+    void testEvaluateYear() throws Exception {
         assertThat(Expression.evaluate(json("$year: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$year: '$a'"), new Document("a", toDate("2018-07-03T14:00:00Z")))).isEqualTo(2018);
 
@@ -1341,7 +1341,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateDayOfWeek() throws Exception {
+    void testEvaluateDayOfWeek() throws Exception {
         assertThat(Expression.evaluate(json("$dayOfWeek: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$dayOfWeek: '$a'"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
         assertThat(Expression.evaluate(json("$dayOfWeek: '$a'"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(1);
@@ -1353,7 +1353,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateDayOfMonth() throws Exception {
+    void testEvaluateDayOfMonth() throws Exception {
         assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
         assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(3);
@@ -1365,7 +1365,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateDayOfYear() throws Exception {
+    void testEvaluateDayOfYear() throws Exception {
         assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), new Document("a", toDate("2018-01-01T14:00:00Z")))).isEqualTo(1);
         assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), new Document("a", toDate("2014-02-03T14:00:00Z")))).isEqualTo(34);
@@ -1376,7 +1376,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testDateToString() throws Exception {
+    void testDateToString() throws Exception {
         Instant instant = Instant.parse("2011-12-19T10:15:20.250Z");
 
         assertThat(Expression.evaluate(json("$dateToString: {date: '$a'}"), json(""))).isNull();
@@ -1448,7 +1448,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateDivide() throws Exception {
+    void testEvaluateDivide() throws Exception {
         assertThat(Expression.evaluate(json("$divide: ['$a', '$b']"), json("a: 8, b: 4"))).isEqualTo(2.0);
         assertThat(Expression.evaluate(json("$divide: [4.5, 3]"), json(""))).isEqualTo(1.5);
         assertThat(Expression.evaluate(json("$divide: [null, 3]"), json(""))).isNull();
@@ -1477,7 +1477,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateExp() throws Exception {
+    void testEvaluateExp() throws Exception {
         assertThat(Expression.evaluate(json("$exp: 0"), json(""))).isEqualTo(1.0);
         assertThat(Expression.evaluate(json("$exp: [0]"), json(""))).isEqualTo(1.0);
         assertThat((double) Expression.evaluate(json("$exp: '$a'"), json("a: 2"))).isEqualTo(7.389, Offset.offset(0.001));
@@ -1498,7 +1498,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateFilter() throws Exception {
+    void testEvaluateFilter() throws Exception {
         assertThat(Expression.evaluate(json("$filter: {input: null, cond: null}"), json(""))).isNull();
 
         assertThat(Expression.evaluate(json("$filter: {input: [1, 2, 3, 4], as: 'value', cond: {$lte: ['$$value', 3]}}"), json("")))
@@ -1557,7 +1557,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateFloor() throws Exception {
+    void testEvaluateFloor() throws Exception {
         assertThat(Expression.evaluate(json("$floor: '$a'"), json("a: 2.5"))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$floor: 42"), json(""))).isEqualTo(42);
         assertThat(Expression.evaluate(json("$floor: NaN"), json(""))).isEqualTo(Double.NaN);
@@ -1578,7 +1578,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateIfNull() throws Exception {
+    void testEvaluateIfNull() throws Exception {
         assertThat(Expression.evaluate(json("$ifNull: [17, 'Unspecified']"), json(""))).isEqualTo(17);
         assertThat(Expression.evaluate(json("$ifNull: [null, null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$ifNull: ['$desc', 'Unspecified']"), json(""))).isEqualTo("Unspecified");
@@ -1600,7 +1600,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateIn() throws Exception {
+    void testEvaluateIn() throws Exception {
         assertThat(Expression.evaluate(json("$in: [2, [1, 2, 3]]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$in: ['abc', ['xyz', 'abc']]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$in: [['a'], ['a']]"), json(""))).isEqualTo(false);
@@ -1618,7 +1618,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateIndexOfArray() throws Exception {
+    void testEvaluateIndexOfArray() throws Exception {
         assertThat(Expression.evaluate(json("$indexOfArray: [['a', 'abc'], 'a']"), json(""))).isEqualTo(0);
         assertThat(Expression.evaluate(json("$indexOfArray: [['a', 'abc', 'de', ['de']], ['de']]"), json(""))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$indexOfArray: [[1, 2], 5]"), json(""))).isEqualTo(-1);
@@ -1662,7 +1662,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateIndexOfBytes() throws Exception {
+    void testEvaluateIndexOfBytes() throws Exception {
         assertThat(Expression.evaluate(json("$indexOfBytes: ['cafeteria', 'e']"), json(""))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$indexOfBytes: ['cafétéria', 'é']"), json(""))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$indexOfBytes: ['cafétéria', 'e']"), json(""))).isEqualTo(-1);
@@ -1711,7 +1711,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateIndexOfCP() throws Exception {
+    void testEvaluateIndexOfCP() throws Exception {
         assertThat(Expression.evaluate(json("$indexOfCP: ['cafeteria', 'e']"), json(""))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$indexOfCP: ['cafétéria', 'é']"), json(""))).isEqualTo(3);
         assertThat(Expression.evaluate(json("$indexOfCP: ['cafétéria', 'e']"), json(""))).isEqualTo(-1);
@@ -1760,7 +1760,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateIsArray() throws Exception {
+    void testEvaluateIsArray() throws Exception {
         assertThat(Expression.evaluate(json("$isArray: ['hello']"), json(""))).isEqualTo(false);
         assertThat(Expression.evaluate(json("$isArray: [[2, 3]]"), json(""))).isEqualTo(true);
         assertThat(Expression.evaluate(json("$isArray: 'foo'}"), json(""))).isEqualTo(false);
@@ -1774,13 +1774,13 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateLiteral() throws Exception {
+    void testEvaluateLiteral() throws Exception {
         assertThat(Expression.evaluate(json("$literal: {$add: [2, 3]}"), json(""))).isEqualTo(json("$add: [2, 3]"));
         assertThat(Expression.evaluate(json("$literal: {$literal: 1}"), json(""))).isEqualTo(json("$literal: 1"));
     }
 
     @Test
-    public void testEvaluateLn() throws Exception {
+    void testEvaluateLn() throws Exception {
         assertThat(Expression.evaluate(json("$ln: 1"), json(""))).isEqualTo(0.0);
         assertThat(Expression.evaluate(json("$ln: [1]"), json(""))).isEqualTo(0.0);
         assertThat((double) Expression.evaluate(json("$ln: '$a'"), json("a: 10"))).isEqualTo(2.302, Offset.offset(0.001));
@@ -1801,7 +1801,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateLog() throws Exception {
+    void testEvaluateLog() throws Exception {
         assertThat(Expression.evaluate(json("$log: 1"), json(""))).isEqualTo(0.0);
         assertThat(Expression.evaluate(json("$log: [1]"), json(""))).isEqualTo(0.0);
         assertThat((double) Expression.evaluate(json("$log: '$a'"), json("a: 10"))).isEqualTo(2.302, Offset.offset(0.001));
@@ -1822,7 +1822,7 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateLog10() throws Exception {
+    void testEvaluateLog10() throws Exception {
         assertThat(Expression.evaluate(json("$log10: 1"), json(""))).isEqualTo(0.0);
         assertThat(Expression.evaluate(json("$log10: 10"), json(""))).isEqualTo(1.0);
         assertThat(Expression.evaluate(json("$log10: 100"), json(""))).isEqualTo(2.0);
@@ -1846,27 +1846,27 @@ public class ExpressionTest {
     }
 
     @Test
-    public void testEvaluateIllegalExpression() throws Exception {
+    void testEvaluateIllegalExpression() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$foo: '$a'"), json("")))
             .withMessage("[Error 168] Unrecognized expression '$foo'");
     }
 
     @Test
-    public void testEvaluateDocument_SimpleExpression() throws Exception {
+    void testEvaluateDocument_SimpleExpression() throws Exception {
         Object evaluatedDocument = Expression.evaluateDocument(json("key: '$key2'"), json("key2: 123"));
         assertThat(evaluatedDocument).isEqualTo(json("key: 123"));
     }
 
     @Test
-    public void testEvaluateDocument_NullValue() throws Exception {
+    void testEvaluateDocument_NullValue() throws Exception {
         Object evaluatedDocument = Expression.evaluateDocument(json("key: '$value'"), json("value: null"));
         assertThat(evaluatedDocument).isEqualTo(json("key: null"));
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/111
     @Test
-    public void testEvaluateDocument_MissingValue() throws Exception {
+    void testEvaluateDocument_MissingValue() throws Exception {
         Object evaluatedDocument = Expression.evaluateDocument(json("key: '$missing'"), json(""));
         assertThat(evaluatedDocument).isEqualTo(json(""));
     }

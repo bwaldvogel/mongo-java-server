@@ -6,14 +6,14 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.math.BigDecimal;
 
 import org.assertj.core.data.Offset;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Decimal128;
 
 public class NumericUtilsTest {
 
     @Test
-    public void testAddNumbers() {
+    void testAddNumbers() {
         assertThat(NumericUtils.addNumbers(-4, 3)).isEqualTo(-1);
         assertThat(NumericUtils.addNumbers(-0.1, 0.1)).isEqualTo(0.0);
         assertThat(NumericUtils.addNumbers(0.9, 0.1)).isEqualTo(1.0);
@@ -31,7 +31,7 @@ public class NumericUtilsTest {
     }
 
     @Test
-    public void testSubtractNumbers() {
+    void testSubtractNumbers() {
         assertThat(NumericUtils.subtractNumbers(-4, 3)).isEqualTo(-7);
         assertThat(NumericUtils.subtractNumbers(0.1, 0.1)).isEqualTo(0.0);
         assertThat(NumericUtils.subtractNumbers(1.1, 0.1)).isEqualTo(1.0);
@@ -49,7 +49,7 @@ public class NumericUtilsTest {
     }
 
     @Test
-    public void testMultiplyNumbers() {
+    void testMultiplyNumbers() {
         assertThat(NumericUtils.multiplyNumbers(-4, 3)).isEqualTo(-12);
         assertThat((double) NumericUtils.multiplyNumbers(0.1, 0.1)).isEqualTo(0.01, Offset.offset(0.0001));
         assertThat((double) NumericUtils.multiplyNumbers(1.1, 0.1)).isEqualTo(0.11, Offset.offset(0.0001));

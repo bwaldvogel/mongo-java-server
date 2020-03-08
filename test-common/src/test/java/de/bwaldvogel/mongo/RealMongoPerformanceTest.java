@@ -2,8 +2,8 @@ package de.bwaldvogel.mongo;
 
 import java.net.InetSocketAddress;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
 
 import de.bwaldvogel.mongo.backend.AbstractPerformanceTest;
@@ -12,7 +12,7 @@ public class RealMongoPerformanceTest extends AbstractPerformanceTest {
 
     private static GenericContainer<?> mongoContainer;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpMongoContainer() {
         mongoContainer = RealMongoContainer.start();
     }
@@ -22,7 +22,7 @@ public class RealMongoPerformanceTest extends AbstractPerformanceTest {
         serverAddress = new InetSocketAddress(mongoContainer.getFirstMappedPort());
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownServer() {
         mongoContainer.stop();
         mongoContainer = null;

@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
@@ -16,14 +16,14 @@ import de.bwaldvogel.mongo.bson.ObjectId;
 public class PostgresqlUtilsTest {
 
     @Test
-    public void testToDataKey() throws Exception {
+    void testToDataKey() throws Exception {
         assertThat(PostgresqlUtils.toDataKey("foo")).isEqualTo("data ->> 'foo'");
         assertThat(PostgresqlUtils.toDataKey("foo.bar")).isEqualTo("data -> 'foo' ->> 'bar'");
         assertThat(PostgresqlUtils.toDataKey("foo.bar.bla")).isEqualTo("data -> 'foo' -> 'bar' ->> 'bla'");
     }
 
     @Test
-    public void testToQueryValue() throws Exception {
+    void testToQueryValue() throws Exception {
         assertThat(PostgresqlUtils.toQueryValue(123)).isEqualTo("123");
         assertThat(PostgresqlUtils.toQueryValue(123.0)).isEqualTo("123");
         assertThat(PostgresqlUtils.toQueryValue(123.1)).isEqualTo("123.1");

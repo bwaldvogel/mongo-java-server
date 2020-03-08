@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.entry;
 
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
@@ -16,7 +16,7 @@ import de.bwaldvogel.mongo.exception.FailedToParseException;
 public class ArrayFiltersTest {
 
     @Test
-    public void testParseAndCalculateKeys_Simple() throws Exception {
+    void testParseAndCalculateKeys_Simple() throws Exception {
         Document query = json("arrayFilters: [{x: {$gt: 20}}]");
         Document updateQuery = json("$set: {'values.$[x]': 20}");
 
@@ -27,7 +27,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_Subdocument() throws Exception {
+    void testParseAndCalculateKeys_Subdocument() throws Exception {
         Document query = json("arrayFilters: [{'elem.name': {$in: ['A', 'B']}}]");
         Document updateQuery = json("$set: {'values.$[elem].active': true}");
 
@@ -43,7 +43,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_NestedSubdocument() throws Exception {
+    void testParseAndCalculateKeys_NestedSubdocument() throws Exception {
         Document query = json("arrayFilters: [{'elem.name': {$in: ['B', 'C']}}]");
         Document updateQuery = json("$set: {'a.b.$[elem].active': true}");
 
@@ -59,7 +59,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_PathDoesNotExist() throws Exception {
+    void testParseAndCalculateKeys_PathDoesNotExist() throws Exception {
         Document query = json("arrayFilters: [{x: {$gt: 20}}]");
         Document updateQuery = json("$set: {'a.b.$[x]': 20}");
 
@@ -71,7 +71,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_TopLevelPathDoesNotExist() throws Exception {
+    void testParseAndCalculateKeys_TopLevelPathDoesNotExist() throws Exception {
         Document query = json("arrayFilters: [{x: {$gt: 20}}]");
         Document updateQuery = json("$set: {'a.b.$[x]': 20}");
 
@@ -83,7 +83,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_NonArray() throws Exception {
+    void testParseAndCalculateKeys_NonArray() throws Exception {
         Document query = json("arrayFilters: [{x: {$gt: 20}}]");
         Document updateQuery = json("$set: {'a.b.$[x]': 20}");
 
@@ -95,7 +95,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_PositionalAll() throws Exception {
+    void testParseAndCalculateKeys_PositionalAll() throws Exception {
         Document query = json("");
         Document updateQuery = json("$set: {'values.$[].active': true}");
 
@@ -108,7 +108,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_PositionalAllAndElementFilter() throws Exception {
+    void testParseAndCalculateKeys_PositionalAllAndElementFilter() throws Exception {
         Document query = json("arrayFilters: [{element: {$gte: 3}}]");
         Document updateQuery = json("$inc: {'grades.$[].x.$[element]': 1}");
 
@@ -127,7 +127,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParse_FilterNotUsed() throws Exception {
+    void testParse_FilterNotUsed() throws Exception {
         Document query = json("arrayFilters: [{x: {$gt: 20}}]");
         Document updateQuery = json("$set: {'a.b': 20}");
 
@@ -137,7 +137,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParseAndCalculateKeys_TopLevelFilter() throws Exception {
+    void testParseAndCalculateKeys_TopLevelFilter() throws Exception {
         Document query = json("arrayFilters: [{x: {$gt: 20}}]");
         Document updateQuery = json("$set: {'$[x]': 20}");
 
@@ -149,7 +149,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParse_MultipleFilters() throws Exception {
+    void testParse_MultipleFilters() throws Exception {
         Document query = json("arrayFilters: [{x: {$gt: 20}}, {y: {$lt: 10}}]");
         Document updateQuery = json("$set: {'values.$[x]': 20, 'values.$[y]': 30}");
 
@@ -162,7 +162,7 @@ public class ArrayFiltersTest {
     }
 
     @Test
-    public void testParse_MultipleSubdocumentFieldsInOneFilter() throws Exception {
+    void testParse_MultipleSubdocumentFieldsInOneFilter() throws Exception {
         Document query = json("arrayFilters: [{'a.x': {$gt: 20}, 'a.y': {$lt: 30}}]");
         Document updateQuery = json("$set: {'values.$[a].amount': 20}");
 

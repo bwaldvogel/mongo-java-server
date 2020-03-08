@@ -12,7 +12,7 @@ import java.util.function.BooleanSupplier;
 import org.bson.BSON;
 import org.bson.BasicBSONObject;
 import org.bson.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +21,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
     private static final Logger log = LoggerFactory.getLogger(AbstractProtocolTest.class);
 
     @Test
-    public void testInsertOperation() throws Exception {
+    void testInsertOperation() throws Exception {
         assertThat(collection.countDocuments()).isZero();
 
         try (Socket socket = new Socket(serverAddress.getAddress(), serverAddress.getPort())) {
@@ -50,7 +50,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
     }
 
     @Test
-    public void testDeleteOperation() throws Exception {
+    void testDeleteOperation() throws Exception {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
         collection.insertOne(json("_id: 3"));
@@ -84,7 +84,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
     }
 
     @Test
-    public void testSingleDeleteOperation() throws Exception {
+    void testSingleDeleteOperation() throws Exception {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
         collection.insertOne(json("_id: 3"));
@@ -121,7 +121,7 @@ public abstract class AbstractProtocolTest extends AbstractTest {
     }
 
     @Test
-    public void testUpdateOperation() throws Exception {
+    void testUpdateOperation() throws Exception {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
         collection.insertOne(json("_id: 3"));

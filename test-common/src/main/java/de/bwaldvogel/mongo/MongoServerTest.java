@@ -15,9 +15,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
 import org.bson.Document;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
@@ -26,30 +27,31 @@ import com.mongodb.ServerAddress;
 
 public abstract class MongoServerTest {
 
-    private static final int TEST_TIMEOUT_MILLIS = 10_000;
+    private static final int TEST_TIMEOUT_SECONDS = 10;
 
     private MongoServer server;
 
     protected abstract MongoBackend createBackend() throws Exception;
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         server = new MongoServer(createBackend());
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         server.shutdown();
     }
 
     @Test
-    public void testToString() throws Exception {
+    void testToString() throws Exception {
         assertThat(server).hasToString("MongoServer()");
         InetSocketAddress inetSocketAddress = server.bind();
         assertThat(server).hasToString("MongoServer(port: " + inetSocketAddress.getPort() + ", ssl: false)");
     }
 
-    @Test(timeout = TEST_TIMEOUT_MILLIS)
+    @Test
+    @Timeout(TEST_TIMEOUT_SECONDS)
     public void testStopListening() throws Exception {
         InetSocketAddress serverAddress = server.bind();
         try (MongoClient client = new MongoClient(new ServerAddress(serverAddress))) {
@@ -71,7 +73,8 @@ public abstract class MongoServerTest {
         }
     }
 
-    @Test(timeout = TEST_TIMEOUT_MILLIS)
+    @Test
+    @Timeout(TEST_TIMEOUT_SECONDS)
     public void testShutdownNow() throws Exception {
         InetSocketAddress serverAddress = server.bind();
         MongoClient client = new MongoClient(new ServerAddress(serverAddress));
@@ -82,7 +85,8 @@ public abstract class MongoServerTest {
         server.shutdownNow();
     }
 
-    @Test(timeout = 5000)
+    @Test
+    @Timeout(TEST_TIMEOUT_SECONDS)
     public void testGetLocalAddress() throws Exception {
         assertThat(server.getLocalAddress()).isNull();
         InetSocketAddress serverAddress = server.bind();
@@ -92,7 +96,8 @@ public abstract class MongoServerTest {
         assertThat(server.getLocalAddress()).isNull();
     }
 
-    @Test(timeout = TEST_TIMEOUT_MILLIS)
+    @Test
+    @Timeout(TEST_TIMEOUT_SECONDS)
     public void testShutdownAndRestart() throws Exception {
         InetSocketAddress serverAddress = server.bind();
         try (MongoClient client = new MongoClient(new ServerAddress(serverAddress))) {
@@ -111,7 +116,8 @@ public abstract class MongoServerTest {
         }
     }
 
-    @Test(timeout = TEST_TIMEOUT_MILLIS)
+    @Test
+    @Timeout(TEST_TIMEOUT_SECONDS)
     public void testSsl() throws Exception {
         server.enableSsl(getPrivateKey(), null, getCertificate());
         InetSocketAddress serverAddress = server.bind();
@@ -128,7 +134,7 @@ public abstract class MongoServerTest {
     }
 
     @Test
-    public void testEnableSslAfterAlreadyStarted() throws Exception {
+    void testEnableSslAfterAlreadyStarted() throws Exception {
         server.bind();
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -137,14 +143,14 @@ public abstract class MongoServerTest {
     }
 
     @Test
-    public void testEnableSslWithEmptyKeyCertChain() throws Exception {
+    void testEnableSslWithEmptyKeyCertChain() throws Exception {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> server.enableSsl(null, null))
             .withMessage("keyCertChain must be non-empty");
     }
 
     @Test
-    public void testEnableSslWithMissingPrivateKey() throws Exception {
+    void testEnableSslWithMissingPrivateKey() throws Exception {
         X509Certificate certificate = getCertificate();
 
         assertThatExceptionOfType(NullPointerException.class)

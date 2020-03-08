@@ -5,19 +5,19 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
 public class Decimal128Test {
 
     @Test
-    public void testEqualsAndHashCodeContract() throws Exception {
+    void testEqualsAndHashCodeContract() throws Exception {
         EqualsVerifier.forClass(Decimal128.class).verify();
     }
 
     @Test
-    public void testFromAndToBigDecimal() throws Exception {
+    void testFromAndToBigDecimal() throws Exception {
         assertThat(new Decimal128(new BigDecimal("1.2345")).toBigDecimal().toString()).isEqualTo("1.2345");
         assertThat(new Decimal128(new BigDecimal("1.2345678901234567890123465789")).toBigDecimal().toString()).isEqualTo("1.2345678901234567890123465789");
         assertThat(new Decimal128(new BigDecimal("12345678901234567890123465789")).toBigDecimal().toString()).isEqualTo("12345678901234567890123465789");
@@ -28,7 +28,7 @@ public class Decimal128Test {
     }
 
     @Test
-    public void testFromBigDecimal_NumberFormatException() {
+    void testFromBigDecimal_NumberFormatException() {
         assertThatExceptionOfType(NumberFormatException.class)
             .isThrownBy(() -> new Decimal128(new BigDecimal("2").scaleByPowerOfTen(10000)))
             .withMessage("Exponent is out of range for Decimal128 encoding of 2E+10000");
@@ -43,7 +43,7 @@ public class Decimal128Test {
     }
 
     @Test
-    public void testToInt() throws Exception {
+    void testToInt() throws Exception {
         assertThat(Decimal128.ONE.intValue()).isEqualTo(1);
         assertThat(Decimal128.POSITIVE_ZERO.intValue()).isEqualTo(0);
         assertThat(Decimal128.NEGATIVE_ZERO.intValue()).isEqualTo(0);
@@ -62,7 +62,7 @@ public class Decimal128Test {
     }
 
     @Test
-    public void testToLong() throws Exception {
+    void testToLong() throws Exception {
         assertThat(Decimal128.ONE.longValue()).isEqualTo(1L);
         assertThat(Decimal128.POSITIVE_ZERO.longValue()).isEqualTo(0L);
         assertThat(Decimal128.NEGATIVE_ZERO.longValue()).isEqualTo(0L);
@@ -81,7 +81,7 @@ public class Decimal128Test {
     }
 
     @Test
-    public void testToFloat() throws Exception {
+    void testToFloat() throws Exception {
         assertThat(Decimal128.ONE.floatValue()).isEqualTo(1.0f);
         assertThat(Decimal128.POSITIVE_ZERO.floatValue()).isEqualTo(0.0f);
         assertThat(Decimal128.NEGATIVE_ZERO.floatValue()).isEqualTo(0.0f);
@@ -91,7 +91,7 @@ public class Decimal128Test {
     }
 
     @Test
-    public void testToDouble() throws Exception {
+    void testToDouble() throws Exception {
         assertThat(Decimal128.ONE.doubleValue()).isEqualTo(1.0);
         assertThat(Decimal128.POSITIVE_ZERO.doubleValue()).isEqualTo(0.0);
         assertThat(Decimal128.NEGATIVE_ZERO.doubleValue()).isEqualTo(0.0);
@@ -101,7 +101,7 @@ public class Decimal128Test {
     }
 
     @Test
-    public void testToString() throws Exception {
+    void testToString() throws Exception {
         assertThat(new Decimal128(new BigDecimal("1e1000"))).hasToString("1E+1000");
         assertThat(new Decimal128(new BigDecimal("1000"))).hasToString("1000");
         assertThat(new Decimal128(new BigDecimal("1000.987654321"))).hasToString("1000.987654321");

@@ -7,14 +7,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.Missing;
 
 public class JsonTest {
 
     @Test
-    public void testToJsonValue() throws Exception {
+    void testToJsonValue() throws Exception {
         assertThat(Json.toJsonValue(null)).isEqualTo("null");
         assertThat(Json.toJsonValue(Missing.getInstance())).isEqualTo("null");
         assertThat(Json.toJsonValue(true)).isEqualTo("true");
@@ -45,7 +45,7 @@ public class JsonTest {
     }
 
     @Test
-    public void testToJsonValueWithCompactKey() throws Exception {
+    void testToJsonValueWithCompactKey() throws Exception {
         assertThat(Json.toJsonValue(new Document().append("a", 1), true, "{", "}")).isEqualTo("{a: 1}");
         assertThat(Json.toJsonValue(new Document().append("a", new Document().append("b", 1)), true, "{", "}")).isEqualTo("{a: {b: 1}}");
     }

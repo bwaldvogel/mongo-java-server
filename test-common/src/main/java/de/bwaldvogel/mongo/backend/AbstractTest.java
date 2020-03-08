@@ -17,8 +17,8 @@ import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.MapAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.bson.Document;
-import org.junit.AfterClass;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
 
 import com.mongodb.MongoNamespace;
 import com.mongodb.ServerAddress;
@@ -45,7 +45,7 @@ public abstract class AbstractTest {
 
     protected abstract MongoBackend createBackend() throws Exception;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         if (serverAddress == null) {
             setUpBackend();
@@ -64,7 +64,7 @@ public abstract class AbstractTest {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() {
         closeClients();
         tearDownBackend();

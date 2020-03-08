@@ -3,7 +3,7 @@ package de.bwaldvogel.mongo.backend;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 
 import org.bson.Document;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

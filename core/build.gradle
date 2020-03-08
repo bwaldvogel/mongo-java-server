@@ -5,5 +5,6 @@ dependencies {
 
     testImplementation group: 'org.mongodb', name: 'mongo-java-driver', version: 'latest.release'
     testImplementation "org.mockito:mockito-core:latest.release"
+    testImplementation "org.mockito:mockito-junit-jupiter:latest.release"
     testImplementation "nl.jqno.equalsverifier:equalsverifier:latest.release"
 }

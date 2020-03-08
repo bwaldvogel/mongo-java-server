@@ -6,8 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.stream.Stream;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import de.bwaldvogel.mongo.MongoDatabase;
@@ -72,14 +72,14 @@ public class AbstractMongoCollectionTest {
 
     private TestCollection collection;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         MongoDatabase database = Mockito.mock(MongoDatabase.class);
         this.collection = new TestCollection(database, "some collection", "_id");
     }
 
     @Test
-    public void testConvertSelector() throws Exception {
+    void testConvertSelector() throws Exception {
         assertThat(collection.convertSelectorToDocument(json("")))
             .isEqualTo(json(""));
 
@@ -97,7 +97,7 @@ public class AbstractMongoCollectionTest {
     }
 
     @Test
-    public void testDeriveDocumentId() throws Exception {
+    void testDeriveDocumentId() throws Exception {
         assertThat(collection.deriveDocumentId(json(""))).isInstanceOf(ObjectId.class);
         assertThat(collection.deriveDocumentId(json("a: 1"))).isInstanceOf(ObjectId.class);
         assertThat(collection.deriveDocumentId(json("_id: 1"))).isEqualTo(1);
@@ -106,7 +106,7 @@ public class AbstractMongoCollectionTest {
     }
 
     @Test
-    public void testValidateUpdateQuery() throws Exception {
+    void testValidateUpdateQuery() throws Exception {
         AbstractMongoCollection.validateUpdateQuery(new Document());
         AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}"));
         AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}, $inc: {c: 1}"));

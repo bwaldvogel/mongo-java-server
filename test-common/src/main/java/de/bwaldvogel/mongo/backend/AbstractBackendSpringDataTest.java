@@ -6,9 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.dao.DuplicateKeyException;
@@ -17,7 +17,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;
@@ -33,7 +33,7 @@ import de.bwaldvogel.mongo.repository.AccountRepository;
 import de.bwaldvogel.mongo.repository.PersonRepository;
 import de.bwaldvogel.mongo.repository.TestRepository;
 
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = AbstractBackendSpringDataTest.TestConfig.class)
 public abstract class AbstractBackendSpringDataTest {
 
@@ -77,8 +77,8 @@ public abstract class AbstractBackendSpringDataTest {
     @Autowired
     private TestRepository testRepository;
 
-    @Before
-    public void deleteAll() throws Exception {
+    @BeforeEach
+    void deleteAll() throws Exception {
         accountRepository.deleteAll();
         personRepository.deleteAll();
         testRepository.deleteAll();

@@ -57,7 +57,7 @@ import org.bson.types.Code;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
 import org.reactivestreams.Subscriber;
@@ -70,7 +70,6 @@ import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCommandException;
-import com.mongodb.MongoException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.MongoQueryException;
 import com.mongodb.MongoServerException;
@@ -1588,16 +1587,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.countDocuments()).isEqualTo(1);
     }
 
-    @Test(expected = MongoException.class)
+    @Test
     public void testInsertDuplicateThrows() {
         collection.insertOne(json("_id: 1"));
-        collection.insertOne(json("_id: 1"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("_id: 1")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1 }");
     }
 
-    @Test(expected = MongoException.class)
+    @Test
     public void testInsertDuplicateWithConcernThrows() {
         collection.insertOne(json("_id: 1"));
-        collection.withWriteConcern(WriteConcern.ACKNOWLEDGED).insertOne(json("_id: 1"));
+
+        assertMongoWriteException(() -> collection.withWriteConcern(WriteConcern.ACKNOWLEDGED).insertOne(json("_id: 1")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1 }");
     }
 
     @Test
