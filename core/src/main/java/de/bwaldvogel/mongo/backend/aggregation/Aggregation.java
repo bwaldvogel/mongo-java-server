@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation;
 
-import static de.bwaldvogel.mongo.backend.Constants.*;
+import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +17,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.BucketStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.FacetStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.IndexStatsStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LookupWithPipelineStage;
@@ -129,6 +130,9 @@ public class Aggregation {
                 case "$unset":
                     Object unset = stage.get(stageOperation);
                     aggregation.addStage(new UnsetStage(unset));
+                    break;
+                case "$indexStats":
+                    aggregation.addStage(new IndexStatsStage(collection));
                     break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");

@@ -82,7 +82,11 @@ public interface MongoCollection<P> {
 
     int count();
 
-    int getNumIndexes();
+    default int getNumIndexes() {
+        return getIndexes().size();
+    }
+
+    List<Index<P>> getIndexes();
 
     void renameTo(MongoDatabase newDatabase, String newCollectionName);
 

@@ -31,7 +31,7 @@ public abstract class Index<P> {
         return sparse;
     }
 
-    protected List<IndexKey> getKeys() {
+    public List<IndexKey> getKeys() {
         return keys;
     }
 

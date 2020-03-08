@@ -1751,6 +1751,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageStartingWith("Command failed with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
     }
 
+    @Test
+    public void testAggregateWithIndexStats() throws Exception {
+        List<Document> pipeline = jsonList("$indexStats: {}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+
+        Document indexStats = CollectionUtils.getSingleElement(collection.aggregate(pipeline));
+        assertThat(indexStats)
+            .containsOnlyKeys("name", "key", "host", "accesses")
+            .containsEntry("name", "_id_")
+            .containsEntry("key", json("_id: 1"));
+
+        assertThat((Document) indexStats.get("accesses"))
+            .containsEntry("ops", 0L);
+    }
+
     private static Function<Document, Document> withSortedStringList(String key) {
         return document -> {
             @SuppressWarnings("unchecked")

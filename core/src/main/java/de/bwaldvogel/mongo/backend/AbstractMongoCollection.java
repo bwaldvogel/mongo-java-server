@@ -633,8 +633,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public int getNumIndexes() {
-        return indexes.size();
+    public List<Index<P>> getIndexes() {
+        return indexes;
     }
 
     @Override
