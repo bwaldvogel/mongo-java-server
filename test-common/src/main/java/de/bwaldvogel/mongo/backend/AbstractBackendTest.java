@@ -2243,6 +2243,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testUpdatePushSlice() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: ['a', 'b', 'c'], $slice: 4}}"));
+        collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $slice: 4}}"));
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 1, value: ['a', 'b', 'c', 1]"));
+    }
+
+    @Test
     public void testUpdatePushEach_unknownModifier() throws Exception {
         collection.insertOne(json("_id: 1"));
 
@@ -2254,6 +2265,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$illegal: 1}}")),
             52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$illegal' in 'value..$illegal' is not valid for storage.");
+    }
+
+    @Test
+    public void testUpdatePushEach_illegalOptions() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $slice: 'abc'}}")),
+            2, "BadValue", "The value for $slice must be an integer value but was given type: string");
     }
 
     @Test
@@ -2295,16 +2314,44 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
 
         collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(6, 5, 4)));
-        assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6, 5, 4]"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4]"));
 
         collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(3, 2, 1)));
-        assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6, 5, 4, 3, 2, 1]"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4, 3, 2, 1]"));
 
         collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(7, 7, 9, 2)));
-        assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6, 5, 4, 3, 2, 1, 7, 9]"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4, 3, 2, 1, 7, 9]"));
 
         collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(12, 13, 12)));
-        assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: [6, 5, 4, 3, 2, 1, 7, 9, 12, 13]"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4, 3, 2, 1, 7, 9, 12, 13]"));
+
+        collection.replaceOne(json("_id: 1"), json("_id: 1"));
+
+        collection.updateOne(json("_id: 1"), json("$addToSet: {value: {key: 'x'}}"));
+        assertThat(collection.find()).containsExactly(json("_id: 1, value: [{key: 'x'}]"));
+    }
+
+    @Test
+    public void testUpdateAddToSetEach_unknownModifier() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$each: [1, 2, 3], $slice: 2}}")),
+            2, "BadValue", "Found unexpected fields after $each in $addToSet: { $each: [ 1, 2, 3 ], $slice: 2 }");
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$each: [1, 2, 3], value: 2}}")),
+            2, "BadValue", "Found unexpected fields after $each in $addToSet: { $each: [ 1, 2, 3 ], value: 2 }");
+
+        String expectedPathPrefix = getExpectedPathPrefix_testUpdateAddToSetEach_unknownModifier();
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {key: 2, $each: [1, 2, 3]}}")),
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$each' in '" + expectedPathPrefix + ".$each' is not valid for storage.");
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$slice: 2, $each: [1, 2, 3]}}")),
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$slice' in '" + expectedPathPrefix + ".$slice' is not valid for storage.");
+    }
+
+    protected String getExpectedPathPrefix_testUpdateAddToSetEach_unknownModifier() {
+        return "value.";
     }
 
     @Test

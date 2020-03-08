@@ -147,4 +147,10 @@ public class RealMongoBackendTest extends AbstractBackendTest {
         Document connections = (Document) serverStatus.get("connections");
         assertThat(connections.get("current")).isNotNull();
     }
+
+    @Override
+    protected String getExpectedPathPrefix_testUpdateAddToSetEach_unknownModifier() {
+        // this is probably a bug
+        return "value.value";
+    }
 }

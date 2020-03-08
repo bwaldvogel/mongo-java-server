@@ -253,6 +253,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         }
     }
 
+    @Override
+    public void testUpdatePushSlice() throws Exception {
+        assumeStrictTests();
+        super.testUpdatePushSlice();
+    }
+
     private void assumeStrictTests() {
         Assumptions.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
