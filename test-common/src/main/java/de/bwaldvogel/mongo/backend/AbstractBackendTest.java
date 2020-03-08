@@ -2230,6 +2230,34 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testUpdatePushEach() throws Exception {
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, value: [0]"));
+
+        collection.updateMany(json(""), json("$push: {value: {$each: [1, 2, 3, {key: 'value'}]}}"));
+
+        assertThat(collection.find())
+            .containsExactlyInAnyOrder(
+                json("_id: 1, value: [1, 2, 3, {key: 'value'}]"),
+                json("_id: 2, value: [0, 1, 2, 3, {key: 'value'}]")
+            );
+    }
+
+    @Test
+    public void testUpdatePushEach_unknownModifier() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $illegal: 1}}")),
+            2, "BadValue", "Unrecognized clause in $push: $illegal");
+
+        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$position: 1}}")),
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$position' in 'value..$position' is not valid for storage.");
+
+        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$illegal: 1}}")),
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$illegal' in 'value..$illegal' is not valid for storage.");
+    }
+
+    @Test
     public void testUpdatePushAll() throws Exception {
         Document idObj = json("_id: 1");
         collection.insertOne(idObj);

@@ -7,7 +7,6 @@ import static de.bwaldvogel.mongo.backend.Utils.splitPath;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,11 +119,11 @@ class FieldUpdates {
     private void handlePushAllAddToSet(String key, Object changeValue) {
         // http://docs.mongodb.org/manual/reference/operator/push/
         Object value = getSubdocumentValue(document, key);
-        final List<Object> list;
+        final List<Object> newValue;
         if (Missing.isNullOrMissing(value)) {
-            list = new ArrayList<>();
+            newValue = new ArrayList<>();
         } else if (value instanceof List<?>) {
-            list = asList(value);
+            newValue = asList(value);
         } else {
             if (updateOperator == UpdateOperator.ADD_TO_SET) {
                 throw new MongoServerError(10141,
@@ -143,13 +142,18 @@ class FieldUpdates {
             }
             @SuppressWarnings("unchecked")
             Collection<Object> valueList = (Collection<Object>) changeValue;
-            list.addAll(valueList);
+            newValue.addAll(valueList);
         } else {
             Collection<Object> pushValues = new ArrayList<>();
-            if (changeValue instanceof Document
-                && ((Document) changeValue).keySet().equals(Collections.singleton("$each"))) {
+            if (changeValue instanceof Document && ((Document) changeValue).containsKey("$each")) {
+                Document pushDocument = (Document) changeValue;
                 @SuppressWarnings("unchecked")
-                Collection<Object> values = (Collection<Object>) ((Document) changeValue).get("$each");
+                Collection<Object> values = (Collection<Object>) pushDocument.get("$each");
+                for (String pushClause : pushDocument.keySet()) {
+                    if (!pushClause.equals("$each")) {
+                        throw new BadValueException("Unrecognized clause in $push: " + pushClause);
+                    }
+                }
                 pushValues.addAll(values);
             } else {
                 pushValues.add(changeValue);
@@ -157,10 +161,10 @@ class FieldUpdates {
 
             for (Object val : pushValues) {
                 if (updateOperator == UpdateOperator.PUSH) {
-                    list.add(val);
+                    newValue.add(val);
                 } else if (updateOperator == UpdateOperator.ADD_TO_SET) {
-                    if (!list.contains(val)) {
-                        list.add(val);
+                    if (!newValue.contains(val)) {
+                        newValue.add(val);
                     }
                 } else {
                     throw new MongoServerException(
@@ -168,7 +172,7 @@ class FieldUpdates {
                 }
             }
         }
-        changeSubdocumentValue(document, key, list);
+        changeSubdocumentValue(document, key, newValue);
     }
 
     private void assertNotKeyField(String key) {
