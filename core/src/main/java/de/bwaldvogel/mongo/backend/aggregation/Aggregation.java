@@ -16,6 +16,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.BucketStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.FacetStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.GraphLookupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.IndexStatsStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
@@ -101,6 +102,10 @@ public class Aggregation {
                 case "$unwind":
                     Object unwind = stage.get(stageOperation);
                     aggregation.addStage(new UnwindStage(unwind));
+                    break;
+                case "$graphLookup":
+                    Document graphLookup = (Document)stage.get(stageOperation);
+                    aggregation.addStage(new GraphLookupStage(graphLookup, database));
                     break;
                 case "$lookup":
                     Document lookup = (Document) stage.get(stageOperation);
