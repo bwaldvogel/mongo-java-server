@@ -6,7 +6,6 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import com.mongodb.Function;
 import com.mongodb.MongoCommandException;
-import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoCollection;
 
 public abstract class AbstractAggregationTest extends AbstractTest {
@@ -1364,27 +1362,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             "$graphLookup: {from: 'testcoll', startWith: '$parent', connectFromField: 'parent', " +
                 "connectToField: '_id', as: 'hierarchy', depthField: 'depth'}");
 
-        AggregateIterable<Document> iterable = collection.aggregate(pipeline);
-        List<Document> hits = iterable.into(new ArrayList<Document>());
-        assertThat(hits.size()).isEqualTo(2);
-
-        Document fileA11 = hits.get(0);
-        assertThat(fileA11.getInteger("_id")).isEqualTo(3);
-        assertThat(fileA11.getString("name")).isEqualTo("File A11");
-        assertThat(fileA11.getInteger("parent")).isEqualTo(2);
-        assertThat(fileA11.getList("hierarchy", Document.class)).containsExactlyInAnyOrder(
-            json("{_id: 2, depth: NumberLong(0), name: 'subfolderA1', parent: 1}"),
-            json("{_id: 1, depth: NumberLong(1), name: 'folderA'}")
-        );
-
-        Document fileA12 = hits.get(1);
-        assertThat(fileA12.getInteger("_id")).isEqualTo(4);
-        assertThat(fileA12.getString("name")).isEqualTo("File A12");
-        assertThat(fileA12.getInteger("parent")).isEqualTo(2);
-        assertThat(fileA12.getList("hierarchy", Document.class)).containsExactlyInAnyOrder(
-            json("{_id: 2, depth: NumberLong(0), name: 'subfolderA1', parent: 1}"),
-            json("{_id: 1, depth: NumberLong(1), name: 'folderA'}")
-        );
+        assertThat(collection.aggregate(pipeline).map(withSortedDocuments("hierarchy")).map(Document::toJson))
+            .containsExactly(
+                "{\"_id\": 3, \"name\": \"File A11\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": {\"$numberLong\": \"1\"}}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": {\"$numberLong\": \"0\"}}]}",
+                "{\"_id\": 4, \"name\": \"File A12\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": {\"$numberLong\": \"1\"}}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": {\"$numberLong\": \"0\"}}]}"
+            );
     }
 
     @Test
@@ -1814,10 +1796,27 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     private static Function<Document, Document> withSortedStringList(String key) {
         return document -> {
             @SuppressWarnings("unchecked")
-            List<String> itemsSold = (List<String>) document.get(key);
-            itemsSold.sort(ValueComparator.asc());
+            List<String> list = (List<String>) document.get(key);
+            list.sort(ValueComparator.asc());
             return document;
         };
+    }
+
+    private static Function<Document, Document> withSortedDocuments(String key) {
+        return document -> {
+            @SuppressWarnings("unchecked")
+            List<Document> list = (List<Document>) document.get(key);
+            list.sort((o1, o2) -> {
+                de.bwaldvogel.mongo.bson.Document d1 = toDocument(o1);
+                de.bwaldvogel.mongo.bson.Document d2 = toDocument(o2);
+                return ValueComparator.asc().compare(d1, d2);
+            });
+            return document;
+        };
+    }
+
+    private static de.bwaldvogel.mongo.bson.Document toDocument(Document document) {
+        return new de.bwaldvogel.mongo.bson.Document(document);
     }
 
 }
