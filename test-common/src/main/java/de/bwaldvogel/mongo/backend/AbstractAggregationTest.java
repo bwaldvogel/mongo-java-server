@@ -454,7 +454,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 5, item: 'abc', price: 10, quantity: 10").append("date", instant("2014-02-15T08:00:00Z")));
         collection.insertOne(json("_id: 6, item: 'xyz', price:  5, quantity: 10").append("date", instant("2014-02-15T09:12:00Z")));
 
-        assertThat(collection.aggregate(pipeline).map(withSortedStringList( "itemsSold")))
+        assertThat(collection.aggregate(pipeline).map(withSortedStringList("itemsSold")))
             .containsExactlyInAnyOrder(
                 json("_id: { day:  1, year: 2014 }, itemsSold: [ 'abc' ]"),
                 json("_id: { day: 34, year: 2014 }, itemsSold: [ 'jkl', 'xyz' ]"),
@@ -1361,7 +1361,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 9, name: 'File B11', parent: 8"));
 
         List<Document> pipeline = jsonList("$match: {name: {$regex: 'File A1.*'}}",
-                "$graphLookup: {from: 'testcoll', startWith: '$parent', connectFromField: 'parent', " +
+            "$graphLookup: {from: 'testcoll', startWith: '$parent', connectFromField: 'parent', " +
                 "connectToField: '_id', as: 'hierarchy', depthField: 'depth'}");
 
         AggregateIterable<Document> iterable = collection.aggregate(pipeline);
@@ -1373,18 +1373,18 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThat(fileA11.getString("name")).isEqualTo("File A11");
         assertThat(fileA11.getInteger("parent")).isEqualTo(2);
         assertThat(fileA11.getList("hierarchy", Document.class)).containsExactlyInAnyOrder(
-                json("{_id: 2, depth: NumberLong(0), name: 'subfolderA1', parent: 1}"),
-                json("{_id: 1, depth: NumberLong(1), name: 'folderA'}")
-                );
+            json("{_id: 2, depth: NumberLong(0), name: 'subfolderA1', parent: 1}"),
+            json("{_id: 1, depth: NumberLong(1), name: 'folderA'}")
+        );
 
         Document fileA12 = hits.get(1);
         assertThat(fileA12.getInteger("_id")).isEqualTo(4);
         assertThat(fileA12.getString("name")).isEqualTo("File A12");
         assertThat(fileA12.getInteger("parent")).isEqualTo(2);
         assertThat(fileA12.getList("hierarchy", Document.class)).containsExactlyInAnyOrder(
-                json("{_id: 2, depth: NumberLong(0), name: 'subfolderA1', parent: 1}"),
-                json("{_id: 1, depth: NumberLong(1), name: 'folderA'}")
-                );
+            json("{_id: 2, depth: NumberLong(0), name: 'subfolderA1', parent: 1}"),
+            json("{_id: 1, depth: NumberLong(1), name: 'folderA'}")
+        );
     }
 
     @Test
@@ -1498,27 +1498,27 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         List<Document> pipeline = jsonList("$match: {hobbies: {$gt: []}}",
             "$project: {\n" +
-            "  name: 1,\n" +
-            "  bio: {\n" +
-            "    $reduce: {\n" +
-            "      input: '$hobbies',\n" +
-            "      initialValue: 'My hobbies include:',\n" +
-            "      in: {\n" +
-            "        $concat: [\n" +
-            "          '$$value',\n" +
-            "          {\n" +
-            "            $cond: {\n" +
-            "              if: { $eq: ['$$value', 'My hobbies include:']},\n" +
-            "              then: ' ',\n" +
-            "              else: ', '\n" +
-            "            }\n" +
-            "          },\n" +
-            "          '$$this'\n" +
-            "        ]\n" +
-            "      }\n" +
-            "    }\n" +
-            "  }\n" +
-            "}");
+                "  name: 1,\n" +
+                "  bio: {\n" +
+                "    $reduce: {\n" +
+                "      input: '$hobbies',\n" +
+                "      initialValue: 'My hobbies include:',\n" +
+                "      in: {\n" +
+                "        $concat: [\n" +
+                "          '$$value',\n" +
+                "          {\n" +
+                "            $cond: {\n" +
+                "              if: { $eq: ['$$value', 'My hobbies include:']},\n" +
+                "              then: ' ',\n" +
+                "              else: ', '\n" +
+                "            }\n" +
+                "          },\n" +
+                "          '$$this'\n" +
+                "        ]\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "}");
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
@@ -1731,14 +1731,14 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         List<Document> pipeline = jsonList(
             "$match: {price: {$gt: 300}}",
             "$facet: {\n" +
-            "  'categorizedByTags': [\n" +
-            "    { $unwind: '$tags' },\n" +
-            "    { $sortByCount: '$tags' }\n" +
-            "  ],\n" +
-            "  'categorizedByPrice': [\n" +
-            "    {$bucket: {groupBy: '$price', boundaries: [300, 400, 500]}}\n" +
-            "  ]\n" +
-            "}");
+                "  'categorizedByTags': [\n" +
+                "    { $unwind: '$tags' },\n" +
+                "    { $sortByCount: '$tags' }\n" +
+                "  ],\n" +
+                "  'categorizedByPrice': [\n" +
+                "    {$bucket: {groupBy: '$price', boundaries: [300, 400, 500]}}\n" +
+                "  ]\n" +
+                "}");
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
