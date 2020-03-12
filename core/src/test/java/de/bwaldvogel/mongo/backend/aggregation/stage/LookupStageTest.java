@@ -135,6 +135,8 @@ public class LookupStageTest extends AbstractLookupStageTest {
 
     @Test
     public void testLookupWithNestedField() throws Exception {
+        prepareAuthorsCollectionMock();
+
         LookupStage lookupStage = buildLookupStage("from: 'authors', 'localField': 'author.id', foreignField: '_id', as: 'author'");
         configureAuthorsCollection("_id: 3", "_id: 3, name: 'Uncle Bob'");
         Document document = json("title: 'Clean Code', author: { id: 3 }");
