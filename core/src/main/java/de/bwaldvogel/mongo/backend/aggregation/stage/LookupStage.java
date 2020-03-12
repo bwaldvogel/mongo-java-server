@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.toList;
 
 import java.util.HashSet;
 import java.util.List;
@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class LookupStage extends AbstractLookupStage {
@@ -46,7 +47,7 @@ public class LookupStage extends AbstractLookupStage {
     }
 
     private Document resolveRemoteField(Document document) {
-        Object value = document.get(localField);
+        Object value = Utils.getSubdocumentValue(document, localField);
         List<Document> documents = lookupValue(value);
         Document result = document.clone();
         result.put(as, documents);
