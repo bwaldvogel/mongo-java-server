@@ -549,6 +549,55 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/121
+    @Test
+    public void testAggregateWithNestedExclusiveProjection() throws Exception {
+        List<Document> pipeline = jsonList("$project: {_id: 0, 'x.b': 0}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, x: {a: 1, b: 2, c: 3}"));
+        collection.insertOne(json("_id: 2, x: 20"));
+        collection.insertOne(json("_id: 3"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("x: {a: 1, c: 3}"),
+                json("x: 20"),
+                json("")
+            );
+    }
+
+    @Test
+    public void testAggregateWithNestedInclusiveProjection() throws Exception {
+        List<Document> pipeline = jsonList("$project: {'x.b': 1, 'x.c': 1}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, x: {b: 2, c: 3}"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("_id: 1, x: {b: 2, c: 3}"),
+                json("_id: 2"),
+                json("_id: 3")
+            );
+    }
+
+    @Test
+    public void testAggregateWithIllegalProjection() throws Exception {
+        List<Document> pipeline = jsonList("$project: {'x.b': 1, 'x.c': 1, 'x.d': 0, y: 0}");
+
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 40178 (Location40178): " +
+                "'Bad projection specification, cannot exclude fields other than '_id' in an inclusion projection: { x.b: 1, x.c: 1, x.d: 0, y: 0 }'");
+    }
+
     @Test
     public void testAggregateWithProjection_IllegalFieldPath() throws Exception {
         collection.insertOne(json("_id: 1, x: 10"));

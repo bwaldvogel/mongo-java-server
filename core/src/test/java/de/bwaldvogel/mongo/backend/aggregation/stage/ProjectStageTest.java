@@ -23,6 +23,18 @@ public class ProjectStageTest {
         assertThat(project(json("_id: 1, b: 2 c: -30"), json("x: {y: {$multiply: ['$b', {$abs: '$c'}]}}"))).isEqualTo(json("_id: 1, x: {y: 60}"));
     }
 
+    @Test
+    void testProject_withNestedExclusion() throws Exception {
+        assertThat(project(json("_id: 1, x: {a: 1, b: 2, c: 3}"), json("'x.b': 0")))
+            .isEqualTo(json("_id: 1, x: {a: 1, c: 3}"));
+    }
+
+    @Test
+    void testProject_withNestedInclusion() throws Exception {
+        assertThat(project(json("_id: 1, x: {a: 1, b: 2, c: 3}"), json("'x.b': 1, 'x.c': 1, 'y': 1, 'x.d': 1")))
+            .isEqualTo(json("_id: 1, x: {b: 2, c: 3}"));
+    }
+
     private static Document project(Document document, Document projection) {
         return new ProjectStage(projection).projectDocument(document);
     }
