@@ -9,7 +9,7 @@ public final class LegacyUUID implements Comparable<LegacyUUID>, Bson {
 
     private final UUID uuid;
 
-    private LegacyUUID(UUID uuid) {
+    public LegacyUUID(UUID uuid) {
         this.uuid = Objects.requireNonNull(uuid);
     }
 
