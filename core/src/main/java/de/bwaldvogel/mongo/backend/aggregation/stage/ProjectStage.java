@@ -22,6 +22,7 @@ public class ProjectStage implements AggregationStage {
         }
         this.projection = projection;
         this.hasInclusions = hasInclusions(projection);
+        validateProjection();
     }
 
     private static boolean hasInclusions(Document projection) {
@@ -40,18 +41,6 @@ public class ProjectStage implements AggregationStage {
             if (!projection.containsKey(ID_FIELD)) {
                 putIfContainsField(document, result, ID_FIELD);
             }
-
-            boolean nonIdExclusion = projection.entrySet().stream()
-                .filter(entry -> !entry.getKey().equals(ID_FIELD))
-                .map(Entry::getValue)
-                .filter(ProjectStage::isNumberOrBoolean)
-                .anyMatch(entry -> !Utils.isTrue(entry));
-            if (nonIdExclusion) {
-                throw new MongoServerError(40178,
-                    "Bad projection specification, cannot exclude fields other than '_id' in an inclusion projection: "
-                        + projection.toString(true, "{ ", " }"));
-            }
-
         } else {
             result = document.cloneDeeply();
         }
@@ -75,6 +64,21 @@ public class ProjectStage implements AggregationStage {
             }
         }
         return result;
+    }
+
+    private void validateProjection() {
+        if (hasInclusions) {
+            boolean nonIdExclusion = projection.entrySet().stream()
+                .filter(entry -> !entry.getKey().equals(ID_FIELD))
+                .map(Entry::getValue)
+                .filter(ProjectStage::isNumberOrBoolean)
+                .anyMatch(entry -> !Utils.isTrue(entry));
+            if (nonIdExclusion) {
+                throw new MongoServerError(40178,
+                    "Bad projection specification, cannot exclude fields other than '_id' in an inclusion projection: "
+                        + projection.toString(true, "{ ", " }"));
+            }
+        }
     }
 
     private static boolean isNumberOrBoolean(Object projectionValue) {
