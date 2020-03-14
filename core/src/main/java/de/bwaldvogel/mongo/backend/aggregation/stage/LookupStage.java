@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 
 import static java.util.stream.Collectors.toList;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,6 +56,9 @@ public class LookupStage extends AbstractLookupStage {
     }
 
     private List<Document> lookupValue(Object value) {
+        if (collection == null) {
+            return Collections.emptyList();
+        }
         if (value instanceof List) {
             return ((List<?>) value).stream()
                 .flatMap(item -> lookupValue(item).stream())

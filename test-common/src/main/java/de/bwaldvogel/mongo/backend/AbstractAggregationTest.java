@@ -1230,6 +1230,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/123
+    @Test
+    public void testAggregateWithLookup_collectionDoesNotExist() {
+        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: 'authorId', foreignField: '_id', as: 'author'}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, title: 'Refactoring', authorId: 2"));
+        collection.insertOne(json("_id: 2, title: 'Clean Code', authorId: 1"));
+        collection.insertOne(json("_id: 3, title: 'Clean Coder', authorId: 1"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("_id: 1, title: 'Refactoring', authorId: 2, author: []"),
+                json("_id: 2, title: 'Clean Code', authorId: 1, author: []"),
+                json("_id: 3, title: 'Clean Coder', authorId: 1, author: []")
+            );
+    }
+
     @Test
     public void testAggregateWithIllegalLookupStage() {
         assertThatExceptionOfType(MongoCommandException.class)
