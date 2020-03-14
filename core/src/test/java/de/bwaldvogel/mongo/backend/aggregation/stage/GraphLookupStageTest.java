@@ -2,39 +2,33 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.mockito.Mock;
 
 import de.bwaldvogel.mongo.MongoCollection;
-import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.TestUtils;
 import de.bwaldvogel.mongo.bson.Document;
 
-public class GraphLookupStageTest {
+class GraphLookupStageTest extends AbstractLookupStageTest {
 
-    MongoDatabase database;
-
+    @Mock
     @SuppressWarnings("rawtypes")
-    MongoCollection employeesCollection;
+    private MongoCollection employeesCollection;
 
     @BeforeEach
     @SuppressWarnings("unchecked")
-    public void setUp() {
-        database = mock(MongoDatabase.class);
-        employeesCollection = mock(MongoCollection.class);
+    void setUp() {
         when(database.resolveCollection("employees", false)).thenReturn(employeesCollection);
     }
 
     @Test
-    public void testGraphLookupObjectThatHasLinkedDocuments() {
+    void testGraphLookupObjectThatHasLinkedDocuments() {
         GraphLookupStage graphLookupStage = buildGraphLookupStage("from: 'employees', 'startWith': '$manager', 'connectFromField': 'manager', 'connectToField': 'name', 'as': 'managers', 'depthField': 'order'");
-        configureEmployeesCollection("name: 'Bob'", "_id: 3, name: 'Bob', manager: 'Dave'");
         configureEmployeesCollection("name: 'Dave'", "_id: 2, name: 'Dave', manager: 'Mike'");
         configureEmployeesCollection("name: 'Mike'", "_id: 1, name: 'Mike'");
         Document document = json("name: 'Bob', manager: 'Dave'");

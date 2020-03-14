@@ -1,10 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import de.bwaldvogel.mongo.MongoCollection;
-import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.Utils;
-import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.FailedToParseException;
+import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,9 +8,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toList;
+import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.FailedToParseException;
 
-public class GraphLookupStage extends AbstractLookupStage implements AggregationStage {
+public class GraphLookupStage extends AbstractLookupStage {
 
     private static final String START_WITH = "startWith";
     private static final String CONNECT_FROM_FIELD = "connectFromField";
@@ -34,8 +34,6 @@ public class GraphLookupStage extends AbstractLookupStage implements Aggregation
         CONFIGURATION_KEYS.add(DEPTH_FIELD);
     }
 
-    private final String fromField;
-    private final String startWithField;
     private final String connectFromField;
     private final String connectToField;
     private final String asField;
@@ -48,8 +46,8 @@ public class GraphLookupStage extends AbstractLookupStage implements Aggregation
         stageName = "$graphLookup";
         String from = readStringConfigurationProperty(configuration, FROM);
         collection = mongoDatabase.resolveCollection(from, false);
-        fromField = readStringConfigurationProperty(configuration, FROM);
-        startWithField = readVariableConfigurationProperty(configuration, START_WITH);
+        readStringConfigurationProperty(configuration, FROM);
+        readVariableConfigurationProperty(configuration, START_WITH);
         connectFromField = readStringConfigurationProperty(configuration, CONNECT_FROM_FIELD);
         connectToField = readStringConfigurationProperty(configuration, CONNECT_TO_FIELD);
         asField = readStringConfigurationProperty(configuration, AS);
