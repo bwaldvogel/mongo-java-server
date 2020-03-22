@@ -5713,4 +5713,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result).containsOnlyKeys("ok", "argv", "parsed");
     }
 
+    @Test
+    public void testUpdateWithExpressionIsNotPossible() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertMongoWriteException(
+            () -> collection.updateOne(json("_id: 1"), json("$set: {x: {$expr: {$add: ['$_id', 10]}}}")),
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$expr' in 'x.$expr' is not valid for storage.");
+    }
+
 }
