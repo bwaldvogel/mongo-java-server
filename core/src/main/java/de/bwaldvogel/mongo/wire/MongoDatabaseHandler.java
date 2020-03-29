@@ -22,7 +22,6 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
@@ -110,10 +109,10 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             log.error("unknown command: {}", query, e);
             Map<String, ?> additionalInfo = Collections.singletonMap("bad cmd", query.getQuery());
             return queryFailure(header, e, additionalInfo);
-        } catch (MongoSilentServerException e) {
-            return queryFailure(header, e);
         } catch (MongoServerException e) {
-            log.error("failed to handle query {}", query, e);
+            if (e.isLogError()) {
+                log.error("failed to handle query {}", query, e);
+            }
             return queryFailure(header, e);
         }
     }

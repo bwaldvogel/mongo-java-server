@@ -22,6 +22,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
+import de.bwaldvogel.mongo.exception.NoReplicationEnabledException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
@@ -101,7 +102,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
                 throw new NoSuchCommandException(new Document(command, collectionName).toString());
             }
         } else if (command.equalsIgnoreCase("replSetGetStatus")) {
-            throw new MongoServerError(76, "NoReplicationEnabled", "not running with --replSet");
+            throw new NoReplicationEnabledException();
         } else if (command.equalsIgnoreCase("getLog")) {
             final Object argument = query.get(command);
             return getLog(argument == null ? null : argument.toString());
