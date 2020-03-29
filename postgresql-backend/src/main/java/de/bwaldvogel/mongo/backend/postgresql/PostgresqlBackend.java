@@ -19,10 +19,6 @@ public class PostgresqlBackend extends AbstractMongoBackend {
     }
 
     @Override
-    public void close() {
-    }
-
-    @Override
     protected MongoDatabase openOrCreateDatabase(String databaseName) {
         String sql = "CREATE TABLE IF NOT EXISTS " + databaseName + "._meta" +
             " (collection_name text," +

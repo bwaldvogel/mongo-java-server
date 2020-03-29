@@ -70,7 +70,7 @@ public class H2Backend extends AbstractMongoBackend {
 
     @Override
     public void close() {
-        log.info("closing {}", this);
+        super.close();
         mvStore.close();
     }
 
