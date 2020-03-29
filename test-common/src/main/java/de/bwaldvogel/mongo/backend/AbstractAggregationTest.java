@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
@@ -1860,6 +1861,60 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat((Document) indexStats.get("accesses"))
             .containsEntry("ops", 0L);
+    }
+
+    @Test
+    public void testAggregateWithOut() {
+        List<Document> pipeline = jsonList(
+            "$group: {_id: '$author', books: {$push: '$title'}}",
+            "$out : 'authors'");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 8751, title: 'The Banquet', author: 'Dante', copies: 2"));
+        collection.insertOne(json("_id: 8752, title: 'Divine Comedy', author: 'Dante', copies: 1"));
+        collection.insertOne(json("_id: 8645, title: 'Eclogues', author: 'Dante', copies: 2"));
+        collection.insertOne(json("_id: 7000, title: 'The Odyssey', author: 'Homer', copies: 10"));
+        collection.insertOne(json("_id: 7020, title: 'Iliad', author: 'Homer', copies: 10"));
+
+        List<Document> expectedDocuments = Arrays.asList(
+            json("_id: 'Homer', books: ['The Odyssey', 'Iliad']"),
+            json("_id: 'Dante', books: ['The Banquet', 'Divine Comedy', 'Eclogues']"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactlyInAnyOrderElementsOf(expectedDocuments);
+
+        assertThat(db.getCollection("authors").find(json("")))
+            .containsExactlyInAnyOrderElementsOf(expectedDocuments);
+
+        // re-run will overwrite the existing collection
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactlyInAnyOrderElementsOf(expectedDocuments);
+
+        assertThat(db.getCollection("authors").find(json("")))
+            .containsExactlyInAnyOrderElementsOf(expectedDocuments);
+    }
+
+    @Test
+    public void testAggregateWithOut_illegal() {
+        collection.insertOne(json("_id: 8751, title: 'The Banquet', author: 'Dante', copies: 2"));
+
+        assertThatExceptionOfType(BsonInvalidOperationException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$out : 123")).first())
+            .withMessage("Value expected to be of type STRING is of unexpected type INT32");
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$out : ''")).first())
+            .withMessage("state should be: collectionName is not empty");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$out : 'some$collection'")).first())
+            .withMessageContaining("Command failed with error 17385 (Location17385): 'Can't $out to special collection: some$collection'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$out : 'one'", "$out : 'other'")).first())
+            .withMessageContaining("Command failed with error 40601 (Location40601): '$out can only be the final stage in the pipeline'");
     }
 
     private static Function<Document, Document> withSortedStringList(String key) {
