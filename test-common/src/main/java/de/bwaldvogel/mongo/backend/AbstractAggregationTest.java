@@ -1853,9 +1853,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         Document indexStats = CollectionUtils.getSingleElement(collection.aggregate(pipeline));
         assertThat(indexStats)
-            .containsOnlyKeys("name", "key", "host", "accesses")
+            .containsOnlyKeys("name", "key", "host", "accesses", "spec")
             .containsEntry("name", "_id_")
-            .containsEntry("key", json("_id: 1"));
+            .containsEntry("key", json("_id: 1"))
+            .containsEntry("spec", json("key: {_id: 1}, name: '_id_', ns: 'testdb.testcoll', v: 2"));
 
         assertThat((Document) indexStats.get("accesses"))
             .containsEntry("ops", 0L);
