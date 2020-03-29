@@ -124,6 +124,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleHostInfo();
         } else if (command.equalsIgnoreCase("getCmdLineOpts")) {
             return handleGetCmdLineOpts();
+        } else if (command.equalsIgnoreCase("getFreeMonitoringStatus")) {
+            return handleGetFreeMonitoringStatus();
         } else {
             throw new NoSuchCommandException(command);
         }
@@ -152,6 +154,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         Document response = new Document();
         response.append("argv", Collections.emptyList());
         response.append("parsed", new Document());
+        Utils.markOkay(response);
+        return response;
+    }
+
+    private Document handleGetFreeMonitoringStatus() {
+        Document response = new Document();
+        response.append("state", "undecided");
         Utils.markOkay(response);
         return response;
     }
