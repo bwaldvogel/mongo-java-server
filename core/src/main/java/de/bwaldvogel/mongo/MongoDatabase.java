@@ -32,6 +32,8 @@ public interface MongoDatabase {
 
     boolean isEmpty();
 
+    MongoCollection<?> createCollectionOrThrowIfExists(String collectionName);
+
     MongoCollection<?> resolveCollection(String collectionName, boolean throwIfNotFound);
 
     void drop();

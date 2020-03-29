@@ -6,11 +6,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
@@ -24,16 +29,20 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LookupWithPipelineStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.OutStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnsetStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
 public class Aggregation {
+
+    private static final Logger log = LoggerFactory.getLogger(Aggregation.class);
 
     private final MongoCollection<?> collection;
 
@@ -104,7 +113,7 @@ public class Aggregation {
                     aggregation.addStage(new UnwindStage(unwind));
                     break;
                 case "$graphLookup":
-                    Document graphLookup = (Document)stage.get(stageOperation);
+                    Document graphLookup = (Document) stage.get(stageOperation);
                     aggregation.addStage(new GraphLookupStage(graphLookup, database));
                     break;
                 case "$lookup":
@@ -138,6 +147,10 @@ public class Aggregation {
                     break;
                 case "$indexStats":
                     aggregation.addStage(new IndexStatsStage(collection));
+                    break;
+                case "$out":
+                    Object outCollection = stage.get(stageOperation);
+                    aggregation.addStage(new OutStage(database, outCollection));
                     break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
@@ -190,6 +203,31 @@ public class Aggregation {
 
     public void setVariables(Map<String, Object> variables) {
         this.variables = Collections.unmodifiableMap(variables);
+    }
+
+    private Optional<AggregationStage> findFirstOutStage() {
+        return stages.stream().filter(stage -> stage instanceof OutStage).findFirst();
+    }
+
+    public void validate(Document query) {
+        Optional<AggregationStage> firstOutStage = findFirstOutStage();
+        if (firstOutStage.isPresent()) {
+            if (!isLastStage(firstOutStage.get())) {
+                throw new MongoServerError(40601, "$out can only be the final stage in the pipeline");
+            }
+        } else {
+            Document cursor = (Document) query.get("cursor");
+            if (cursor == null) {
+                throw new FailedToParseException("The 'cursor' option is required, except for aggregate with the explain argument");
+            } else if (!cursor.isEmpty()) {
+                log.warn("Non-empty cursor is not yet implemented. Ignoring.");
+            }
+        }
+    }
+
+    private boolean isLastStage(AggregationStage aggregationStage) {
+        Assert.notEmpty(stages);
+        return stages.indexOf(aggregationStage) == stages.size() - 1;
     }
 
 }
