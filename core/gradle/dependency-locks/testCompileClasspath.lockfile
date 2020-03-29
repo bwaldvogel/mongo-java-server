@@ -12,9 +12,9 @@ net.bytebuddy:byte-buddy:1.10.5
 nl.jqno.equalsverifier:equalsverifier:3.1.13
 org.apiguardian:apiguardian-api:1.1.0
 org.assertj:assertj-core:3.15.0
-org.junit.jupiter:junit-jupiter-api:5.6.0
-org.junit.platform:junit-platform-commons:1.6.0
-org.junit:junit-bom:5.6.0
+org.junit.jupiter:junit-jupiter-api:5.6.1
+org.junit.platform:junit-platform-commons:1.6.1
+org.junit:junit-bom:5.6.1
 org.mockito:mockito-core:3.3.3
 org.mockito:mockito-junit-jupiter:3.3.3
 org.mongodb:mongo-java-driver:3.12.2
