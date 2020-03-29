@@ -304,6 +304,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
+    public void close() {
+        log.info("closing {}", this);
+        databases.clear();
+    }
+
+    @Override
     public List<Integer> getVersion() {
         return version;
     }
