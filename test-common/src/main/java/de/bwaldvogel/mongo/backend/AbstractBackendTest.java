@@ -5714,6 +5714,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    void testGetFreeMonitoringStatus() throws Exception {
+        Document result = runCommand("getFreeMonitoringStatus");
+        assertThat(result).isEqualTo(json("ok: 1.0, state: 'undecided'"));
+    }
+
+    @Test
     public void testUpdateWithExpressionIsNotPossible() throws Exception {
         collection.insertOne(json("_id: 1"));
 
