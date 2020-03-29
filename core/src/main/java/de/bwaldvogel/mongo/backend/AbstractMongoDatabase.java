@@ -183,15 +183,20 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             collectionDescription.put("options", collectionOptions);
             collectionDescription.put("info", new Document("readOnly", false));
             collectionDescription.put("type", "collection");
-            collectionDescription.put("idIndex", new Document("key", new Document(ID_FIELD, 1))
-                .append("name", "_id_")
-                .append("ns", namespace)
-                .append("v", 2)
+            collectionDescription.put("idIndex", getPrimaryKeyIndexDescription(namespace)
             );
             firstBatch.add(collectionDescription);
         }
 
         return Utils.cursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
+    }
+
+    @VisibleForExternalBackends
+    protected static Document getPrimaryKeyIndexDescription(String namespace) {
+        return new Document("key", new Document(ID_FIELD, 1))
+            .append("name", "_id_")
+            .append("ns", namespace)
+            .append("v", 2);
     }
 
     private Iterable<String> listCollectionNamespaces() {
@@ -862,11 +867,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         MongoCollection<P> collection = openOrCreateCollection(collectionName, ID_FIELD);
         addNamespace(collection);
 
-        Document indexDescription = new Document();
-        indexDescription.put("name", "_id_");
-        indexDescription.put("ns", collection.getFullName());
-        indexDescription.put("key", new Document(ID_FIELD, 1));
-        addIndex(indexDescription);
+        addIndex(getPrimaryKeyIndexDescription(collection.getFullName()));
 
         log.info("created collection {}", collection.getFullName());
 
