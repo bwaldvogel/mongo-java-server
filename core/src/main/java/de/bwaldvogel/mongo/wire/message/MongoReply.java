@@ -14,10 +14,11 @@ public class MongoReply {
     private int flags;
 
     public MongoReply(MessageHeader header, Document document, ReplyFlag... replyFlags) {
-        this(header, Collections.singletonList(document), replyFlags);
+        this(header, Collections.singletonList(document), 0, replyFlags);
     }
 
-    public MongoReply(MessageHeader header, List<? extends Document> documents, ReplyFlag... replyFlags) {
+    public MongoReply(MessageHeader header, List<? extends Document> documents, long cursorId, ReplyFlag... replyFlags) {
+        this.cursorId = cursorId;
         this.header = header;
         this.documents = documents;
         for (ReplyFlag replyFlag : replyFlags) {

@@ -144,6 +144,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testSimpleCursor() {
+        int expectedCount = 20;
+        int batchSize = 10;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("name", "testUser1"));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(expectedCount).cursor();
+        int count = 0;
+        while (cursor.hasNext()) {
+            cursor.next();
+            count++;
+        }
+        assertThat(count).isEqualTo(expectedCount);
+    }
+
+    @Test
     public void testSimpleInsertDelete() throws Exception {
         collection.insertOne(json("_id: 1"));
         collection.deleteOne(json("_id: 1"));

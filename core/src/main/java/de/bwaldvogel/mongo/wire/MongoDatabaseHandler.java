@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoBackend;
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -25,7 +26,9 @@ import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
@@ -78,6 +81,11 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         } else if (object instanceof MongoUpdate) {
             MongoUpdate update = (MongoUpdate) object;
             mongoBackend.handleUpdate(update);
+        } else if (object instanceof MongoGetMore) {
+            MongoGetMore getMore = (MongoGetMore) object;
+            ctx.channel().writeAndFlush(handleGetMore(getMore));
+        } else if (object instanceof MongoKillCursors) {
+            // Implement here any cursor recycling logic.
         } else {
             throw new MongoServerException("unknown message: " + object);
         }
@@ -86,15 +94,17 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     private MongoReply handleQuery(MongoQuery query) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
+            QueryResult<Document> queryResult = null;
             List<Document> documents = new ArrayList<>();
             if (query.getCollectionName().startsWith("$cmd")) {
                 documents.add(handleCommand(query));
             } else {
-                for (Document obj : mongoBackend.handleQuery(query)) {
+                queryResult = mongoBackend.handleQuery(query);
+                for (Document obj : queryResult) {
                     documents.add(obj);
                 }
             }
-            return new MongoReply(header, documents);
+            return new MongoReply(header, documents, queryResult == null ? 0 : queryResult.getCursorId());
         } catch (NoSuchCommandException e) {
             log.error("unknown command: {}", query, e);
             Map<String, ?> additionalInfo = Collections.singletonMap("bad cmd", query.getQuery());
@@ -105,6 +115,16 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             log.error("failed to handle query {}", query, e);
             return queryFailure(header, e);
         }
+    }
+
+    public MongoReply handleGetMore(MongoGetMore getMore) {
+        MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), getMore.getHeader().getRequestID());
+        List<Document> documents = new ArrayList<>();
+        QueryResult<Document> queryResult = mongoBackend.handleGetMore(getMore);
+        for (Document obj : queryResult) {
+            documents.add(obj);
+        }
+        return new MongoReply(header, documents, queryResult.getCursorId());
     }
 
     private MongoReply queryFailure(MessageHeader header, MongoServerException exception) {

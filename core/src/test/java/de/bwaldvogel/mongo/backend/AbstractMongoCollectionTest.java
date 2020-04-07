@@ -44,7 +44,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
+        protected QueryResult<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
                                                     int numberToReturn) {
             throw new UnsupportedOperationException();
         }

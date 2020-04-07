@@ -11,6 +11,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
@@ -68,8 +69,13 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public Iterable<Document> handleQuery(MongoQuery query) {
+    public QueryResult<Document> handleQuery(MongoQuery query) {
         return backend.handleQuery(query);
+    }
+
+    @Override
+    public QueryResult<Document> handleGetMore(MongoGetMore getMore) {
+        return backend.handleGetMore(getMore);
     }
 
     @Override

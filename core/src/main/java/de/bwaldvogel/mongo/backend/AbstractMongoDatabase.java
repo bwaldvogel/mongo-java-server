@@ -31,6 +31,7 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
@@ -584,17 +585,25 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public Iterable<Document> handleQuery(MongoQuery query) {
+    public QueryResult<Document> handleQuery(MongoQuery query) {
         clearLastStatus(query.getChannel());
         String collectionName = query.getCollectionName();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
-            return Collections.emptyList();
+            return new QueryResult<>();
         }
         int numSkip = query.getNumberToSkip();
         int numReturn = query.getNumberToReturn();
         Document fieldSelector = query.getReturnFieldSelector();
         return collection.handleQuery(query.getQuery(), numSkip, numReturn, fieldSelector);
+    }
+
+    @Override
+    public QueryResult<Document> handleGetMore(MongoGetMore getMore) {
+        clearLastStatus(getMore.getChannel());
+        String collectionName = getMore.getCollectionName();
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
+        return collection.handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
     }
 
     @Override

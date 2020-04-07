@@ -1,7 +1,9 @@
 package de.bwaldvogel.mongo;
 
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
@@ -15,7 +17,9 @@ public interface MongoDatabase {
 
     Document handleCommand(Channel channel, String command, Document query);
 
-    Iterable<Document> handleQuery(MongoQuery query);
+    QueryResult<Document> handleQuery(MongoQuery query);
+
+    QueryResult<Document> handleGetMore(MongoGetMore getMore);
 
     void handleInsert(MongoInsert insert);
 
