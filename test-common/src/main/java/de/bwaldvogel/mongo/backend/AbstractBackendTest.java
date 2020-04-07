@@ -150,7 +150,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         for (int i = 0; i < expectedCount; i++) {
             collection.insertOne(new Document("name", "testUser1"));
         }
-        MongoCursor<Document> cursor = collection.find().batchSize(expectedCount).cursor();
+        MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
         int count = 0;
         while (cursor.hasNext()) {
             cursor.next();

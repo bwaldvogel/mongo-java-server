@@ -1,10 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -41,10 +39,6 @@ public class Cursor implements Iterable<Document> {
 
     public boolean isEmpty() {
         return documents.isEmpty();
-    }
-
-    public Document toDocument() {
-        return null;
     }
 
     public long getCursorId() {
