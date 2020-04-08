@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -57,6 +58,7 @@ import org.bson.types.Code;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
@@ -157,6 +159,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
             count++;
         }
         assertThat(count).isEqualTo(expectedCount);
+        Assertions.assertThrows(NoSuchElementException.class, cursor::next);
+    }
+
+    @Test
+    public void testCloseCursor() {
+        int expectedCount = 20;
+        int batchSize = 5;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("name", "testUser1"));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
+        int count = 0;
+        while (cursor.hasNext() && count < 10) {
+            cursor.next();
+            count++;
+        }
+        cursor.close();
+        assertThat(count).isEqualTo(10);
+        Assertions.assertThrows(IllegalStateException.class, cursor::next);
     }
 
     @Test

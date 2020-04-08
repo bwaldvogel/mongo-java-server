@@ -13,6 +13,7 @@ import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
@@ -116,6 +117,11 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public void setClock(Clock clock) {
         backend.setClock(clock);
+    }
+
+    @Override
+    public void handleKillCursors(MongoKillCursors mongoKillCursors) {
+        backend.handleKillCursors(mongoKillCursors);
     }
 
 }

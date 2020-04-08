@@ -33,6 +33,7 @@ import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
@@ -604,6 +605,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         String collectionName = getMore.getCollectionName();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         return collection.handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
+    }
+
+    @Override
+    public void handleKillCursors(MongoKillCursors killCursors) {
+        collections.values().forEach(c -> c.handleKillCursors(killCursors));
     }
 
     @Override

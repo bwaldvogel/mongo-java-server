@@ -85,7 +85,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             MongoGetMore getMore = (MongoGetMore) object;
             ctx.channel().writeAndFlush(handleGetMore(getMore));
         } else if (object instanceof MongoKillCursors) {
-            // Implement here any cursor recycling logic.
+            handleKillCursors((MongoKillCursors)object);
         } else {
             throw new MongoServerException("unknown message: " + object);
         }
@@ -125,6 +125,10 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             documents.add(obj);
         }
         return new MongoReply(header, documents, queryResult.getCursorId());
+    }
+
+    public void handleKillCursors(MongoKillCursors mongoKillCursors) {
+        mongoBackend.handleKillCursors(mongoKillCursors);
     }
 
     private MongoReply queryFailure(MessageHeader header, MongoServerException exception) {

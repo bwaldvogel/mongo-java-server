@@ -35,6 +35,7 @@ import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
@@ -462,6 +463,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
         return new QueryResult(docs, cursor.isEmpty() ? 0 : cursorId);
     }
+
+    public synchronized void handleKillCursors(MongoKillCursors killCursors) {
+        killCursors.getCursorIds().forEach(cursors::remove);
+    }
+
 
     @Override
     public synchronized Document handleDistinct(Document query) {
