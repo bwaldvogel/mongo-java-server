@@ -51,7 +51,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected QueryResult<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         Collection<Document> matchedDocuments = new ArrayList<>();
 
         int numMatched = 0;
@@ -77,7 +77,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
         }
 
         Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult<>(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
+        return new QueryResult(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
     }
 
     static String convertOrderByToSql(Document orderBy) {

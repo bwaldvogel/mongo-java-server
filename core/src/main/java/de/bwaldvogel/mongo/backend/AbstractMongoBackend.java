@@ -246,13 +246,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public QueryResult<Document> handleQuery(MongoQuery query) {
+    public QueryResult handleQuery(MongoQuery query) {
         MongoDatabase db = resolveDatabase(query);
         return db.handleQuery(query);
     }
 
     @Override
-    public QueryResult<Document> handleGetMore(MongoGetMore getMore) {
+    public QueryResult handleGetMore(MongoGetMore getMore) {
         MongoDatabase db = resolveDatabase(getMore);
         return db.handleGetMore(getMore);
     }

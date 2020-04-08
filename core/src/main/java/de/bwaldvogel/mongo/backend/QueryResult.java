@@ -5,35 +5,30 @@ import java.util.Iterator;
 
 import de.bwaldvogel.mongo.bson.Document;
 
-public class QueryResult<T extends Document> implements Iterable<T> {
+public class QueryResult implements Iterable<Document> {
 
-    private Iterable<T> documents;
-    private int remainingDocuments;
-    private long cursorId;
+    private final Iterable<Document> documents;
+    private final long cursorId;
 
     public QueryResult() {
         this(Collections.emptyList(), 0);
     }
 
-    public QueryResult(Iterable<T> documents, long cursorId) {
+    public QueryResult(Iterable<Document> documents, long cursorId) {
         this.documents = documents;
         this.cursorId = cursorId;
     }
 
-    public QueryResult(Iterable<T> documents) {
+    public QueryResult(Iterable<Document> documents) {
         this(documents, 0);
     }
 
-    public Iterable<T> getDocuments() {
+    public Iterable<Document> getDocuments() {
         return documents;
     }
 
-    public int getRemainingDocuments() {
-        return remainingDocuments;
-    }
-
     @Override
-    public Iterator<T> iterator() {
+    public Iterator<Document> iterator() {
         return documents.iterator();
     }
 

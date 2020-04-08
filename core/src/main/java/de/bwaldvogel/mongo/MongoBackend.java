@@ -19,9 +19,9 @@ public interface MongoBackend {
 
     Document handleCommand(Channel channel, String database, String command, Document query);
 
-    QueryResult<Document> handleQuery(MongoQuery query);
+    QueryResult handleQuery(MongoQuery query);
 
-    QueryResult<Document> handleGetMore(MongoGetMore getMore);
+    QueryResult handleGetMore(MongoGetMore getMore);
 
     void handleInsert(MongoInsert insert);
 

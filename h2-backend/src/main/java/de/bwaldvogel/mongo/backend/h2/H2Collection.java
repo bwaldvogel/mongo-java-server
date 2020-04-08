@@ -99,7 +99,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected QueryResult<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         for (Document document : dataMap.values()) {
@@ -111,7 +111,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         sortDocumentsInMemory(matchedDocuments, orderBy);
 
         Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult<>(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
+        return new QueryResult(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
     }
 
     @Override

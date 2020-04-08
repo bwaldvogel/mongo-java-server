@@ -585,12 +585,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public QueryResult<Document> handleQuery(MongoQuery query) {
+    public QueryResult handleQuery(MongoQuery query) {
         clearLastStatus(query.getChannel());
         String collectionName = query.getCollectionName();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
-            return new QueryResult<>();
+            return new QueryResult();
         }
         int numSkip = query.getNumberToSkip();
         int numReturn = query.getNumberToReturn();
@@ -599,7 +599,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public QueryResult<Document> handleGetMore(MongoGetMore getMore) {
+    public QueryResult handleGetMore(MongoGetMore getMore) {
         clearLastStatus(getMore.getChannel());
         String collectionName = getMore.getCollectionName();
         MongoCollection<P> collection = resolveCollection(collectionName, false);

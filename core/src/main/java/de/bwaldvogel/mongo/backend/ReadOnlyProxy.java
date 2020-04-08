@@ -69,12 +69,12 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public QueryResult<Document> handleQuery(MongoQuery query) {
+    public QueryResult handleQuery(MongoQuery query) {
         return backend.handleQuery(query);
     }
 
     @Override
-    public QueryResult<Document> handleGetMore(MongoGetMore getMore) {
+    public QueryResult handleGetMore(MongoGetMore getMore) {
         return backend.handleGetMore(getMore);
     }
 

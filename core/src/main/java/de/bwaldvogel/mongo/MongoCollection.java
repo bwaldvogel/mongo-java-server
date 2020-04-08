@@ -50,13 +50,13 @@ public interface MongoCollection<P> {
         return StreamSupport.stream(documents, false);
     }
 
-    default QueryResult<Document> handleQuery(Document query, int numberToSkip, int numberToReturn) {
+    default QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn) {
         return handleQuery(query, numberToSkip, numberToReturn, null);
     }
 
-    QueryResult<Document> handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
+    QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
 
-    QueryResult<Document> handleGetMore(long cursorId, int numberToReturn);
+    QueryResult handleGetMore(long cursorId, int numberToReturn);
 
     default void insertDocuments(List<Document> documents) {
         for (Document document : documents) {

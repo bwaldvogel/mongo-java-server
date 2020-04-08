@@ -94,7 +94,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     private MongoReply handleQuery(MongoQuery query) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
         try {
-            QueryResult<Document> queryResult = null;
+            QueryResult queryResult = null;
             List<Document> documents = new ArrayList<>();
             if (query.getCollectionName().startsWith("$cmd")) {
                 documents.add(handleCommand(query));
@@ -120,7 +120,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     public MongoReply handleGetMore(MongoGetMore getMore) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), getMore.getHeader().getRequestID());
         List<Document> documents = new ArrayList<>();
-        QueryResult<Document> queryResult = mongoBackend.handleGetMore(getMore);
+        QueryResult queryResult = mongoBackend.handleGetMore(getMore);
         for (Document obj : queryResult) {
             documents.add(obj);
         }
