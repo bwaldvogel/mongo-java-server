@@ -6,15 +6,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
-import de.bwaldvogel.mongo.backend.Cursor;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
@@ -25,8 +23,8 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
 
     private final PostgresqlBackend backend;
 
-    public PostgresqlCollection(PostgresqlDatabase database, String collectionName, String idField) {
-        super(database, collectionName, idField);
+    public PostgresqlCollection(PostgresqlDatabase database, String collectionName, CollectionOptions options) {
+        super(database, collectionName, options);
         this.backend = database.getBackend();
     }
 
@@ -52,9 +50,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
 
     @Override
     protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
-        Collection<Document> matchedDocuments = new ArrayList<>();
-
-        int numMatched = 0;
+        List<Document> matchedDocuments = new ArrayList<>();
 
         String sql = "SELECT data FROM " + getQualifiedTablename() + " " + convertOrderByToSql(orderBy);
         try (Connection connection = backend.getConnection();
@@ -65,7 +61,6 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
                     String data = resultSet.getString("data");
                     Document document = JsonConverter.fromJson(data);
                     if (documentMatchesQuery(document, query)) {
-                        numMatched++;
                         matchedDocuments.add(document);
                     }
                 }
@@ -76,8 +71,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
             throw new MongoServerException("failed to query " + this, e);
         }
 
-        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
+        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     static String convertOrderByToSql(Document orderBy) {
@@ -214,13 +208,13 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
 
     @Override
     protected Long findDocumentPosition(Document document) {
-        if (idField == null || !document.containsKey(idField)) {
+        if (options == null || !document.containsKey(getIdField())) {
             return super.findDocumentPosition(document);
         }
-        String sql = "SELECT id FROM " + getQualifiedTablename() + " WHERE " + PostgresqlUtils.toDataKey(idField) + " = ?";
+        String sql = "SELECT id FROM " + getQualifiedTablename() + " WHERE " + PostgresqlUtils.toDataKey(options.getIdField()) + " = ?";
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, PostgresqlUtils.toQueryValue(document.get(idField)));
+            stmt.setString(1, PostgresqlUtils.toQueryValue(document.get(getIdField())));
             try (ResultSet resultSet = stmt.executeQuery()) {
                 if (!resultSet.next()) {
                     return null;
@@ -263,7 +257,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, JsonConverter.toJson(newDocument));
-            Object idValue = newDocument.get(idField);
+            Object idValue = newDocument.get(getIdField());
             stmt.setLong(2, position);
             stmt.executeUpdate();
         } catch (SQLException e) {

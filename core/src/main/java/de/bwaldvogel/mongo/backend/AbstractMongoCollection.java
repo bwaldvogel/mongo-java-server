@@ -5,16 +5,15 @@ import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,13 +45,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     private String collectionName;
     private final List<Index<P>> indexes = new ArrayList<>();
     private final QueryMatcher matcher = new DefaultQueryMatcher();
-    protected final String idField;
+    protected final CollectionOptions options;
     protected final ConcurrentMap<Long, Cursor> cursors = new ConcurrentHashMap<>();
+    private final AtomicLong cursorIdCounter = new AtomicLong();
 
-    protected AbstractMongoCollection(MongoDatabase database, String collectionName, String idField) {
-        this.database = database;
-        this.collectionName = collectionName;
-        this.idField = idField;
+    protected AbstractMongoCollection(MongoDatabase database, String collectionName, CollectionOptions options) {
+        this.database = Objects.requireNonNull(database);
+        this.collectionName = Objects.requireNonNull(collectionName);
+        this.options = Objects.requireNonNull(options);
     }
 
     protected boolean documentMatchesQuery(Document document, Document query) {
@@ -82,7 +82,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                            int numberToReturn);
+                                                  int numberToReturn);
 
     protected QueryResult matchDocuments(Document query, Iterable<P> positions, Document orderBy,
                                          int numberToSkip, int numberToReturn) {
@@ -240,8 +240,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                              Integer matchPos, boolean isUpsert) {
         Document change = (Document) update.get(modifier);
         UpdateOperator updateOperator = getUpdateOperator(modifier, change);
-        FieldUpdates updates = new FieldUpdates(document, updateOperator, idField, isUpsert, matchPos, arrayFilters);
+        FieldUpdates updates = new FieldUpdates(document, updateOperator, getIdField(), isUpsert, matchPos, arrayFilters);
         updates.apply(change, modifier);
+    }
+
+    protected String getIdField() {
+        return options.getIdField();
     }
 
     private UpdateOperator getUpdateOperator(String modifier, Document change) {
@@ -260,22 +264,22 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return;
         }
 
-        Object oldId = oldDocument.get(idField);
-        Object newId = newDocument.get(idField);
+        Object oldId = oldDocument.get(getIdField());
+        Object newId = newDocument.get(getIdField());
 
         if (newId != null && oldId != null && !Utils.nullAwareEquals(oldId, newId)) {
             throw new ImmutableFieldException("After applying the update, the (immutable) field '_id' was found to have been altered to _id: " + newId);
         }
 
         if (newId == null && oldId != null) {
-            newDocument.put(idField, oldId);
+            newDocument.put(getIdField(), oldId);
         }
 
         cloneInto(oldDocument, newDocument);
     }
 
     Object deriveDocumentId(Document selector) {
-        Object value = selector.get(idField);
+        Object value = selector.get(getIdField());
         if (value != null) {
             if (!Utils.containsQueryExpression(value)) {
                 return value;
@@ -312,8 +316,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         Document newDocument = new Document();
-        if (idField != null) {
-            newDocument.put(idField, oldDocument.get(idField));
+        if (getIdField() != null) {
+            newDocument.put(getIdField(), oldDocument.get(getIdField()));
         }
 
         if (numStartsWithDollar == update.keySet().size()) {
@@ -408,7 +412,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (query.get("fields") != null) {
             Document fields = (Document) query.get("fields");
-            returnDocument = Projection.projectDocument(returnDocument, fields, idField);
+            returnDocument = Projection.projectDocument(returnDocument, fields, getIdField());
         }
 
         Document result = new Document();
@@ -422,7 +426,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
-            Document fieldSelector) {
+                                                Document fieldSelector) {
 
         final Document query;
         final Document orderBy;
@@ -446,7 +450,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         QueryResult objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
-            return new QueryResult(new ProjectingIterable(objs, fieldSelector, idField), 0);
+            return new QueryResult(new ProjectingIterable(objs, fieldSelector, getIdField()), 0);
         }
 
         return objs;
@@ -454,21 +458,24 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized QueryResult handleGetMore(long cursorId, int numberToReturn) {
-        if (!cursors.containsKey(cursorId)) {
+        Cursor cursor = cursors.get(cursorId);
+        if (cursor == null) {
             throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
         }
-        Cursor cursor = cursors.get(cursorId);
-        List<Document> docs = new ArrayList<>();
-        while (!cursor.isEmpty() && docs.size() < numberToReturn) {
-            docs.add(cursor.getDocuments().poll());
+        List<Document> documents = cursor.takeDocuments(numberToReturn);
+
+        if (cursor.isEmpty()) {
+            log.debug("Removing empty {}", cursor);
+            cursors.remove(cursor.getCursorId());
         }
-        return new QueryResult(docs, cursor.isEmpty() ? 0 : cursorId);
+
+        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getCursorId() : cursorId);
     }
 
+    @Override
     public synchronized void handleKillCursors(MongoKillCursors killCursors) {
         killCursors.getCursorIds().forEach(cursors::remove);
     }
-
 
     @Override
     public synchronized Document handleDistinct(Document query) {
@@ -542,7 +549,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         // insert?
         if (nMatched == 0 && isUpsert) {
             Document newDocument = handleUpsert(updateQuery, selector, arrayFilters);
-            result.put("upserted", newDocument.get(idField));
+            result.put("upserted", newDocument.get(getIdField()));
         }
 
         result.put("n", Integer.valueOf(nMatched));
@@ -632,9 +639,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document document = convertSelectorToDocument(selector);
 
         Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, null, true);
-        if (newDocument.get(idField) == null) {
-            newDocument.put(idField, deriveDocumentId(selector));
-        }
+        newDocument.computeIfAbsent(getIdField(), k -> deriveDocumentId(selector));
         addDocument(newDocument);
         return newDocument;
     }
@@ -675,7 +680,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return count;
         }
 
-        int numberToReturn = (limit >= 0) ? limit : 0;
+        int numberToReturn = Math.max(limit, 0);
         int count = 0;
         Iterator<?> it = queryDocuments(query, null, skip, numberToReturn).iterator();
         while (it.hasNext()) {
@@ -773,10 +778,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract void removeDocument(P position);
 
-    protected static Iterable<Document> applySkipAndLimit(Collection<Document> documents, int numberToSkip, int numberToReturn) {
-        return applySkipAndLimit(new ArrayList<>(documents), numberToSkip, numberToReturn);
-    }
-
     protected static Iterable<Document> applySkipAndLimit(List<Document> documents, int numberToSkip, int numberToReturn) {
         if (numberToSkip > 0) {
             if (numberToSkip < documents.size()) {
@@ -807,14 +808,29 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return AbstractMongoDatabase.isSystemCollection(getCollectionName());
     }
 
+    protected QueryResult createQueryResult(List<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
+        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
+        Iterable<Document> documents = applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
+        return new QueryResult(documents, cursor.getCursorId());
+    }
+
     protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
-        Cursor cursor = new Cursor(collectionName);
+        final List<Document> remainingDocuments;
         if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            cursor = new Cursor(matchedDocuments.stream().skip(numberToSkip + numberToReturn).collect(Collectors.toList()), getCollectionName());
-            if (cursor.getCursorId() > 0) {
-                cursors.put(cursor.getCursorId(), cursor);
-            }
+            remainingDocuments = matchedDocuments.stream()
+                .skip(numberToSkip + numberToReturn)
+                .collect(Collectors.toList());
+        } else {
+            remainingDocuments = Collections.emptyList();
         }
+
+        if (remainingDocuments.isEmpty()) {
+            return EmptyCursor.get();
+        }
+
+        Cursor cursor = new InMemoryCursor(cursorIdCounter.incrementAndGet(), remainingDocuments);
+        Cursor previousValue = cursors.put(cursor.getCursorId(), cursor);
+        Assert.isNull(previousValue);
         return cursor;
     }
 

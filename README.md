@@ -25,7 +25,7 @@ Add the following Maven dependency to your project:
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server</artifactId>
-    <version>1.26.0</version>
+    <version>1.27.0</version>
 </dependency>
 ```
 
@@ -95,30 +95,39 @@ public class SimpleSpringBootTest {
     }
 
     @Configuration
+    @EnableMongoTestServer
     @EnableMongoRepositories(basePackageClasses={MyRepository.class})
     protected static class TestConfiguration {
-        @Bean
-        public MongoTemplate mongoTemplate(MongoClient mongoClient) {
-            return new MongoTemplate(mongoDbFactory(mongoClient));
-        }
-
-        @Bean
-        public MongoDbFactory mongoDbFactory(MongoClient mongoClient) {
-            return new SimpleMongoDbFactory(mongoClient, "test");
-        }
-
-        @Bean(destroyMethod="shutdown")
-        public MongoServer mongoServer() {
-            MongoServer mongoServer = new MongoServer(new MemoryBackend());
-            mongoServer.bind();
-            return mongoServer;
-        }
-
-        @Bean(destroyMethod="close")
-        public MongoClient mongoClient(MongoServer mongoServer) {
-            return new MongoClient(new ServerAddress(mongoServer.getLocalAddress()));
-        }
+        // test bean definitions ...
+        ...
     }
+}
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Import(MongoTestServerConfiguration.class)
+public @interface EnableMongoTestServer {
+
+}
+
+public class MongoTestServerConfiguration {
+	@Bean
+	public MongoTemplate mongoTemplate(MongoDbFactory mongoDbFactory) {
+		return new MongoTemplate(mongoDbFactory);
+	}
+
+	@Bean
+	public MongoDbFactory mongoDbFactory(MongoServer mongoServer) {
+		InetSocketAddress serverAddress = mongoServer.getLocalAddress();
+		return new SimpleMongoClientDbFactory("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort() + "/test");
+	}
+
+	@Bean(destroyMethod = "shutdown")
+	public MongoServer mongoServer() {
+		MongoServer mongoServer = new MongoServer(new MemoryBackend());
+		mongoServer.bind();
+		return mongoServer;
+	}
 }
 ```
 
@@ -131,7 +140,7 @@ can either be in-memory or on-disk.
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server-h2-backend</artifactId>
-    <version>1.26.0</version>
+    <version>1.27.0</version>
 </dependency>
 ```
 
@@ -158,7 +167,7 @@ Postgres and each MongoDB collection is stored as a table.
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server-postgresql-backend</artifactId>
-    <version>1.26.0</version>
+    <version>1.27.0</version>
 </dependency>
 ```
 

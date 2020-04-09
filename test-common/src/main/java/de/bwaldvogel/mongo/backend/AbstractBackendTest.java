@@ -19,6 +19,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,7 +59,6 @@ import org.bson.types.Code;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
@@ -107,6 +107,8 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.Success;
 
+import de.bwaldvogel.mongo.oplog.OperationType;
+
 public abstract class AbstractBackendTest extends AbstractTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
@@ -151,16 +153,67 @@ public abstract class AbstractBackendTest extends AbstractTest {
         int expectedCount = 20;
         int batchSize = 10;
         for (int i = 0; i < expectedCount; i++) {
-            collection.insertOne(new Document("name", "testUser1"));
+            collection.insertOne(new Document("_id", 100 + i));
         }
-        MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
-        int count = 0;
+        MongoCursor<Document> cursor = collection.find().sort(json("_id: 1")).batchSize(batchSize).cursor();
+        List<Document> retrievedDocuments = new ArrayList<>();
         while (cursor.hasNext()) {
-            cursor.next();
-            count++;
+            retrievedDocuments.add(cursor.next());
         }
-        assertThat(count).isEqualTo(expectedCount);
-        Assertions.assertThrows(NoSuchElementException.class, cursor::next);
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(expectedCount);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 100"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
+    }
+
+    @Test
+    public void testCursor_skipDocuments() {
+        int totalCount = 20;
+        int numToSkip = 5;
+        int expectedCount = totalCount - numToSkip;
+        int batchSize = 10;
+        for (int i = 0; i < totalCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i));
+        }
+        MongoCursor<Document> cursor = collection.find()
+            .sort(json("_id: 1"))
+            .skip(numToSkip)
+            .batchSize(batchSize)
+            .cursor();
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(expectedCount);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
+    }
+
+    @Test
+    public void testCursor_skipAndLimitDocuments() {
+        int totalCount = 50;
+        int numToSkip = 5;
+        int limit = 20;
+        int batchSize = 10;
+        for (int i = 0; i < totalCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i));
+        }
+        MongoCursor<Document> cursor = collection.find()
+            .sort(json("_id: 1"))
+            .skip(numToSkip)
+            .limit(limit)
+            .batchSize(batchSize)
+            .cursor();
+
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(limit);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 124"));
     }
 
     @Test
@@ -168,7 +221,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         int expectedCount = 20;
         int batchSize = 5;
         for (int i = 0; i < expectedCount; i++) {
-            collection.insertOne(new Document("name", "testUser1"));
+            collection.insertOne(new Document("value", i));
         }
         MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
         int count = 0;
@@ -178,7 +231,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
         cursor.close();
         assertThat(count).isEqualTo(10);
-        Assertions.assertThrows(IllegalStateException.class, cursor::next);
+        assertThrows(IllegalStateException.class, cursor::next);
     }
 
     @Test
@@ -190,7 +243,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
         MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
         cursor.next();
         killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
-        Assertions.assertThrows(MongoCursorNotFoundException.class, cursor::next);
+        assertThrows(MongoCursorNotFoundException.class, cursor::next);
+    }
+
+    @Test
+    public void testSimpleOplogInsert() {
+        Document doc = new Document("name", "testUser1");
+        collection.insertOne(doc);
+        Document oplogDoc = oplogCollection.find().first();
+        assertThat(oplogDoc).isNotNull();
+        assertThat(oplogDoc.get("ts")).isNotNull();
+        assertThat(oplogDoc.get("wall")).isNotNull();
+        assertThat(oplogDoc.get("o2")).isNull();
+        assertThat(oplogDoc.get("v")).isEqualTo(2L);
+        assertThat(oplogDoc.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+        assertThat(oplogDoc.get("op")).isEqualTo(OperationType.INSERT.getValue());
+        assertThat(oplogDoc.get("o")).isEqualTo(doc);
     }
 
     @Test
@@ -205,6 +273,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(db.listCollectionNames()).doesNotContain(newCollectionName);
         db.createCollection(newCollectionName, new CreateCollectionOptions());
         assertThat(db.listCollectionNames()).contains(newCollectionName);
+    }
+
+    @Test
+    public void testCreateCappedCollection_invalidOptions() throws Exception {
+        String newCollectionName = "some-collection";
+        assertThat(db.listCollectionNames()).doesNotContain(newCollectionName);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions().capped(true)))
+            .withMessageContaining("Command failed with error 72 (InvalidOptions): 'the 'size' field is required when 'capped' is true'");
     }
 
     @Test
@@ -1718,11 +1796,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testListDatabaseNames() throws Exception {
-        assertThat(listDatabaseNames()).isEmpty();
+        assertThat(listDatabaseNames()).contains(localDb.getName());
         collection.insertOne(json(""));
-        assertThat(listDatabaseNames()).containsExactly(db.getName());
+        assertThat(listDatabaseNames()).containsExactlyInAnyOrder(db.getName(), localDb.getName());
         getDatabase().getCollection("some-collection").insertOne(json(""));
-        assertThat(listDatabaseNames()).containsExactly("bar", db.getName());
+        assertThat(listDatabaseNames()).containsExactlyInAnyOrder("bar", db.getName(), localDb.getName());
     }
 
     private MongoDatabase getDatabase() {
@@ -5761,6 +5839,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document result = runCommand("getCmdLineOpts");
         assertThat(result.get("ok")).isEqualTo(1.0);
         assertThat(result).containsOnlyKeys("ok", "argv", "parsed");
+    }
+
+    @Test
+    void testGetFreeMonitoringStatus() throws Exception {
+        Document result = runCommand("getFreeMonitoringStatus");
+        assertThat(result).isEqualTo(json("ok: 1.0, state: 'undecided'"));
     }
 
     @Test

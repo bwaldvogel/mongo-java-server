@@ -22,7 +22,6 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
@@ -86,7 +85,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             MongoGetMore getMore = (MongoGetMore) object;
             ctx.channel().writeAndFlush(handleGetMore(getMore));
         } else if (object instanceof MongoKillCursors) {
-            handleKillCursors((MongoKillCursors)object);
+            handleKillCursors((MongoKillCursors) object);
         } else {
             throw new MongoServerException("unknown message: " + object);
         }
@@ -110,10 +109,10 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             log.error("unknown command: {}", query, e);
             Map<String, ?> additionalInfo = Collections.singletonMap("bad cmd", query.getQuery());
             return queryFailure(header, e, additionalInfo);
-        } catch (MongoSilentServerException e) {
-            return queryFailure(header, e);
         } catch (MongoServerException e) {
-            log.error("failed to handle query {}", query, e);
+            if (e.isLogError()) {
+                log.error("failed to handle query {}", query, e);
+            }
             return queryFailure(header, e);
         }
     }
@@ -177,8 +176,8 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                     Document actualQuery = query.getQuery();
 
                     if (command.equals("$query")) {
-                        command = ((Document)query.getQuery().get("$query")).keySet().iterator().next();
-                        actualQuery = (Document)actualQuery.get("$query");
+                        command = ((Document) query.getQuery().get("$query")).keySet().iterator().next();
+                        actualQuery = (Document) actualQuery.get("$query");
                     }
 
                     return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), command, actualQuery);

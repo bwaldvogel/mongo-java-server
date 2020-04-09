@@ -7,6 +7,7 @@ import java.util.List;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.postgresql.index.PostgresUniqueIndex;
@@ -67,7 +68,7 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     }
 
     @Override
-    protected MongoCollection<Long> openOrCreateCollection(String collectionName, String idField) {
+    protected MongoCollection<Long> openOrCreateCollection(String collectionName, CollectionOptions options) {
         String tableName = PostgresqlCollection.getTablename(collectionName);
         String fullCollectionName = PostgresqlCollection.getQualifiedTablename(getDatabaseName(), collectionName);
         String createTableSql = "CREATE TABLE IF NOT EXISTS " + fullCollectionName + "" +
@@ -86,7 +87,7 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
             throw new MongoServerException("failed to create or open collection " + collectionName, e);
         }
 
-        return new PostgresqlCollection(this, collectionName, idField);
+        return new PostgresqlCollection(this, collectionName, options);
     }
 
     public PostgresqlBackend getBackend() {

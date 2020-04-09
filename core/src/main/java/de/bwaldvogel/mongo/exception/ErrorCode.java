@@ -8,9 +8,11 @@ public enum ErrorCode {
     IndexNotFound(27),
     PathNotViable(28),
     ConflictingUpdateOperators(40),
+    NamespaceExists(48),
     DollarPrefixedFieldName(52),
     CommandNotFound(59),
     ImmutableField(66),
+    InvalidOptions(72),
     IndexOptionsConflict(85),
     CannotIndexParallelArrays(171),
     DuplicateKey(11000);

@@ -30,6 +30,8 @@ public interface MongoBackend {
 
     void handleUpdate(MongoUpdate update);
 
+    void handleKillCursors(MongoKillCursors mongoKillCursors);
+
     void dropDatabase(String database);
 
     Collection<Document> getCurrentOperations(MongoQuery query);
@@ -42,5 +44,4 @@ public interface MongoBackend {
 
     void setClock(Clock clock);
 
-    void handleKillCursors(MongoKillCursors mongoKillCursors);
 }

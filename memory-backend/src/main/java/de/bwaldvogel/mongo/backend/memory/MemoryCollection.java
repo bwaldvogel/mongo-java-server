@@ -5,13 +5,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
-import de.bwaldvogel.mongo.backend.Cursor;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
@@ -19,12 +18,12 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
-    private List<Document> documents = new ArrayList<>();
-    private Queue<Integer> emptyPositions = new LinkedList<>();
-    private AtomicInteger dataSize = new AtomicInteger();
+    private final List<Document> documents = new ArrayList<>();
+    private final Queue<Integer> emptyPositions = new LinkedList<>();
+    private final AtomicInteger dataSize = new AtomicInteger();
 
-    public MemoryCollection(MongoDatabase database, String collectionName, String idField) {
-        super(database, collectionName, idField);
+    public MemoryCollection(MongoDatabase database, String collectionName, CollectionOptions options) {
+        super(database, collectionName, options);
     }
 
     @Override
@@ -67,8 +66,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             matchedDocuments.sort(documentComparator);
         }
 
-        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
+        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     private Iterable<Document> iterateAllDocuments(Document orderBy) {
@@ -102,6 +100,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     @Override
     protected Stream<DocumentWithPosition<Integer>> streamAllDocumentsWithPosition() {
         return IntStream.range(0, documents.size())
+            .filter(position -> !emptyPositions.contains(position))
             .mapToObj(index -> new DocumentWithPosition<>(documents.get(index), index));
     }
 

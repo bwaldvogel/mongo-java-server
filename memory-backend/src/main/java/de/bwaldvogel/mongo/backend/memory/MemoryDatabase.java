@@ -4,6 +4,7 @@ import java.util.List;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
@@ -16,8 +17,8 @@ public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
     }
 
     @Override
-    protected MemoryCollection openOrCreateCollection(String collectionName, String idField) {
-        return new MemoryCollection(this, collectionName, idField);
+    protected MemoryCollection openOrCreateCollection(String collectionName, CollectionOptions options) {
+        return new MemoryCollection(this, collectionName, options);
     }
 
     @Override

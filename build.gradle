@@ -16,7 +16,7 @@ allprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'signing'
 
-    version = '1.27.0-SNAPSHOT'
+    version = '1.28.0-SNAPSHOT'
 
     group = 'de.bwaldvogel'
 
@@ -169,7 +169,7 @@ allprojects {
 }
 
 wrapper {
-    gradleVersion = "6.2.2"
+    gradleVersion = "6.3"
     distributionType = Wrapper.DistributionType.ALL
 }
 

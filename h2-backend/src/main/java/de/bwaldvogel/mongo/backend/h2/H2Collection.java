@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.h2.mvstore.MVMap;
@@ -14,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.Assert;
-import de.bwaldvogel.mongo.backend.Cursor;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.QueryResult;
@@ -30,8 +29,9 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
     private static final String DATA_SIZE_KEY = "dataSize";
 
-    public H2Collection(MongoDatabase database, String collectionName, String idField, MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap) {
-        super(database, collectionName, idField);
+    public H2Collection(MongoDatabase database, String collectionName, CollectionOptions options,
+                        MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap) {
+        super(database, collectionName, options);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
         if (!this.metaMap.containsKey(DATA_SIZE_KEY)) {
@@ -59,8 +59,8 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     @Override
     protected Object addDocumentInternal(Document document) {
         final Object key;
-        if (idField != null) {
-            key = Utils.getSubdocumentValue(document, idField);
+        if (getIdField() != null) {
+            key = Utils.getSubdocumentValue(document, getIdField());
         } else {
             key = UUID.randomUUID();
         }
@@ -110,8 +110,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
 
         sortDocumentsInMemory(matchedDocuments, orderBy);
 
-        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
+        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     @Override
