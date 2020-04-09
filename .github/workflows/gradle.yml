@@ -13,7 +13,17 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    services:
+      postgress:
+        image: postgres:9.6-alpine
+        env:
+          POSTGRES_USER: mongo-java-server-test
+          POSTGRES_PASSWORD: mongo-java-server-test
+          POSTGRES_DB: mongo-java-server-test          
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5      
+      
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK 1.8
