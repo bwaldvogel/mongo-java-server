@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
@@ -16,6 +17,7 @@ import de.bwaldvogel.mongo.wire.MongoDatabaseHandler;
 import de.bwaldvogel.mongo.wire.MongoExceptionHandler;
 import de.bwaldvogel.mongo.wire.MongoWireEncoder;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -190,5 +192,13 @@ public class MongoServer {
         }
         sb.append(")");
         return sb.toString();
+    }
+
+    /**
+     * Use this method to simulate closing of cursors by the server, for instance due to timeout.
+     * @param killCursors
+     */
+    public void closeCursors(MongoKillCursors killCursors) {
+        backend.handleKillCursors(killCursors);
     }
 }

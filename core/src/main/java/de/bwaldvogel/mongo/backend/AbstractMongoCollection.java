@@ -30,6 +30,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
+import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
@@ -454,7 +455,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     @Override
     public synchronized QueryResult handleGetMore(long cursorId, int numberToReturn) {
         if (!cursors.containsKey(cursorId)) {
-            throw new RuntimeException("Cursor not found");
+            throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
         }
         Cursor cursor = cursors.get(cursorId);
         List<Document> docs = new ArrayList<>();

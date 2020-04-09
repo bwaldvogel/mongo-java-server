@@ -19,6 +19,7 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -120,7 +121,12 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     public MongoReply handleGetMore(MongoGetMore getMore) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), getMore.getHeader().getRequestID());
         List<Document> documents = new ArrayList<>();
-        QueryResult queryResult = mongoBackend.handleGetMore(getMore);
+        QueryResult queryResult;
+        try {
+            queryResult = mongoBackend.handleGetMore(getMore);
+        } catch (CursorNotFoundException cursorNotFoundException) {
+            return new MongoReply(header, documents, getMore.getCursorId(), ReplyFlag.CURSOR_NOT_FOUND);
+        }
         for (Document obj : queryResult) {
             documents.add(obj);
         }
