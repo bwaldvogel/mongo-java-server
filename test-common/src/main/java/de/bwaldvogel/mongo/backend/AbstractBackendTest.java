@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -57,6 +58,7 @@ import org.bson.types.Code;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
@@ -70,6 +72,7 @@ import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCommandException;
+import com.mongodb.MongoCursorNotFoundException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.MongoQueryException;
 import com.mongodb.MongoServerException;
@@ -111,7 +114,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     protected static final String OTHER_TEST_DATABASE_NAME = "bar";
 
     protected Document runCommand(String commandName) {
-        return runCommand(new Document(commandName, Integer.valueOf(1)));
+        return runCommand(new Document(commandName, 1));
     }
 
     private Document runCommand(Document command) {
@@ -141,6 +144,53 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testSimpleInsert() throws Exception {
         collection.insertOne(json("_id: 1"));
+    }
+
+    @Test
+    public void testSimpleCursor() {
+        int expectedCount = 20;
+        int batchSize = 10;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("name", "testUser1"));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
+        int count = 0;
+        while (cursor.hasNext()) {
+            cursor.next();
+            count++;
+        }
+        assertThat(count).isEqualTo(expectedCount);
+        Assertions.assertThrows(NoSuchElementException.class, cursor::next);
+    }
+
+    @Test
+    public void testCloseCursor() {
+        int expectedCount = 20;
+        int batchSize = 5;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("name", "testUser1"));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
+        int count = 0;
+        while (cursor.hasNext() && count < 10) {
+            cursor.next();
+            count++;
+        }
+        cursor.close();
+        assertThat(count).isEqualTo(10);
+        Assertions.assertThrows(IllegalStateException.class, cursor::next);
+    }
+
+    @Test
+    public void testCursor_iteratingACursorThatNoLongerExists() {
+        int expectedCount = 20;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("name", "testUser1"));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
+        cursor.next();
+        killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
+        Assertions.assertThrows(MongoCursorNotFoundException.class, cursor::next);
     }
 
     @Test

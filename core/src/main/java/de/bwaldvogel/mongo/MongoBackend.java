@@ -4,9 +4,12 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
@@ -17,7 +20,9 @@ public interface MongoBackend {
 
     Document handleCommand(Channel channel, String database, String command, Document query);
 
-    Iterable<Document> handleQuery(MongoQuery query);
+    QueryResult handleQuery(MongoQuery query);
+
+    QueryResult handleGetMore(MongoGetMore getMore);
 
     void handleInsert(MongoInsert insert);
 
@@ -37,4 +42,5 @@ public interface MongoBackend {
 
     void setClock(Clock clock);
 
+    void handleKillCursors(MongoKillCursors mongoKillCursors);
 }

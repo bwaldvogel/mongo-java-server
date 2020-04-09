@@ -27,7 +27,9 @@ import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
@@ -245,9 +247,20 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public Iterable<Document> handleQuery(MongoQuery query) {
+    public QueryResult handleQuery(MongoQuery query) {
         MongoDatabase db = resolveDatabase(query);
         return db.handleQuery(query);
+    }
+
+    @Override
+    public QueryResult handleGetMore(MongoGetMore getMore) {
+        MongoDatabase db = resolveDatabase(getMore);
+        return db.handleGetMore(getMore);
+    }
+
+    @Override
+    public void handleKillCursors(MongoKillCursors killCursors) {
+        databases.values().forEach(database -> database.handleKillCursors(killCursors));
     }
 
     @Override

@@ -4,6 +4,8 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +46,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
+        protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
                                                     int numberToReturn) {
             throw new UnsupportedOperationException();
         }
@@ -122,6 +124,28 @@ public class AbstractMongoCollectionTest {
         assertThatExceptionOfType(ConflictingUpdateOperatorsException.class)
             .isThrownBy(() -> AbstractMongoCollection.validateUpdateQuery(json("$set: {'a.b.c': 1}, $inc: {'a.b': 1}")))
             .withMessage("[Error 40] Updating the path 'a.b' would create a conflict at 'a.b'");
+    }
+
+    @Test
+    void testCreateCursor() {
+        Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"),
+            new Document("name", "Steve"));
+        Cursor cursor = collection.createCursor(docs, 1, 1);
+        assertThat(cursor.isEmpty()).isFalse();
+        assertThat(cursor.documentsCount()).isEqualTo(1);
+        assertThat(cursor.getCursorId()).isGreaterThan(0);
+    }
+
+    @Test
+    void testCreateCursor_shouldCreateAnEmptyCursor() {
+        Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"),
+            new Document("name", "Steve"));
+        Cursor cursor = collection.createCursor(docs, 1, 2);
+        assertThat(cursor.isEmpty()).isTrue();
+        cursor = collection.createCursor(docs, 2, 1);
+        assertThat(cursor.isEmpty()).isTrue();
+        cursor = collection.createCursor(docs, 0, 0);
+        assertThat(cursor.isEmpty()).isTrue();
     }
 
 }

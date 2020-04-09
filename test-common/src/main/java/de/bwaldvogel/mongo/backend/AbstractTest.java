@@ -28,6 +28,7 @@ import com.mongodb.reactivestreams.client.MongoClient;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoServer;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractTest {
 
@@ -62,6 +63,11 @@ public abstract class AbstractTest {
             }
             syncClient.dropDatabase(databaseName);
         }
+    }
+
+    protected void killCursors(List<Long> cursorIds) {
+        MongoKillCursors killCursors = new MongoKillCursors(cursorIds);
+        mongoServer.closeCursors(killCursors);
     }
 
     @AfterAll

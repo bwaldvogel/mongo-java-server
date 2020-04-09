@@ -9,11 +9,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
+import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -48,7 +51,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         Collection<Document> matchedDocuments = new ArrayList<>();
 
         int numMatched = 0;
@@ -63,12 +66,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
                     Document document = JsonConverter.fromJson(data);
                     if (documentMatchesQuery(document, query)) {
                         numMatched++;
-                        if (numberToSkip <= 0 || numMatched > numberToSkip) {
-                            matchedDocuments.add(document);
-                        }
-                        if (numberToReturn > 0 && matchedDocuments.size() == numberToReturn) {
-                            break;
-                        }
+                        matchedDocuments.add(document);
                     }
                 }
             } catch (IOException e) {
@@ -78,7 +76,8 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
             throw new MongoServerException("failed to query " + this, e);
         }
 
-        return matchedDocuments;
+        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
+        return new QueryResult(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
     }
 
     static String convertOrderByToSql(Document orderBy) {
@@ -120,7 +119,7 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Iterable<Long> positions, Document orderBy, int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Iterable<Long> positions, Document orderBy, int numberToSkip, int numberToReturn) {
         throw new UnsupportedOperationException("not yet implemented");
     }
 
