@@ -182,18 +182,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCursor_iteratingACursorThatNoLongerExists() {
-        int expectedCount = 20;
-        for (int i = 0; i < expectedCount; i++) {
-            collection.insertOne(new Document("name", "testUser1"));
-        }
-        MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
-        cursor.next();
-        killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
-        Assertions.assertThrows(MongoCursorNotFoundException.class, cursor::next);
-    }
-
-    @Test
     public void testSimpleInsertDelete() throws Exception {
         collection.insertOne(json("_id: 1"));
         collection.deleteOne(json("_id: 1"));
