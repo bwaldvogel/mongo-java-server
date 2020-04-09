@@ -14,10 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoBackend;
-import de.bwaldvogel.mongo.backend.AbstractBackendTest;
+import de.bwaldvogel.mongo.backend.AbstractFakeBackendTest;
 import de.bwaldvogel.mongo.backend.h2.H2Backend;
 
-public class H2OnDiskBackendTest extends AbstractBackendTest {
+public class H2OnDiskBackendTest extends AbstractFakeBackendTest {
 
     private static final Logger log = LoggerFactory.getLogger(H2OnDiskBackendTest.class);
 
