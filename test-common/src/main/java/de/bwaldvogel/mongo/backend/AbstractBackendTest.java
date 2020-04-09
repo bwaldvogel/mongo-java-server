@@ -114,7 +114,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     protected static final String OTHER_TEST_DATABASE_NAME = "bar";
 
     protected Document runCommand(String commandName) {
-        return runCommand(new Document(commandName, Integer.valueOf(1)));
+        return runCommand(new Document(commandName, 1));
     }
 
     private Document runCommand(Document command) {
