@@ -611,7 +611,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @Override
     public void handleKillCursors(MongoKillCursors killCursors) {
-        collections.values().forEach(c -> c.handleKillCursors(killCursors));
+        collections.values().forEach(collection -> collection.handleKillCursors(killCursors));
     }
 
     @Override
