@@ -82,7 +82,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                            int numberToReturn);
+                                                  int numberToReturn);
 
     protected QueryResult matchDocuments(Document query, Iterable<P> positions, Document orderBy,
                                          int numberToSkip, int numberToReturn) {
@@ -422,7 +422,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
-            Document fieldSelector) {
+                                                Document fieldSelector) {
 
         final Document query;
         final Document orderBy;
@@ -473,7 +473,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     public synchronized void handleKillCursors(MongoKillCursors killCursors) {
         killCursors.getCursorIds().forEach(cursors::remove);
     }
-
 
     @Override
     public synchronized Document handleDistinct(Document query) {
