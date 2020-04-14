@@ -19,6 +19,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -58,7 +59,6 @@ import org.bson.types.Code;
 import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
@@ -159,7 +159,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             count++;
         }
         assertThat(count).isEqualTo(expectedCount);
-        Assertions.assertThrows(NoSuchElementException.class, cursor::next);
+        assertThrows(NoSuchElementException.class, cursor::next);
     }
 
     @Test
@@ -177,7 +177,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
         cursor.close();
         assertThat(count).isEqualTo(10);
-        Assertions.assertThrows(IllegalStateException.class, cursor::next);
+        assertThrows(IllegalStateException.class, cursor::next);
     }
 
     @Test
