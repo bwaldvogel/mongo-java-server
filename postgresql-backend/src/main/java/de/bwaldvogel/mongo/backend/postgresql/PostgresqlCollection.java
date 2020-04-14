@@ -53,8 +53,6 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
     protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         Collection<Document> matchedDocuments = new ArrayList<>();
 
-        int numMatched = 0;
-
         String sql = "SELECT data FROM " + getQualifiedTablename() + " " + convertOrderByToSql(orderBy);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)
@@ -64,7 +62,6 @@ public class PostgresqlCollection extends AbstractMongoCollection<Long> {
                     String data = resultSet.getString("data");
                     Document document = JsonConverter.fromJson(data);
                     if (documentMatchesQuery(document, query)) {
-                        numMatched++;
                         matchedDocuments.add(document);
                     }
                 }
