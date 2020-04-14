@@ -259,11 +259,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public void handleKillCursors(MongoKillCursors killCursors) {
-        databases.values().forEach(database -> database.handleKillCursors(killCursors));
-    }
-
-    @Override
     public void handleInsert(MongoInsert insert) {
         MongoDatabase db = resolveDatabase(insert);
         db.handleInsert(insert);
@@ -279,6 +274,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     public void handleUpdate(MongoUpdate update) {
         MongoDatabase db = resolveDatabase(update);
         db.handleUpdate(update);
+    }
+
+    @Override
+    public void handleKillCursors(MongoKillCursors killCursors) {
+        databases.values().forEach(database -> database.handleKillCursors(killCursors));
     }
 
     @Override
