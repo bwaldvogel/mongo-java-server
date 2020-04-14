@@ -456,16 +456,16 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
         }
         Cursor cursor = cursors.get(cursorId);
-        List<Document> docs = new ArrayList<>();
-        while (!cursor.isEmpty() && docs.size() < numberToReturn) {
-            docs.add(cursor.getDocuments().poll());
+        List<Document> documents = new ArrayList<>();
+        while (!cursor.isEmpty() && documents.size() < numberToReturn) {
+            documents.add(cursor.getDocuments().poll());
         }
 
         if (cursor.isEmpty()) {
             cursors.remove(cursor.getCursorId());
         }
 
-        return new QueryResult(docs, cursor.isEmpty() ? 0 : cursorId);
+        return new QueryResult(documents, cursor.isEmpty() ? 0 : cursorId);
     }
 
     public synchronized void handleKillCursors(MongoKillCursors killCursors) {
