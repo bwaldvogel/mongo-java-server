@@ -44,7 +44,7 @@ class CursorTest {
     void getDocuments() {
         Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"));
         Cursor cursor = new Cursor(docs, "testcol");
-        for (Document doc: docs) {
+        for (Document doc : docs) {
             assertThat(cursor.getDocuments().poll()).isEqualTo(doc);
         }
     }

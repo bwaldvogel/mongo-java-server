@@ -215,7 +215,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         buffer.skipBytes(4);
         int numberOfCursors = buffer.readIntLE();
         List<Long> cursorIds = new ArrayList<>();
-        while(numberOfCursors > 0) {
+        while (numberOfCursors > 0) {
             cursorIds.add(buffer.readLongLE());
             numberOfCursors--;
         }

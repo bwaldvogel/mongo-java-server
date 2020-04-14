@@ -16,13 +16,14 @@ public class Cursor implements Iterable<Document> {
 
     /**
      * Creates a cursor. If the documents iterator is null or empty the cursor id will be zero.
-     * @param documents Documents to be stored in the cursor.
+     *
+     * @param documents      Documents to be stored in the cursor.
      * @param collectionName Name of the collection.
      */
     public Cursor(Iterable<Document> documents, String collectionName) {
         this.collectionName = collectionName;
         if (documents != null) {
-            for(Document doc: documents) {
+            for (Document doc : documents) {
                 this.documents.add(doc);
             }
             this.cursorId = isEmpty() ? 0 : Cursor.generateCursorId();

@@ -85,7 +85,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             MongoGetMore getMore = (MongoGetMore) object;
             ctx.channel().writeAndFlush(handleGetMore(getMore));
         } else if (object instanceof MongoKillCursors) {
-            handleKillCursors((MongoKillCursors)object);
+            handleKillCursors((MongoKillCursors) object);
         } else {
             throw new MongoServerException("unknown message: " + object);
         }
@@ -176,8 +176,8 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                     Document actualQuery = query.getQuery();
 
                     if (command.equals("$query")) {
-                        command = ((Document)query.getQuery().get("$query")).keySet().iterator().next();
-                        actualQuery = (Document)actualQuery.get("$query");
+                        command = ((Document) query.getQuery().get("$query")).keySet().iterator().next();
+                        actualQuery = (Document) actualQuery.get("$query");
                     }
 
                     return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), command, actualQuery);
