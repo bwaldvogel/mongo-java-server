@@ -46,4 +46,8 @@ public class Cursor implements Iterable<Document> {
         return documents.iterator();
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(id: " + cursorId + ")";
+    }
 }
