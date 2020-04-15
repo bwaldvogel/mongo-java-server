@@ -16,7 +16,7 @@ class CursorTest {
     void documentsCount() {
         Cursor cursor = new Cursor("testcol");
         assertThat(cursor.documentsCount()).isEqualTo(0);
-        cursor = new Cursor(Collections.singleton(new Document()), "testcol");
+        cursor = new Cursor(Collections.singleton(new Document()), "testcol", 1L);
         assertThat(cursor.documentsCount()).isEqualTo(1);
     }
 
@@ -24,7 +24,7 @@ class CursorTest {
     void isEmpty() {
         Cursor cursor = new Cursor("testcol");
         assertThat(cursor.isEmpty()).isTrue();
-        cursor = new Cursor(Collections.singleton(new Document()), "testcol");
+        cursor = new Cursor(Collections.singleton(new Document()), "testcol", 1L);
         assertThat(cursor.isEmpty()).isFalse();
     }
 
@@ -36,14 +36,14 @@ class CursorTest {
 
     @Test
     void getCursorId_ShouldHaveIdEqualsGreaterThanZero() {
-        Cursor cursor = new Cursor(Collections.singleton(new Document()), "testcol");
+        Cursor cursor = new Cursor(Collections.singleton(new Document()), "testcol", 1L);
         assertThat(cursor.getCursorId()).isGreaterThan(0);
     }
 
     @Test
     void getDocuments() {
         Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"));
-        Cursor cursor = new Cursor(docs, "testcol");
+        Cursor cursor = new Cursor(docs, "testcol", 1L);
         for (Document doc : docs) {
             assertThat(cursor.getDocuments().poll()).isEqualTo(doc);
         }
