@@ -468,6 +468,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return new QueryResult(documents, cursor.isEmpty() ? 0 : cursorId);
     }
 
+    @Override
     public synchronized void handleKillCursors(MongoKillCursors killCursors) {
         killCursors.getCursorIds().forEach(cursors::remove);
     }
