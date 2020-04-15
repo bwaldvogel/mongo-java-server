@@ -24,10 +24,8 @@ public class Cursor implements Iterable<Document> {
     public Cursor(Iterable<Document> documents, String collectionName, long cursorId) {
         this.cursorId = cursorId;
         this.collectionName = collectionName;
-        if (documents != null) {
-            for (Document document : documents) {
-                this.documents.add(document);
-            }
+        for (Document document : documents) {
+            this.documents.add(document);
         }
     }
 
