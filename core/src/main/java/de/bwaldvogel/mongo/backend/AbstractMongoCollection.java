@@ -454,10 +454,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public synchronized QueryResult handleGetMore(long cursorId, int numberToReturn) {
-        if (!cursors.containsKey(cursorId)) {
+        Cursor cursor = cursors.get(cursorId);
+        if (cursor == null) {
             throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
         }
-        Cursor cursor = cursors.get(cursorId);
         List<Document> documents = new ArrayList<>();
         while (!cursor.isEmpty() && documents.size() < numberToReturn) {
             documents.add(cursor.getDocuments().poll());
