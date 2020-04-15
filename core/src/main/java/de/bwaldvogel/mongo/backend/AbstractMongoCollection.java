@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -46,6 +47,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     private final QueryMatcher matcher = new DefaultQueryMatcher();
     protected final String idField;
     protected final ConcurrentMap<Long, Cursor> cursors = new ConcurrentHashMap<>();
+    private final AtomicLong cursorIdCounter = new AtomicLong();
 
     protected AbstractMongoCollection(MongoDatabase database, String collectionName, String idField) {
         this.database = database;
@@ -813,8 +815,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
         Cursor cursor = new Cursor(collectionName);
         if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            cursor = new Cursor(matchedDocuments.stream().skip(numberToSkip + numberToReturn).collect(Collectors.toList()), getCollectionName());
-            if (cursor.getCursorId() > 0) {
+            List<Document> documents = matchedDocuments.stream().skip(numberToSkip + numberToReturn).collect(Collectors.toList());
+            if (documents.isEmpty()) {
+                cursor = new Cursor(getCollectionName());
+            } else {
+                long cursorId = cursorIdCounter.incrementAndGet();
+                cursor = new Cursor(documents, getCollectionName(), cursorId);
                 cursors.put(cursor.getCursorId(), cursor);
             }
         }

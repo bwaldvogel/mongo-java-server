@@ -4,13 +4,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.concurrent.ThreadLocalRandom;
 
 import de.bwaldvogel.mongo.bson.Document;
 
 public class Cursor implements Iterable<Document> {
 
-    private long cursorId;
+    public static final long EMPTY_CURSOR_ID = 0L;
+
+    private final long cursorId;
     private final Queue<Document> documents = new LinkedList<>();
     private final String collectionName;
 
@@ -20,18 +21,18 @@ public class Cursor implements Iterable<Document> {
      * @param documents      Documents to be stored in the cursor.
      * @param collectionName Name of the collection.
      */
-    public Cursor(Iterable<Document> documents, String collectionName) {
+    public Cursor(Iterable<Document> documents, String collectionName, long cursorId) {
+        this.cursorId = cursorId;
         this.collectionName = collectionName;
         if (documents != null) {
             for (Document document : documents) {
                 this.documents.add(document);
             }
-            this.cursorId = isEmpty() ? 0 : Cursor.generateCursorId();
         }
     }
 
     public Cursor(String collectionName) {
-        this(Collections.emptyList(), collectionName);
+        this(Collections.emptyList(), collectionName, EMPTY_CURSOR_ID);
     }
 
     public int documentsCount() {
@@ -53,10 +54,6 @@ public class Cursor implements Iterable<Document> {
     @Override
     public Iterator<Document> iterator() {
         return documents.iterator();
-    }
-
-    public static long generateCursorId() {
-        return ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
     }
 
     public String getCollectionName() {
