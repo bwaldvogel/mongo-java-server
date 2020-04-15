@@ -779,10 +779,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract void removeDocument(P position);
 
-    protected static Iterable<Document> applySkipAndLimit(Collection<Document> documents, int numberToSkip, int numberToReturn) {
-        return applySkipAndLimit(new ArrayList<>(documents), numberToSkip, numberToReturn);
-    }
-
     protected static Iterable<Document> applySkipAndLimit(List<Document> documents, int numberToSkip, int numberToReturn) {
         if (numberToSkip > 0) {
             if (numberToSkip < documents.size()) {
@@ -811,6 +807,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private boolean isSystemCollection() {
         return AbstractMongoDatabase.isSystemCollection(getCollectionName());
+    }
+
+    protected QueryResult createQueryResult(List<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
+        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
+        Iterable<Document> documents = applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
+        return new QueryResult(documents, cursor.getCursorId());
     }
 
     protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
