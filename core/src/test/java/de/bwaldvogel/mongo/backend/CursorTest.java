@@ -41,11 +41,11 @@ class CursorTest {
     }
 
     @Test
-    void getDocuments() {
+    void testPollDocument() {
         Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"));
         Cursor cursor = new Cursor(docs, 1L);
         for (Document doc : docs) {
-            assertThat(cursor.getDocuments().poll()).isEqualTo(doc);
+            assertThat(cursor.pollDocument()).isEqualTo(doc);
         }
     }
 

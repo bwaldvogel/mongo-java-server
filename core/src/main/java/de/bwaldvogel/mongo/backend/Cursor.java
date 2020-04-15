@@ -37,8 +37,8 @@ public class Cursor implements Iterable<Document> {
         return cursorId;
     }
 
-    public Queue<Document> getDocuments() {
-        return documents;
+    public Document pollDocument() {
+        return documents.poll();
     }
 
     @Override

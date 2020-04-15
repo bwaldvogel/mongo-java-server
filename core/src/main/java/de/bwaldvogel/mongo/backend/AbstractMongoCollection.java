@@ -460,7 +460,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
         List<Document> documents = new ArrayList<>();
         while (!cursor.isEmpty() && documents.size() < numberToReturn) {
-            documents.add(cursor.getDocuments().poll());
+            documents.add(cursor.pollDocument());
         }
 
         if (cursor.isEmpty()) {
