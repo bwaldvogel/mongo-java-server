@@ -72,6 +72,7 @@ import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCommandException;
+import com.mongodb.MongoCursorNotFoundException;
 import com.mongodb.MongoNamespace;
 import com.mongodb.MongoQueryException;
 import com.mongodb.MongoServerException;
@@ -229,6 +230,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
         cursor.close();
         assertThat(count).isEqualTo(10);
         assertThrows(IllegalStateException.class, cursor::next);
+    }
+
+    @Test
+    public void testCursor_iteratingACursorThatNoLongerExists() {
+        int expectedCount = 20;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("name", "testUser1"));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
+        cursor.next();
+        killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
+        assertThrows(MongoCursorNotFoundException.class, cursor::next);
     }
 
     @Test
