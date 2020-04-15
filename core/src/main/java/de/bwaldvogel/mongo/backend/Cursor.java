@@ -13,24 +13,16 @@ public class Cursor implements Iterable<Document> {
 
     private final long cursorId;
     private final Queue<Document> documents = new LinkedList<>();
-    private final String collectionName;
 
-    /**
-     * Creates a cursor. If the documents iterator is null or empty the cursor id will be zero.
-     *
-     * @param documents      Documents to be stored in the cursor.
-     * @param collectionName Name of the collection.
-     */
-    public Cursor(Iterable<Document> documents, String collectionName, long cursorId) {
+    public Cursor(Iterable<Document> documents, long cursorId) {
         this.cursorId = cursorId;
-        this.collectionName = collectionName;
         for (Document document : documents) {
             this.documents.add(document);
         }
     }
 
-    public Cursor(String collectionName) {
-        this(Collections.emptyList(), collectionName, EMPTY_CURSOR_ID);
+    public Cursor() {
+        this(Collections.emptyList(), EMPTY_CURSOR_ID);
     }
 
     public int documentsCount() {
@@ -54,7 +46,4 @@ public class Cursor implements Iterable<Document> {
         return documents.iterator();
     }
 
-    public String getCollectionName() {
-        return collectionName;
-    }
 }
