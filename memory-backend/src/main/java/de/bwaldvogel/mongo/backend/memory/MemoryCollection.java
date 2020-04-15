@@ -5,13 +5,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
-import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
@@ -67,8 +65,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             matchedDocuments.sort(documentComparator);
         }
 
-        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult(applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn), cursor.getCursorId());
+        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     private Iterable<Document> iterateAllDocuments(Document orderBy) {
