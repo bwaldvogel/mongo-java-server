@@ -1,7 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -32,8 +34,17 @@ public class InMemoryCursor implements Cursor {
     }
 
     @Override
-    public Document pollDocument() {
-        return remainingDocuments.poll();
+    public List<Document> takeDocuments(int numberToReturn) {
+        Assert.isTrue(numberToReturn > 0, () -> "Illegal number to return: " + numberToReturn);
+        List<Document> documents = new ArrayList<>();
+        while (documents.size() < numberToReturn) {
+            Document nextDocument = remainingDocuments.poll();
+            if (nextDocument == null) {
+                return documents;
+            }
+            documents.add(nextDocument);
+        }
+        return documents;
     }
 
     @Override

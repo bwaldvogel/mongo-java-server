@@ -64,7 +64,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
     @Test
     void testShutdownAndRestartOpensDatabasesAndCollections() throws Exception {
-        List<String> dbs = Arrays.asList("testdb1", "testdb2");
+        List<String> dbs = Arrays.asList("local", "testdb1", "testdb2");
         for (String db : dbs) {
             for (String coll : new String[] { "collection1", "collection2" }) {
                 syncClient.getDatabase(db).getCollection(coll).insertOne(json(""));

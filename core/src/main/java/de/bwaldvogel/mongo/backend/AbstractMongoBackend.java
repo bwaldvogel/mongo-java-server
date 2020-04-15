@@ -43,7 +43,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
 
-    private Clock clock = Clock.systemDefaultZone();
+    protected Clock clock = Clock.systemDefaultZone();
 
     private int maxWireVersion = 2;
     private int minWireVersion = 0;

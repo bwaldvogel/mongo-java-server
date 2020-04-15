@@ -107,6 +107,8 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.Success;
 
+import de.bwaldvogel.mongo.oplog.OperationType;
+
 public abstract class AbstractBackendTest extends AbstractTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
@@ -242,6 +244,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
         cursor.next();
         killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
         assertThrows(MongoCursorNotFoundException.class, cursor::next);
+    }
+
+    @Test
+    public void testSimpleOplogInsert() {
+        Document doc = new Document("name", "testUser1");
+        collection.insertOne(doc);
+        Document oplogDoc = oplogCollection.find().first();
+        assertThat(oplogDoc).isNotNull();
+        assertThat(oplogDoc.get("ts")).isNotNull();
+        assertThat(oplogDoc.get("wall")).isNotNull();
+        assertThat(oplogDoc.get("o2")).isNull();
+        assertThat(oplogDoc.get("v")).isEqualTo(2L);
+        assertThat(oplogDoc.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+        assertThat(oplogDoc.get("op")).isEqualTo(OperationType.INSERT.getValue());
+        assertThat(oplogDoc.get("o")).isEqualTo(doc);
     }
 
     @Test
@@ -1769,11 +1786,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testListDatabaseNames() throws Exception {
-        assertThat(listDatabaseNames()).isEmpty();
+        assertThat(listDatabaseNames()).contains(localDb.getName());
         collection.insertOne(json(""));
-        assertThat(listDatabaseNames()).containsExactly(db.getName());
+        assertThat(listDatabaseNames()).containsExactlyInAnyOrder(db.getName(), localDb.getName());
         getDatabase().getCollection("some-collection").insertOne(json(""));
-        assertThat(listDatabaseNames()).containsExactly("bar", db.getName());
+        assertThat(listDatabaseNames()).containsExactlyInAnyOrder("bar", db.getName(), localDb.getName());
     }
 
     private MongoDatabase getDatabase() {

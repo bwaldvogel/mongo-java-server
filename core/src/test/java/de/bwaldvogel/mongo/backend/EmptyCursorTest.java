@@ -22,9 +22,9 @@ class EmptyCursorTest {
     }
 
     @Test
-    void testPollDocument() {
+    void testTakeDocuments() {
         assertThatExceptionOfType(NoSuchElementException.class)
-            .isThrownBy(() -> EmptyCursor.get().pollDocument());
+            .isThrownBy(() -> EmptyCursor.get().takeDocuments(1));
     }
 
     @Test

@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.json;
+
 import java.net.InetSocketAddress;
 import java.time.Clock;
 import java.time.Instant;
@@ -16,7 +18,10 @@ import org.assertj.core.api.Assertions;
 import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.MapAssert;
 import org.assertj.core.api.ObjectAssert;
+import org.bson.BsonDocument;
 import org.bson.Document;
+import org.bson.codecs.configuration.CodecRegistry;
+import org.bson.conversions.Bson;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -33,13 +38,20 @@ import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 public abstract class AbstractTest {
 
     protected static final String TEST_DATABASE_NAME = "testdb";
+    protected static final String LOCAL_DATABASE = "local";
+    protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
     protected static final Clock TEST_CLOCK = Clock.fixed(Instant.parse("2019-05-23T12:00:00.123Z"), ZoneOffset.UTC);
 
     protected static com.mongodb.MongoClient syncClient;
     protected static MongoDatabase db;
+    protected static MongoDatabase localDb;
+
     protected static MongoCollection<Document> collection;
+    protected static MongoCollection<Document> oplogCollection;
+
     static com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection;
+
     private static MongoServer mongoServer;
     private static MongoClient asyncClient;
     protected static InetSocketAddress serverAddress;
@@ -53,6 +65,7 @@ public abstract class AbstractTest {
             setUpClients();
         } else {
             dropAllDatabases();
+            clearOplog();
         }
     }
 
@@ -62,6 +75,12 @@ public abstract class AbstractTest {
                 continue;
             }
             syncClient.dropDatabase(databaseName);
+        }
+    }
+
+    protected void clearOplog() {
+        if (oplogCollection != null) {
+            oplogCollection.deleteMany(json(""));
         }
     }
 
@@ -80,7 +99,9 @@ public abstract class AbstractTest {
         syncClient = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
         asyncClient = com.mongodb.reactivestreams.client.MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
         db = syncClient.getDatabase(TEST_DATABASE_NAME);
+        localDb = syncClient.getDatabase(LOCAL_DATABASE);
         collection = db.getCollection("testcoll");
+        oplogCollection = localDb.getCollection(OPLOG_COLLECTION_NAME);
 
         MongoNamespace namespace = collection.getNamespace();
         com.mongodb.reactivestreams.client.MongoDatabase asyncDb = asyncClient.getDatabase(namespace.getDatabaseName());

@@ -6,10 +6,11 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoBackend;
+import de.bwaldvogel.mongo.backend.OplogMongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public class H2Backend extends AbstractMongoBackend {
+public class H2Backend extends OplogMongoBackend {
 
     private static final Logger log = LoggerFactory.getLogger(H2Backend.class);
 
