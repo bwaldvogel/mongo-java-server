@@ -468,7 +468,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             cursors.remove(cursor.getCursorId());
         }
 
-        return new QueryResult(documents, cursor.isEmpty() ? 0 : cursorId);
+        return new QueryResult(documents, cursor.isEmpty() ? Cursor.EMPTY_CURSOR_ID : cursorId);
     }
 
     @Override
@@ -814,20 +814,20 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
-        final List<Document> documents;
+        final List<Document> remainingDocuments;
         if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            documents = matchedDocuments.stream()
+            remainingDocuments = matchedDocuments.stream()
                 .skip(numberToSkip + numberToReturn)
                 .collect(Collectors.toList());
         } else {
-            documents = Collections.emptyList();
+            remainingDocuments = Collections.emptyList();
         }
 
-        if (documents.isEmpty()) {
+        if (remainingDocuments.isEmpty()) {
             return new Cursor();
         }
 
-        Cursor cursor = new Cursor(documents, cursorIdCounter.incrementAndGet());
+        Cursor cursor = new Cursor(cursorIdCounter.incrementAndGet(), remainingDocuments);
         Cursor previousValue = cursors.put(cursor.getCursorId(), cursor);
         Assert.isNull(previousValue);
         return cursor;

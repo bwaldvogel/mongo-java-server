@@ -16,7 +16,7 @@ class CursorTest {
     void documentsCount() {
         Cursor cursor = new Cursor();
         assertThat(cursor.documentsCount()).isEqualTo(0);
-        cursor = new Cursor(Collections.singleton(new Document()), 1L);
+        cursor = new Cursor(1L, Collections.singleton(new Document()));
         assertThat(cursor.documentsCount()).isEqualTo(1);
     }
 
@@ -24,7 +24,7 @@ class CursorTest {
     void isEmpty() {
         Cursor cursor = new Cursor();
         assertThat(cursor.isEmpty()).isTrue();
-        cursor = new Cursor(Collections.singleton(new Document()), 1L);
+        cursor = new Cursor(1L, Collections.singleton(new Document()));
         assertThat(cursor.isEmpty()).isFalse();
     }
 
@@ -36,14 +36,14 @@ class CursorTest {
 
     @Test
     void getCursorId_ShouldHaveIdEqualsGreaterThanZero() {
-        Cursor cursor = new Cursor(Collections.singleton(new Document()), 1L);
+        Cursor cursor = new Cursor(1L, Collections.singleton(new Document()));
         assertThat(cursor.getCursorId()).isGreaterThan(0);
     }
 
     @Test
     void testPollDocument() {
         Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"));
-        Cursor cursor = new Cursor(docs, 1L);
+        Cursor cursor = new Cursor(1L, docs);
         for (Document doc : docs) {
             assertThat(cursor.pollDocument()).isEqualTo(doc);
         }
@@ -52,7 +52,7 @@ class CursorTest {
     @Test
     void testToString() throws Exception {
         assertThat(new Cursor()).hasToString("Cursor(id: 0)");
-        assertThat(new Cursor(Collections.emptyList(), 123L)).hasToString("Cursor(id: 123)");
+        assertThat(new Cursor(123L, Collections.singleton(new Document()))).hasToString("Cursor(id: 123)");
     }
 
 }
