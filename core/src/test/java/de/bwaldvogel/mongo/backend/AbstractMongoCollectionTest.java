@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -128,11 +129,12 @@ public class AbstractMongoCollectionTest {
 
     @Test
     void testCreateCursor() {
-        Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"),
+        List<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"),
             new Document("name", "Steve"));
         Cursor cursor = collection.createCursor(docs, 1, 1);
         assertThat(cursor.isEmpty()).isFalse();
-        assertThat(cursor.documentsCount()).isEqualTo(1);
+        assertThat(cursor.pollDocument()).isSameAs(docs.get(2));
+        assertThat(cursor.pollDocument()).isNull();
         assertThat(cursor.getCursorId()).isGreaterThan(0);
     }
 
