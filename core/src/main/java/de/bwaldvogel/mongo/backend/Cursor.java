@@ -10,6 +10,8 @@ public class Cursor {
 
     public static final long EMPTY_CURSOR_ID = 0L;
 
+    private static final Cursor EMPTY = new Cursor();
+
     private final long cursorId;
     private final Queue<Document> remainingDocuments;
 
@@ -19,9 +21,13 @@ public class Cursor {
         this.remainingDocuments = new LinkedList<>(remainingDocuments);
     }
 
-    public Cursor() {
+    private Cursor() {
         this.cursorId = EMPTY_CURSOR_ID;
         this.remainingDocuments = new LinkedList<>();
+    }
+
+    public static Cursor empty() {
+        return EMPTY;
     }
 
     public int documentsCount() {

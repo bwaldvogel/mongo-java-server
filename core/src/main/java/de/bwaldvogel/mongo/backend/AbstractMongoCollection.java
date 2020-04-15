@@ -826,7 +826,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         if (remainingDocuments.isEmpty()) {
-            return new Cursor();
+            return Cursor.empty();
         }
 
         Cursor cursor = new Cursor(cursorIdCounter.incrementAndGet(), remainingDocuments);
