@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -11,25 +11,25 @@ public class Cursor {
     public static final long EMPTY_CURSOR_ID = 0L;
 
     private final long cursorId;
-    private final Queue<Document> documents = new LinkedList<>();
+    private final Queue<Document> remainingDocuments;
 
-    public Cursor(Iterable<Document> documents, long cursorId) {
+    public Cursor(long cursorId, Collection<Document> remainingDocuments) {
         this.cursorId = cursorId;
-        for (Document document : documents) {
-            this.documents.add(document);
-        }
+        Assert.notEmpty(remainingDocuments);
+        this.remainingDocuments = new LinkedList<>(remainingDocuments);
     }
 
     public Cursor() {
-        this(Collections.emptyList(), EMPTY_CURSOR_ID);
+        this.cursorId = EMPTY_CURSOR_ID;
+        this.remainingDocuments = new LinkedList<>();
     }
 
     public int documentsCount() {
-        return documents.size();
+        return remainingDocuments.size();
     }
 
     public boolean isEmpty() {
-        return documents.isEmpty();
+        return remainingDocuments.isEmpty();
     }
 
     public long getCursorId() {
@@ -37,7 +37,7 @@ public class Cursor {
     }
 
     public Document pollDocument() {
-        return documents.poll();
+        return remainingDocuments.poll();
     }
 
     @Override
