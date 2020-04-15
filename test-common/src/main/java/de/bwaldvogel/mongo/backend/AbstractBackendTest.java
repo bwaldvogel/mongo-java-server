@@ -150,16 +150,67 @@ public abstract class AbstractBackendTest extends AbstractTest {
         int expectedCount = 20;
         int batchSize = 10;
         for (int i = 0; i < expectedCount; i++) {
-            collection.insertOne(new Document("name", "testUser1"));
+            collection.insertOne(new Document("_id", 100 + i));
         }
-        MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
-        int count = 0;
+        MongoCursor<Document> cursor = collection.find().sort(json("_id: 1")).batchSize(batchSize).cursor();
+        List<Document> retrievedDocuments = new ArrayList<>();
         while (cursor.hasNext()) {
-            cursor.next();
-            count++;
+            retrievedDocuments.add(cursor.next());
         }
-        assertThat(count).isEqualTo(expectedCount);
         assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(expectedCount);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 100"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
+    }
+
+    @Test
+    public void testCursor_skipDocuments() {
+        int totalCount = 20;
+        int numToSkip = 5;
+        int expectedCount = totalCount - numToSkip;
+        int batchSize = 10;
+        for (int i = 0; i < totalCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i));
+        }
+        MongoCursor<Document> cursor = collection.find()
+            .sort(json("_id: 1"))
+            .skip(numToSkip)
+            .batchSize(batchSize)
+            .cursor();
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(expectedCount);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
+    }
+
+    @Test
+    public void testCursor_skipAndLimitDocuments() {
+        int totalCount = 50;
+        int numToSkip = 5;
+        int limit = 20;
+        int batchSize = 10;
+        for (int i = 0; i < totalCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i));
+        }
+        MongoCursor<Document> cursor = collection.find()
+            .sort(json("_id: 1"))
+            .skip(numToSkip)
+            .limit(limit)
+            .batchSize(batchSize)
+            .cursor();
+
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(limit);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 124"));
     }
 
     @Test
@@ -167,7 +218,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         int expectedCount = 20;
         int batchSize = 5;
         for (int i = 0; i < expectedCount; i++) {
-            collection.insertOne(new Document("name", "testUser1"));
+            collection.insertOne(new Document("value", i));
         }
         MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
         int count = 0;
