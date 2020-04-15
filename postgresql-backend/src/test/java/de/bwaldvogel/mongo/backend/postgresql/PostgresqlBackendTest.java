@@ -21,10 +21,10 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.AbstractFakeBackendTest;
+import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 import de.bwaldvogel.mongo.backend.AbstractTest;
 
-public class PostgresqlBackendTest extends AbstractFakeBackendTest {
+public class PostgresqlBackendTest extends AbstractBackendTest {
 
     private static HikariDataSource dataSource;
 

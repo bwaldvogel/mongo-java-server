@@ -8,6 +8,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -152,5 +153,11 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     protected String getExpectedPathPrefix_testUpdateAddToSetEach_unknownModifier() {
         // this is probably a bug
         return "value.value";
+    }
+
+    @Override
+    @Disabled
+    public void testCursor_iteratingACursorThatNoLongerExists() {
+        // disabled on real MongoDB
     }
 }
