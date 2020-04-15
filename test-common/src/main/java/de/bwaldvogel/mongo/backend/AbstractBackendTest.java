@@ -19,6 +19,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -111,7 +113,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     protected static final String OTHER_TEST_DATABASE_NAME = "bar";
 
     protected Document runCommand(String commandName) {
-        return runCommand(new Document(commandName, Integer.valueOf(1)));
+        return runCommand(new Document(commandName, 1));
     }
 
     private Document runCommand(Document command) {
@@ -141,6 +143,92 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testSimpleInsert() throws Exception {
         collection.insertOne(json("_id: 1"));
+    }
+
+    @Test
+    public void testSimpleCursor() {
+        int expectedCount = 20;
+        int batchSize = 10;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i));
+        }
+        MongoCursor<Document> cursor = collection.find().sort(json("_id: 1")).batchSize(batchSize).cursor();
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(expectedCount);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 100"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
+    }
+
+    @Test
+    public void testCursor_skipDocuments() {
+        int totalCount = 20;
+        int numToSkip = 5;
+        int expectedCount = totalCount - numToSkip;
+        int batchSize = 10;
+        for (int i = 0; i < totalCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i));
+        }
+        MongoCursor<Document> cursor = collection.find()
+            .sort(json("_id: 1"))
+            .skip(numToSkip)
+            .batchSize(batchSize)
+            .cursor();
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(expectedCount);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
+    }
+
+    @Test
+    public void testCursor_skipAndLimitDocuments() {
+        int totalCount = 50;
+        int numToSkip = 5;
+        int limit = 20;
+        int batchSize = 10;
+        for (int i = 0; i < totalCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i));
+        }
+        MongoCursor<Document> cursor = collection.find()
+            .sort(json("_id: 1"))
+            .skip(numToSkip)
+            .limit(limit)
+            .batchSize(batchSize)
+            .cursor();
+
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+        assertThrows(NoSuchElementException.class, cursor::next);
+        assertThat(retrievedDocuments).hasSize(limit);
+        assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("_id: 124"));
+    }
+
+    @Test
+    public void testCloseCursor() {
+        int expectedCount = 20;
+        int batchSize = 5;
+        for (int i = 0; i < expectedCount; i++) {
+            collection.insertOne(new Document("value", i));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(batchSize).cursor();
+        int count = 0;
+        while (cursor.hasNext() && count < 10) {
+            cursor.next();
+            count++;
+        }
+        cursor.close();
+        assertThat(count).isEqualTo(10);
+        assertThrows(IllegalStateException.class, cursor::next);
     }
 
     @Test

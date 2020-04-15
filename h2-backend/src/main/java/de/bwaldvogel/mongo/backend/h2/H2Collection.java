@@ -15,6 +15,7 @@ import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.Missing;
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -96,7 +97,7 @@ public class H2Collection extends AbstractMongoCollection<Object> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         for (Document document : dataMap.values()) {
@@ -106,7 +107,8 @@ public class H2Collection extends AbstractMongoCollection<Object> {
         }
 
         sortDocumentsInMemory(matchedDocuments, orderBy);
-        return applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
+
+        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     @Override

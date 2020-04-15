@@ -13,7 +13,9 @@ import de.bwaldvogel.mongo.wire.bson.BsonDecoder;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.buffer.ByteBuf;
@@ -92,6 +94,12 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
                 break;
             case OP_UPDATE:
                 request = handleUpdate(channel, header, in);
+                break;
+            case OP_GET_MORE:
+                request = handleGetMore(channel, header, in);
+                break;
+            case OP_KILL_CURSORS:
+                request = handleKillCursors(channel, header, in);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported opcode: " + opCode);
@@ -193,6 +201,25 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         log.debug("query {} from {}", query, fullCollectionName);
 
         return mongoQuery;
+    }
+
+    private ClientRequest handleGetMore(Channel channel, MessageHeader header, ByteBuf buffer) {
+        buffer.skipBytes(4);
+        final String fullCollectionName = BsonDecoder.decodeCString(buffer);
+        int numberToReturn = buffer.readIntLE();
+        long cursorId = buffer.readLongLE();
+        return new MongoGetMore(channel, header, fullCollectionName, numberToReturn, cursorId);
+    }
+
+    private ClientRequest handleKillCursors(Channel channel, MessageHeader header, ByteBuf buffer) {
+        buffer.skipBytes(4);
+        int numberOfCursors = buffer.readIntLE();
+        List<Long> cursorIds = new ArrayList<>();
+        while (numberOfCursors > 0) {
+            cursorIds.add(buffer.readLongLE());
+            numberOfCursors--;
+        }
+        return new MongoKillCursors(channel, header, cursorIds);
     }
 
 }

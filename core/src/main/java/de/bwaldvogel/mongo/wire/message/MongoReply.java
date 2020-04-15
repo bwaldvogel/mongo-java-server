@@ -2,6 +2,8 @@ package de.bwaldvogel.mongo.wire.message;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.ReplyFlag;
@@ -14,12 +16,13 @@ public class MongoReply {
     private int flags;
 
     public MongoReply(MessageHeader header, Document document, ReplyFlag... replyFlags) {
-        this(header, Collections.singletonList(document), replyFlags);
+        this(header, Collections.singletonList(document), 0, replyFlags);
     }
 
-    public MongoReply(MessageHeader header, List<? extends Document> documents, ReplyFlag... replyFlags) {
+    public MongoReply(MessageHeader header, Iterable<? extends Document> documents, long cursorId, ReplyFlag... replyFlags) {
+        this.cursorId = cursorId;
         this.header = header;
-        this.documents = documents;
+        this.documents = StreamSupport.stream(documents.spliterator(), false).collect(Collectors.toList());
         for (ReplyFlag replyFlag : replyFlags) {
             flags = replyFlag.addTo(flags);
         }

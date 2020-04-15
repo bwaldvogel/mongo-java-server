@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,11 +29,13 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
+import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
@@ -41,6 +46,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     private final List<Index<P>> indexes = new ArrayList<>();
     private final QueryMatcher matcher = new DefaultQueryMatcher();
     protected final String idField;
+    protected final ConcurrentMap<Long, Cursor> cursors = new ConcurrentHashMap<>();
+    private final AtomicLong cursorIdCounter = new AtomicLong();
 
     protected AbstractMongoCollection(MongoDatabase database, String collectionName, String idField) {
         this.database = database;
@@ -52,7 +59,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return matcher.matches(document, query);
     }
 
-    private Iterable<Document> queryDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
+    private QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         synchronized (indexes) {
             for (Index<P> index : indexes) {
                 if (index.canHandle(query)) {
@@ -74,11 +81,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
     }
 
-    protected abstract Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                         int numberToReturn);
+    protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
+                                                  int numberToReturn);
 
-    protected Iterable<Document> matchDocuments(Document query, Iterable<P> positions, Document orderBy,
-                                                int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Iterable<P> positions, Document orderBy,
+                                         int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         for (P position : positions) {
@@ -98,7 +105,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             matchedDocuments = matchedDocuments.subList(0, numberToReturn);
         }
 
-        return matchedDocuments;
+        return new QueryResult(matchedDocuments);
     }
 
     protected static boolean isNaturalDescending(Document orderBy) {
@@ -414,8 +421,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized Iterable<Document> handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
-            Document fieldSelector) {
+    public synchronized QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
+                                                Document fieldSelector) {
 
         final Document query;
         final Document orderBy;
@@ -436,13 +443,37 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             orderBy = null;
         }
 
-        Iterable<Document> objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
+        QueryResult objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
-            return new ProjectingIterable(objs, fieldSelector, idField);
+            return new QueryResult(new ProjectingIterable(objs, fieldSelector, idField), 0);
         }
 
         return objs;
+    }
+
+    @Override
+    public synchronized QueryResult handleGetMore(long cursorId, int numberToReturn) {
+        Cursor cursor = cursors.get(cursorId);
+        if (cursor == null) {
+            throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
+        }
+        List<Document> documents = new ArrayList<>();
+        while (!cursor.isEmpty() && documents.size() < numberToReturn) {
+            documents.add(cursor.pollDocument());
+        }
+
+        if (cursor.isEmpty()) {
+            log.debug("Removing empty {}", cursor);
+            cursors.remove(cursor.getCursorId());
+        }
+
+        return new QueryResult(documents, cursor.isEmpty() ? Cursor.EMPTY_CURSOR_ID : cursorId);
+    }
+
+    @Override
+    public synchronized void handleKillCursors(MongoKillCursors killCursors) {
+        killCursors.getCursorIds().forEach(cursors::remove);
     }
 
     @Override
@@ -776,6 +807,32 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private boolean isSystemCollection() {
         return AbstractMongoDatabase.isSystemCollection(getCollectionName());
+    }
+
+    protected QueryResult createQueryResult(List<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
+        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
+        Iterable<Document> documents = applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
+        return new QueryResult(documents, cursor.getCursorId());
+    }
+
+    protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
+        final List<Document> remainingDocuments;
+        if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
+            remainingDocuments = matchedDocuments.stream()
+                .skip(numberToSkip + numberToReturn)
+                .collect(Collectors.toList());
+        } else {
+            remainingDocuments = Collections.emptyList();
+        }
+
+        if (remainingDocuments.isEmpty()) {
+            return Cursor.empty();
+        }
+
+        Cursor cursor = new Cursor(cursorIdCounter.incrementAndGet(), remainingDocuments);
+        Cursor previousValue = cursors.put(cursor.getCursorId(), cursor);
+        Assert.isNull(previousValue);
+        return cursor;
     }
 
 }

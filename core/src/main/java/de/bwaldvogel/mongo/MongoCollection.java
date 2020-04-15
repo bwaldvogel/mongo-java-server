@@ -7,7 +7,9 @@ import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public interface MongoCollection<P> {
 
@@ -49,11 +51,15 @@ public interface MongoCollection<P> {
         return StreamSupport.stream(documents, false);
     }
 
-    default Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn) {
+    default QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn) {
         return handleQuery(query, numberToSkip, numberToReturn, null);
     }
 
-    Iterable<Document> handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
+    QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
+
+    QueryResult handleGetMore(long cursorId, int numberToReturn);
+
+    void handleKillCursors(MongoKillCursors killCursors);
 
     default void insertDocuments(List<Document> documents) {
         for (Document document : documents) {

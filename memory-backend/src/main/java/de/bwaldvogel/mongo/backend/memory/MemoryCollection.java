@@ -12,6 +12,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class MemoryCollection extends AbstractMongoCollection<Integer> {
@@ -50,7 +51,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     }
 
     @Override
-    protected Iterable<Document> matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
         List<Document> matchedDocuments = new ArrayList<>();
 
         for (Document document : iterateAllDocuments(orderBy)) {
@@ -64,7 +65,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
             matchedDocuments.sort(documentComparator);
         }
 
-        return applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
+        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
     }
 
     private Iterable<Document> iterateAllDocuments(Document orderBy) {

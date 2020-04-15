@@ -11,7 +11,7 @@ public class MongoExceptionHandler extends ChannelInboundHandlerAdapter {
     private static final Logger log = LoggerFactory.getLogger(MongoExceptionHandler.class);
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         log.error("exception for client {}", ctx.channel().id(), cause);
         ctx.channel().close();
     }
