@@ -462,6 +462,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         while (!cursor.isEmpty() && docs.size() < numberToReturn) {
             docs.add(cursor.getDocuments().poll());
         }
+
+        if (cursor.isEmpty()) {
+            cursors.remove(cursor.getCursorId());
+        }
+
         return new QueryResult(docs, cursor.isEmpty() ? 0 : cursorId);
     }
 
