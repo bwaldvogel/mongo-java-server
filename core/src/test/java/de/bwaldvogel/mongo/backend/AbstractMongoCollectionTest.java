@@ -133,8 +133,7 @@ public class AbstractMongoCollectionTest {
             new Document("name", "Steve"));
         Cursor cursor = collection.createCursor(docs, 1, 1);
         assertThat(cursor.isEmpty()).isFalse();
-        assertThat(cursor.pollDocument()).isSameAs(docs.get(2));
-        assertThat(cursor.pollDocument()).isNull();
+        assertThat(cursor.takeDocuments(10)).containsExactly(docs.get(2));
         assertThat(cursor.getCursorId()).isGreaterThan(0);
     }
 

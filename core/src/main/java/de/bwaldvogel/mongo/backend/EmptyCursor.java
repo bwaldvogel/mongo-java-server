@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -28,7 +29,7 @@ public class EmptyCursor implements Cursor {
     }
 
     @Override
-    public Document pollDocument() {
+    public List<Document> takeDocuments(int numberToReturn) {
         throw new NoSuchElementException();
     }
 

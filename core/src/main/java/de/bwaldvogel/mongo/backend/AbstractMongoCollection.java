@@ -458,10 +458,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         if (cursor == null) {
             throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
         }
-        List<Document> documents = new ArrayList<>();
-        while (!cursor.isEmpty() && documents.size() < numberToReturn) {
-            documents.add(cursor.pollDocument());
-        }
+        List<Document> documents = cursor.takeDocuments(numberToReturn);
 
         if (cursor.isEmpty()) {
             log.debug("Removing empty {}", cursor);
