@@ -813,14 +813,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
-        Cursor cursor = new Cursor(collectionName);
+        Cursor cursor = new Cursor();
         if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
             List<Document> documents = matchedDocuments.stream().skip(numberToSkip + numberToReturn).collect(Collectors.toList());
             if (documents.isEmpty()) {
-                cursor = new Cursor(getCollectionName());
+                cursor = new Cursor();
             } else {
                 long cursorId = cursorIdCounter.incrementAndGet();
-                cursor = new Cursor(documents, getCollectionName(), cursorId);
+                cursor = new Cursor(documents, cursorId);
                 cursors.put(cursor.getCursorId(), cursor);
             }
         }
