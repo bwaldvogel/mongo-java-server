@@ -49,4 +49,10 @@ class CursorTest {
         }
     }
 
+    @Test
+    void testToString() throws Exception {
+        assertThat(new Cursor()).hasToString("Cursor(id: 0)");
+        assertThat(new Cursor(Collections.emptyList(), 123L)).hasToString("Cursor(id: 123)");
+    }
+
 }

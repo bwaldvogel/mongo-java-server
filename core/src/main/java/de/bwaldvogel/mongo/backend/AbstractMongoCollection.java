@@ -464,6 +464,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         if (cursor.isEmpty()) {
+            log.debug("Removing empty {}", cursor);
             cursors.remove(cursor.getCursorId());
         }
 
