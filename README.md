@@ -103,16 +103,12 @@ public class SimpleSpringBootTest {
     }
 }
 
-
-
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Import(MongoTestServerConfiguration.class)
 public @interface EnableMongoTestServer {
 
 }
-
-
 
 public class MongoTestServerConfiguration {
 	@Bean
