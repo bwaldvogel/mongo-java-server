@@ -111,7 +111,7 @@ public abstract class AbstractTest {
     protected void setUpBackend() throws Exception {
         MongoBackend backend = createBackend();
         backend.setClock(TEST_CLOCK);
-        mongoServer = new MongoServer(backend);
+        mongoServer = new MongoServer(backend, true);
         serverAddress = mongoServer.bind();
     }
 

@@ -109,7 +109,7 @@ public abstract class AbstractBackendSpringDataTest {
         Person updatedPerson = personRepository.findOneByName(billy.getName());
         assertThat(updatedPerson.getAccounts()).hasSize(2);
 
-        assertThat(mongoClient.listDatabaseNames()).containsExactlyInAnyOrder(DATABASE_NAME, "local");
+        assertThat(mongoClient.listDatabaseNames()).containsExactly(DATABASE_NAME);
 
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
         assertThat(database.listCollectionNames()).containsExactlyInAnyOrder("person", "account", "test");

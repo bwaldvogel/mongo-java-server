@@ -74,9 +74,9 @@ public abstract class AbstractReadOnlyProxyTest {
     void testListDatabaseNames() throws Exception {
         assertThat(readOnlyClient.listDatabaseNames()).isEmpty();
         writeClient.getDatabase("testdb").getCollection("testcollection").insertOne(new Document());
-        assertThat(readOnlyClient.listDatabaseNames()).containsExactlyInAnyOrder("testdb", "local");
+        assertThat(readOnlyClient.listDatabaseNames()).containsExactly("testdb");
         writeClient.getDatabase("bar").getCollection("testcollection").insertOne(new Document());
-        assertThat(readOnlyClient.listDatabaseNames()).containsExactlyInAnyOrder("bar", "testdb", "local");
+        assertThat(readOnlyClient.listDatabaseNames()).containsExactly("bar", "testdb");
     }
 
     @Test

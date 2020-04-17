@@ -10,7 +10,7 @@ import de.bwaldvogel.mongo.backend.OplogMongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public class H2Backend extends OplogMongoBackend {
+public class H2Backend extends AbstractMongoBackend {
 
     private static final Logger log = LoggerFactory.getLogger(H2Backend.class);
 

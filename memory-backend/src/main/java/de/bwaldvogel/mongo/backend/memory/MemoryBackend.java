@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.backend.memory;
 
-import de.bwaldvogel.mongo.backend.OplogMongoBackend;
+import de.bwaldvogel.mongo.backend.AbstractMongoBackend;
 
-public class MemoryBackend extends OplogMongoBackend {
+public class MemoryBackend extends AbstractMongoBackend {
 
     @Override
     public MemoryDatabase openOrCreateDatabase(String databaseName) {
