@@ -31,6 +31,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.OutStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.RedactStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnsetStage;
@@ -151,6 +152,10 @@ public class Aggregation {
                 case "$out":
                     Object outCollection = stage.get(stageOperation);
                     aggregation.addStage(new OutStage(database, outCollection));
+                    break;
+                case "$redact":
+                    Document redactExpression = (Document) stage.get(stageOperation);
+                    aggregation.addStage(new RedactStage(redactExpression));
                     break;
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");

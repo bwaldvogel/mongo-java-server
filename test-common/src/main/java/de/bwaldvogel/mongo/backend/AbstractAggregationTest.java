@@ -6,6 +6,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -1915,6 +1916,20 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 'one'", "$out : 'other'")).first())
             .withMessageContaining("Command failed with error 40601 (Location40601): '$out can only be the final stage in the pipeline'");
+    }
+
+    @Test
+    public void testAggregateWithRedact() {
+        List<Document> pipeline = jsonList("$redact: {$cond: {if: {$eq: [\"$_id\", 1]}, then: \"$$KEEP\", else: \"$$PRUNE\"}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+
+        List<Document> redactedDocuments = collection.aggregate(pipeline).into(new ArrayList<>());
+        assertThat(redactedDocuments)
+            .containsOnly(json("_id: 1"));
     }
 
     private static Function<Document, Document> withSortedStringList(String key) {
