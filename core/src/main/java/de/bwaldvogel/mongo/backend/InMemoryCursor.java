@@ -1,22 +1,19 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
 
 import de.bwaldvogel.mongo.bson.Document;
 
 public class InMemoryCursor implements Cursor {
 
     private final long cursorId;
-    private final Queue<Document> remainingDocuments;
+    private List<Document> remainingDocuments;
 
-    public InMemoryCursor(long cursorId, Collection<Document> remainingDocuments) {
+    public InMemoryCursor(long cursorId, List<Document> remainingDocuments) {
         this.cursorId = cursorId;
         Assert.notEmpty(remainingDocuments);
-        this.remainingDocuments = new LinkedList<>(remainingDocuments);
+        this.remainingDocuments = Collections.unmodifiableList(remainingDocuments);
     }
 
     public int documentsCount() {
@@ -36,14 +33,9 @@ public class InMemoryCursor implements Cursor {
     @Override
     public List<Document> takeDocuments(int numberToReturn) {
         Assert.isTrue(numberToReturn > 0, () -> "Illegal number to return: " + numberToReturn);
-        List<Document> documents = new ArrayList<>();
-        while (documents.size() < numberToReturn) {
-            Document nextDocument = remainingDocuments.poll();
-            if (nextDocument == null) {
-                return documents;
-            }
-            documents.add(nextDocument);
-        }
+        int toIndex = Math.min(remainingDocuments.size(), numberToReturn);
+        List<Document> documents = remainingDocuments.subList(0, toIndex);
+        remainingDocuments = remainingDocuments.subList(documents.size(), remainingDocuments.size());
         return documents;
     }
 
