@@ -39,6 +39,7 @@ import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.MongoServerNotYetImplementedException;
 
 class DefaultQueryMatcherTest {
 
@@ -941,6 +942,43 @@ class DefaultQueryMatcherTest {
         Document document = new Document("data", new BsonJavaScript("code 1"));
         assertThat(matcher.matches(document, new Document("data", new BsonJavaScript("code 1")))).isTrue();
         assertThat(matcher.matches(document, new Document("data", new BsonJavaScript("code 2")))).isFalse();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/132
+    @Test
+    void testNearSphere() throws Exception {
+        assertThatExceptionOfType(MongoServerNotYetImplementedException.class)
+            .isThrownBy(() -> matcher.matches(json("location: [0, 0]"), json("location: " +
+                "{" +
+                "    $nearSphere: {" +
+                "        $geometry: {" +
+                "            type : 'Point'," +
+                "            coordinates : [ -73.9667, 40.78 ]" +
+                "        },\n" +
+                "        $minDistance: 1000,\n" +
+                "        $maxDistance: 5000\n" +
+                "    }" +
+                "}")))
+            .withMessage("$nearSphere is not yet implemented. See https://github.com/bwaldvogel/mongo-java-server/issues/132");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/132
+    @Test
+    void testGeoWithin() throws Exception {
+        assertThatExceptionOfType(MongoServerNotYetImplementedException.class)
+            .isThrownBy(() -> matcher.matches(json("location: [0, 0]"), json("location: {" +
+                "    $geoWithin: {" +
+                "        $geometry: {" +
+                "            type: 'Polygon'," +
+                "            coordinates: [[[0, 0], [3, 6], [6, 1], [0, 0]]]," +
+                "            crs: {" +
+                "                type: 'name'," +
+                "                properties: { name: 'urn:x-mongodb:crs:strictwinding:EPSG:4326' }" +
+                "            }" +
+                "        }" +
+                "    }" +
+                "}")))
+            .withMessage("$geoWithin is not yet implemented. See https://github.com/bwaldvogel/mongo-java-server/issues/132");
     }
 
 }

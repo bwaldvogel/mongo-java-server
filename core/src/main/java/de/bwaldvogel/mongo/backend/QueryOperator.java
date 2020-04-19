@@ -25,6 +25,8 @@ public enum QueryOperator {
     ALL("$all"),
     ELEM_MATCH("$elemMatch"),
     TYPE("$type"),
+    NEAR_SPHERE("$nearSphere"),
+    GEO_WITHIN("$geoWithin"),
     ;
 
     private final String value;
