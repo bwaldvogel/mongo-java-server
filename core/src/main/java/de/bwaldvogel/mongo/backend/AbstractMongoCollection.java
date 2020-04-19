@@ -678,7 +678,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return count;
         }
 
-        int numberToReturn = (limit >= 0) ? limit : 0;
+        int numberToReturn = Math.max(limit, 0);
         int count = 0;
         Iterator<?> it = queryDocuments(query, null, skip, numberToReturn).iterator();
         while (it.hasNext()) {

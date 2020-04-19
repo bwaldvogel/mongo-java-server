@@ -17,9 +17,9 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public class MemoryCollection extends AbstractMongoCollection<Integer> {
 
-    private List<Document> documents = new ArrayList<>();
-    private Queue<Integer> emptyPositions = new LinkedList<>();
-    private AtomicInteger dataSize = new AtomicInteger();
+    private final List<Document> documents = new ArrayList<>();
+    private final Queue<Integer> emptyPositions = new LinkedList<>();
+    private final AtomicInteger dataSize = new AtomicInteger();
 
     public MemoryCollection(MongoDatabase database, String collectionName, String idField) {
         super(database, collectionName, idField);
