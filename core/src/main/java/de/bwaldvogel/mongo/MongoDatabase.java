@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo;
 
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
@@ -32,7 +33,7 @@ public interface MongoDatabase {
 
     boolean isEmpty();
 
-    MongoCollection<?> createCollectionOrThrowIfExists(String collectionName);
+    MongoCollection<?> createCollectionOrThrowIfExists(String collectionName, CollectionOptions options);
 
     MongoCollection<?> resolveCollection(String collectionName, boolean throwIfNotFound);
 

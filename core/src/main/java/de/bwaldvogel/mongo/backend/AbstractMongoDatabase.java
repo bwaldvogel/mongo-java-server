@@ -63,19 +63,19 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     protected void initializeNamespacesAndIndexes() {
-        this.namespaces = openOrCreateCollection(NAMESPACES_COLLECTION_NAME, "name");
+        this.namespaces = openOrCreateCollection(NAMESPACES_COLLECTION_NAME, CollectionOptions.withIdField("name"));
         this.collections.put(namespaces.getCollectionName(), namespaces);
 
         if (!namespaces.isEmpty()) {
             for (String name : listCollectionNamespaces()) {
                 log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
-                MongoCollection<P> collection = openOrCreateCollection(collectionName, ID_FIELD);
+                MongoCollection<P> collection = openOrCreateCollection(collectionName, CollectionOptions.withDefaults());
                 collections.put(collectionName, collection);
                 log.debug("opened collection '{}'", collectionName);
             }
 
-            MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
+            MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, CollectionOptions.withoutIdField());
             collections.put(indexCollection.getCollectionName(), indexCollection);
             this.indexes.set(indexCollection);
             for (Document indexDescription : indexCollection.queryAll()) {
@@ -219,7 +219,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (collection != null) {
             return collection;
         } else {
-            return createCollection(collectionName);
+            return createCollection(collectionName, CollectionOptions.withDefaults());
         }
     }
 
@@ -353,17 +353,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document commandCreate(String command, Document query) {
         String collectionName = query.get(command).toString();
-        boolean isCapped = Utils.isTrue(query.get("capped"));
-        if (isCapped) {
-            throw new MongoServerException("Creating capped collections is not yet implemented");
-        }
 
-        Object autoIndexId = query.get("autoIndexId");
-        if (autoIndexId != null && !Utils.isTrue(autoIndexId)) {
-            throw new MongoServerException("Disabling autoIndexId is not yet implemented");
-        }
-
-        createCollectionOrThrowIfExists(collectionName);
+        CollectionOptions collectionOptions = CollectionOptions.fromQuery(query);
+        collectionOptions.validate();
+        createCollectionOrThrowIfExists(collectionName, collectionOptions);
 
         Document response = new Document();
         Utils.markOkay(response);
@@ -371,13 +364,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public MongoCollection<P> createCollectionOrThrowIfExists(String collectionName) {
+    public MongoCollection<P> createCollectionOrThrowIfExists(String collectionName, CollectionOptions options) {
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             throw new NamespaceExistsException("a collection '" + getDatabaseName() + "." + collectionName + "' already exists");
         }
 
-        return createCollection(collectionName);
+        return createCollection(collectionName, options);
     }
 
     private Document commandCreateIndexes(Document query) {
@@ -725,7 +718,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private MongoCollection<P> getOrCreateIndexesCollection() {
         synchronized (indexes) {
             if (indexes.get() == null) {
-                MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, null);
+                MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, CollectionOptions.withoutIdField());
                 addNamespace(indexCollection);
                 indexes.set(indexCollection);
             }
@@ -869,13 +862,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         results.set(results.size() - 1, result);
     }
 
-    private MongoCollection<P> createCollection(String collectionName) {
+    private MongoCollection<P> createCollection(String collectionName, CollectionOptions options) {
         checkCollectionName(collectionName);
         if (collectionName.contains("$")) {
             throw new MongoServerError(10093, "cannot insert into reserved $ collection");
         }
 
-        MongoCollection<P> collection = openOrCreateCollection(collectionName, ID_FIELD);
+        MongoCollection<P> collection = openOrCreateCollection(collectionName, options);
         addNamespace(collection);
 
         addIndex(getPrimaryKeyIndexDescription(collection.getFullName()));
@@ -885,7 +878,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collection;
     }
 
-    protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, String idField);
+    protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, CollectionOptions options);
 
     @Override
     public void drop() {

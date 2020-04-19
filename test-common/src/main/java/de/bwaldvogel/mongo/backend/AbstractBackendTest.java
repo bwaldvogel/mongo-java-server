@@ -259,6 +259,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testCreateCappedCollection_invalidOptions() throws Exception {
+        String newCollectionName = "some-collection";
+        assertThat(db.listCollectionNames()).doesNotContain(newCollectionName);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions().capped(true)))
+            .withMessageContaining("Command failed with error 72 (InvalidOptions): 'the 'size' field is required when 'capped' is true'");
+    }
+
+    @Test
     public void testCreateCollectionAlreadyExists() throws Exception {
         db.createCollection("some-collection", new CreateCollectionOptions());
 

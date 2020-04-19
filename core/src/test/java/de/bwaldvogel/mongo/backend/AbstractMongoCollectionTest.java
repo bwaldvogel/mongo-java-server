@@ -22,8 +22,8 @@ public class AbstractMongoCollectionTest {
 
     private static class TestCollection extends AbstractMongoCollection<Object> {
 
-        TestCollection(MongoDatabase database, String collectionName, String idField) {
-            super(database, collectionName, idField);
+        TestCollection(MongoDatabase database, String collectionName) {
+            super(database, collectionName, CollectionOptions.withDefaults());
         }
 
         @Override
@@ -48,7 +48,7 @@ public class AbstractMongoCollectionTest {
 
         @Override
         protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                    int numberToReturn) {
+                                             int numberToReturn) {
             throw new UnsupportedOperationException();
         }
 
@@ -78,7 +78,7 @@ public class AbstractMongoCollectionTest {
     @BeforeEach
     void setUp() {
         MongoDatabase database = Mockito.mock(MongoDatabase.class);
-        this.collection = new TestCollection(database, "some collection", "_id");
+        this.collection = new TestCollection(database, "some collection");
     }
 
     @Test

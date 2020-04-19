@@ -45,14 +45,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     private String collectionName;
     private final List<Index<P>> indexes = new ArrayList<>();
     private final QueryMatcher matcher = new DefaultQueryMatcher();
-    protected final String idField;
+    protected final CollectionOptions options;
     protected final ConcurrentMap<Long, Cursor> cursors = new ConcurrentHashMap<>();
     private final AtomicLong cursorIdCounter = new AtomicLong();
 
-    protected AbstractMongoCollection(MongoDatabase database, String collectionName, String idField) {
-        this.database = database;
-        this.collectionName = collectionName;
-        this.idField = idField;
+    protected AbstractMongoCollection(MongoDatabase database, String collectionName, CollectionOptions options) {
+        this.database = Objects.requireNonNull(database);
+        this.collectionName = Objects.requireNonNull(collectionName);
+        this.options = Objects.requireNonNull(options);
     }
 
     protected boolean documentMatchesQuery(Document document, Document query) {
@@ -240,8 +240,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                              Integer matchPos, boolean isUpsert) {
         Document change = (Document) update.get(modifier);
         UpdateOperator updateOperator = getUpdateOperator(modifier, change);
-        FieldUpdates updates = new FieldUpdates(document, updateOperator, idField, isUpsert, matchPos, arrayFilters);
+        FieldUpdates updates = new FieldUpdates(document, updateOperator, getIdField(), isUpsert, matchPos, arrayFilters);
         updates.apply(change, modifier);
+    }
+
+    protected String getIdField() {
+        return options.getIdField();
     }
 
     private UpdateOperator getUpdateOperator(String modifier, Document change) {
@@ -260,22 +264,22 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return;
         }
 
-        Object oldId = oldDocument.get(idField);
-        Object newId = newDocument.get(idField);
+        Object oldId = oldDocument.get(getIdField());
+        Object newId = newDocument.get(getIdField());
 
         if (newId != null && oldId != null && !Utils.nullAwareEquals(oldId, newId)) {
             throw new ImmutableFieldException("After applying the update, the (immutable) field '_id' was found to have been altered to _id: " + newId);
         }
 
         if (newId == null && oldId != null) {
-            newDocument.put(idField, oldId);
+            newDocument.put(getIdField(), oldId);
         }
 
         cloneInto(oldDocument, newDocument);
     }
 
     Object deriveDocumentId(Document selector) {
-        Object value = selector.get(idField);
+        Object value = selector.get(getIdField());
         if (value != null) {
             if (!Utils.containsQueryExpression(value)) {
                 return value;
@@ -312,8 +316,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         Document newDocument = new Document();
-        if (idField != null) {
-            newDocument.put(idField, oldDocument.get(idField));
+        if (getIdField() != null) {
+            newDocument.put(getIdField(), oldDocument.get(getIdField()));
         }
 
         if (numStartsWithDollar == update.keySet().size()) {
@@ -408,7 +412,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (query.get("fields") != null) {
             Document fields = (Document) query.get("fields");
-            returnDocument = Projection.projectDocument(returnDocument, fields, idField);
+            returnDocument = Projection.projectDocument(returnDocument, fields, getIdField());
         }
 
         Document result = new Document();
@@ -446,7 +450,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         QueryResult objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
-            return new QueryResult(new ProjectingIterable(objs, fieldSelector, idField), 0);
+            return new QueryResult(new ProjectingIterable(objs, fieldSelector, getIdField()), 0);
         }
 
         return objs;
@@ -545,7 +549,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         // insert?
         if (nMatched == 0 && isUpsert) {
             Document newDocument = handleUpsert(updateQuery, selector, arrayFilters);
-            result.put("upserted", newDocument.get(idField));
+            result.put("upserted", newDocument.get(getIdField()));
         }
 
         result.put("n", Integer.valueOf(nMatched));
@@ -635,8 +639,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document document = convertSelectorToDocument(selector);
 
         Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, null, true);
-        if (newDocument.get(idField) == null) {
-            newDocument.put(idField, deriveDocumentId(selector));
+        if (newDocument.get(getIdField()) == null) {
+            newDocument.put(getIdField(), deriveDocumentId(selector));
         }
         addDocument(newDocument);
         return newDocument;

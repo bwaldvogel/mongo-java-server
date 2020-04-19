@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
@@ -24,7 +25,7 @@ public class OutStage implements AggregationStage {
     @Override
     public Stream<Document> apply(Stream<Document> stream) {
         String tempCollectionName = "_tmp" + System.currentTimeMillis() + "_" + this.collectionName;
-        MongoCollection<?> tempCollection = database.createCollectionOrThrowIfExists(tempCollectionName);
+        MongoCollection<?> tempCollection = database.createCollectionOrThrowIfExists(tempCollectionName, CollectionOptions.withDefaults());
         stream.forEach(document -> tempCollection.insertDocuments(Collections.singletonList(document)));
         database.moveCollection(database, tempCollection, this.collectionName);
         return Stream.empty();

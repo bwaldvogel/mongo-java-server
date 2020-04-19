@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
@@ -21,8 +22,8 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     private final Queue<Integer> emptyPositions = new LinkedList<>();
     private final AtomicInteger dataSize = new AtomicInteger();
 
-    public MemoryCollection(MongoDatabase database, String collectionName, String idField) {
-        super(database, collectionName, idField);
+    public MemoryCollection(MongoDatabase database, String collectionName, CollectionOptions options) {
+        super(database, collectionName, options);
     }
 
     @Override
