@@ -40,9 +40,9 @@ import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public class DefaultQueryMatcherTest {
+class DefaultQueryMatcherTest {
 
-    private QueryMatcher matcher = new DefaultQueryMatcher();
+    private final QueryMatcher matcher = new DefaultQueryMatcher();
 
     @Test
     void testMatchesSimple() throws Exception {
