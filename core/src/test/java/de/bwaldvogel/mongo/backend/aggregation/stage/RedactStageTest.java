@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 
-public class RedactStageTest {
+class RedactStageTest {
 
     @Test
     void testRedact() {
