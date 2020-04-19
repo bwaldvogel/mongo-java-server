@@ -100,6 +100,7 @@ public class MemoryCollection extends AbstractMongoCollection<Integer> {
     @Override
     protected Stream<DocumentWithPosition<Integer>> streamAllDocumentsWithPosition() {
         return IntStream.range(0, documents.size())
+            .filter(position -> !emptyPositions.contains(position))
             .mapToObj(index -> new DocumentWithPosition<>(documents.get(index), index));
     }
 
