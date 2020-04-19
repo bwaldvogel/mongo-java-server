@@ -639,9 +639,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document document = convertSelectorToDocument(selector);
 
         Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, null, true);
-        if (newDocument.get(getIdField()) == null) {
-            newDocument.put(getIdField(), deriveDocumentId(selector));
-        }
+        newDocument.computeIfAbsent(getIdField(), k -> deriveDocumentId(selector));
         addDocument(newDocument);
         return newDocument;
     }
