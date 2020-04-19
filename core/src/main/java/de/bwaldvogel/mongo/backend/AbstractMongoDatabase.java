@@ -28,6 +28,7 @@ import de.bwaldvogel.mongo.exception.IndexNotFoundException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
+import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
@@ -373,8 +374,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     public MongoCollection<P> createCollectionOrThrowIfExists(String collectionName) {
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
-            throw new MongoServerError(48, "NamespaceExists",
-                "a collection '" + getDatabaseName() + "." + collectionName + "' already exists");
+            throw new NamespaceExistsException("a collection '" + getDatabaseName() + "." + collectionName + "' already exists");
         }
 
         return createCollection(collectionName);

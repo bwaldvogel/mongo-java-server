@@ -19,9 +19,9 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
+import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoReplicationEnabledException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.BsonConstants;
@@ -192,7 +192,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
                 if (dropTarget) {
                     newDatabase.dropCollection(newCollectionName);
                 } else {
-                    throw new MongoServerError(48, "NamespaceExists", "target namespace exists");
+                    throw new NamespaceExistsException("target namespace exists");
                 }
             }
 
