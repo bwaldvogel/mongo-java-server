@@ -8,7 +8,6 @@ import javax.sql.DataSource;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoBackend;
-import de.bwaldvogel.mongo.backend.OplogMongoBackend;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class PostgresqlBackend extends AbstractMongoBackend {
@@ -42,5 +41,4 @@ public class PostgresqlBackend extends AbstractMongoBackend {
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
-
 }

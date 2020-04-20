@@ -4,7 +4,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLException;
@@ -13,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.backend.Assert;
-import de.bwaldvogel.mongo.backend.OplogMongoBackend;
 import de.bwaldvogel.mongo.wire.MongoDatabaseHandler;
 import de.bwaldvogel.mongo.wire.MongoExceptionHandler;
 import de.bwaldvogel.mongo.wire.MongoWireEncoder;
@@ -49,15 +47,12 @@ public class MongoServer {
     private SslContext sslContext;
 
     public MongoServer(MongoBackend backend) {
-        this(backend, false);
+        this.backend = backend;
     }
 
-    public MongoServer(MongoBackend backend, boolean oplogEnabled) {
-        if (oplogEnabled) {
-            this.backend = new OplogMongoBackend(backend);
-        } else {
-            this.backend = backend;
-        }
+    public MongoServer withOplogEnabled() {
+        this.backend.enableOplog();
+        return this;
     }
 
     public void enableSsl(PrivateKey key, String keyPassword, X509Certificate... keyCertChain) {

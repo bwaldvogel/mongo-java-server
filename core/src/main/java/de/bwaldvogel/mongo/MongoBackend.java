@@ -44,4 +44,8 @@ public interface MongoBackend {
 
     void setClock(Clock clock);
 
+    void enableOplog();
+
+    void disableOplog();
+
 }

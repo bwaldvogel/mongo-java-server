@@ -24,6 +24,9 @@ import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoReplicationEnabledException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import de.bwaldvogel.mongo.oplog.CollectionBackedOplog;
+import de.bwaldvogel.mongo.oplog.NoopOplog;
+import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
@@ -43,7 +46,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
 
-    protected Clock clock = Clock.systemDefaultZone();
+    private Clock clock = Clock.systemDefaultZone();
+
+    protected Oplog oplog = NoopOplog.get();
+
+    protected final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
     private int maxWireVersion = 2;
     private int minWireVersion = 0;
@@ -246,7 +253,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleAdminCommand(command, query);
         } else {
             MongoDatabase db = resolveDatabase(databaseName);
-            return db.handleCommand(channel, command, query);
+            Document doc = db.handleCommand(channel, command, query);
+            oplog.handleCommand(databaseName, command, query);
+            return doc;
         }
     }
 
@@ -334,6 +343,21 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public void setClock(Clock clock) {
         this.clock = clock;
+    }
+
+    @Override
+    public void disableOplog() {
+        oplog = NoopOplog.get();
+    }
+
+    @Override
+    public void enableOplog() {
+        MongoDatabase localDatabase = resolveDatabase("local");
+        MongoCollection<Document> collection = (MongoCollection<Document>) localDatabase.resolveCollection(OPLOG_COLLECTION_NAME, false);
+        if (collection == null) {
+            collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME, CollectionOptions.withDefaults());
+        }
+        oplog = new CollectionBackedOplog(getClock(), collection);
     }
 
 }

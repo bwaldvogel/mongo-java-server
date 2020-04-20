@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoBackend;
-import de.bwaldvogel.mongo.backend.OplogMongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
