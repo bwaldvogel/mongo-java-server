@@ -27,7 +27,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     private static final String META_PREFIX = "meta.";
     static final String DATABASES_PREFIX = "databases.";
 
-    private MVStore mvStore;
+    private final MVStore mvStore;
 
     public H2Database(String databaseName, MongoBackend backend, MVStore mvStore) {
         super(databaseName, backend);

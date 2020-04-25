@@ -11,7 +11,7 @@ import de.bwaldvogel.mongo.wire.ReplyFlag;
 public class MongoReply {
     private final MessageHeader header;
     private final List<? extends Document> documents;
-    private long cursorId;
+    private final long cursorId;
     private int startingFrom;
     private int flags;
 

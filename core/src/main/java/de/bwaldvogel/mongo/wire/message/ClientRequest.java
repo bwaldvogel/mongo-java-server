@@ -7,7 +7,7 @@ public abstract class ClientRequest implements Message {
 
     private final MessageHeader header;
     private final String fullCollectionName;
-    private Channel channel;
+    private final Channel channel;
 
     public ClientRequest(Channel channel, MessageHeader header, String fullCollectionName) {
         this.channel = channel;

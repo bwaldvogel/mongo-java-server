@@ -13,7 +13,7 @@ public class H2Backend extends AbstractMongoBackend {
 
     private static final Logger log = LoggerFactory.getLogger(H2Backend.class);
 
-    private MVStore mvStore;
+    private final MVStore mvStore;
 
     public static H2Backend inMemory() {
         MVStore mvStore = MVStore.open(null);

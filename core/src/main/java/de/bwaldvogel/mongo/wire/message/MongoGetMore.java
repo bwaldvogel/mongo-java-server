@@ -3,8 +3,8 @@ package de.bwaldvogel.mongo.wire.message;
 import io.netty.channel.Channel;
 
 public class MongoGetMore extends ClientRequest {
-    private long cursorId;
-    private int numberToReturn;
+    private final long cursorId;
+    private final int numberToReturn;
 
     public MongoGetMore(Channel channel, MessageHeader header, String fullCollectionName, int numberToReturn, long cursorId) {
         super(channel, header, fullCollectionName);

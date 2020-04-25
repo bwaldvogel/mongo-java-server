@@ -6,9 +6,9 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public class ProjectingIterable implements Iterable<Document> {
 
-    private Iterable<Document> iterable;
-    private Document fieldSelector;
-    private String idField;
+    private final Iterable<Document> iterable;
+    private final Document fieldSelector;
+    private final String idField;
 
     public ProjectingIterable(Iterable<Document> iterable, Document fieldSelector, String idField) {
         this.iterable = iterable;

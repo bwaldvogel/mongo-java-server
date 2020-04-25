@@ -34,7 +34,7 @@ public class ReadOnlyProxy implements MongoBackend {
         allowedCommands.add("getlasterror");
     }
 
-    private MongoBackend backend;
+    private final MongoBackend backend;
 
     public ReadOnlyProxy(MongoBackend backend) {
         this.backend = backend;

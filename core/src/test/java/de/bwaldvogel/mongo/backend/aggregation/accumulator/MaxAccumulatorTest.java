@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 public class MaxAccumulatorTest {
 
-    private ComparingAccumulator accumulator = new MaxAccumulator(null, null);
+    private final ComparingAccumulator accumulator = new MaxAccumulator(null, null);
 
     @Test
     void testAccumulateNumbers() throws Exception {

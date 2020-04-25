@@ -23,7 +23,7 @@ import io.netty.buffer.Unpooled;
 
 public class ValueComparatorTest {
 
-    private Comparator<Object> comparator = ValueComparator.asc();
+    private final Comparator<Object> comparator = ValueComparator.asc();
 
     @Test
     void testReverse() throws Exception {

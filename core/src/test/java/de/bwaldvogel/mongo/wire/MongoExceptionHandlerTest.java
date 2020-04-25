@@ -32,7 +32,7 @@ class MongoExceptionHandlerTest {
 
     class MockChannelId implements ChannelId {
 
-        private String id;
+        private final String id;
 
         public MockChannelId(String id) {
             this.id = id;

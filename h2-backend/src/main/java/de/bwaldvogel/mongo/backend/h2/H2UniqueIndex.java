@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.backend.Missing;
 
 public class H2UniqueIndex extends AbstractUniqueIndex<Object> {
 
-    private MVMap<KeyValue, Object> mvMap;
+    private final MVMap<KeyValue, Object> mvMap;
 
     H2UniqueIndex(MVMap<KeyValue, Object> mvMap, String name, List<IndexKey> keys, boolean sparse) {
         super(name, keys, sparse);

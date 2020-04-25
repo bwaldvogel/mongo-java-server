@@ -9,7 +9,7 @@ public enum QueryFlag {
     EXHAUST(6), //
     PARTIAL(7);
 
-    private int value;
+    private final int value;
 
     QueryFlag(int bit) {
         this.value = 1 << bit;

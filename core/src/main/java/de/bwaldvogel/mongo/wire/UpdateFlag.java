@@ -3,7 +3,7 @@ package de.bwaldvogel.mongo.wire;
 public enum UpdateFlag {
     UPSERT(0), MULTI_UPDATE(1);
 
-    private int value;
+    private final int value;
 
     UpdateFlag(int bit) {
         this.value = 1 << bit;
