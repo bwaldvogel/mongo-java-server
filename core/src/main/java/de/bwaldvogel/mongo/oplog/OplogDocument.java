@@ -56,7 +56,7 @@ public class OplogDocument implements Bson {
     }
 
     public OperationType getOperationType() {
-        return OperationType.valueOf((String) document.get("op"));
+        return OperationType.fromCode((String) document.get("op"));
     }
 
     public OplogDocument withOperationType(OperationType operationType) {
