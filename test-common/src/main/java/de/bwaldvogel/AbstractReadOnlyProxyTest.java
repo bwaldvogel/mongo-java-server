@@ -157,9 +157,8 @@ public abstract class AbstractReadOnlyProxyTest {
 
     @Test
     void testHandleKillCursor() {
-        writeClient.getDatabase("testdb").getCollection("testcollection").insertMany(
-            Arrays.asList(new Document(), new Document())
-        );
+        MongoCollection<Document> collection = writeClient.getDatabase("testdb").getCollection("testcollection");
+        collection.insertMany(Arrays.asList(new Document(), new Document()));
         MongoCursor<Document> cursor = readOnlyClient.getDatabase("testdb")
             .getCollection("testcollection").find().batchSize(1).cursor();
         assertThat(cursor.getServerCursor()).isNotNull();
