@@ -52,7 +52,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected Oplog oplog = NoopOplog.get();
 
-
     private int maxWireVersion = 2;
     private int minWireVersion = 0;
 
