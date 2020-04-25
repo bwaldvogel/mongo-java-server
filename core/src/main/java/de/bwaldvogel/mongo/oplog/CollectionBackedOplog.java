@@ -20,17 +20,23 @@ public class CollectionBackedOplog extends AbstractOplog {
 
     @Override
     public void handleInsert(String databaseName, Document query) {
-        Instant instant = clock.instant();
+        String namespace = String.format("%s.%s", databaseName, query.get("insert"));
         List<Document> documents = (List<Document>) query.get("documents");
-        List<Document> oplogDocuments = documents.stream().map(d ->
-            new OplogDocument()
-                .withTimestamp(new BsonTimestamp(instant.toEpochMilli()))
-                .withWall(instant)
-                .withOperationType(OperationType.INSERT)
-                .withOperationDocument(d)
-                .withNamespace(String.format("%s.%s", databaseName, query.get("insert")))
-                .asDocument()).collect(Collectors.toList());
+        List<Document> oplogDocuments = documents.stream()
+            .map(oplogDocument -> toOplogDocument(oplogDocument, namespace))
+            .collect(Collectors.toList());
         collection.insertDocuments(oplogDocuments);
+    }
+
+    private Document toOplogDocument(Document oplogDocument, String namespace) {
+        Instant now = clock.instant();
+        return new OplogDocument()
+            .withTimestamp(new BsonTimestamp(now))
+            .withWall(now)
+            .withOperationType(OperationType.INSERT)
+            .withOperationDocument(oplogDocument)
+            .withNamespace(namespace)
+            .asDocument();
     }
 
     @Override
