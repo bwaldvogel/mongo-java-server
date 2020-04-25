@@ -30,7 +30,9 @@ class MongoExceptionHandlerTest {
         verify(mockChannel, times(1)).close();
     }
 
-    class MockChannelId implements ChannelId {
+    static class MockChannelId implements ChannelId {
+
+        private static final long serialVersionUID = 1L;
 
         private final String id;
 
