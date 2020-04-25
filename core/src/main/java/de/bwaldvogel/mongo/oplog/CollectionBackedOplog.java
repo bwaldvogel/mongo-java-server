@@ -12,6 +12,7 @@ import de.bwaldvogel.mongo.bson.Document;
 public class CollectionBackedOplog extends AbstractOplog {
 
     private final MongoCollection<Document> collection;
+
     public CollectionBackedOplog(Clock clock, MongoCollection<Document> collection) {
         super(clock);
         this.collection = collection;

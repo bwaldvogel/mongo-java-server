@@ -120,7 +120,7 @@ public class OplogDocument implements Bson {
         if (!(o instanceof OplogDocument)) {
             return false;
         }
-        return asDocument().equals(((OplogDocument)o).asDocument());
+        return asDocument().equals(((OplogDocument) o).asDocument());
     }
 
     @Override

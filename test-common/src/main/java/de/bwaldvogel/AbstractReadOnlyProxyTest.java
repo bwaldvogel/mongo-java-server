@@ -163,7 +163,7 @@ public abstract class AbstractReadOnlyProxyTest {
         MongoCursor<Document> cursor = readOnlyClient.getDatabase("testdb")
             .getCollection("testcollection").find().batchSize(1).cursor();
         assertThat(cursor.getServerCursor()).isNotNull();
-        while(cursor.hasNext()) {
+        while (cursor.hasNext()) {
             cursor.next();
         }
         assertThat(cursor.getServerCursor()).isNull();

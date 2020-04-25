@@ -10,10 +10,15 @@ public enum OperationType {
     UPDATE("u"),
     INSERT("i");
 
-    OperationType(String code) { this.code = code; }
-    public String getCode() { return code; }
+    private final String code;
 
-    private String code;
+    OperationType(String code) {
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
+    }
 
     private static final Map<String, OperationType> MAP = new HashMap<>();
 
