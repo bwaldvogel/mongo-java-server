@@ -14,5 +14,3 @@ out/
 *.class
 bin/
 classes/
-
-*.iml
