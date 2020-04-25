@@ -78,17 +78,13 @@ public class GraphLookupStage extends AbstractLookupStage {
         throw new FailedToParseException("'" + name + "' option to \" + stageName + \" must be a string, but was type " + Utils.describeType(value));
     }
 
-    String readVariableConfigurationProperty(Document configuration, String name) {
+    void readVariableConfigurationProperty(Document configuration, String name) {
         Object value = configuration.get(name);
         if (value == null) {
             throw new FailedToParseException("missing '" + name + "' option to $graphLookup stage specification: " + configuration);
         }
         if (value instanceof String) {
-            String ret = (String) value;
-            if (ret.startsWith("$")) {
-                ret = ret.substring(1);
-            }
-            return ret;
+            return;
         }
         throw new FailedToParseException("'" + name + "' option to $graphLookup must be a string, but was type " + Utils.describeType(value));
     }
