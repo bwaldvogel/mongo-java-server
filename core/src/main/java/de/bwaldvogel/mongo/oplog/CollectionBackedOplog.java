@@ -9,12 +9,13 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 
-public class CollectionBackedOplog extends AbstractOplog {
+public class CollectionBackedOplog implements Oplog {
 
+    private final Clock clock;
     private final MongoCollection<Document> collection;
 
     public CollectionBackedOplog(Clock clock, MongoCollection<Document> collection) {
-        super(clock);
+        this.clock = clock;
         this.collection = collection;
     }
 
@@ -45,6 +46,6 @@ public class CollectionBackedOplog extends AbstractOplog {
 
     @Override
     public void handleDelete(String databaseName, Document query) {
-
     }
+
 }

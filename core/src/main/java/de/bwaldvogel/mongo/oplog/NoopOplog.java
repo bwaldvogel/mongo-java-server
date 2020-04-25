@@ -1,20 +1,16 @@
 package de.bwaldvogel.mongo.oplog;
 
-import java.time.Clock;
-
 import de.bwaldvogel.mongo.bson.Document;
-import io.netty.channel.Channel;
 
-public final class NoopOplog extends AbstractOplog {
+public final class NoopOplog implements Oplog {
 
-    private static final NoopOplog INSTANCE = new NoopOplog(Clock.systemDefaultZone());
+    private static final NoopOplog INSTANCE = new NoopOplog();
 
     public static NoopOplog get() {
         return INSTANCE;
     }
 
-    private NoopOplog(Clock clock) {
-        super(clock);
+    private NoopOplog() {
     }
 
     @Override
