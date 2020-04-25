@@ -120,6 +120,14 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
+    public void enableOplog() {
+    }
+
+    @Override
+    public void disableOplog() {
+    }
+
+    @Override
     public void handleKillCursors(MongoKillCursors mongoKillCursors) {
         backend.handleKillCursors(mongoKillCursors);
     }

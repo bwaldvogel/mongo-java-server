@@ -41,5 +41,4 @@ public class PostgresqlBackend extends AbstractMongoBackend {
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
-
 }

@@ -4,6 +4,8 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.util.Arrays;
+
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +15,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 
@@ -150,6 +153,20 @@ public abstract class AbstractReadOnlyProxyTest {
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(collection::drop)
             .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'drop'");
+    }
+
+    @Test
+    void testHandleKillCursor() {
+        writeClient.getDatabase("testdb").getCollection("testcollection").insertMany(
+            Arrays.asList(new Document(), new Document())
+        );
+        MongoCursor<Document> cursor = readOnlyClient.getDatabase("testdb")
+            .getCollection("testcollection").find().batchSize(1).cursor();
+        assertThat(cursor.getServerCursor()).isNotNull();
+        while(cursor.hasNext()) {
+            cursor.next();
+        }
+        assertThat(cursor.getServerCursor()).isNull();
     }
 
 }

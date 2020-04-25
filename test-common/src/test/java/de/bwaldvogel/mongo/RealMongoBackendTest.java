@@ -160,4 +160,10 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     public void testCursor_iteratingACursorThatNoLongerExists() {
         // disabled on real MongoDB
     }
+
+    @Override
+    @Disabled
+    public void testSimpleOplogInsert() {
+        // disabled on real MongoDB
+    }
 }
