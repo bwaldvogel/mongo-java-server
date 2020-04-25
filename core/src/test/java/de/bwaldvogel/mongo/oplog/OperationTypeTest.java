@@ -16,9 +16,9 @@ class OperationTypeTest {
 
     @Test
     void testFromCode() {
-        for (OperationType ot : OperationType.values()) {
-            OperationType ot1 = OperationType.fromCode(ot.getCode());
-            assertThat(ot1).isEqualTo(ot);
+        for (OperationType operationType : OperationType.values()) {
+            OperationType operationTypeFromCode = OperationType.fromCode(operationType.getCode());
+            assertThat(operationTypeFromCode).isEqualTo(operationType);
         }
     }
 
