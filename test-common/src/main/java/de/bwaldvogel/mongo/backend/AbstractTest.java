@@ -52,6 +52,7 @@ public abstract class AbstractTest {
     private static MongoServer mongoServer;
     private static MongoClient asyncClient;
     protected static InetSocketAddress serverAddress;
+    protected static MongoBackend backend;
 
     protected abstract MongoBackend createBackend() throws Exception;
 
@@ -104,7 +105,7 @@ public abstract class AbstractTest {
     }
 
     protected void setUpBackend() throws Exception {
-        MongoBackend backend = createBackend();
+        backend = createBackend();
         backend.setClock(TEST_CLOCK);
         mongoServer = new MongoServer(backend).withOplogEnabled();
         serverAddress = mongoServer.bind();
