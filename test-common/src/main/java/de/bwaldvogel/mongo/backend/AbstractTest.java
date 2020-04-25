@@ -76,9 +76,7 @@ public abstract class AbstractTest {
     }
 
     protected void clearOplog() {
-        if (oplogCollection != null) {
-            oplogCollection.deleteMany(json(""));
-        }
+        oplogCollection.deleteMany(json(""));
     }
 
     protected void killCursors(List<Long> cursorIds) {
