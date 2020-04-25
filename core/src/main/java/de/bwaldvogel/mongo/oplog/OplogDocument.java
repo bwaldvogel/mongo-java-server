@@ -11,10 +11,9 @@ public class OplogDocument implements Bson {
 
     private static final long serialVersionUID = 1L;
 
-    private final Document document;
+    private final Document document = new Document();
 
     public OplogDocument() {
-        document = new Document();
         withProtocolVersion(2L);
     }
 
