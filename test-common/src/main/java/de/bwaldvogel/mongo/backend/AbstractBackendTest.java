@@ -248,17 +248,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testSimpleOplogInsert() {
-        Document doc = new Document("name", "testUser1");
-        collection.insertOne(doc);
-        Document oplogDoc = oplogCollection.find().first();
-        assertThat(oplogDoc).isNotNull();
-        assertThat(oplogDoc.get("ts")).isNotNull();
-        assertThat(oplogDoc.get("wall")).isNotNull();
-        assertThat(oplogDoc.get("o2")).isNull();
-        assertThat(oplogDoc.get("v")).isEqualTo(2L);
-        assertThat(oplogDoc.get("ns")).isEqualTo(collection.getNamespace().getFullName());
-        assertThat(oplogDoc.get("op")).isEqualTo(OperationType.INSERT.getCode());
-        assertThat(oplogDoc.get("o")).isEqualTo(doc);
+        Document document = json("name: 'testUser1'");
+        collection.insertOne(document);
+
+        Document oplogDocument = CollectionUtils.getSingleElement(oplogCollection.find());
+        assertThat(oplogDocument).containsKeys("ts", "wall", "v", "ns", "op", "o");
+        assertThat(oplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
+        assertThat(oplogDocument.get("wall")).isEqualTo(Date.from(Instant.parse("2019-05-23T12:00:00.123Z")));
+        assertThat(oplogDocument.get("v")).isEqualTo(2L);
+        assertThat(oplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+        assertThat(oplogDocument.get("op")).isEqualTo(OperationType.INSERT.getCode());
+        assertThat(oplogDocument.get("o")).isEqualTo(document);
     }
 
     @Test
