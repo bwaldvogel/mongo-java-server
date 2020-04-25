@@ -135,7 +135,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
 
             // handle $all
-            if (queryValue instanceof Document && ((Document) queryValue).keySet().contains(QueryOperator.ALL.getValue())) {
+            if (queryValue instanceof Document && ((Document) queryValue).containsKey(QueryOperator.ALL.getValue())) {
                 // clone first
                 queryValue = ((Document) queryValue).clone();
                 Object allQuery = ((Document) queryValue).remove(QueryOperator.ALL.getValue());

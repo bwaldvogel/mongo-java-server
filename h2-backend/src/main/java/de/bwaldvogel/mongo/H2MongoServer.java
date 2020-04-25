@@ -20,13 +20,10 @@ public class H2MongoServer extends MongoServer {
         }
 
         mongoServer.bind("localhost", 27017);
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                log.info("shutting down {}", mongoServer);
-                mongoServer.shutdownNow();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("shutting down {}", mongoServer);
+            mongoServer.shutdownNow();
+        }));
     }
 
     public H2MongoServer() {

@@ -436,7 +436,7 @@ public enum Expression implements ExpressionTraits {
 
                 // append literals (after format specifier)
                 if (hasFormatSpecifier && part.length() > 2) {
-                    builder.appendLiteral(part.substring(2, part.length()));
+                    builder.appendLiteral(part.substring(2));
                 }
             }
             return builder;
