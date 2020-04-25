@@ -18,10 +18,7 @@ import org.assertj.core.api.Assertions;
 import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.MapAssert;
 import org.assertj.core.api.ObjectAssert;
-import org.bson.BsonDocument;
 import org.bson.Document;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.conversions.Bson;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 
