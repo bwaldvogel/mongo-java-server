@@ -8,6 +8,9 @@ import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class OplogDocument implements Bson {
+
+    private static final long serialVersionUID = 1L;
+
     private final Document document;
 
     public OplogDocument() {
