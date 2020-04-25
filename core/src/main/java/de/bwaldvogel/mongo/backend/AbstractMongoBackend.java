@@ -42,6 +42,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoBackend.class);
 
+    protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
+
     private final Map<String, MongoDatabase> databases = new TreeMap<>();
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
@@ -50,7 +52,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected Oplog oplog = NoopOplog.get();
 
-    protected final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
     private int maxWireVersion = 2;
     private int minWireVersion = 0;
