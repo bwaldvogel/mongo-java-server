@@ -1,6 +1,6 @@
 package de.bwaldvogel.mongo.oplog;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +10,6 @@ class NoopOplogTest {
     void testSingleton() {
         NoopOplog oplog = NoopOplog.get();
         NoopOplog oplog1 = NoopOplog.get();
-        assertEquals(oplog, oplog1);
+        assertThat(oplog).isSameAs(oplog1);
     }
 }
