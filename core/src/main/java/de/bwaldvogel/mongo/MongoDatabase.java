@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -17,7 +18,7 @@ public interface MongoDatabase {
 
     void handleClose(Channel channel);
 
-    Document handleCommand(Channel channel, String command, Document query);
+    Document handleCommand(Channel channel, String command, Document query, Oplog oplog);
 
     QueryResult handleQuery(MongoQuery query);
 
@@ -25,7 +26,7 @@ public interface MongoDatabase {
 
     void handleKillCursors(MongoKillCursors killCursors);
 
-    void handleInsert(MongoInsert insert);
+    void handleInsert(MongoInsert insert, Oplog oplog);
 
     void handleDelete(MongoDelete delete);
 

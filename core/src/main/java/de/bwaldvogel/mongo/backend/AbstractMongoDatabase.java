@@ -30,6 +30,7 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
@@ -93,7 +94,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public Document handleCommand(Channel channel, String command, Document query) {
+    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog) {
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
@@ -106,11 +107,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (command.equalsIgnoreCase("find")) {
             return commandFind(command, query);
         } else if (command.equalsIgnoreCase("insert")) {
-            return commandInsert(channel, command, query);
+            return commandInsert(channel, command, query, oplog);
         } else if (command.equalsIgnoreCase("update")) {
-            return commandUpdate(channel, command, query);
+            return commandUpdate(channel, command, query, oplog);
         } else if (command.equalsIgnoreCase("delete")) {
-            return commandDelete(channel, command, query);
+            return commandDelete(channel, command, query, oplog);
         } else if (command.equalsIgnoreCase("create")) {
             return commandCreate(command, query);
         } else if (command.equalsIgnoreCase("createIndexes")) {
@@ -233,7 +234,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return Utils.cursorResponse(getDatabaseName() + "." + collectionName, documents);
     }
 
-    private Document commandInsert(Channel channel, String command, Document query) {
+    private Document commandInsert(Channel channel, String command, Document query, Oplog oplog) {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -243,7 +244,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         List<Document> writeErrors = new ArrayList<>();
         try {
-            insertDocuments(channel, collectionName, documents);
+            insertDocuments(channel, collectionName, documents, oplog);
         } catch (MongoServerError e) {
             Document error = new Document();
             error.put("index", getIndex(e));
@@ -271,7 +272,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document commandUpdate(Channel channel, String command, Document query) {
+    private Document commandUpdate(Channel channel, String command, Document query, Oplog oplog) {
         clearLastStatus(channel);
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
@@ -323,7 +324,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandDelete(Channel channel, String command, Document query) {
+    private Document commandDelete(Channel channel, String command, Document query, Oplog oplog) {
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
         log.trace("ordered: {}", isOrdered);
@@ -369,8 +370,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document commandCreateIndexes(Document query) {
         int indexesBefore = countIndexes();
 
-        @SuppressWarnings("unchecked")
-        final Collection<Document> indexDescriptions = (Collection<Document>) query.get("indexes");
+        @SuppressWarnings("unchecked") final Collection<Document> indexDescriptions = (Collection<Document>) query.get("indexes");
         for (Document indexDescription : indexDescriptions) {
             addIndex(indexDescription);
         }
@@ -611,7 +611,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public void handleInsert(MongoInsert insert) {
+    public void handleInsert(MongoInsert insert, Oplog oplog) {
         Channel channel = insert.getChannel();
         String collectionName = insert.getCollectionName();
         List<Document> documents = insert.getDocuments();
@@ -622,7 +622,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
         } else {
             try {
-                insertDocuments(channel, collectionName, documents);
+                insertDocuments(channel, collectionName, documents, oplog);
             } catch (MongoServerException e) {
                 log.error("failed to insert {}", insert, e);
             }
@@ -766,7 +766,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse);
 
-    private void insertDocuments(Channel channel, String collectionName, List<Document> documents) {
+    private void insertDocuments(Channel channel, String collectionName, List<Document> documents, Oplog oplog) {
         clearLastStatus(channel);
         try {
             if (isSystemCollection(collectionName)) {
@@ -774,6 +774,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
             MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
             collection.insertDocuments(documents);
+            oplog.handleInsert(collection.getFullName(), documents);
             Document result = new Document("n", 0);
             result.put("err", null);
             putLastResult(channel, result);

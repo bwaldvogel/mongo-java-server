@@ -266,6 +266,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testQueryOplogWhenOplogIsDisabled() throws Exception {
         backend.disableOplog();
         try {
+            collection.insertOne(json("_id: 1"));
+
             assertThat(oplogCollection.find()).isEmpty();
         } finally {
             backend.enableOplog();

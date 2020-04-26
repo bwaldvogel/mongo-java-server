@@ -20,9 +20,7 @@ public class CollectionBackedOplog implements Oplog {
     }
 
     @Override
-    public void handleInsert(String databaseName, Document query) {
-        String namespace = String.format("%s.%s", databaseName, query.get("insert"));
-        List<Document> documents = (List<Document>) query.get("documents");
+    public void handleInsert(String namespace, List<Document> documents) {
         List<Document> oplogDocuments = documents.stream()
             .map(oplogDocument -> toOplogDocument(oplogDocument, namespace))
             .collect(Collectors.toList());

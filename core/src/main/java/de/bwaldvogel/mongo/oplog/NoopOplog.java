@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.oplog;
 
+import java.util.List;
+
 import de.bwaldvogel.mongo.bson.Document;
 
 public final class NoopOplog implements Oplog {
@@ -14,7 +16,7 @@ public final class NoopOplog implements Oplog {
     }
 
     @Override
-    public void handleInsert(String databaseName, Document query) {
+    public void handleInsert(String namespace, List<Document> documents) {
     }
 
     @Override

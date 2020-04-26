@@ -255,9 +255,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleAdminCommand(command, query);
         } else {
             MongoDatabase db = resolveDatabase(databaseName);
-            Document doc = db.handleCommand(channel, command, query);
-            oplog.handleCommand(databaseName, command, query);
-            return doc;
+            return db.handleCommand(channel, command, query, oplog);
         }
     }
 
@@ -282,7 +280,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public void handleInsert(MongoInsert insert) {
         MongoDatabase db = resolveDatabase(insert);
-        db.handleInsert(insert);
+        db.handleInsert(insert, oplog);
     }
 
     @Override
