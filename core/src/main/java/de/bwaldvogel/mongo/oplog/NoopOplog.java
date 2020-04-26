@@ -20,10 +20,10 @@ public final class NoopOplog implements Oplog {
     }
 
     @Override
-    public void handleUpdate(String databaseName, Document query) {
+    public void handleUpdate(String namespace, Document selector, Document query) {
     }
 
     @Override
-    public void handleDelete(String databaseName, Document query) {
+    public void handleDelete(String namespace, Document query) {
     }
 }

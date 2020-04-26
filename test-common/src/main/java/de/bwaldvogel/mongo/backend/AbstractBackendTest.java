@@ -108,8 +108,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.Success;
 
-import de.bwaldvogel.mongo.oplog.OperationType;
-
 public abstract class AbstractBackendTest extends AbstractTest {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
@@ -245,36 +243,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
         cursor.next();
         killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
         assertThrows(MongoCursorNotFoundException.class, cursor::next);
-    }
-
-    @Test
-    public void testSimpleOplogInsert() {
-        Document document = json("name: 'testUser1'");
-        collection.insertOne(document);
-
-        Document oplogDocument = CollectionUtils.getSingleElement(oplogCollection.find());
-        assertThat(oplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o");
-        assertThat(oplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
-        assertThat(oplogDocument.get("t")).isEqualTo(1L);
-        assertThat(oplogDocument.get("h")).isEqualTo(0L);
-        assertThat(oplogDocument.get("v")).isEqualTo(2L);
-        assertThat(oplogDocument.get("op")).isEqualTo(OperationType.INSERT.getCode());
-        assertThat(oplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
-        assertThat(oplogDocument.get("ui")).isInstanceOf(UUID.class);
-        assertThat(oplogDocument.get("wall")).isEqualTo(Date.from(Instant.parse("2019-05-23T12:00:00.123Z")));
-        assertThat(oplogDocument.get("o")).isEqualTo(document);
-    }
-
-    @Test
-    public void testQueryOplogWhenOplogIsDisabled() throws Exception {
-        backend.disableOplog();
-        try {
-            collection.insertOne(json("_id: 1"));
-
-            assertThat(oplogCollection.find()).isEmpty();
-        } finally {
-            backend.enableOplog();
-        }
     }
 
     @Test
@@ -1812,23 +1780,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testListDatabaseNames() throws Exception {
-        assertThat(listDatabaseNames()).contains(localDb.getName());
+        assertThat(listDatabaseNames()).isEmpty();
         collection.insertOne(json(""));
-        assertThat(listDatabaseNames()).containsExactlyInAnyOrder(db.getName(), localDb.getName());
+        assertThat(listDatabaseNames()).containsExactly(db.getName());
         getDatabase().getCollection("some-collection").insertOne(json(""));
-        assertThat(listDatabaseNames()).containsExactlyInAnyOrder("bar", db.getName(), localDb.getName());
+        assertThat(listDatabaseNames()).containsExactly("bar", db.getName());
     }
 
     private MongoDatabase getDatabase() {
         return syncClient.getDatabase(OTHER_TEST_DATABASE_NAME);
-    }
-
-    private List<String> listDatabaseNames() {
-        List<String> databaseNames = new ArrayList<>();
-        for (String databaseName : syncClient.listDatabaseNames()) {
-            databaseNames.add(databaseName);
-        }
-        return databaseNames;
     }
 
     @Test
@@ -2156,7 +2116,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);
         Instant serverTime = ((Date) serverStatus.get("localTime")).toInstant();
-        assertThat(serverTime).isEqualTo(TEST_CLOCK.instant());
+        assertThat(serverTime).isEqualTo(clock.instant());
 
         Document connections = (Document) serverStatus.get("connections");
         assertThat(connections.get("current")).isNotNull();

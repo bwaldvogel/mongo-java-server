@@ -161,14 +161,4 @@ public class RealMongoBackendTest extends AbstractBackendTest {
         // disabled on real MongoDB
     }
 
-    @Override
-    @Disabled
-    public void testSimpleOplogInsert() {
-        // disabled on real MongoDB
-    }
-
-    @Override
-    public void testQueryOplogWhenOplogIsDisabled() throws Exception {
-        // disabled on real MongoDB
-    }
 }

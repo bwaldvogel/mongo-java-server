@@ -286,13 +286,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public void handleDelete(MongoDelete delete) {
         MongoDatabase db = resolveDatabase(delete);
-        db.handleDelete(delete);
+        db.handleDelete(delete, oplog);
     }
 
     @Override
     public void handleUpdate(MongoUpdate update) {
         MongoDatabase db = resolveDatabase(update);
-        db.handleUpdate(update);
+        db.handleUpdate(update, oplog);
     }
 
     @Override

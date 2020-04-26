@@ -296,7 +296,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             boolean upsert = Utils.isTrue(updateObj.get("upsert"));
             final Document result;
             try {
-                result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert);
+                result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert, oplog);
             } catch (MongoServerException e) {
                 writeErrors.add(toWriteError(i, e));
                 continue;
@@ -335,7 +335,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         for (Document delete : deletes) {
             final Document selector = (Document) delete.get("q");
             final int limit = ((Number) delete.get("limit")).intValue();
-            Document result = deleteDocuments(channel, collectionName, selector, limit);
+            Document result = deleteDocuments(channel, collectionName, selector, limit, oplog);
             Integer resultNumber = (Integer) result.get("n");
             n += resultNumber.intValue();
         }
@@ -667,21 +667,21 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public void handleDelete(MongoDelete delete) {
+    public void handleDelete(MongoDelete delete, Oplog oplog) {
         Channel channel = delete.getChannel();
         String collectionName = delete.getCollectionName();
         Document selector = delete.getSelector();
         int limit = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
 
         try {
-            deleteDocuments(channel, collectionName, selector, limit);
+            deleteDocuments(channel, collectionName, selector, limit, oplog);
         } catch (MongoServerException e) {
             log.error("failed to delete {}", delete, e);
         }
     }
 
     @Override
-    public void handleUpdate(MongoUpdate updateCommand) {
+    public void handleUpdate(MongoUpdate updateCommand, Oplog oplog) {
         Channel channel = updateCommand.getChannel();
         String collectionName = updateCommand.getCollectionName();
         Document selector = updateCommand.getSelector();
@@ -692,7 +692,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         clearLastStatus(channel);
         try {
-            Document result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert);
+            Document result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert, oplog);
             putLastResult(channel, result);
         } catch (MongoServerException e) {
             putLastError(channel, e);
@@ -784,7 +784,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private Document deleteDocuments(Channel channel, String collectionName, Document selector, int limit) {
+    private Document deleteDocuments(Channel channel, String collectionName, Document selector, int limit, Oplog oplog) {
         clearLastStatus(channel);
         try {
             if (isSystemCollection(collectionName)) {
@@ -797,6 +797,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 n = 0;
             } else {
                 n = collection.deleteDocuments(selector, limit);
+                oplog.handleDelete(collection.getFullName(), selector);
             }
             Document result = new Document("n", Integer.valueOf(n));
             putLastResult(channel, result);
@@ -809,14 +810,16 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document updateDocuments(String collectionName, Document selector,
                                      Document update, ArrayFilters arrayFilters,
-                                     boolean multi, boolean upsert) {
+                                     boolean multi, boolean upsert, Oplog oplog) {
 
         if (isSystemCollection(collectionName)) {
             throw new MongoServerError(10156, "cannot update system collection");
         }
 
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-        return collection.updateDocuments(selector, update, arrayFilters, multi, upsert);
+        Document result = collection.updateDocuments(selector, update, arrayFilters, multi, upsert);
+        oplog.handleUpdate(collection.getFullName(), selector, update);
+        return result;
     }
 
     private void putLastError(Channel channel, MongoServerException ex) {

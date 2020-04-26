@@ -28,9 +28,9 @@ public interface MongoDatabase {
 
     void handleInsert(MongoInsert insert, Oplog oplog);
 
-    void handleDelete(MongoDelete delete);
+    void handleDelete(MongoDelete delete, Oplog oplog);
 
-    void handleUpdate(MongoUpdate update);
+    void handleUpdate(MongoUpdate update, Oplog oplog);
 
     boolean isEmpty();
 

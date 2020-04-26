@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
@@ -25,32 +24,46 @@ public class CollectionBackedOplog implements Oplog {
 
     @Override
     public void handleInsert(String namespace, List<Document> documents) {
-        List<Document> oplogDocuments = documents.stream()
-            .map(document -> toOplogDocument(document, namespace))
-            .collect(Collectors.toList());
-        collection.insertDocuments(oplogDocuments);
+        if (isOplogCollection(namespace)) {
+            return;
+        }
+        documents.stream()
+            .map(document -> toOplogDocument(OperationType.INSERT, namespace, document))
+            .forEach(collection::addDocument);
     }
 
     @Override
-    public void handleUpdate(String databaseName, Document query) {
+    public void handleUpdate(String namespace, Document selector, Document query) {
+        if (isOplogCollection(namespace)) {
+            return;
+        }
+        collection.addDocument(toOplogDocument(OperationType.UPDATE, namespace, selector).append("o2", query));
     }
 
     @Override
-    public void handleDelete(String databaseName, Document query) {
+    public void handleDelete(String namespace, Document query) {
+        if (isOplogCollection(namespace)) {
+            return;
+        }
+        collection.addDocument(toOplogDocument(OperationType.DELETE, namespace, query));
     }
 
-    private Document toOplogDocument(Document document, String namespace) {
+    private Document toOplogDocument(OperationType operationType, String namespace, Document document) {
         Instant now = clock.instant();
         return new Document()
             .append("ts", new BsonTimestamp(now))
             .append("t", ELECTION_TERM)
             .append("h", 0L)
             .append("v", 2L)
-            .append("op", OperationType.INSERT.getCode())
+            .append("op", operationType.getCode())
             .append("ns", namespace)
             .append("ui", ui)
             .append("wall", now)
-            .append("o", document);
+            .append("o", document.cloneDeeply());
+    }
+
+    private boolean isOplogCollection(String namespace) {
+        return collection.getFullName().equals(namespace);
     }
 
 }
