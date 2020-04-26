@@ -359,12 +359,16 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public void enableOplog() {
+        oplog = createOplog();
+    }
+
+    protected Oplog createOplog() {
         MongoDatabase localDatabase = resolveDatabase("local");
         MongoCollection<Document> collection = (MongoCollection<Document>) localDatabase.resolveCollection(OPLOG_COLLECTION_NAME, false);
         if (collection == null) {
             collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME, CollectionOptions.withDefaults());
         }
-        oplog = new CollectionBackedOplog(getClock(), collection);
+        return new CollectionBackedOplog(getClock(), collection);
     }
 
 }
