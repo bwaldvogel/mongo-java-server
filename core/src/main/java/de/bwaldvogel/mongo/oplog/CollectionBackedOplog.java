@@ -22,20 +22,9 @@ public class CollectionBackedOplog implements Oplog {
     @Override
     public void handleInsert(String namespace, List<Document> documents) {
         List<Document> oplogDocuments = documents.stream()
-            .map(oplogDocument -> toOplogDocument(oplogDocument, namespace))
+            .map(document -> toOplogDocument(document, namespace))
             .collect(Collectors.toList());
         collection.insertDocuments(oplogDocuments);
-    }
-
-    private Document toOplogDocument(Document oplogDocument, String namespace) {
-        Instant now = clock.instant();
-        return new OplogDocument()
-            .withTimestamp(new BsonTimestamp(now))
-            .withWall(now)
-            .withOperationType(OperationType.INSERT)
-            .withOperationDocument(oplogDocument)
-            .withNamespace(namespace)
-            .asDocument();
     }
 
     @Override
@@ -44,6 +33,17 @@ public class CollectionBackedOplog implements Oplog {
 
     @Override
     public void handleDelete(String databaseName, Document query) {
+    }
+
+    private Document toOplogDocument(Document document, String namespace) {
+        Instant now = clock.instant();
+        return new Document()
+            .append("v", 2L)
+            .append("ts", new BsonTimestamp(now))
+            .append("wall", now)
+            .append("op", OperationType.INSERT.getCode())
+            .append("ns", namespace)
+            .append("o", document);
     }
 
 }
