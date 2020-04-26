@@ -69,6 +69,7 @@ import org.slf4j.LoggerFactory;
 
 import com.mongodb.DBRef;
 import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoCommandException;
@@ -3811,6 +3812,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         BulkWriteResult result = collection.bulkWrite(inserts);
         assertThat(result.getInsertedCount()).isEqualTo(3);
+    }
+
+    @Test
+    public void testBulkInsert_withDuplicate() throws Exception {
+        collection.insertOne(json("_id: 2"));
+
+        List<WriteModel<Document>> inserts = new ArrayList<>();
+        inserts.add(new InsertOneModel<>(json("_id: 1")));
+        inserts.add(new InsertOneModel<>(json("_id: 2")));
+        inserts.add(new InsertOneModel<>(json("_id: 3")));
+
+        assertThatExceptionOfType(MongoBulkWriteException.class)
+            .isThrownBy(() -> collection.bulkWrite(inserts))
+            .withMessageContaining("BulkWriteError{index=1, code=11000, message='E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 2 }'");
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactly(json("_id: 1"), json("_id: 2"));
     }
 
     @Test

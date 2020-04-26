@@ -9,6 +9,8 @@ import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.InsertDocumentError;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public interface MongoCollection<P> {
@@ -62,8 +64,14 @@ public interface MongoCollection<P> {
     void handleKillCursors(MongoKillCursors killCursors);
 
     default void insertDocuments(List<Document> documents) {
+        int index = 0;
         for (Document document : documents) {
-            addDocument(document);
+            try {
+                addDocument(document);
+                index++;
+            } catch (MongoServerError e) {
+                throw new InsertDocumentError(e, index);
+            }
         }
     }
 

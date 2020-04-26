@@ -24,6 +24,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.IndexNotFoundException;
+import de.bwaldvogel.mongo.exception.InsertDocumentError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -241,28 +242,33 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         List<Document> documents = (List<Document>) query.get("documents");
 
         List<Document> writeErrors = new ArrayList<>();
-        int n = 0;
-        for (Document document : documents) {
-            try {
-                insertDocuments(channel, collectionName, Collections.singletonList(document));
-                n++;
-            } catch (MongoServerError e) {
-                Document error = new Document();
-                error.put("index", Integer.valueOf(n));
-                error.put("errmsg", e.getMessageWithoutErrorCode());
-                error.put("code", Integer.valueOf(e.getCode()));
-                error.putIfNotNull("codeName", e.getCodeName());
-                writeErrors.add(error);
-            }
+        try {
+            insertDocuments(channel, collectionName, documents);
+        } catch (MongoServerError e) {
+            Document error = new Document();
+            error.put("index", getIndex(e));
+            error.put("errmsg", e.getMessageWithoutErrorCode());
+            error.put("code", Integer.valueOf(e.getCode()));
+            error.putIfNotNull("codeName", e.getCodeName());
+            writeErrors.add(error);
         }
         Document result = new Document();
-        result.put("n", Integer.valueOf(n));
+        result.put("n", Integer.valueOf(documents.size()));
         if (!writeErrors.isEmpty()) {
             result.put("writeErrors", writeErrors);
         }
         // odd by true: also mark error as okay
         Utils.markOkay(result);
         return result;
+    }
+
+    private static int getIndex(MongoServerError e) {
+        if (e instanceof InsertDocumentError) {
+            InsertDocumentError insertDocumentError = (InsertDocumentError) e;
+            return insertDocumentError.getIndex();
+        } else {
+            return 0;
+        }
     }
 
     private Document commandUpdate(Channel channel, String command, Document query) {
