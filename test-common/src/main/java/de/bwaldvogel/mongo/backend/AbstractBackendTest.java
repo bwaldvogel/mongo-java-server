@@ -253,12 +253,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(document);
 
         Document oplogDocument = CollectionUtils.getSingleElement(oplogCollection.find());
-        assertThat(oplogDocument).containsKeys("ts", "wall", "v", "ns", "op", "o");
+        assertThat(oplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o");
         assertThat(oplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
-        assertThat(oplogDocument.get("wall")).isEqualTo(Date.from(Instant.parse("2019-05-23T12:00:00.123Z")));
+        assertThat(oplogDocument.get("t")).isEqualTo(1L);
+        assertThat(oplogDocument.get("h")).isEqualTo(0L);
         assertThat(oplogDocument.get("v")).isEqualTo(2L);
-        assertThat(oplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
         assertThat(oplogDocument.get("op")).isEqualTo(OperationType.INSERT.getCode());
+        assertThat(oplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+        assertThat(oplogDocument.get("ui")).isInstanceOf(UUID.class);
+        assertThat(oplogDocument.get("wall")).isEqualTo(Date.from(Instant.parse("2019-05-23T12:00:00.123Z")));
         assertThat(oplogDocument.get("o")).isEqualTo(document);
     }
 
