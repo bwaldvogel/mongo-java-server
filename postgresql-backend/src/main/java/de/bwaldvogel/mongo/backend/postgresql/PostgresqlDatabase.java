@@ -18,7 +18,7 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     private final PostgresqlBackend backend;
 
     public PostgresqlDatabase(String databaseName, PostgresqlBackend backend) {
-        super(databaseName, backend);
+        super(databaseName);
         this.backend = backend;
         initializeNamespacesAndIndexes();
     }

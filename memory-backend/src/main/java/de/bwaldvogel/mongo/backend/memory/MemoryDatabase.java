@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
 
     public MemoryDatabase(MongoBackend backend, String databaseName) {
-        super(databaseName, backend);
+        super(databaseName);
         initializeNamespacesAndIndexes();
     }
 

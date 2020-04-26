@@ -30,7 +30,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     private final MVStore mvStore;
 
     public H2Database(String databaseName, MongoBackend backend, MVStore mvStore) {
-        super(databaseName, backend);
+        super(databaseName);
         this.mvStore = mvStore;
         initializeNamespacesAndIndexes();
     }

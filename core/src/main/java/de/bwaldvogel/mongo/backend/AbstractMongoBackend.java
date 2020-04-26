@@ -247,6 +247,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             Utils.markOkay(response);
             return response;
+        } else if (command.equalsIgnoreCase("dropDatabase")) {
+            return handleDropDatabase(databaseName);
         }
 
         if (databaseName.equals("admin")) {
@@ -298,6 +300,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public void handleKillCursors(MongoKillCursors killCursors) {
         databases.values().forEach(database -> database.handleKillCursors(killCursors));
+    }
+
+    protected Document handleDropDatabase(String databaseName) {
+        dropDatabase(databaseName);
+        Document response = new Document("dropped", databaseName);
+        Utils.markOkay(response);
+        return response;
     }
 
     @Override

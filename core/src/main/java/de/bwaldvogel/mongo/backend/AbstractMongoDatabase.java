@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
@@ -47,7 +46,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoDatabase.class);
 
     protected final String databaseName;
-    private final MongoBackend backend;
 
     private final Map<String, MongoCollection<P>> collections = new ConcurrentHashMap<>();
 
@@ -57,9 +55,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private MongoCollection<P> namespaces;
 
-    protected AbstractMongoDatabase(String databaseName, MongoBackend backend) {
+    protected AbstractMongoDatabase(String databaseName) {
         this.databaseName = databaseName;
-        this.backend = backend;
     }
 
     protected void initializeNamespacesAndIndexes() {
@@ -94,16 +91,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    private Document commandDropDatabase() {
-        backend.dropDatabase(getDatabaseName());
-        Document response = new Document("dropped", getDatabaseName());
-        Utils.markOkay(response);
-        return response;
-    }
-
     @Override
     public Document handleCommand(Channel channel, String command, Document query) {
-
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
@@ -134,8 +123,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             return collection.handleDistinct(query);
         } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query);
-        } else if (command.equalsIgnoreCase("dropDatabase")) {
-            return commandDropDatabase();
         } else if (command.equalsIgnoreCase("dropIndexes")) {
             return commandDropIndexes(query);
         } else if (command.equalsIgnoreCase("dbstats")) {
