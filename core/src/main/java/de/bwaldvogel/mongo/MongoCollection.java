@@ -78,7 +78,7 @@ public interface MongoCollection<P> {
     Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
                              boolean isMulti, boolean isUpsert);
 
-    int deleteDocuments(Document selector, int limit);
+    List<Document> deleteDocuments(Document selector, int limit);
 
     Document handleDistinct(Document query);
 

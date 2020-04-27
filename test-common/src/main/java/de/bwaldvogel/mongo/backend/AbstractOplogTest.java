@@ -1,16 +1,18 @@
 package de.bwaldvogel.mongo.backend;
 
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.set;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
 
 import org.bson.BsonTimestamp;
 import org.bson.Document;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.mongodb.client.MongoCollection;
@@ -89,8 +91,8 @@ public abstract class AbstractOplogTest extends AbstractTest {
         assertThat(updateOplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
         assertThat(updateOplogDocument.get("ui")).isInstanceOf(UUID.class);
         assertThat(updateOplogDocument.get("wall")).isEqualTo(Date.from(Instant.parse("2019-05-23T12:00:01.123Z")));
-        assertThat(updateOplogDocument.get("o")).isEqualTo(json("_id: 1"));
-        assertThat(updateOplogDocument.get("o2")).isEqualTo(json("$set: {name: 'user 2'}"));
+        assertThat(updateOplogDocument.get("o2")).isEqualTo(json("_id: 1"));
+        assertThat(updateOplogDocument.get("o")).isEqualTo(json("$set: {name: 'user 2'}"));
 
         Document deleteOplogDocument = oplogDocuments.get(2);
         assertThat(deleteOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o");
@@ -110,6 +112,103 @@ public abstract class AbstractOplogTest extends AbstractTest {
         backend.disableOplog();
         collection.insertOne(json("_id: 1"));
         assertThat(getOplogCollection().find()).isEmpty();
+    }
+
+    @Test
+    @Disabled("This test represents a missing feature") //Todo. Support replace one.
+    public void testSetOplogReplaceOneById() {
+        collection.insertOne(json("_id: 1, b: 6"));
+        collection.replaceOne(json("_id: 1"), json("a: 5, b: 7"));
+        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
+        Document updateOplogEntry = oplogDocuments.get(1);
+        assertThat(updateOplogEntry.get("op")).isEqualTo(OperationType.UPDATE.getCode());
+        assertThat(updateOplogEntry.get("ns")).isEqualTo(collection.getNamespace().toString());
+        assertThat(updateOplogEntry.get("o")).isEqualTo(json("_id: 1, a: 5, b: 7"));
+        assertThat(updateOplogEntry.get("o2")).isEqualTo(json("_id: 1"));
+    }
+
+    @Test
+    public void testSetOplogUpdateOneById() {
+        collection.insertOne(json("_id: 34, b: 6"));
+        collection.updateOne(eq("_id", 34), set("a", 6));
+        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
+
+        Document updateOplogDocument = oplogDocuments.get(1);
+        assertThat(updateOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o", "o2");
+        assertThat(updateOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
+        assertThat(updateOplogDocument.get("t")).isEqualTo(1L);
+        assertThat(updateOplogDocument.get("h")).isEqualTo(0L);
+        assertThat(updateOplogDocument.get("v")).isEqualTo(2L);
+        assertThat(updateOplogDocument.get("op")).isEqualTo(OperationType.UPDATE.getCode());
+        assertThat(updateOplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+        assertThat(updateOplogDocument.get("ui")).isInstanceOf(UUID.class);
+        assertThat(updateOplogDocument.get("o2")).isEqualTo(json("_id: 34"));
+        assertThat(updateOplogDocument.get("o")).isEqualTo(json("$set: {a: 6}"));
+    }
+
+    @Test
+    @Disabled("This test represents a missing feature")
+    public void testSetOplogUpdateOneByIdMultipleFields() {
+        collection.insertOne(json("_id: 1, b: 6"));
+        collection.updateOne(eq("_id", 1), Arrays.asList(set("a", 7), set("b", 7)));
+        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
+
+        Document updateOplogDocument = oplogDocuments.get(1);
+        assertThat(updateOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o", "o2");
+        assertThat(updateOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
+        assertThat(updateOplogDocument.get("t")).isEqualTo(1L);
+        assertThat(updateOplogDocument.get("h")).isEqualTo(0L);
+        assertThat(updateOplogDocument.get("v")).isEqualTo(2L);
+        assertThat(updateOplogDocument.get("op")).isEqualTo(OperationType.UPDATE.getCode());
+        assertThat(updateOplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+        assertThat(updateOplogDocument.get("ui")).isInstanceOf(UUID.class);
+        assertThat(updateOplogDocument.get("o2")).isEqualTo(json("_id: 1"));
+        assertThat(updateOplogDocument.get("o")).isEqualTo(json("$set: {a: 7, b: 7}"));
+    }
+
+    @Test
+    public void testSetOplogUpdateMany() {
+        collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
+        collection.updateMany(eq("b", 6), set("a", 7));
+
+        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
+        assertThat(oplogDocuments).hasSize(4);
+
+        for (int i = 2; i < 4; i++) {
+            Document updateOplogDocument = oplogDocuments.get(i);
+            assertThat(updateOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o", "o2");
+            assertThat(updateOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
+            assertThat(updateOplogDocument.get("t")).isEqualTo(1L);
+            assertThat(updateOplogDocument.get("h")).isEqualTo(0L);
+            assertThat(updateOplogDocument.get("v")).isEqualTo(2L);
+            assertThat(updateOplogDocument.get("op")).isEqualTo(OperationType.UPDATE.getCode());
+            assertThat(updateOplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+            assertThat(updateOplogDocument.get("ui")).isInstanceOf(UUID.class);
+            assertThat(updateOplogDocument.get("o2")).isEqualTo(json(String.format("_id: %d", i - 1)));
+            assertThat(updateOplogDocument.get("o")).isEqualTo(json("$set: {a: 7}"));
+        }
+    }
+
+    @Test
+    public void testSetOplogDeleteMany() {
+        collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
+        collection.deleteMany(eq("b", 6));
+
+        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
+        assertThat(oplogDocuments).hasSize(4);
+
+        for (int i = 2; i < 4; i++) {
+            Document updateOplogDocument = oplogDocuments.get(i);
+            assertThat(updateOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o");
+            assertThat(updateOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
+            assertThat(updateOplogDocument.get("t")).isEqualTo(1L);
+            assertThat(updateOplogDocument.get("h")).isEqualTo(0L);
+            assertThat(updateOplogDocument.get("v")).isEqualTo(2L);
+            assertThat(updateOplogDocument.get("op")).isEqualTo(OperationType.DELETE.getCode());
+            assertThat(updateOplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
+            assertThat(updateOplogDocument.get("ui")).isInstanceOf(UUID.class);
+            assertThat(updateOplogDocument.get("o")).isEqualTo(json(String.format("_id: %d", i - 1)));
+        }
     }
 
 }

@@ -28,27 +28,33 @@ public class CollectionBackedOplog implements Oplog {
             return;
         }
         documents.stream()
-            .map(document -> toOplogDocument(OperationType.INSERT, namespace, document))
+            .map(document -> toOplogInsertDocument(OperationType.INSERT, namespace, document))
             .forEach(collection::addDocument);
     }
 
     @Override
-    public void handleUpdate(String namespace, Document selector, Document query) {
+    public void handleUpdate(String namespace, Document selector, Document query, List<Object> modifiedIds) {
         if (isOplogCollection(namespace)) {
             return;
         }
-        collection.addDocument(toOplogDocument(OperationType.UPDATE, namespace, selector).append("o2", query));
+        modifiedIds.forEach(id ->
+            collection.addDocument(toOplogUpdateDocument(OperationType.UPDATE, namespace, id).append("o", query))
+        );
+
     }
 
     @Override
-    public void handleDelete(String namespace, Document query) {
+    public void handleDelete(String namespace, Document query, List<Object> deletedIds) {
         if (isOplogCollection(namespace)) {
             return;
         }
-        collection.addDocument(toOplogDocument(OperationType.DELETE, namespace, query));
+        deletedIds.forEach(id ->
+            collection.addDocument(toOplogDeleteDocument(OperationType.DELETE, namespace, id))
+        );
+
     }
 
-    private Document toOplogDocument(OperationType operationType, String namespace, Document document) {
+    private Document toOplogDocument(OperationType operationType, String namespace) {
         Instant now = clock.instant();
         return new Document()
             .append("ts", new BsonTimestamp(now))
@@ -58,8 +64,19 @@ public class CollectionBackedOplog implements Oplog {
             .append("op", operationType.getCode())
             .append("ns", namespace)
             .append("ui", ui)
-            .append("wall", now)
-            .append("o", document.cloneDeeply());
+            .append("wall", now);
+    }
+
+    private Document toOplogInsertDocument(OperationType operationType, String namespace, Document document) {
+        return toOplogDocument(operationType, namespace).append("o", document.cloneDeeply());
+    }
+
+    private Document toOplogUpdateDocument(OperationType operationType, String namespace, Object updatedDocumentId) {
+        return toOplogDocument(operationType, namespace).append("o2", new Document("_id", updatedDocumentId));
+    }
+
+    private Document toOplogDeleteDocument(OperationType operationType, String namespace, Object updatedDocumentId) {
+        return toOplogDocument(operationType, namespace).append("o", new Document("_id", updatedDocumentId));
     }
 
     private boolean isOplogCollection(String namespace) {

@@ -505,16 +505,16 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized int deleteDocuments(Document selector, int limit) {
-        int n = 0;
+    public synchronized List<Document> deleteDocuments(Document selector, int limit) {
+        List<Document> deleteDocuments = new ArrayList<>();
         for (Document document : handleQuery(selector, 0, limit)) {
-            if (limit > 0 && n >= limit) {
-                throw new MongoServerException("internal error: too many elements (" + n + " >= " + limit + ")");
+            if (limit > 0 && deleteDocuments.size() >= limit) {
+                throw new MongoServerException("internal error: too many elements (" + deleteDocuments.size() + " >= " + limit + ")");
             }
+            deleteDocuments.add(document);
             removeDocument(document);
-            n++;
         }
-        return n;
+        return deleteDocuments;
     }
 
     @Override
@@ -531,10 +531,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         int nMatched = 0;
         int nModified = 0;
+        List<Object> updatedIds = new ArrayList<>();
         for (Document document : queryDocuments(selector, null, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
             Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
             if (!Utils.nullAwareEquals(oldDocument, document)) {
+                updatedIds.add(document.get("_id"));
                 nModified++;
             }
             nMatched++;
@@ -554,6 +556,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         result.put("n", Integer.valueOf(nMatched));
         result.put("nModified", Integer.valueOf(nModified));
+        result.put("modifiedIds", updatedIds);
         return result;
     }
 
