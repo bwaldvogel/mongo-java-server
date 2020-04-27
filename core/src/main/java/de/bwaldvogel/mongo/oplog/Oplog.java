@@ -8,7 +8,7 @@ public interface Oplog {
 
     void handleInsert(String namespace, List<Document> documents);
 
-    void handleUpdate(String namespace, Document selector, Document query);
+    void handleUpdate(String namespace, Document selector, Document query, List<Object> modifiedIds);
 
-    void handleDelete(String namespace, Document query);
+    void handleDelete(String namespace, Document query, List<Object> deletedIds);
 }

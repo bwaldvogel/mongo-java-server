@@ -402,7 +402,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private int dropIndex(MongoCollection<P> collection, Document indexDescription) {
         String indexName = (String) indexDescription.get("name");
         dropIndex(collection, indexName);
-        return indexes.get().deleteDocuments(indexDescription, -1);
+        return indexes.get().deleteDocuments(indexDescription, -1).size();
     }
 
     protected void dropIndex(MongoCollection<P> collection, String indexName) {
@@ -792,14 +792,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     "cannot write to '" + getDatabaseName() + "." + collectionName + "'");
             }
             MongoCollection<P> collection = resolveCollection(collectionName, false);
-            final int n;
-            if (collection == null) {
-                n = 0;
-            } else {
-                n = collection.deleteDocuments(selector, limit);
-                oplog.handleDelete(collection.getFullName(), selector);
+            List<Object> deletedDocumentIds = new ArrayList<>();
+            if(collection != null) {
+                deletedDocumentIds = collection.deleteDocuments(selector, limit).stream().map(d -> d.get("_id")).collect(Collectors.toList());
+                oplog.handleDelete(collection.getFullName(), selector, deletedDocumentIds);
             }
-            Document result = new Document("n", Integer.valueOf(n));
+            Document result = new Document("n", deletedDocumentIds.size());
             putLastResult(channel, result);
             return result;
         } catch (MongoServerError e) {
@@ -818,7 +816,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
         Document result = collection.updateDocuments(selector, update, arrayFilters, multi, upsert);
-        oplog.handleUpdate(collection.getFullName(), selector, update);
+        oplog.handleUpdate(collection.getFullName(), selector, update, (List<Object>)result.get("modifiedIds"));
         return result;
     }
 
