@@ -6,10 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import de.bwaldvogel.mongo.MongoCollection;
-import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
-import de.bwaldvogel.mongo.backend.CollectionOptions;
-import de.bwaldvogel.mongo.backend.Index;
-import de.bwaldvogel.mongo.backend.IndexKey;
+import de.bwaldvogel.mongo.backend.*;
 import de.bwaldvogel.mongo.backend.postgresql.index.PostgresUniqueIndex;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
@@ -17,8 +14,8 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
 
     private final PostgresqlBackend backend;
 
-    public PostgresqlDatabase(String databaseName, PostgresqlBackend backend) {
-        super(databaseName);
+    public PostgresqlDatabase(String databaseName, PostgresqlBackend backend, CursorFactory cursorFactory) {
+        super(databaseName, cursorFactory);
         this.backend = backend;
         initializeNamespacesAndIndexes();
     }
@@ -87,7 +84,7 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
             throw new MongoServerException("failed to create or open collection " + collectionName, e);
         }
 
-        return new PostgresqlCollection(this, collectionName, options);
+        return new PostgresqlCollection(this, collectionName, options, cursorFactory);
     }
 
     public PostgresqlBackend getBackend() {

@@ -33,9 +33,7 @@ import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
@@ -58,8 +56,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private MongoCollection<P> namespaces;
 
-    protected AbstractMongoDatabase(String databaseName) {
+    protected final CursorFactory cursorFactory;
+
+    protected AbstractMongoDatabase(String databaseName, CursorFactory cursorFactory) {
         this.databaseName = databaseName;
+        this.cursorFactory = cursorFactory;
     }
 
     protected void initializeNamespacesAndIndexes() {
@@ -120,7 +121,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("count")) {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("aggregate")) {
-            return commandAggregate(command, query);
+            return commandAggregate(command, query, oplog);
         } else if (command.equalsIgnoreCase("distinct")) {
             MongoCollection<P> collection = resolveCollection(command, query, true);
             return collection.handleDistinct(query);
@@ -559,14 +560,54 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandAggregate(String command, Document query) {
+    private Document commandAggregate(String command, Document query, Oplog oplog) {
         String collectionName = query.get(command).toString();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         Object pipeline = query.get("pipeline");
-        Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection);
+        Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection, oplog);
         aggregation.validate(query);
-        List<Document> aggregationResult = aggregation.computeResult();
-        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregationResult);
+
+        if (isChangeStreamPipeline(pipeline)) {
+            return commandAggregateChangeStream(query, oplog, aggregation, collectionName);
+        }
+        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregation.computeResult());
+    }
+
+    private Document commandAggregateChangeStream(Document query, Oplog oplog, Aggregation aggregation,
+                                                  String collectionName) {
+        int batchSize = ((Document)query.get("cursor")).get("batchSize") != null
+            ? (int)((Document)query.get("cursor")).get("batchSize"): 0;
+
+        long resumeToken = getResumeToken(query);
+        Cursor cursor;
+        if (isChangeStreamStartAtOperationTime(query)) {
+            cursor = oplog.createCursor(aggregation, 0);
+        } else if (resumeToken > 0) {
+            // StartAfter or ResumeAfter
+            cursor = oplog.createCursor(aggregation, resumeToken);
+        } else {
+            // Start cursor from clock.now
+            cursor = oplog.createCursor(aggregation);
+        }
+        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize),
+            cursor.getCursorId());
+    }
+
+    private long getResumeToken(Document query) {
+        ArrayList<Document> pipeline = (ArrayList<Document>)query.get("pipeline");
+        Document changeStreamDoc = (Document) pipeline.get(0).get("$changeStream");
+        return Utils.getResumeTokenFromChangeStreamDocument(changeStreamDoc);
+    }
+
+    private boolean isChangeStreamStartAtOperationTime(Document query) {
+        ArrayList<Document> pipeline = (ArrayList<Document>)query.get("pipeline");
+        Document changeStreamDoc = (Document) pipeline.get(0).get("$changeStream");
+        return changeStreamDoc.containsKey("startAtOperationTime");
+    }
+
+    private boolean isChangeStreamPipeline(Object pipeline) {
+        ArrayList pline = (ArrayList)pipeline;
+        return pline.size() > 0 && ((Document)pline.get(0)).containsKey("$changeStream");
     }
 
     private int getOptionalNumber(Document query, String fieldName, int defaultValue) {
@@ -586,19 +627,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         int numReturn = query.getNumberToReturn();
         Document fieldSelector = query.getReturnFieldSelector();
         return collection.handleQuery(query.getQuery(), numSkip, numReturn, fieldSelector);
-    }
-
-    @Override
-    public QueryResult handleGetMore(MongoGetMore getMore) {
-        clearLastStatus(getMore.getChannel());
-        String collectionName = getMore.getCollectionName();
-        MongoCollection<P> collection = resolveCollection(collectionName, false);
-        return collection.handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
-    }
-
-    @Override
-    public void handleKillCursors(MongoKillCursors killCursors) {
-        collections.values().forEach(collection -> collection.handleKillCursors(killCursors));
     }
 
     @Override

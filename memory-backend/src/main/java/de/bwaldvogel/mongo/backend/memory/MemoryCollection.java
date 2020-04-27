@@ -22,8 +22,8 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     private final Queue<Integer> emptyPositions = new LinkedList<>();
     private final AtomicInteger dataSize = new AtomicInteger();
 
-    public MemoryCollection(MongoDatabase database, String collectionName, CollectionOptions options) {
-        super(database, collectionName, options);
+    public MemoryCollection(MongoDatabase database, String collectionName, CollectionOptions options, CursorFactory cursorFactory) {
+        super(database, collectionName, options, cursorFactory);
     }
 
     @Override

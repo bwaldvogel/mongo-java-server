@@ -1,19 +1,14 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.Collections;
-import java.util.List;
-
 import de.bwaldvogel.mongo.bson.Document;
 
-public class InMemoryCursor implements Cursor {
+import java.util.List;
 
-    private final long cursorId;
-    private List<Document> remainingDocuments;
+public class InMemoryCursor extends AbstractCursor {
 
     public InMemoryCursor(long cursorId, List<Document> remainingDocuments) {
-        this.cursorId = cursorId;
+        super(cursorId, remainingDocuments);
         Assert.notEmpty(remainingDocuments);
-        this.remainingDocuments = Collections.unmodifiableList(remainingDocuments);
     }
 
     public int documentsCount() {
@@ -26,11 +21,6 @@ public class InMemoryCursor implements Cursor {
     }
 
     @Override
-    public long getCursorId() {
-        return cursorId;
-    }
-
-    @Override
     public List<Document> takeDocuments(int numberToReturn) {
         Assert.isTrue(numberToReturn > 0, () -> "Illegal number to return: " + numberToReturn);
         int toIndex = Math.min(remainingDocuments.size(), numberToReturn);
@@ -39,8 +29,4 @@ public class InMemoryCursor implements Cursor {
         return documents;
     }
 
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "(id: " + cursorId + ")";
-    }
 }

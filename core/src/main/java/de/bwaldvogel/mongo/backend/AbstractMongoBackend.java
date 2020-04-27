@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import de.bwaldvogel.mongo.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +20,6 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.exception.MongoSilentServerException;
-import de.bwaldvogel.mongo.exception.NamespaceExistsException;
-import de.bwaldvogel.mongo.exception.NoReplicationEnabledException;
-import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.oplog.CollectionBackedOplog;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
@@ -48,7 +44,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
 
-    private Clock clock = Clock.systemDefaultZone();
+    private MongoBackendClock clock = new MongoBackendClock();
+
+    protected final CursorFactory cursorFactory = new CursorFactory();
 
     protected Oplog oplog = NoopOplog.get();
 
@@ -59,7 +57,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return resolveDatabase(message.getDatabaseName());
     }
 
-    protected synchronized MongoDatabase resolveDatabase(String database) {
+    public synchronized MongoDatabase resolveDatabase(String database) {
         MongoDatabase db = databases.get(database);
         if (db == null) {
             db = openOrCreateDatabase(database);
@@ -273,8 +271,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public QueryResult handleGetMore(MongoGetMore getMore) {
-        MongoDatabase db = resolveDatabase(getMore);
-        return db.handleGetMore(getMore);
+        Cursor cursor = cursorFactory.getCursor(getMore.getCursorId());
+        List<Document> documents = cursor.takeDocuments(getMore.getNumberToReturn());
+        if (cursor.isEmpty()) {
+            log.debug("Removing empty {}", cursor);
+            cursorFactory.remove(cursor.getCursorId());
+        }
+        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getCursorId() : getMore.getCursorId());
     }
 
     @Override
@@ -297,7 +300,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public void handleKillCursors(MongoKillCursors killCursors) {
-        databases.values().forEach(database -> database.handleKillCursors(killCursors));
+        killCursors.getCursorIds().forEach(cursorFactory::remove);
     }
 
     protected Document handleDropDatabase(String databaseName) {
@@ -345,13 +348,18 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public Clock getClock() {
+    public MongoBackendClock getClock() {
         return clock;
     }
 
     @Override
-    public void setClock(Clock clock) {
+    public void setClock(MongoBackendClock clock) {
         this.clock = clock;
+    }
+
+    @Override
+    public void setClock(Clock clock) {
+        setClock(new MongoBackendClock(clock));
     }
 
     @Override
@@ -370,7 +378,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         if (collection == null) {
             collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME, CollectionOptions.withDefaults());
         }
-        return new CollectionBackedOplog(getClock(), collection);
+        return new CollectionBackedOplog(this, collection, cursorFactory);
     }
 
 }

@@ -164,7 +164,7 @@ public class ValueComparator implements Comparator<Object> {
         if (BsonTimestamp.class.isAssignableFrom(clazz)) {
             BsonTimestamp bt1 = (BsonTimestamp) value1;
             BsonTimestamp bt2 = (BsonTimestamp) value2;
-            return Long.compare(bt1.getTimestamp(), bt2.getTimestamp());
+            return Long.compare(bt1.getValue(), bt2.getValue());
         }
 
         if (Boolean.class.isAssignableFrom(clazz)) {

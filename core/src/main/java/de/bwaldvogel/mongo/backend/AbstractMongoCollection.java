@@ -11,9 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -29,14 +26,12 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
-import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
@@ -47,13 +42,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     private final List<Index<P>> indexes = new ArrayList<>();
     private final QueryMatcher matcher = new DefaultQueryMatcher();
     protected final CollectionOptions options;
-    protected final ConcurrentMap<Long, Cursor> cursors = new ConcurrentHashMap<>();
-    private final AtomicLong cursorIdCounter = new AtomicLong();
+    protected final CursorFactory cursorFactory;
 
-    protected AbstractMongoCollection(MongoDatabase database, String collectionName, CollectionOptions options) {
+    protected AbstractMongoCollection(MongoDatabase database, String collectionName, CollectionOptions options,
+                                      CursorFactory cursorFactory) {
         this.database = Objects.requireNonNull(database);
         this.collectionName = Objects.requireNonNull(collectionName);
         this.options = Objects.requireNonNull(options);
+        this.cursorFactory = cursorFactory;
     }
 
     protected boolean documentMatchesQuery(Document document, Document query) {
@@ -454,27 +450,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public QueryResult handleGetMore(long cursorId, int numberToReturn) {
-        Cursor cursor = cursors.get(cursorId);
-        if (cursor == null) {
-            throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
-        }
-        List<Document> documents = cursor.takeDocuments(numberToReturn);
-
-        if (cursor.isEmpty()) {
-            log.debug("Removing empty {}", cursor);
-            cursors.remove(cursor.getCursorId());
-        }
-
-        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getCursorId() : cursorId);
-    }
-
-    @Override
-    public void handleKillCursors(MongoKillCursors killCursors) {
-        killCursors.getCursorIds().forEach(cursors::remove);
-    }
-
-    @Override
     public Document handleDistinct(Document query) {
         String key = (String) query.get("key");
         Document filter = (Document) query.getOrDefault("query", new Document());
@@ -822,10 +797,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return EmptyCursor.get();
         }
 
-        Cursor cursor = new InMemoryCursor(cursorIdCounter.incrementAndGet(), remainingDocuments);
-        Cursor previousValue = cursors.put(cursor.getCursorId(), cursor);
-        Assert.isNull(previousValue);
-        return cursor;
+        return cursorFactory.createInMemoryCursor(remainingDocuments);
     }
 
 }

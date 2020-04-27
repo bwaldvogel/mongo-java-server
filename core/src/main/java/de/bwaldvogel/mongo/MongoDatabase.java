@@ -22,10 +22,6 @@ public interface MongoDatabase {
 
     QueryResult handleQuery(MongoQuery query);
 
-    QueryResult handleGetMore(MongoGetMore getMore);
-
-    void handleKillCursors(MongoKillCursors killCursors);
-
     void handleInsert(MongoInsert insert, Oplog oplog);
 
     void handleDelete(MongoDelete delete, Oplog oplog);

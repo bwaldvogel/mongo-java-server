@@ -12,6 +12,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.oplog.Oplog;
 
 public class LookupWithPipelineStage extends AbstractLookupStage {
 
@@ -29,13 +30,15 @@ public class LookupWithPipelineStage extends AbstractLookupStage {
     }
 
     private final MongoDatabase mongoDatabase;
+    private Oplog oplog;
     private final MongoCollection<?> collection;
     private final Document let;
     private final Object pipeline;
     private final String as;
 
-    public LookupWithPipelineStage(Document configuration, MongoDatabase mongoDatabase) {
+    public LookupWithPipelineStage(Document configuration, MongoDatabase mongoDatabase, Oplog oplog) {
         this.mongoDatabase = mongoDatabase;
+        this.oplog = oplog;
         String from = readStringConfigurationProperty(configuration, FROM);
         collection = mongoDatabase.resolveCollection(from, false);
         let = readOptionalDocumentArgument(configuration, LET_FIELD);
@@ -50,7 +53,7 @@ public class LookupWithPipelineStage extends AbstractLookupStage {
     }
 
     private Document joinDocuments(Document document) {
-        Aggregation aggregation = Aggregation.fromPipeline(pipeline, mongoDatabase, collection);
+        Aggregation aggregation = Aggregation.fromPipeline(pipeline, mongoDatabase, collection, oplog);
         aggregation.setVariables(evaluateVariables(document));
         List<Document> documents = aggregation.computeResult();
         Document result = document.clone();

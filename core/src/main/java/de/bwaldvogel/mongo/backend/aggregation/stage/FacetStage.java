@@ -11,14 +11,15 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.oplog.Oplog;
 
 public class FacetStage implements AggregationStage {
 
     private final Map<String, Aggregation> facets = new LinkedHashMap<>();
 
-    public FacetStage(Document facetsConfiguration, MongoDatabase database, MongoCollection<?> collection) {
+    public FacetStage(Document facetsConfiguration, MongoDatabase database, MongoCollection<?> collection, Oplog oplog) {
         for (Entry<String, Object> entry : facetsConfiguration.entrySet()) {
-            Aggregation aggregation = Aggregation.fromPipeline(entry.getValue(), database, collection);
+            Aggregation aggregation = Aggregation.fromPipeline(entry.getValue(), database, collection, oplog);
             facets.put(entry.getKey(), aggregation);
         }
     }

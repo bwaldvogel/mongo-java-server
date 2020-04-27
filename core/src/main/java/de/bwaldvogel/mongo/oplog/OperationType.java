@@ -36,4 +36,16 @@ public enum OperationType {
         }
         return operationType;
     }
+
+    String getDescription() {
+        switch (this) {
+            case DELETE:
+                return "delete";
+            case INSERT:
+                return "insert";
+            case UPDATE:
+                return "update";
+        }
+        return null;
+    }
 }

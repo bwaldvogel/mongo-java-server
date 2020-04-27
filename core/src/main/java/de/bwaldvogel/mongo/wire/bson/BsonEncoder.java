@@ -135,7 +135,7 @@ public class BsonEncoder {
                 break;
             case BsonConstants.TYPE_TIMESTAMP:
                 BsonTimestamp timestamp = (BsonTimestamp) value;
-                buffer.writeLongLE(timestamp.getTimestamp());
+                buffer.writeLongLE(timestamp.getValue());
                 break;
             case BsonConstants.TYPE_INT64:
                 buffer.writeLongLE(((Long) value).longValue());

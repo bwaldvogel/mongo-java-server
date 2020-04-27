@@ -30,8 +30,8 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
     private static final String DATA_SIZE_KEY = "dataSize";
 
     public H2Collection(MongoDatabase database, String collectionName, CollectionOptions options,
-                        MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap) {
-        super(database, collectionName, options);
+                        MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap, CursorFactory cursorFactory) {
+        super(database, collectionName, options, cursorFactory);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
         if (!this.metaMap.containsKey(DATA_SIZE_KEY)) {

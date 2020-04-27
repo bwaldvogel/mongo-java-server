@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.aggregation.stage.*;
+import de.bwaldvogel.mongo.oplog.Oplog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,25 +19,6 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
-import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.BucketStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.FacetStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.GraphLookupStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.IndexStatsStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.LookupWithPipelineStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.OutStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.RedactStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.UnsetStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -55,7 +38,7 @@ public class Aggregation {
         this.collection = collection;
     }
 
-    public static Aggregation fromPipeline(Object pipelineObject, MongoDatabase database, MongoCollection<?> collection) {
+    public static Aggregation fromPipeline(Object pipelineObject, MongoDatabase database, MongoCollection<?> collection, Oplog oplog) {
         if (!(pipelineObject instanceof List)) {
             throw new TypeMismatchException("'pipeline' option must be specified as an array");
         }
@@ -66,10 +49,10 @@ public class Aggregation {
             }
             pipeline.add((Document) pipelineElement);
         }
-        return fromPipeline(pipeline, database, collection);
+        return fromPipeline(pipeline, database, collection, oplog);
     }
 
-    private static Aggregation fromPipeline(List<Document> pipeline, MongoDatabase database, MongoCollection<?> collection) {
+    private static Aggregation fromPipeline(List<Document> pipeline, MongoDatabase database, MongoCollection<?> collection, Oplog oplog) {
         Aggregation aggregation = new Aggregation(collection);
 
         for (Document stage : pipeline) {
@@ -121,7 +104,7 @@ public class Aggregation {
                 case "$lookup":
                     Document lookup = (Document) stage.get(stageOperation);
                     if (lookup.containsKey(LookupWithPipelineStage.PIPELINE_FIELD)) {
-                        aggregation.addStage(new LookupWithPipelineStage(lookup, database));
+                        aggregation.addStage(new LookupWithPipelineStage(lookup, database, oplog));
                     } else {
                         aggregation.addStage(new LookupStage(lookup, database));
                     }
@@ -141,7 +124,7 @@ public class Aggregation {
                     break;
                 case "$facet":
                     Document facet = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new FacetStage(facet, database, collection));
+                    aggregation.addStage(new FacetStage(facet, database, collection, oplog));
                     break;
                 case "$unset":
                     Object unset = stage.get(stageOperation);
@@ -157,6 +140,10 @@ public class Aggregation {
                 case "$redact":
                     Document redactExpression = (Document) stage.get(stageOperation);
                     aggregation.addStage(new RedactStage(redactExpression));
+                    break;
+                case "$changeStream":
+                    Document changeStreamDocument = (Document) stage.get(stageOperation);
+                    aggregation.addStage(new ChangeStreamStage(changeStreamDocument, oplog));
                     break;
                 case "$geoNear":
                     throw new MongoServerNotYetImplementedException(138, stageOperation);

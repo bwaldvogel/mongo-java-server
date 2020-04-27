@@ -23,7 +23,7 @@ public class AbstractMongoCollectionTest {
     private static class TestCollection extends AbstractMongoCollection<Object> {
 
         TestCollection(MongoDatabase database, String collectionName) {
-            super(database, collectionName, CollectionOptions.withDefaults());
+            super(database, collectionName, CollectionOptions.withDefaults(), new CursorFactory());
         }
 
         @Override
@@ -147,15 +147,6 @@ public class AbstractMongoCollectionTest {
         assertThat(cursor.isEmpty()).isTrue();
         cursor = collection.createCursor(docs, 0, 0);
         assertThat(cursor.isEmpty()).isTrue();
-    }
-
-    @Test
-    void testGetMore_shouldDeleteCursorIfEmpty() {
-        Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"),
-            new Document("name", "Steve"));
-        Cursor cursor = collection.createCursor(docs, 0, 2);
-        collection.handleGetMore(cursor.getCursorId(), 1);
-        assertThat(collection.cursors.containsKey(cursor.getCursorId())).isFalse();
     }
 
 }

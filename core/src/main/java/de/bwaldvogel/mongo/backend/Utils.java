@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.DollarPrefixedFieldNameException;
@@ -522,6 +523,18 @@ public class Utils {
         return response;
     }
 
+    static Document cursorResponse(String ns, List<Document> firstBatch, long cursorId) {
+        Document cursor = new Document();
+        cursor.put("id", cursorId);
+        cursor.put("ns", ns);
+        cursor.put("firstBatch", firstBatch);
+
+        Document response = new Document();
+        response.put("cursor", cursor);
+        markOkay(response);
+        return response;
+    }
+
 
     static String joinPath(String... fragments) {
         return Stream.of(fragments)
@@ -605,4 +618,26 @@ public class Utils {
             changeSubdocumentValue(result, key, value);
         }
     }
+    public static long getResumeToken(BsonTimestamp timestamp) {
+        return timestamp.getTime() + timestamp.getInc();
+    }
+
+    public static String getResumeTokenAsHEX(BsonTimestamp timestamp) {
+        return Long.toHexString(getResumeToken(timestamp));
+    }
+
+    public static long getResumeToken(Document document) {
+        return Long.parseLong((String) document.get("_data"), 16);
+    }
+
+    public static long getResumeTokenFromChangeStreamDocument(Document changeStreamDocument) {
+        if (changeStreamDocument.containsKey("startAfter")) {
+            return Utils.getResumeToken((Document)changeStreamDocument.get("startAfter"));
+        }
+        if (changeStreamDocument.containsKey("resumeAfter")) {
+            return Utils.getResumeToken((Document)changeStreamDocument.get("resumeAfter"));
+        }
+        return 0;
+    }
+
 }

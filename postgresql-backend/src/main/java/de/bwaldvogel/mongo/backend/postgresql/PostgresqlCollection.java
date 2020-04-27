@@ -23,8 +23,8 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
 
     private final PostgresqlBackend backend;
 
-    public PostgresqlCollection(PostgresqlDatabase database, String collectionName, CollectionOptions options) {
-        super(database, collectionName, options);
+    public PostgresqlCollection(PostgresqlDatabase database, String collectionName, CollectionOptions options, CursorFactory cursorFactory) {
+        super(database, collectionName, options, cursorFactory);
         this.backend = database.getBackend();
     }
 

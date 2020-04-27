@@ -61,10 +61,6 @@ public interface MongoCollection<P> {
 
     QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
 
-    QueryResult handleGetMore(long cursorId, int numberToReturn);
-
-    void handleKillCursors(MongoKillCursors killCursors);
-
     default void insertDocuments(List<Document> documents) {
         int index = 0;
         for (Document document : documents) {
