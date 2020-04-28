@@ -917,6 +917,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection2.insertOne(json("_id: 1"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/136
+    @Test
+    public void testDropEmptyDatabase() throws Exception {
+        String emptyDatabaseName = "empty-db";
+        MongoDatabase database = syncClient.getDatabase(emptyDatabaseName);
+        database.drop();
+        assertThat(syncClient.listDatabaseNames()).doesNotContain(emptyDatabaseName);
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/107
     @Test
     public void testDropDatabaseAfterAddingIndexMultipleTimes() throws Exception {

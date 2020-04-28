@@ -310,7 +310,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public void dropDatabase(String databaseName) {
         MongoDatabase removedDatabase = databases.remove(databaseName);
-        removedDatabase.drop();
+        if (removedDatabase != null) {
+            removedDatabase.drop();
+        }
     }
 
     @Override
