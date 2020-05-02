@@ -133,9 +133,9 @@ public abstract class AbstractOplogTest extends AbstractTest {
     public void testSetOplogUpdateOneById() {
         collection.insertOne(json("_id: 34, b: 6"));
         collection.updateOne(eq("_id", 34), set("a", 6));
-        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
+        List<Document> oplogDocuments = toArray(getOplogCollection().find(json("op: 'u'")).sort(json("ts: 1")));
 
-        Document updateOplogDocument = oplogDocuments.get(1);
+        Document updateOplogDocument = CollectionUtils.getSingleElement(oplogDocuments);
         assertThat(updateOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o", "o2");
         assertThat(updateOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
         assertThat(updateOplogDocument.get("t")).isEqualTo(1L);
