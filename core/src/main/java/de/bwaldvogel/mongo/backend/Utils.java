@@ -210,16 +210,28 @@ public class Utils {
         }
 
         if (value instanceof List<?>) {
+            List<?> list = (List<?>) value;
             if (isNumeric(field)) {
                 int pos = Integer.parseInt(field);
-                List<?> list = (List<?>) value;
                 if (pos >= 0 && pos < list.size()) {
                     return list.get(pos);
                 } else {
                     return Missing.getInstance();
                 }
             } else {
-                return Missing.getInstance();
+                List<Object> values = new ArrayList<>();
+                for (Object subValue : list) {
+                    if (subValue instanceof Document) {
+                        Object subDocumentValue = ((Document) subValue).getOrMissing(field);
+                        if (!(subDocumentValue instanceof Missing)) {
+                            values.add(subDocumentValue);
+                        }
+                    }
+                }
+                if (values.isEmpty()) {
+                    return Missing.getInstance();
+                }
+                return values;
             }
         } else if (value instanceof Document) {
             Document document = (Document) value;
@@ -313,14 +325,11 @@ public class Utils {
         if (document instanceof List<?>) {
             @SuppressWarnings("unchecked")
             List<Object> list = ((List<Object>) document);
-            final int pos;
-            try {
-                pos = Integer.parseInt(key);
-            } catch (NumberFormatException e) {
+            if (!isNumeric(key)) {
                 String element = new Document(previousKey, document).toString(true);
                 throw new PathNotViableException("Cannot create field '" + key + "' in element " + element);
             }
-
+            int pos = Integer.parseInt(key);
             while (list.size() <= pos) {
                 list.add(null);
             }
@@ -332,29 +341,44 @@ public class Utils {
         }
     }
 
-    private static Object removeListSafe(Object document, String key) {
-        if (document instanceof Document) {
-            if (((Document) document).containsKey(key)) {
-                return ((Document) document).remove(key);
+    private static Object removeListSafe(Object value, String key) {
+        if (value instanceof Document) {
+            Document document = (Document) value;
+            if (document.containsKey(key)) {
+                return document.remove(key);
             }
             return Missing.getInstance();
-        } else if (document instanceof List<?>) {
-            int pos;
-            try {
-                pos = Integer.parseInt(key);
-            } catch (final NumberFormatException e) {
-                return Missing.getInstance();
-            }
-
-            @SuppressWarnings("unchecked")
-            List<Object> list = ((List<Object>) document);
-            if (list.size() > pos) {
-                return list.set(pos, null);
+        } else if (value instanceof List<?>) {
+            List<?> values = ((List<?>) value);
+            if (isNumeric(key)) {
+                int pos = Integer.parseInt(key);
+                if (values.size() > pos) {
+                    return values.set(pos, null);
+                } else {
+                    return Missing.getInstance();
+                }
             } else {
-                return null;
+                List<Object> removedValues = new ArrayList<>();
+                for (Object subValue : values) {
+                    if (subValue instanceof Document) {
+                        Object removedValue = removeListSafe(subValue, key);
+                        if (!(removedValue instanceof Missing)) {
+                            removedValues.add(removedValue);
+                        }
+                    } else if (subValue instanceof List) {
+                        List<?> subValueList = (List<?>) subValue;
+                        for (Object subValueListValue : subValueList) {
+                            Object removedValue = removeListSafe(subValueListValue, key);
+                            if (!(removedValue instanceof Missing)) {
+                                removedValues.add(removedValue);
+                            }
+                        }
+                    }
+                }
+                return removedValues;
             }
         } else {
-            throw new IllegalArgumentException();
+            return Missing.getInstance();
         }
     }
 

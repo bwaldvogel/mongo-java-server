@@ -561,12 +561,35 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1, x: {a: 1, b: 2, c: 3}"));
         collection.insertOne(json("_id: 2, x: 20"));
         collection.insertOne(json("_id: 3"));
+        collection.insertOne(json("_id: 4, x: ['abc', {a: 1, b: 2}, {a: 2, b: 3, c: 4}]"));
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
                 json("x: {a: 1, c: 3}"),
                 json("x: 20"),
-                json("")
+                json(""),
+                json("x: ['abc', {a: 1}, {a: 2, c: 4}]")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/121
+    @Test
+    void testAggregateWithNestedExclusiveProjection_array() throws Exception {
+        List<Document> pipeline = jsonList("$project: {_id: 0, 'a.b.c': 0}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, a: [{b: {c: 1}}]"));
+        collection.insertOne(json("_id: 2, a: {b: [{x: 1, y: 2, c: 3}, {c: 4}]}"));
+        collection.insertOne(json("_id: 3, a: [{b: {c: [1, 2, 3]}}]"));
+        collection.insertOne(json("_id: 4, a: {b: {c: [1, 2, 3]}}"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("a: [{b: {}}]"),
+                json("a: {b: [{x: 1, y: 2}, {}]}"),
+                json("a: [{b: {}}]"),
+                json("a: {b: {}}")
             );
     }
 

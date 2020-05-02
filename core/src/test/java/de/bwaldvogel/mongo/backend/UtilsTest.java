@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -129,6 +130,10 @@ public class UtilsTest {
         assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isEqualTo("b");
         assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "10")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(Collections.emptyList(), "0")).isInstanceOf(Missing.class);
+
+        List<Document> documentList = Arrays.asList(json("a: 1"), json("a: 2"), json("b: 3"), json("a: {b: 'x'}"));
+        assertThat(Utils.getFieldValueListSafe(documentList, "a"))
+            .isEqualTo(Arrays.asList(1, 2, json("b: 'x'")));
     }
 
     @Test
@@ -201,6 +206,42 @@ public class UtilsTest {
 
         Utils.removeSubdocumentValue(document, "baz.bar.a.z");
         assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, null, 3]}, baz: { bar: { a: 1, b: 2 } }"));
+    }
+
+    @Test
+    void testRemoveSubdocumentValue_array() throws Exception {
+        Document document = json("_id: 1, x: [{a: 1, b: 2, c: 3}, {b: 3}]");
+
+        Object removedValues = Utils.removeSubdocumentValue(document, "x.b");
+        assertThat(removedValues).isEqualTo(Arrays.asList(2, 3));
+        assertThat(document).isEqualTo(json("_id: 1, x: [{a: 1, c: 3}, {}]"));
+    }
+
+    @Test
+    void testRemoveSubdocumentValue_arrayOnLevel1() throws Exception {
+        Document document = json("a: [{b: [{c: 1}, {c: 2, d: 3}, 'abc']}]");
+
+        Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
+        assertThat(removedValues).isEqualTo(Arrays.asList(1, 2));
+        assertThat(document).isEqualTo(json("a: [{b: [{}, {d: 3}, 'abc']}]"));
+    }
+
+    @Test
+    void testRemoveSubdocumentValue_arrayOnLevel2() throws Exception {
+        Document document = json("a: {b: [{c: 1}, {c: 2, d: 3}, 'abc']}");
+
+        Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
+        assertThat(removedValues).isEqualTo(Arrays.asList(1, 2));
+        assertThat(document).isEqualTo(json("a: {b: [{}, {d: 3}, 'abc']}"));
+    }
+
+    @Test
+    void testRemoveSubdocumentValue_arrayValue() throws Exception {
+        Document document = json("a: {b: {c: [1, 2, 3]}}");
+
+        Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
+        assertThat(removedValues).isEqualTo(Arrays.asList(1, 2, 3));
+        assertThat(document).isEqualTo(json("a: {b: {}}"));
     }
 
     @Test
