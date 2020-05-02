@@ -39,7 +39,7 @@ public class ProjectStage implements AggregationStage {
         if (hasInclusions) {
             result = new Document();
             if (!projection.containsKey(ID_FIELD)) {
-                putIfContainsField(document, result, ID_FIELD);
+                Utils.copySubdocumentValue(document, result, ID_FIELD);
             }
         } else {
             result = document.cloneDeeply();
@@ -50,7 +50,7 @@ public class ProjectStage implements AggregationStage {
             Object projectionValue = entry.getValue();
             if (isNumberOrBoolean(projectionValue)) {
                 if (Utils.isTrue(projectionValue)) {
-                    putIfContainsField(document, result, field);
+                    Utils.copySubdocumentValue(document, result, field);
                 } else {
                     Utils.removeSubdocumentValue(result, field);
                 }
@@ -85,10 +85,4 @@ public class ProjectStage implements AggregationStage {
         return projectionValue instanceof Number || projectionValue instanceof Boolean;
     }
 
-    private static void putIfContainsField(Document input, Document result, String key) {
-        Object value = Utils.getSubdocumentValue(input, key);
-        if (!(value instanceof Missing)) {
-            Utils.changeSubdocumentValue(result, key, value);
-        }
-    }
 }

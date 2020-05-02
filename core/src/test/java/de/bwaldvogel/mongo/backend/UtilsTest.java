@@ -183,6 +183,33 @@ public class UtilsTest {
 
         Utils.changeSubdocumentValue(document, "foo.x.1", "new-value");
         assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 'new-value', 3]}"));
+
+        Utils.changeSubdocumentValue(document, "foo.y", Arrays.asList(1, 2, 3));
+        assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 'new-value', 3], y: [1, 2, 3]}"));
+    }
+
+    @Test
+    void testCopySubdocumentValue() throws Exception {
+        Document document = json("_id: 1, foo: {bar: 1, bla: 2}, x: null, y: {a: 1, b: [1, 2, 3]}");
+        Document result = new Document();
+
+        Utils.copySubdocumentValue(document, result, "_id");
+        assertThat(result).isEqualTo(json("_id: 1"));
+
+        Utils.copySubdocumentValue(document, result, "does-not-exist");
+        assertThat(result).isEqualTo(json("_id: 1"));
+
+        Utils.copySubdocumentValue(document, result, "foo.bar");
+        assertThat(result).isEqualTo(json("_id: 1, foo: {bar: 1}"));
+
+        Utils.copySubdocumentValue(document, result, "foo.bla");
+        assertThat(result).isEqualTo(json("_id: 1, foo: {bar: 1, bla: 2}"));
+
+        Utils.copySubdocumentValue(document, result, "x");
+        assertThat(result).isEqualTo(json("_id: 1, foo: {bar: 1, bla: 2}, x: null"));
+
+        Utils.copySubdocumentValue(document, result, "y");
+        assertThat(result).isEqualTo(json("_id: 1, foo: {bar: 1, bla: 2}, x: null, y: {a: 1, b: [1, 2, 3]}"));
     }
 
     @Test

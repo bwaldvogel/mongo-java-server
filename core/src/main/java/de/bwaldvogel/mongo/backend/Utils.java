@@ -598,4 +598,11 @@ public class Utils {
         }
     }
 
+    public static void copySubdocumentValue(Document input, Document result, String key) {
+        Object value = getSubdocumentValueCollectionAware(input, key);
+
+        if (!(value instanceof Missing)) {
+            changeSubdocumentValue(result, key, value);
+        }
+    }
 }
