@@ -2933,10 +2933,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertMongoWriteException(() -> collection.updateOne(obj, json("$unset: {_id: ''}")),
             66, "ImmutableField", "Performing an update on the path '_id' would modify the immutable field '_id'");
 
-        collection.updateOne(json("_id: 1"), json("$unset: {'a.b.z':1}"));
+        collection.updateOne(json("_id: 1"), json("$unset: {'a.b.z': 1}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1, b: null, c: 'value'"));
 
-        collection.updateOne(obj, json("$unset: {a:'', b:''}"));
+        collection.updateOne(obj, json("$unset: {a: '', b: ''}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, c: 'value'"));
 
         collection.updateOne(obj, Updates.unset("c.y"));
@@ -2944,10 +2944,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.replaceOne(json("_id: 1"), json("a: {b: 'foo', c: 'bar'}"));
 
-        collection.updateOne(json("_id: 1"), json("$unset: {'a.b':1}"));
+        collection.updateOne(json("_id: 1"), json("$unset: {'a.b': 1}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: {c: 'bar'}"));
 
-        collection.updateOne(json("_id: 1"), json("$unset: {'a.b.z':1}"));
+        collection.updateOne(json("_id: 1"), json("$unset: {'a.b.z': 1}"));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: {c: 'bar'}"));
     }
 
