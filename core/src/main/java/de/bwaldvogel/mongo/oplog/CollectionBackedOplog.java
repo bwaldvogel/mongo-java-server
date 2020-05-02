@@ -28,7 +28,7 @@ public class CollectionBackedOplog implements Oplog {
             return;
         }
         documents.stream()
-            .map(document -> toOplogInsertDocument(OperationType.INSERT, namespace, document))
+            .map(document -> toOplogInsertDocument(namespace, document))
             .forEach(collection::addDocument);
     }
 
@@ -38,9 +38,8 @@ public class CollectionBackedOplog implements Oplog {
             return;
         }
         modifiedIds.forEach(id ->
-            collection.addDocument(toOplogUpdateDocument(OperationType.UPDATE, namespace, id).append("o", query))
+            collection.addDocument(toOplogUpdateDocument(namespace, query, id))
         );
-
     }
 
     @Override
@@ -49,7 +48,7 @@ public class CollectionBackedOplog implements Oplog {
             return;
         }
         deletedIds.forEach(id ->
-            collection.addDocument(toOplogDeleteDocument(OperationType.DELETE, namespace, id))
+            collection.addDocument(toOplogDeleteDocument(namespace, id))
         );
 
     }
@@ -67,16 +66,20 @@ public class CollectionBackedOplog implements Oplog {
             .append("wall", now);
     }
 
-    private Document toOplogInsertDocument(OperationType operationType, String namespace, Document document) {
-        return toOplogDocument(operationType, namespace).append("o", document.cloneDeeply());
+    private Document toOplogInsertDocument(String namespace, Document document) {
+        return toOplogDocument(OperationType.INSERT, namespace)
+            .append("o", document.cloneDeeply());
     }
 
-    private Document toOplogUpdateDocument(OperationType operationType, String namespace, Object updatedDocumentId) {
-        return toOplogDocument(operationType, namespace).append("o2", new Document("_id", updatedDocumentId));
+    private Document toOplogUpdateDocument(String namespace, Document query, Object id) {
+        return toOplogDocument(OperationType.UPDATE, namespace)
+            .append("o", query)
+            .append("o2", new Document("_id", id));
     }
 
-    private Document toOplogDeleteDocument(OperationType operationType, String namespace, Object updatedDocumentId) {
-        return toOplogDocument(operationType, namespace).append("o", new Document("_id", updatedDocumentId));
+    private Document toOplogDeleteDocument(String namespace, Object deletedDocumentId) {
+        return toOplogDocument(OperationType.DELETE, namespace)
+            .append("o", new Document("_id", deletedDocumentId));
     }
 
     private boolean isOplogCollection(String namespace) {

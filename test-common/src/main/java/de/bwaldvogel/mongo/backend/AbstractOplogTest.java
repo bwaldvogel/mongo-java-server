@@ -7,8 +7,10 @@ import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 import org.bson.BsonTimestamp;
 import org.bson.Document;
@@ -171,10 +173,10 @@ public abstract class AbstractOplogTest extends AbstractTest {
         collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
         collection.updateMany(eq("b", 6), set("a", 7));
 
-        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
-        assertThat(oplogDocuments).hasSize(4);
+        List<Document> oplogDocuments = toArray(getOplogCollection().find(json("op: 'u'")).sort(json("ts: 1, 'o2._id': 1")));
+        assertThat(oplogDocuments).hasSize(2);
 
-        for (int i = 2; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
             Document updateOplogDocument = oplogDocuments.get(i);
             assertThat(updateOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o", "o2");
             assertThat(updateOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
@@ -184,7 +186,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
             assertThat(updateOplogDocument.get("op")).isEqualTo(OperationType.UPDATE.getCode());
             assertThat(updateOplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
             assertThat(updateOplogDocument.get("ui")).isInstanceOf(UUID.class);
-            assertThat(updateOplogDocument.get("o2")).isEqualTo(json(String.format("_id: %d", i - 1)));
+            assertThat(updateOplogDocument.get("o2")).isEqualTo(json(String.format("_id: %d", i + 1)));
             assertThat(updateOplogDocument.get("o")).isEqualTo(json("$set: {a: 7}"));
         }
     }
@@ -194,10 +196,10 @@ public abstract class AbstractOplogTest extends AbstractTest {
         collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
         collection.deleteMany(eq("b", 6));
 
-        List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
-        assertThat(oplogDocuments).hasSize(4);
+        List<Document> oplogDocuments = toArray(getOplogCollection().find(json("op: 'd'")).sort(json("ts: 1, 'o._id': 1")));
+        assertThat(oplogDocuments).hasSize(2);
 
-        for (int i = 2; i < 4; i++) {
+        for (int i = 0; i < 2; i++) {
             Document updateOplogDocument = oplogDocuments.get(i);
             assertThat(updateOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o");
             assertThat(updateOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
@@ -207,7 +209,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
             assertThat(updateOplogDocument.get("op")).isEqualTo(OperationType.DELETE.getCode());
             assertThat(updateOplogDocument.get("ns")).isEqualTo(collection.getNamespace().getFullName());
             assertThat(updateOplogDocument.get("ui")).isInstanceOf(UUID.class);
-            assertThat(updateOplogDocument.get("o")).isEqualTo(json(String.format("_id: %d", i - 1)));
+            assertThat(updateOplogDocument.get("o")).isEqualTo(json(String.format("_id: %d", i + 1)));
         }
     }
 

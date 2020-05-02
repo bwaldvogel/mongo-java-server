@@ -11,6 +11,8 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.InsertDocumentError;
+import de.bwaldvogel.mongo.oplog.NoopOplog;
+import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public interface MongoCollection<P> {
@@ -76,9 +78,13 @@ public interface MongoCollection<P> {
     }
 
     Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
-                             boolean isMulti, boolean isUpsert);
+                             boolean isMulti, boolean isUpsert, Oplog oplog);
 
-    List<Document> deleteDocuments(Document selector, int limit);
+    default int deleteDocuments(Document selector, int limit) {
+        return deleteDocuments(selector, limit, NoopOplog.get());
+    }
+
+    int deleteDocuments(Document selector, int limit, Oplog oplog);
 
     Document handleDistinct(Document query);
 

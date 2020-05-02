@@ -30,6 +30,7 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
@@ -402,7 +403,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private int dropIndex(MongoCollection<P> collection, Document indexDescription) {
         String indexName = (String) indexDescription.get("name");
         dropIndex(collection, indexName);
-        return indexes.get().deleteDocuments(indexDescription, -1).size();
+        return indexes.get().deleteDocuments(indexDescription, -1);
     }
 
     protected void dropIndex(MongoCollection<P> collection, String indexName) {
@@ -792,12 +793,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     "cannot write to '" + getDatabaseName() + "." + collectionName + "'");
             }
             MongoCollection<P> collection = resolveCollection(collectionName, false);
-            List<Object> deletedDocumentIds = new ArrayList<>();
-            if(collection != null) {
-                deletedDocumentIds = collection.deleteDocuments(selector, limit).stream().map(d -> d.get("_id")).collect(Collectors.toList());
-                oplog.handleDelete(collection.getFullName(), selector, deletedDocumentIds);
+            final int n;
+            if (collection == null) {
+                n = 0;
+            } else {
+                n = collection.deleteDocuments(selector, limit, oplog);
             }
-            Document result = new Document("n", deletedDocumentIds.size());
+            Document result = new Document("n", Integer.valueOf(n));
             putLastResult(channel, result);
             return result;
         } catch (MongoServerError e) {
@@ -815,9 +817,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
 
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-        Document result = collection.updateDocuments(selector, update, arrayFilters, multi, upsert);
-        oplog.handleUpdate(collection.getFullName(), selector, update, (List<Object>)result.get("modifiedIds"));
-        return result;
+        return collection.updateDocuments(selector, update, arrayFilters, multi, upsert, oplog);
     }
 
     private void putLastError(Channel channel, MongoServerException ex) {
@@ -935,7 +935,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         indexes.get().updateDocuments(new Document("ns", oldFullName),
             new Document("$set", new Document("ns", newCollection.getFullName())),
-            ArrayFilters.empty(), true, false);
+            ArrayFilters.empty(), true, false, NoopOplog.get());
 
         namespaces.insertDocuments(newDocuments);
     }

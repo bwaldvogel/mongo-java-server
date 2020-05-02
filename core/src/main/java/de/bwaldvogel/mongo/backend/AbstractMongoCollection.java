@@ -35,6 +35,7 @@ import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
@@ -505,22 +506,22 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized List<Document> deleteDocuments(Document selector, int limit) {
-        List<Document> deleteDocuments = new ArrayList<>();
+    public synchronized int deleteDocuments(Document selector, int limit, Oplog oplog) {
+        List<Object> deletedDocumentIds = new ArrayList<>();
         for (Document document : handleQuery(selector, 0, limit)) {
-            if (limit > 0 && deleteDocuments.size() >= limit) {
-                throw new MongoServerException("internal error: too many elements (" + deleteDocuments.size() + " >= " + limit + ")");
+            if (limit > 0 && deletedDocumentIds.size() >= limit) {
+                throw new MongoServerException("internal error: too many elements (" + deletedDocumentIds.size() + " >= " + limit + ")");
             }
-            deleteDocuments.add(document);
+            deletedDocumentIds.add(document.get(getIdField()));
             removeDocument(document);
         }
-        return deleteDocuments;
+        oplog.handleDelete(getFullName(), selector, deletedDocumentIds);
+        return deletedDocumentIds.size();
     }
 
     @Override
     public synchronized Document updateDocuments(Document selector, Document updateQuery, ArrayFilters arrayFilters,
-                                                 boolean isMulti, boolean isUpsert) {
-
+                                                 boolean isMulti, boolean isUpsert, Oplog oplog) {
         if (isMulti) {
             for (String key : updateQuery.keySet()) {
                 if (!key.startsWith("$")) {
@@ -530,14 +531,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         int nMatched = 0;
-        int nModified = 0;
         List<Object> updatedIds = new ArrayList<>();
         for (Document document : queryDocuments(selector, null, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
             Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
             if (!Utils.nullAwareEquals(oldDocument, document)) {
-                updatedIds.add(document.get("_id"));
-                nModified++;
+                updatedIds.add(document.get(getIdField()));
             }
             nMatched++;
 
@@ -554,9 +553,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             result.put("upserted", newDocument.get(getIdField()));
         }
 
+        oplog.handleUpdate(getFullName(), selector, updateQuery, updatedIds);
+
         result.put("n", Integer.valueOf(nMatched));
-        result.put("nModified", Integer.valueOf(nModified));
-        result.put("modifiedIds", updatedIds);
+        result.put("nModified", Integer.valueOf(updatedIds.size()));
         return result;
     }
 
