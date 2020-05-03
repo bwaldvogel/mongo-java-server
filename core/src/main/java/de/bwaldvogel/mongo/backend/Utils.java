@@ -50,12 +50,12 @@ public class Utils {
         validateKey(key);
         List<String> pathFragments = splitPath(key);
         if (pathFragments.size() == 1) {
-            return Utils.getFieldValueListSafe(document, CollectionUtils.getSingleElement(pathFragments));
+            return getFieldValueListSafe(document, CollectionUtils.getSingleElement(pathFragments));
         }
         String mainKey = pathFragments.get(0);
         String subKey = joinTail(pathFragments);
         Assert.doesNotStartWith(subKey, "$.");
-        Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+        Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document) {
             return getSubdocumentValue((Document) subObject, subKey, handleCollections);
         } else if (handleCollections && subObject instanceof Collection) {
@@ -249,10 +249,10 @@ public class Utils {
         List<String> pathFragments = splitPath(key);
         String mainKey = pathFragments.get(0);
         if (pathFragments.size() == 1) {
-            return Utils.hasFieldValueListSafe(document, key);
+            return hasFieldValueListSafe(document, key);
         }
-        String subKey = Utils.getSubkey(pathFragments, new AtomicReference<>());
-        Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+        String subKey = getSubkey(pathFragments, new AtomicReference<>());
+        Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document || subObject instanceof List<?>) {
             return hasSubdocumentValue(subObject, subKey);
         } else {
@@ -266,9 +266,9 @@ public class Utils {
         if (pathFragments.size() == 1) {
             return true;
         }
-        String subKey = Utils.getSubkey(pathFragments, new AtomicReference<>());
+        String subKey = getSubkey(pathFragments, new AtomicReference<>());
 
-        Object subObject = Utils.getFieldValueListSafe(document, mainKey);
+        Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document) {
             return canFullyTraverseSubkeyForRename(subObject, subKey);
         } else {
@@ -407,13 +407,13 @@ public class Utils {
             setListSafe(document, key, previousKey, newValue);
             return;
         }
-        String subKey = Utils.getSubkey(pathFragments, matchPos);
+        String subKey = getSubkey(pathFragments, matchPos);
         Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document || subObject instanceof List<?>) {
             changeSubdocumentValue(subObject, subKey, newValue, mainKey, matchPos);
         } else if (Missing.isNeitherNullNorMissing(subObject)) {
             String element = new Document(mainKey, subObject).toString(true);
-            String subKeyFirst = Utils.splitPath(subKey).get(0);
+            String subKeyFirst = splitPath(subKey).get(0);
             throw new PathNotViableException("Cannot create field '" + subKeyFirst + "' in element " + element);
         } else {
             Document obj = new Document();
@@ -459,7 +459,7 @@ public class Utils {
         if (pathFragments.size() == 1) {
             return removeListSafe(document, key);
         }
-        String subKey = Utils.getSubkey(pathFragments, matchPos);
+        String subKey = getSubkey(pathFragments, matchPos);
         Assert.notNullOrEmpty(subKey);
 
         Object subObject = getFieldValueListSafe(document, mainKey);
