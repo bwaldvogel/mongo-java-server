@@ -130,10 +130,16 @@ public class UtilsTest {
         assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isEqualTo("b");
         assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "10")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(Collections.emptyList(), "0")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(123, "0")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe("abc", "0")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(123, "x")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe("abc", "x")).isInstanceOf(Missing.class);
 
-        List<Document> documentList = Arrays.asList(json("a: 1"), json("a: 2"), json("b: 3"), json("a: {b: 'x'}"));
-        assertThat(Utils.getFieldValueListSafe(documentList, "a"))
+        List<?> values = Arrays.asList(json("a: 1"), 2, json("a: 2"), json("b: 3"), json("a: {b: 'x'}"));
+        assertThat(Utils.getFieldValueListSafe(values, "a"))
             .isEqualTo(Arrays.asList(1, 2, json("b: 'x'")));
+
+        assertThat(Utils.getFieldValueListSafe(Arrays.asList(1, 2, 3), "a")).isInstanceOf(Missing.class);
     }
 
     @Test
