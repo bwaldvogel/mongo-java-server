@@ -5756,6 +5756,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 4"),
                 json("_id: 5").append("value", new MaxKey())
             );
+
+        assertThat(collection.find(new Document("value", new Document("$lte", new MinKey()))))
+            .containsExactly(json("_id: 3").append("value", new MinKey()));
+
+        assertThat(collection.find(new Document("value", new Document("$lt", new MinKey()))))
+            .isEmpty();
     }
 
     @Test
@@ -5781,6 +5787,39 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 3").append("value", new MaxKey()),
                 json("_id: 4"),
                 json("_id: 5").append("value", new MinKey())
+            );
+
+        assertThat(collection.find(new Document("value", new Document("$gte", new MaxKey()))))
+            .containsExactly(json("_id: 3").append("value", new MaxKey()));
+
+        assertThat(collection.find(new Document("value", new Document("$gt", new MaxKey()))))
+            .isEmpty();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/140
+    @Test
+    public void testMinMaxKeyRangeQuery() throws Exception {
+        collection.insertOne(json("_id: {id1: 10, id2: 20}"));
+        collection.insertOne(json("_id: {id1: 20, id2: 50}"));
+        collection.insertOne(json("_id: {id1: 10, id2: 100}"));
+        collection.insertOne(json("_id: {id1: 10}"));
+        collection.insertOne(json("_id: {id1: 10, id2: null}"));
+        collection.insertOne(json("_id: {id2: 20}"));
+
+        Document rangeQuery = json("{_id: {'$gt': {id1: 10, id2: {'$minKey': 1}}, '$lt': {id1: 10, id2: {'$maxKey': 1}}}}");
+
+        assertThat(collection.find(rangeQuery).sort(json("_id: 1")))
+            .containsExactly(
+                json("_id: {id1: 10, id2: null}"),
+                json("_id: {id1: 10, id2: 20}"),
+                json("_id: {id1: 10, id2: 100}")
+            );
+
+        assertThat(collection.find(rangeQuery).sort(json("_id: -1")))
+            .containsExactly(
+                json("_id: {id1: 10, id2: 100}"),
+                json("_id: {id1: 10, id2: 20}"),
+                json("_id: {id1: 10, id2: null}")
             );
     }
 

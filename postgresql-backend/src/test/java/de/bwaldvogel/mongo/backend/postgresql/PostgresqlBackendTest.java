@@ -265,6 +265,12 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         super.testUpdatePushSortAndSlice();
     }
 
+    @Override
+    public void testMinMaxKeyRangeQuery() throws Exception {
+        assumeStrictTests();
+        super.testMinMaxKeyRangeQuery();
+    }
+
     private void assumeStrictTests() {
         Assumptions.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
     }
