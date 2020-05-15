@@ -14,13 +14,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
+import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import com.mongodb.MongoClient;
-import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -50,12 +50,12 @@ public abstract class AbstractBackendSpringDataTest {
         @Bean(destroyMethod = "close")
         public MongoClient mongoClient(MongoServer mongoServer) {
             InetSocketAddress serverAddress = mongoServer.bind();
-            return new MongoClient(new ServerAddress(serverAddress));
+            return MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
         }
 
         @Bean
         public MongoDbFactory mongoDbFactory(MongoClient client) throws Exception {
-            return new SimpleMongoDbFactory(client, DATABASE_NAME);
+            return new SimpleMongoClientDbFactory(client, DATABASE_NAME);
         }
 
         @Bean

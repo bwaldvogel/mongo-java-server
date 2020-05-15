@@ -1,13 +1,13 @@
 dependencies {
     api project(':mongo-java-server-core')
-    api group: 'org.mongodb', name: 'mongo-java-driver', version: 'latest.release'
-    api group: 'org.mongodb', name: 'mongodb-driver-reactivestreams', version: '1.13.0'
+    api 'org.mongodb:mongo-java-driver:latest.release'
+    api 'org.mongodb:mongodb-driver-reactivestreams:[1.13.0,2.0.0)'
 
     api "org.springframework:spring-core:latest.release"
     api "org.springframework:spring-beans:latest.release"
     api "org.springframework:spring-context:latest.release"
     api "org.springframework:spring-test:latest.release"
-    api "org.springframework.data:spring-data-mongodb:latest.release"
+    api "org.springframework.data:spring-data-mongodb:[2.2.0.RELEASE, 3.0.0.RELEASE)"
 
     api group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: 'latest.release'
     runtimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: 'latest.release'
