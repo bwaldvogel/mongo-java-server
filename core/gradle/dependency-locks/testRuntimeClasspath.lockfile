@@ -3,17 +3,17 @@
 # This file is expected to be part of source control.
 ch.qos.logback:logback-classic:1.2.3
 ch.qos.logback:logback-core:1.2.3
-io.netty:netty-buffer:4.1.49.Final
-io.netty:netty-codec:4.1.49.Final
-io.netty:netty-common:4.1.49.Final
-io.netty:netty-handler:4.1.49.Final
-io.netty:netty-resolver:4.1.49.Final
-io.netty:netty-transport:4.1.49.Final
+io.netty:netty-buffer:4.1.50.Final
+io.netty:netty-codec:4.1.50.Final
+io.netty:netty-common:4.1.50.Final
+io.netty:netty-handler:4.1.50.Final
+io.netty:netty-resolver:4.1.50.Final
+io.netty:netty-transport:4.1.50.Final
 net.bytebuddy:byte-buddy-agent:1.10.5
 net.bytebuddy:byte-buddy:1.10.5
-nl.jqno.equalsverifier:equalsverifier:3.1.13
+nl.jqno.equalsverifier:equalsverifier:3.3
 org.apiguardian:apiguardian-api:1.1.0
-org.assertj:assertj-core:3.15.0
+org.assertj:assertj-core:3.16.1
 org.junit.jupiter:junit-jupiter-api:5.6.2
 org.junit.jupiter:junit-jupiter-engine:5.6.2
 org.junit.platform:junit-platform-commons:1.6.2
@@ -21,7 +21,7 @@ org.junit.platform:junit-platform-engine:1.6.2
 org.junit:junit-bom:5.6.2
 org.mockito:mockito-core:3.3.3
 org.mockito:mockito-junit-jupiter:3.3.3
-org.mongodb:mongo-java-driver:3.12.3
+org.mongodb:mongo-java-driver:3.12.4
 org.objenesis:objenesis:2.6
 org.opentest4j:opentest4j:1.2.0
 org.slf4j:jcl-over-slf4j:1.7.30
