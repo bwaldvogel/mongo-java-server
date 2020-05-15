@@ -5,3 +5,5 @@ include 'postgresql-backend'
 include 'test-common'
 
 rootProject.children.each { it.name = rootProject.name + "-" + it.name }
+
+enableFeaturePreview('ONE_LOCKFILE_PER_PROJECT')
