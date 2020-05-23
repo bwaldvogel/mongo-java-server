@@ -217,5 +217,3 @@ dependencies {
     api project(':mongo-java-server-core')
     api project(':mongo-java-server-memory-backend')
 }
-
-// vim: set ts=4 sw=4 et:
