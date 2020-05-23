@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
+import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
@@ -19,7 +19,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public class PostgresqlCollection extends AbstractMongoCollection<Long> {
+public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Long> {
 
     private final PostgresqlBackend backend;
 

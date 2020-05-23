@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
+import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
@@ -20,7 +20,7 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
-public class H2Collection extends AbstractMongoCollection<Object> {
+public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(H2Collection.class);
 

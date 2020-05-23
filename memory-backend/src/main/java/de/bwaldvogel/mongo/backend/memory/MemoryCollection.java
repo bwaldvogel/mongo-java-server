@@ -9,14 +9,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.AbstractMongoCollection;
+import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 
-public class MemoryCollection extends AbstractMongoCollection<Integer> {
+public class MemoryCollection extends AbstractSynchronizedMongoCollection<Integer> {
 
     private final List<Document> documents = new ArrayList<>();
     private final Queue<Integer> emptyPositions = new LinkedList<>();

@@ -145,7 +145,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected abstract P addDocumentInternal(Document document);
 
     @Override
-    public synchronized void addDocument(Document document) {
+    public void addDocument(Document document) {
         if (document.get(ID_FIELD) instanceof Collection) {
             throw new BadValueException("can't use an array for _id");
         }
@@ -354,8 +354,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized Document findAndModify(Document query) {
-
+    public Document findAndModify(Document query) {
         boolean returnNew = Utils.isTrue(query.get("new"));
 
         if (!query.containsKey("remove") && !query.containsKey("update")) {
@@ -426,17 +425,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
-                                                Document fieldSelector) {
-
-        final Document query;
-        final Document orderBy;
-
+    public QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn, Document fieldSelector) {
         if (numberToReturn < 0) {
             // actually: request to close cursor automatically
             numberToReturn = -numberToReturn;
         }
 
+        final Document query;
+        final Document orderBy;
         if (queryObject.containsKey("query")) {
             query = (Document) queryObject.get("query");
             orderBy = (Document) queryObject.get("orderby");
@@ -458,7 +454,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized QueryResult handleGetMore(long cursorId, int numberToReturn) {
+    public QueryResult handleGetMore(long cursorId, int numberToReturn) {
         Cursor cursor = cursors.get(cursorId);
         if (cursor == null) {
             throw new CursorNotFoundException(String.format("Cursor id %d does not exists in collection %s", cursorId, collectionName));
@@ -474,12 +470,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized void handleKillCursors(MongoKillCursors killCursors) {
+    public void handleKillCursors(MongoKillCursors killCursors) {
         killCursors.getCursorIds().forEach(cursors::remove);
     }
 
     @Override
-    public synchronized Document handleDistinct(Document query) {
+    public Document handleDistinct(Document query) {
         String key = (String) query.get("key");
         Document filter = (Document) query.getOrDefault("query", new Document());
         Set<Object> values = new TreeSet<>(ValueComparator.ascWithoutListHandling().withDefaultComparatorForUuids());
@@ -501,12 +497,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized void insertDocuments(List<Document> documents) {
-        MongoCollection.super.insertDocuments(documents);
-    }
-
-    @Override
-    public synchronized int deleteDocuments(Document selector, int limit, Oplog oplog) {
+    public int deleteDocuments(Document selector, int limit, Oplog oplog) {
         List<Object> deletedDocumentIds = new ArrayList<>();
         for (Document document : handleQuery(selector, 0, limit)) {
             if (limit > 0 && deletedDocumentIds.size() >= limit) {
@@ -520,8 +511,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized Document updateDocuments(Document selector, Document updateQuery, ArrayFilters arrayFilters,
-                                                 boolean isMulti, boolean isUpsert, Oplog oplog) {
+    public Document updateDocuments(Document selector, Document updateQuery, ArrayFilters arrayFilters,
+                                    boolean isMulti, boolean isUpsert, Oplog oplog) {
         if (isMulti) {
             for (String key : updateQuery.keySet()) {
                 if (!key.startsWith("$")) {
@@ -721,7 +712,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public synchronized void removeDocument(Document document) {
+    public void removeDocument(Document document) {
         P position = null;
 
         if (!indexes.isEmpty()) {
