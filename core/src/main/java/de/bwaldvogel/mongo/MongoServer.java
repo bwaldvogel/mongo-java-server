@@ -200,7 +200,6 @@ public class MongoServer {
 
     /**
      * Use this method to simulate closing of cursors by the server, for instance due to timeout.
-     * @param killCursors
      */
     public void closeCursors(MongoKillCursors killCursors) {
         backend.handleKillCursors(killCursors);
