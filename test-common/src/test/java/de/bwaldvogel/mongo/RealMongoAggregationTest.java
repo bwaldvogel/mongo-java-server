@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo;
 
 import java.net.InetSocketAddress;
 
+import org.junit.Assume;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
@@ -33,4 +34,9 @@ public class RealMongoAggregationTest extends AbstractAggregationTest {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void testAggregateWithGeoNear() throws Exception {
+        Assume.assumeTrue(false);
+        super.testAggregateWithGeoNear();
+    }
 }

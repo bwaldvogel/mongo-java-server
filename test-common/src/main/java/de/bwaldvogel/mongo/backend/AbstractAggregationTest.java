@@ -1955,6 +1955,16 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsOnly(json("_id: 1"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/138
+    @Test
+    public void testAggregateWithGeoNear() throws Exception {
+        List<Document> pipeline = jsonList("$geoNear: {}");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error -1: '$geoNear is not yet implemented. See https://github.com/bwaldvogel/mongo-java-server/issues/138'");
+    }
+
     private static Function<Document, Document> withSortedStringList(String key) {
         return document -> {
             @SuppressWarnings("unchecked")

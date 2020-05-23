@@ -39,6 +39,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.MongoServerNotYetImplementedException;
 import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
 public class Aggregation {
@@ -157,6 +158,8 @@ public class Aggregation {
                     Document redactExpression = (Document) stage.get(stageOperation);
                     aggregation.addStage(new RedactStage(redactExpression));
                     break;
+                case "$geoNear":
+                    throw new MongoServerNotYetImplementedException(138, stageOperation);
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
             }
