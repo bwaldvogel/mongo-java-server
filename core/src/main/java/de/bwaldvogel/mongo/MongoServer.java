@@ -131,7 +131,7 @@ public class MongoServer {
      * be forced.
      */
     public void shutdown() {
-        stopListenting();
+        stopListening();
 
         // Shut down all event loops to terminate all threads.
         if (bossGroup != null) {
@@ -156,7 +156,7 @@ public class MongoServer {
     /**
      * Closes the server socket. No new clients are accepted afterwards.
      */
-    public void stopListenting() {
+    public void stopListening() {
         if (channel != null) {
             log.info("closing server channel");
             channel.close().syncUninterruptibly();
@@ -170,7 +170,7 @@ public class MongoServer {
      * block.
      */
     public void shutdownNow() {
-        stopListenting();
+        stopListening();
         closeClients();
         shutdown();
     }

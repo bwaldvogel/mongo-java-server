@@ -58,7 +58,7 @@ public abstract class MongoServerTest {
             // request something
             pingServer(client);
 
-            server.stopListenting();
+            server.stopListening();
 
             // existing clients must still work
             pingServer(client);
