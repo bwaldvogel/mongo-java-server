@@ -6,18 +6,12 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.*;
 import org.h2.mvstore.MVMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
-import de.bwaldvogel.mongo.backend.Assert;
-import de.bwaldvogel.mongo.backend.CollectionOptions;
-import de.bwaldvogel.mongo.backend.DocumentWithPosition;
-import de.bwaldvogel.mongo.backend.Missing;
-import de.bwaldvogel.mongo.backend.QueryResult;
-import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {

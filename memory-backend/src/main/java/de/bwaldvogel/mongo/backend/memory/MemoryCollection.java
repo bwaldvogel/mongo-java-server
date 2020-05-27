@@ -9,11 +9,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
-import de.bwaldvogel.mongo.backend.CollectionOptions;
-import de.bwaldvogel.mongo.backend.DocumentComparator;
-import de.bwaldvogel.mongo.backend.DocumentWithPosition;
-import de.bwaldvogel.mongo.backend.QueryResult;
+import de.bwaldvogel.mongo.backend.*;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class MemoryCollection extends AbstractSynchronizedMongoCollection<Integer> {

@@ -9,8 +9,10 @@ import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMongoCollection<P> {
 
-    protected AbstractSynchronizedMongoCollection(MongoDatabase database, String collectionName, CollectionOptions options) {
-        super(database, collectionName, options);
+    protected AbstractSynchronizedMongoCollection(MongoDatabase database, String collectionName,
+                                                  CollectionOptions options,
+                                                  CursorFactory cursorFactory) {
+        super(database, collectionName, options, cursorFactory);
     }
 
     @Override
@@ -27,16 +29,6 @@ public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMon
     public synchronized QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn,
                                                 Document fieldSelector) {
         return super.handleQuery(queryObject, numberToSkip, numberToReturn, fieldSelector);
-    }
-
-    @Override
-    public synchronized QueryResult handleGetMore(long cursorId, int numberToReturn) {
-        return super.handleGetMore(cursorId, numberToReturn);
-    }
-
-    @Override
-    public synchronized void handleKillCursors(MongoKillCursors killCursors) {
-        super.handleKillCursors(killCursors);
     }
 
     @Override
