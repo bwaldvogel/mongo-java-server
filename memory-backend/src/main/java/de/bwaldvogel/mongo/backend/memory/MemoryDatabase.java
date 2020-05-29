@@ -2,24 +2,23 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.List;
 
-import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
-import de.bwaldvogel.mongo.backend.CursorFactory;
+import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 
 public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
 
-    public MemoryDatabase(MongoBackend backend, String databaseName, CursorFactory cursorFactory) {
-        super(databaseName, cursorFactory);
+    public MemoryDatabase(String databaseName, CursorRegistry cursorRegistry) {
+        super(databaseName, cursorRegistry);
         initializeNamespacesAndIndexes();
     }
 
     @Override
     protected MemoryCollection openOrCreateCollection(String collectionName, CollectionOptions options) {
-        return new MemoryCollection(this, collectionName, options, cursorFactory);
+        return new MemoryCollection(this, collectionName, options, cursorRegistry);
     }
 
     @Override

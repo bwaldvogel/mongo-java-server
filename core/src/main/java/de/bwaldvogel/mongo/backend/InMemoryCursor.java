@@ -16,11 +16,6 @@ public class InMemoryCursor extends AbstractCursor {
     }
 
     @Override
-    public boolean isEmpty() {
-        return remainingDocuments.isEmpty();
-    }
-
-    @Override
     public List<Document> takeDocuments(int numberToReturn) {
         Assert.isTrue(numberToReturn > 0, () -> "Illegal number to return: " + numberToReturn);
         int toIndex = Math.min(remainingDocuments.size(), numberToReturn);

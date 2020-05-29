@@ -42,14 +42,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     private final List<Index<P>> indexes = new ArrayList<>();
     private final QueryMatcher matcher = new DefaultQueryMatcher();
     protected final CollectionOptions options;
-    protected final CursorFactory cursorFactory;
+    protected final CursorRegistry cursorRegistry;
 
     protected AbstractMongoCollection(MongoDatabase database, String collectionName, CollectionOptions options,
-                                      CursorFactory cursorFactory) {
+                                      CursorRegistry cursorRegistry) {
         this.database = Objects.requireNonNull(database);
         this.collectionName = Objects.requireNonNull(collectionName);
         this.options = Objects.requireNonNull(options);
-        this.cursorFactory = cursorFactory;
+        this.cursorRegistry = cursorRegistry;
     }
 
     protected boolean documentMatchesQuery(Document document, Document query) {
@@ -780,7 +780,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected QueryResult createQueryResult(List<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
         Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
         Iterable<Document> documents = applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult(documents, cursor.getCursorId());
+        return new QueryResult(documents, cursor.getId());
     }
 
     protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
@@ -797,7 +797,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return EmptyCursor.get();
         }
 
-        return cursorFactory.createInMemoryCursor(remainingDocuments);
+        InMemoryCursor cursor = new InMemoryCursor(cursorRegistry.generateCursorId(), new ArrayList<>(remainingDocuments));
+        cursorRegistry.add(cursor);
+        return cursor;
     }
 
 }

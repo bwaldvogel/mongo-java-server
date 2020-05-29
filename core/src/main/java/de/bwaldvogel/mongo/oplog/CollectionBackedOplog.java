@@ -2,35 +2,33 @@ package de.bwaldvogel.mongo.oplog;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.Cursor;
-import de.bwaldvogel.mongo.backend.CursorFactory;
-import de.bwaldvogel.mongo.backend.MongoBackendClock;
-import de.bwaldvogel.mongo.backend.Utils;
-import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
+import de.bwaldvogel.mongo.backend.CursorRegistry;
+import de.bwaldvogel.mongo.backend.TailableCursor;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class CollectionBackedOplog implements Oplog {
 
     private static final long ELECTION_TERM = 1L;
-    private final String START_AT_OPERATION_TIME = "startAtOperationTime";
+    private static final String START_AT_OPERATION_TIME = "startAtOperationTime";
 
-    private final MongoBackendClock clock;
+    private final OplogClock oplogClock;
     private final MongoCollection<Document> collection;
-    private MongoBackend backend;
-    private CursorFactory cursorFactory;
+    private final MongoBackend backend;
+    private final CursorRegistry cursorRegistry;
     private final UUID ui = UUID.randomUUID();
 
-    public CollectionBackedOplog(MongoBackend backend, MongoCollection<Document> collection, CursorFactory cursorFactory) {
-        this.clock = backend.getClock();
+    public CollectionBackedOplog(MongoBackend backend, MongoCollection<Document> collection, CursorRegistry cursorRegistry) {
+        this.oplogClock = new OplogClock(backend.getClock());
         this.collection = collection;
         this.backend = backend;
-        this.cursorFactory = cursorFactory;
+        this.cursorRegistry = cursorRegistry;
     }
 
     @Override
@@ -61,53 +59,55 @@ public class CollectionBackedOplog implements Oplog {
         deletedIds.forEach(id ->
             collection.addDocument(toOplogDeleteDocument(namespace, id))
         );
-
     }
 
-    @Override
-    public Stream<Document> handleAggregation(Document changeStreamDocument) {
-        final long clientToken = Utils.getResumeTokenFromChangeStreamDocument(changeStreamDocument);
-        final BsonTimestamp startAtOperationTime = changeStreamDocument.containsKey(START_AT_OPERATION_TIME) ?
-            (BsonTimestamp) changeStreamDocument.get(START_AT_OPERATION_TIME) : null;
-
-        List<Document> res = collection.queryAllAsStream()
+    private Stream<Document> streamOplog(Document changeStreamDocument, ResumeToken resumeToken) {
+        return collection.queryAllAsStream()
             .filter(document -> {
-                if (startAtOperationTime != null) {
-                    BsonTimestamp serverTs = (BsonTimestamp) document.get("ts");
-                    return serverTs.compareTo(startAtOperationTime) >= 0;
-                }
-                return Utils.getResumeToken((BsonTimestamp) document.get("ts")) > clientToken;
+                BsonTimestamp timestamp = (BsonTimestamp) document.get("ts");
+                ResumeToken documentResumeToken = new ResumeToken(timestamp);
+                return documentResumeToken.isAfter(resumeToken);
             })
             .sorted((o1, o2) -> {
                 BsonTimestamp timestamp1 = (BsonTimestamp) o1.get("ts");
                 BsonTimestamp timestamp2 = (BsonTimestamp) o2.get("ts");
                 return timestamp1.compareTo(timestamp2);
             })
-            .map(document -> getChangeStreamResponseDocument(document, changeStreamDocument))
-            .collect(Collectors.toList());
-        return res.stream();
+            .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument));
     }
 
     @Override
-    public Cursor createCursor(Aggregation aggregation) {
-        return cursorFactory.createTailableCursor(aggregation, clock);
-    }
+    public Cursor createCursor(Document changeStreamDocument) {
+        Document startAfter = (Document) changeStreamDocument.get("startAfter");
+        Document resumeAfter = (Document) changeStreamDocument.get("resumeAfter");
+        BsonTimestamp startAtOperationTime = (BsonTimestamp) changeStreamDocument.get(START_AT_OPERATION_TIME);
+        final ResumeToken initialResumeToken;
+        if (startAfter != null) {
+            initialResumeToken = ResumeToken.fromDocument(startAfter);
+        } else if (resumeAfter != null) {
+            initialResumeToken = ResumeToken.fromDocument(resumeAfter);
+        } else if (startAtOperationTime != null) {
+            initialResumeToken = new ResumeToken(startAtOperationTime).inclusive();
+        } else {
+            initialResumeToken = new ResumeToken(oplogClock.now());
+        }
 
-    @Override
-    public Cursor createCursor(Aggregation aggregation, long resumeToken) {
-        return cursorFactory.createTailableCursor(aggregation, resumeToken);
+        Function<ResumeToken, Stream<Document>> streamSupplier = resumeToken -> streamOplog(changeStreamDocument, resumeToken);
+        Cursor cursor = new TailableCursor(cursorRegistry.generateCursorId(), streamSupplier, initialResumeToken);
+        cursorRegistry.add(cursor);
+        return cursor;
     }
 
     private Document toOplogDocument(OperationType operationType, String namespace) {
         return new Document()
-            .append("ts", clock.increaseAndGet())
+            .append("ts", oplogClock.incrementAndGet())
             .append("t", ELECTION_TERM)
             .append("h", 0L)
             .append("v", 2L)
             .append("op", operationType.getCode())
             .append("ns", namespace)
             .append("ui", ui)
-            .append("wall", clock.instant());
+            .append("wall", oplogClock.instant());
     }
 
     private Document toOplogInsertDocument(String namespace, Document document) {
@@ -144,12 +144,12 @@ public class CollectionBackedOplog implements Oplog {
 
     private Document lookUpUpdateDocument(Document changeStreamDocument, Document document) {
         if (changeStreamDocument.containsKey("fullDocument") && changeStreamDocument.get("fullDocument").equals("updateLookup")) {
-            String namespace = (String)document.get("ns");
+            String namespace = (String) document.get("ns");
             String databaseName = namespace.split("\\.")[0];
             String collectionName = namespace.split("\\.")[1];
             return backend.resolveDatabase(databaseName)
                 .resolveCollection(collectionName, true)
-                .queryAllAsStream().filter(d -> d.get("_id").equals(((Document)document.get("o2")).get("_id")))
+                .queryAllAsStream().filter(d -> d.get("_id").equals(((Document) document.get("o2")).get("_id")))
                 .findFirst().orElse(getDeltaUpdate((Document) document.get("o")));
         }
         return getDeltaUpdate((Document) document.get("o"));
@@ -158,30 +158,31 @@ public class CollectionBackedOplog implements Oplog {
     private Document getDeltaUpdate(Document updateDocument) {
         Document delta = new Document();
         if (updateDocument.containsKey("$set")) {
-            delta.appendAll((Document)updateDocument.get("$set"));
+            delta.appendAll((Document) updateDocument.get("$set"));
         }
         if (updateDocument.containsKey("$unset")) {
-            delta.appendAll((Document)updateDocument.get("$unset"));
+            delta.appendAll((Document) updateDocument.get("$unset"));
         }
         return delta;
     }
 
-    private Document getChangeStreamResponseDocument(Document oplogDocument, Document changeStreamDocument) {
+    private Document toChangeStreamResponseDocument(Document oplogDocument, Document changeStreamDocument) {
         OperationType operationType = OperationType.fromCode(oplogDocument.get("op").toString());
         Document documentKey = new Document();
         switch (operationType) {
             case UPDATE:
-                documentKey = (Document)oplogDocument.get("o2");
+                documentKey = (Document) oplogDocument.get("o2");
                 break;
             case INSERT:
-                documentKey.append("_id", ((Document)oplogDocument.get("o")).get("_id"));
+                documentKey.append("_id", ((Document) oplogDocument.get("o")).get("_id"));
                 break;
             case DELETE:
-                documentKey = (Document)oplogDocument.get("o");
+                documentKey = (Document) oplogDocument.get("o");
                 break;
         }
+        ResumeToken resumeToken = new ResumeToken((BsonTimestamp) oplogDocument.get("ts"));
         return new Document()
-            .append("_id", new Document("_data", Utils.getResumeTokenAsHEX((BsonTimestamp) oplogDocument.get("ts")))) //This is going to be the resume token
+            .append("_id", new Document("_data", resumeToken.toHexString()))
             .append("operationType", operationType.getDescription())
             .append("fullDocument", getFullDocument(changeStreamDocument, oplogDocument, operationType))
             .append("documentKey", documentKey)

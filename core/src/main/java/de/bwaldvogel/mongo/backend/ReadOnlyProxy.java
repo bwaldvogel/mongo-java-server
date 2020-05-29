@@ -106,22 +106,22 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
+    public MongoDatabase resolveDatabase(String database) {
+        throw new ReadOnlyException("resolveDatabase not allowed");
+    }
+
+    @Override
     public void close() {
         backend.close();
     }
 
     @Override
-    public MongoBackendClock getClock() {
+    public Clock getClock() {
         return backend.getClock();
     }
 
     @Override
     public void setClock(Clock clock) {
-        setClock(new MongoBackendClock(clock));
-    }
-
-    @Override
-    public void setClock(MongoBackendClock clock) {
         backend.setClock(clock);
     }
 
@@ -131,11 +131,6 @@ public class ReadOnlyProxy implements MongoBackend {
 
     @Override
     public void disableOplog() {
-    }
-
-    @Override
-    public MongoDatabase resolveDatabase(String database) {
-        return null;
     }
 
     @Override

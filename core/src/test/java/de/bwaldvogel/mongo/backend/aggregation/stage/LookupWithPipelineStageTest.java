@@ -3,10 +3,10 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import de.bwaldvogel.mongo.oplog.NoopOplog;
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.oplog.NoopOplog;
 
 public class LookupWithPipelineStageTest extends AbstractLookupStageTest {
 

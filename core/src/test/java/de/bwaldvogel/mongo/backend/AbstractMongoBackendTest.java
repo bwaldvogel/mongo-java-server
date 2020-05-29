@@ -1,27 +1,35 @@
 package de.bwaldvogel.mongo.backend;
 
-import de.bwaldvogel.mongo.MongoBackend;
-import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import de.bwaldvogel.mongo.MongoBackend;
+import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.CursorNotFoundException;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 class AbstractMongoBackendTest {
 
     private MongoBackend backend;
-    private CursorFactory cursorFactory = new CursorFactory();
+    private CursorRegistry cursorRegistry;
 
     @BeforeEach
     public void setup() {
         backend = new AbstractMongoBackend() {
+
+            {
+                AbstractMongoBackendTest.this.cursorRegistry = this.cursorRegistry;
+            }
+
             @Override
             protected MongoDatabase openOrCreateDatabase(String databaseName) {
                 return null;
@@ -31,26 +39,38 @@ class AbstractMongoBackendTest {
 
     @Test
     void testGetMore_shouldDeleteCursorIfEmpty() {
-        Collection<Document> docs = Arrays.asList(new Document("name", "Joe"), new Document("name", "Mary"),
+        List<Document> documents = Arrays.asList(
+            new Document("name", "Joe"),
+            new Document("name", "Mary"),
             new Document("name", "Steve"));
-        Cursor cursor = cursorFactory.createInMemoryCursor(docs);
+        Cursor cursor = new InMemoryCursor(cursorRegistry.generateCursorId(), documents);
+        cursorRegistry.add(cursor);
         MongoGetMore getMore = new MongoGetMore(null, null, "testcoll", 3,
-            cursor.getCursorId());
+            cursor.getId());
         backend.handleGetMore(getMore);
-        assertThat(cursorFactory.exists(cursor.getCursorId())).isFalse();
+
+        assertThatExceptionOfType(CursorNotFoundException.class)
+            .isThrownBy(() -> cursorRegistry.getCursor(cursor.getId()))
+            .withMessage("[Error 3] Cursor id 1 does not exists");
     }
 
     @Test
     void testHandleKillCursor() {
-        Cursor cursor1 = cursorFactory.createInMemoryCursor(Collections.singleton(new Document()));
-        Cursor cursor2 = cursorFactory.createInMemoryCursor(Collections.singleton(new Document()));
-        assertThat(cursorFactory.exists(cursor1.getCursorId())).isTrue();
-        assertThat(cursorFactory.exists(cursor2.getCursorId())).isTrue();
-        MongoKillCursors killCursors =
-            new MongoKillCursors(null, null, Collections.singletonList(cursor1.getCursorId()));
+        InMemoryCursor cursor1 = new InMemoryCursor(cursorRegistry.generateCursorId(), Collections.singletonList(new Document()));
+        InMemoryCursor cursor2 = new InMemoryCursor(cursorRegistry.generateCursorId(), Collections.singletonList(new Document()));
+        cursorRegistry.add(cursor1);
+        cursorRegistry.add(cursor2);
+        assertThat(cursorRegistry.getCursor(cursor1.getId())).isNotNull();
+        assertThat(cursorRegistry.getCursor(cursor2.getId())).isNotNull();
+
+        MongoKillCursors killCursors = new MongoKillCursors(null, null, Collections.singletonList(cursor1.getId()));
         backend.handleKillCursors(killCursors);
-        assertThat(cursorFactory.exists(cursor1.getCursorId())).isFalse();
-        assertThat(cursorFactory.exists(cursor2.getCursorId())).isTrue();
+
+        assertThatExceptionOfType(CursorNotFoundException.class)
+            .isThrownBy(() -> cursorRegistry.getCursor(cursor1.getId()))
+            .withMessage("[Error 3] Cursor id 1 does not exists");
+
+        assertThat(cursorRegistry.getCursor(cursor2.getId())).isNotNull();
     }
 
 }

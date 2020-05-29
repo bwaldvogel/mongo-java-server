@@ -7,22 +7,27 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public abstract class AbstractCursor implements Cursor {
 
-    protected final long cursorId;
+    protected final long id;
     protected List<Document> remainingDocuments;
 
-    protected AbstractCursor(long cursorId, List<Document> remainingDocuments) {
-        this.cursorId = cursorId;
+    protected AbstractCursor(long id, List<Document> remainingDocuments) {
+        this.id = id;
         this.remainingDocuments = Collections.unmodifiableList(remainingDocuments);
     }
 
     @Override
-    public long getCursorId() {
-        return cursorId;
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return remainingDocuments.isEmpty();
     }
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "(id: " + cursorId + ")";
+        return getClass().getSimpleName() + "(id: " + id + ")";
     }
 
 }

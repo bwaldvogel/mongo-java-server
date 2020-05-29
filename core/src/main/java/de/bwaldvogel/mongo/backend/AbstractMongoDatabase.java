@@ -56,11 +56,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private MongoCollection<P> namespaces;
 
-    protected final CursorFactory cursorFactory;
+    protected final CursorRegistry cursorRegistry;
 
-    protected AbstractMongoDatabase(String databaseName, CursorFactory cursorFactory) {
+    protected AbstractMongoDatabase(String databaseName, CursorRegistry cursorRegistry) {
         this.databaseName = databaseName;
-        this.cursorFactory = cursorFactory;
+        this.cursorRegistry = cursorRegistry;
     }
 
     protected void initializeNamespacesAndIndexes() {
@@ -563,51 +563,25 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document commandAggregate(String command, Document query, Oplog oplog) {
         String collectionName = query.get(command).toString();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
-        Object pipeline = query.get("pipeline");
+        Object pipelineObject = Aggregation.parse(query.get("pipeline"));
+        List<Document> pipeline = Aggregation.parse(pipelineObject);
+        if (!pipeline.isEmpty()) {
+            Document changeStream = (Document) pipeline.get(0).get("$changeStream");
+            if (changeStream != null) {
+                return commandChangeStreamPipeline(query, oplog, collectionName, changeStream);
+            }
+        }
         Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection, oplog);
         aggregation.validate(query);
-
-        if (isChangeStreamPipeline(pipeline)) {
-            return commandAggregateChangeStream(query, oplog, aggregation, collectionName);
-        }
         return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregation.computeResult());
     }
 
-    private Document commandAggregateChangeStream(Document query, Oplog oplog, Aggregation aggregation,
-                                                  String collectionName) {
-        int batchSize = ((Document)query.get("cursor")).get("batchSize") != null
-            ? (int)((Document)query.get("cursor")).get("batchSize"): 0;
+    private Document commandChangeStreamPipeline(Document query, Oplog oplog, String collectionName, Document changeStreamDocument) {
+        Document cursorDocument = (Document) query.get("cursor");
+        int batchSize = (int) cursorDocument.getOrDefault("batchSize", 0);
 
-        long resumeToken = getResumeToken(query);
-        Cursor cursor;
-        if (isChangeStreamStartAtOperationTime(query)) {
-            cursor = oplog.createCursor(aggregation, 0);
-        } else if (resumeToken > 0) {
-            // StartAfter or ResumeAfter
-            cursor = oplog.createCursor(aggregation, resumeToken);
-        } else {
-            // Start cursor from clock.now
-            cursor = oplog.createCursor(aggregation);
-        }
-        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize),
-            cursor.getCursorId());
-    }
-
-    private long getResumeToken(Document query) {
-        ArrayList<Document> pipeline = (ArrayList<Document>)query.get("pipeline");
-        Document changeStreamDoc = (Document) pipeline.get(0).get("$changeStream");
-        return Utils.getResumeTokenFromChangeStreamDocument(changeStreamDoc);
-    }
-
-    private boolean isChangeStreamStartAtOperationTime(Document query) {
-        ArrayList<Document> pipeline = (ArrayList<Document>)query.get("pipeline");
-        Document changeStreamDoc = (Document) pipeline.get(0).get("$changeStream");
-        return changeStreamDoc.containsKey("startAtOperationTime");
-    }
-
-    private boolean isChangeStreamPipeline(Object pipeline) {
-        ArrayList pline = (ArrayList)pipeline;
-        return pline.size() > 0 && ((Document)pline.get(0)).containsKey("$changeStream");
+        Cursor cursor = oplog.createCursor(changeStreamDocument);
+        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize), cursor);
     }
 
     private int getOptionalNumber(Document query, String fieldName, int defaultValue) {

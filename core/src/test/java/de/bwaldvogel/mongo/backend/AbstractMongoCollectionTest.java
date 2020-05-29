@@ -23,7 +23,7 @@ public class AbstractMongoCollectionTest {
     private static class TestCollection extends AbstractMongoCollection<Object> {
 
         TestCollection(MongoDatabase database, String collectionName) {
-            super(database, collectionName, CollectionOptions.withDefaults(), new CursorFactory());
+            super(database, collectionName, CollectionOptions.withDefaults(), new CursorRegistry());
         }
 
         @Override
@@ -134,7 +134,7 @@ public class AbstractMongoCollectionTest {
         Cursor cursor = collection.createCursor(docs, 1, 1);
         assertThat(cursor.isEmpty()).isFalse();
         assertThat(cursor.takeDocuments(10)).containsExactly(docs.get(2));
-        assertThat(cursor.getCursorId()).isGreaterThan(0);
+        assertThat(cursor.getId()).isGreaterThan(0);
     }
 
     @Test

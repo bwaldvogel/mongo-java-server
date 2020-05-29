@@ -48,9 +48,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
 
-    private MongoBackendClock clock = new MongoBackendClock();
+    private Clock clock = Clock.systemDefaultZone();
 
-    protected final CursorFactory cursorFactory = new CursorFactory();
+    protected final CursorRegistry cursorRegistry = new CursorRegistry();
 
     protected Oplog oplog = NoopOplog.get();
 
@@ -61,6 +61,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return resolveDatabase(message.getDatabaseName());
     }
 
+    @Override
     public synchronized MongoDatabase resolveDatabase(String database) {
         MongoDatabase db = databases.get(database);
         if (db == null) {
@@ -275,13 +276,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public QueryResult handleGetMore(MongoGetMore getMore) {
-        Cursor cursor = cursorFactory.getCursor(getMore.getCursorId());
+        Cursor cursor = cursorRegistry.getCursor(getMore.getCursorId());
         List<Document> documents = cursor.takeDocuments(getMore.getNumberToReturn());
         if (cursor.isEmpty()) {
             log.debug("Removing empty {}", cursor);
-            cursorFactory.remove(cursor.getCursorId());
+            cursorRegistry.remove(cursor.getId());
         }
-        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getCursorId() : getMore.getCursorId());
+        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getId() : getMore.getCursorId());
     }
 
     @Override
@@ -304,7 +305,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public void handleKillCursors(MongoKillCursors killCursors) {
-        killCursors.getCursorIds().forEach(cursorFactory::remove);
+        killCursors.getCursorIds().forEach(cursorRegistry::remove);
     }
 
     protected Document handleDropDatabase(String databaseName) {
@@ -352,18 +353,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public MongoBackendClock getClock() {
+    public Clock getClock() {
         return clock;
     }
 
     @Override
-    public void setClock(MongoBackendClock clock) {
-        this.clock = clock;
-    }
-
-    @Override
     public void setClock(Clock clock) {
-        setClock(new MongoBackendClock(clock));
+        this.clock = clock;
     }
 
     @Override
@@ -382,7 +378,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         if (collection == null) {
             collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME, CollectionOptions.withDefaults());
         }
-        return new CollectionBackedOplog(this, collection, cursorFactory);
+        return new CollectionBackedOplog(this, collection, cursorRegistry);
     }
 
 }

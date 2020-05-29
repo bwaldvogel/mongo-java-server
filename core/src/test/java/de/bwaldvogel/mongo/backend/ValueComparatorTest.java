@@ -181,7 +181,7 @@ public class ValueComparatorTest {
 
     @Test
     void testCompareLegacyUuids() throws Exception {
-        assertComparesTheSame(new LegacyUUID( 1, 1), new LegacyUUID(1, 1));
+        assertComparesTheSame(new LegacyUUID(1, 1), new LegacyUUID(1, 1));
         assertFirstValueBeforeSecondValue(null, new LegacyUUID(1, 2));
         assertFirstValueBeforeSecondValue(new LegacyUUID(0, 1), new LegacyUUID(1, 1));
         assertFirstValueBeforeSecondValue(LegacyUUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), LegacyUUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));

@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
-import de.bwaldvogel.mongo.backend.CursorFactory;
+import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
@@ -24,8 +24,9 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
 
     private final PostgresqlBackend backend;
 
-    public PostgresqlCollection(PostgresqlDatabase database, String collectionName, CollectionOptions options, CursorFactory cursorFactory) {
-        super(database, collectionName, options, cursorFactory);
+    public PostgresqlCollection(PostgresqlDatabase database, String collectionName,
+                                CollectionOptions options, CursorRegistry cursorRegistry) {
+        super(database, collectionName, options, cursorRegistry);
         this.backend = database.getBackend();
     }
 

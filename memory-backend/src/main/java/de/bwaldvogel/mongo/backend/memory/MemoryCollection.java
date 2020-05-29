@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
-import de.bwaldvogel.mongo.backend.CursorFactory;
+import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
@@ -23,8 +23,9 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     private final Queue<Integer> emptyPositions = new LinkedList<>();
     private final AtomicInteger dataSize = new AtomicInteger();
 
-    public MemoryCollection(MongoDatabase database, String collectionName, CollectionOptions options, CursorFactory cursorFactory) {
-        super(database, collectionName, options, cursorFactory);
+    public MemoryCollection(MongoDatabase database, String collectionName,
+                            CollectionOptions options, CursorRegistry cursorRegistry) {
+        super(database, collectionName, options, cursorRegistry);
     }
 
     @Override

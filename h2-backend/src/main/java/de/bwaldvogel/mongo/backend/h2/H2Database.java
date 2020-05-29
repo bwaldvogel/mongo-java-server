@@ -4,16 +4,20 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import de.bwaldvogel.mongo.backend.*;
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
+import de.bwaldvogel.mongo.backend.CursorRegistry;
+import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.IndexKey;
+import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class H2Database extends AbstractMongoDatabase<Object> {
@@ -25,8 +29,8 @@ public class H2Database extends AbstractMongoDatabase<Object> {
 
     private final MVStore mvStore;
 
-    public H2Database(String databaseName, MongoBackend backend, MVStore mvStore, CursorFactory cursorFactory) {
-        super(databaseName, cursorFactory);
+    public H2Database(String databaseName, MVStore mvStore, CursorRegistry cursorRegistry) {
+        super(databaseName, cursorRegistry);
         this.mvStore = mvStore;
         initializeNamespacesAndIndexes();
     }
@@ -71,7 +75,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
         String fullCollectionName = databaseName + "." + collectionName;
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
-        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorFactory);
+        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry);
     }
 
     @Override

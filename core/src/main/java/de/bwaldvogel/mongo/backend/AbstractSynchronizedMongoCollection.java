@@ -10,8 +10,8 @@ public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMon
 
     protected AbstractSynchronizedMongoCollection(MongoDatabase database, String collectionName,
                                                   CollectionOptions options,
-                                                  CursorFactory cursorFactory) {
-        super(database, collectionName, options, cursorFactory);
+                                                  CursorRegistry cursorRegistry) {
+        super(database, collectionName, options, cursorRegistry);
     }
 
     @Override

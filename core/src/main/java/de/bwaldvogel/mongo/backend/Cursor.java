@@ -8,7 +8,7 @@ public interface Cursor {
 
     boolean isEmpty();
 
-    long getCursorId();
+    long getId();
 
     List<Document> takeDocuments(int numberToReturn);
 

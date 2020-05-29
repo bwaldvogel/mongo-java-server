@@ -393,7 +393,7 @@ class FieldUpdates {
         if (useDate) {
             newValue = now;
         } else {
-            newValue = new BsonTimestamp(now.getEpochSecond());
+            newValue = new BsonTimestamp(now, 0);
         }
 
         changeSubdocumentValue(document, key, newValue);

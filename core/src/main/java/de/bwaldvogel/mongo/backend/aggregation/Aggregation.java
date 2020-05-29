@@ -20,7 +20,6 @@ import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.BucketStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.ChangeStreamStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.FacetStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.GraphLookupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
@@ -57,7 +56,7 @@ public class Aggregation {
         this.collection = collection;
     }
 
-    public static Aggregation fromPipeline(Object pipelineObject, MongoDatabase database, MongoCollection<?> collection, Oplog oplog) {
+    public static List<Document> parse(Object pipelineObject) {
         if (!(pipelineObject instanceof List)) {
             throw new TypeMismatchException("'pipeline' option must be specified as an array");
         }
@@ -68,10 +67,17 @@ public class Aggregation {
             }
             pipeline.add((Document) pipelineElement);
         }
+        return pipeline;
+    }
+
+    public static Aggregation fromPipeline(Object pipelineObject, MongoDatabase database,
+                                           MongoCollection<?> collection, Oplog oplog) {
+        List<Document> pipeline = parse(pipelineObject);
         return fromPipeline(pipeline, database, collection, oplog);
     }
 
-    private static Aggregation fromPipeline(List<Document> pipeline, MongoDatabase database, MongoCollection<?> collection, Oplog oplog) {
+    public static Aggregation fromPipeline(List<Document> pipeline, MongoDatabase database,
+                                            MongoCollection<?> collection, Oplog oplog) {
         Aggregation aggregation = new Aggregation(collection);
 
         for (Document stage : pipeline) {
@@ -159,10 +165,6 @@ public class Aggregation {
                 case "$redact":
                     Document redactExpression = (Document) stage.get(stageOperation);
                     aggregation.addStage(new RedactStage(redactExpression));
-                    break;
-                case "$changeStream":
-                    Document changeStreamDocument = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new ChangeStreamStage(changeStreamDocument, oplog));
                     break;
                 case "$geoNear":
                     throw new MongoServerNotYetImplementedException(138, stageOperation);

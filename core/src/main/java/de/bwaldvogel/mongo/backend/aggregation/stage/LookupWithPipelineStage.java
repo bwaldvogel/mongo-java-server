@@ -30,7 +30,7 @@ public class LookupWithPipelineStage extends AbstractLookupStage {
     }
 
     private final MongoDatabase mongoDatabase;
-    private Oplog oplog;
+    private final Oplog oplog;
     private final MongoCollection<?> collection;
     private final Document let;
     private final Object pipeline;

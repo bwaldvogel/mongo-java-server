@@ -6,12 +6,19 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import de.bwaldvogel.mongo.backend.*;
 import org.h2.mvstore.MVMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
+import de.bwaldvogel.mongo.backend.Assert;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
+import de.bwaldvogel.mongo.backend.CursorRegistry;
+import de.bwaldvogel.mongo.backend.DocumentWithPosition;
+import de.bwaldvogel.mongo.backend.Missing;
+import de.bwaldvogel.mongo.backend.QueryResult;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
@@ -24,8 +31,8 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
     private static final String DATA_SIZE_KEY = "dataSize";
 
     public H2Collection(MongoDatabase database, String collectionName, CollectionOptions options,
-                        MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap, CursorFactory cursorFactory) {
-        super(database, collectionName, options, cursorFactory);
+                        MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry) {
+        super(database, collectionName, options, cursorRegistry);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
         if (!this.metaMap.containsKey(DATA_SIZE_KEY)) {

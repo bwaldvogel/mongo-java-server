@@ -30,7 +30,7 @@ class InMemoryCursorTest {
     @Test
     void testGetCursorId() {
         Cursor cursor = new InMemoryCursor(1L, Collections.singletonList(new Document()));
-        assertThat(cursor.getCursorId()).isEqualTo(1);
+        assertThat(cursor.getId()).isEqualTo(1);
     }
 
     @Test

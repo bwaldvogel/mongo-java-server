@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 
-import de.bwaldvogel.mongo.backend.MongoBackendClock;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
@@ -41,11 +40,9 @@ public interface MongoBackend {
 
     void close();
 
-    MongoBackendClock getClock();
+    Clock getClock();
 
     void setClock(Clock clock);
-
-    void setClock(MongoBackendClock clock);
 
     void enableOplog();
 

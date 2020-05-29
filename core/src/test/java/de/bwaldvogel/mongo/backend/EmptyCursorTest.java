@@ -18,7 +18,7 @@ class EmptyCursorTest {
     @Test
     void testGetCursorId() {
         Cursor cursor = EmptyCursor.get();
-        assertThat(cursor.getCursorId()).isEqualTo(0);
+        assertThat(cursor.getId()).isEqualTo(0);
     }
 
     @Test

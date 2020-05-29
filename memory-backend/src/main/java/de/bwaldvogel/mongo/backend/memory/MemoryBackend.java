@@ -6,7 +6,7 @@ public class MemoryBackend extends AbstractMongoBackend {
 
     @Override
     public MemoryDatabase openOrCreateDatabase(String databaseName) {
-        return new MemoryDatabase(this, databaseName, cursorFactory);
+        return new MemoryDatabase(databaseName, cursorRegistry);
     }
 
 }
