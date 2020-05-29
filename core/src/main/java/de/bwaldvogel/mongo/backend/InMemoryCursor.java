@@ -1,14 +1,23 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.Collections;
 import java.util.List;
 
 import de.bwaldvogel.mongo.bson.Document;
 
 public class InMemoryCursor extends AbstractCursor {
 
+    protected List<Document> remainingDocuments;
+
     public InMemoryCursor(long cursorId, List<Document> remainingDocuments) {
-        super(cursorId, remainingDocuments);
+        super(cursorId);
         Assert.notEmpty(remainingDocuments);
+        this.remainingDocuments = Collections.unmodifiableList(remainingDocuments);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return remainingDocuments.isEmpty();
     }
 
     public int documentsCount() {

@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -13,11 +12,16 @@ public class EmptyCursor extends AbstractCursor {
     private static final EmptyCursor INSTANCE = new EmptyCursor();
 
     private EmptyCursor() {
-        super(EMPTY_CURSOR_ID, Collections.emptyList());
+        super(EMPTY_CURSOR_ID);
     }
 
     public static EmptyCursor get() {
         return INSTANCE;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return true;
     }
 
     @Override
@@ -27,6 +31,6 @@ public class EmptyCursor extends AbstractCursor {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName()+"()";
+        return getClass().getSimpleName() + "()";
     }
 }

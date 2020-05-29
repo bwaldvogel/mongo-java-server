@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.oplog;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -16,7 +15,7 @@ class OplogCursor extends AbstractCursor {
     private OplogPosition position;
 
     public OplogCursor(long cursorId, Function<OplogPosition, Stream<Document>> oplogStream, OplogPosition position) {
-        super(cursorId, Collections.emptyList());
+        super(cursorId);
         this.oplogStream = oplogStream;
         this.position = position;
     }
