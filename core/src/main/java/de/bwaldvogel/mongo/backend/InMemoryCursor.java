@@ -7,7 +7,7 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public class InMemoryCursor extends Cursor {
 
-    protected List<Document> remainingDocuments;
+    private List<Document> remainingDocuments;
 
     public InMemoryCursor(long cursorId, List<Document> remainingDocuments) {
         super(cursorId);
