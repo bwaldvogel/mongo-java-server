@@ -1,11 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
-import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
-import de.bwaldvogel.mongo.bson.Document;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
+import de.bwaldvogel.mongo.bson.Document;
 
 public class TailableCursor extends AbstractCursor {
 

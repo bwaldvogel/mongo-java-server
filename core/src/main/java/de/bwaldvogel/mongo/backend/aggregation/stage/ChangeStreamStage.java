@@ -1,9 +1,9 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
+import java.util.stream.Stream;
+
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
-
-import java.util.stream.Stream;
 
 public class ChangeStreamStage implements AggregationStage {
 

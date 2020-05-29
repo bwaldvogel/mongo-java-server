@@ -9,11 +9,10 @@ import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.InsertDocumentError;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public interface MongoCollection<P> {
 

@@ -1,5 +1,29 @@
 package de.bwaldvogel.mongo.backend;
 
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.set;
+import static com.mongodb.client.model.Updates.unset;
+import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
+import static java.util.Collections.singletonList;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import org.bson.BsonDocument;
+import org.bson.BsonInt32;
+import org.bson.BsonTimestamp;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
 import com.mongodb.client.MongoChangeStreamCursor;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -7,27 +31,9 @@ import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
+
 import de.bwaldvogel.mongo.oplog.OperationType;
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import org.bson.BsonDocument;
-import org.bson.BsonInt32;
-import org.bson.BsonTimestamp;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.*;
-
-import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Updates.set;
-import static com.mongodb.client.model.Updates.unset;
-import static de.bwaldvogel.mongo.backend.TestUtils.*;
-import static java.util.Collections.singletonList;
 
 public abstract class AbstractOplogTest extends AbstractTest {
 

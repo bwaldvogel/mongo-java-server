@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
-import de.bwaldvogel.mongo.bson.Document;
-
 import java.util.List;
+
+import de.bwaldvogel.mongo.bson.Document;
 
 public class InMemoryCursor extends AbstractCursor {
 

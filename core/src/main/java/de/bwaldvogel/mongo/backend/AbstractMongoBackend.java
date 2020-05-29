@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import de.bwaldvogel.mongo.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +19,11 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.MongoSilentServerException;
+import de.bwaldvogel.mongo.exception.NamespaceExistsException;
+import de.bwaldvogel.mongo.exception.NoReplicationEnabledException;
+import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.oplog.CollectionBackedOplog;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;

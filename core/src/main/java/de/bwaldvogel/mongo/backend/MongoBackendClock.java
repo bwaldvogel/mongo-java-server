@@ -1,12 +1,12 @@
 package de.bwaldvogel.mongo.backend;
 
-import de.bwaldvogel.mongo.bson.BsonTimestamp;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
 
 public class MongoBackendClock extends Clock {
 

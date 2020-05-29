@@ -5,7 +5,6 @@ import java.util.List;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMongoCollection<P> {
 

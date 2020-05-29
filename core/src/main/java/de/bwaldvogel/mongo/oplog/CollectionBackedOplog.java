@@ -1,5 +1,10 @@
 package de.bwaldvogel.mongo.oplog;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.Cursor;
@@ -9,12 +14,6 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
-import sun.nio.ch.Util;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class CollectionBackedOplog implements Oplog {
 

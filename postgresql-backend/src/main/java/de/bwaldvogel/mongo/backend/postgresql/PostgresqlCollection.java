@@ -11,7 +11,11 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.*;
+import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
+import de.bwaldvogel.mongo.backend.CursorFactory;
+import de.bwaldvogel.mongo.backend.DocumentWithPosition;
+import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
 import de.bwaldvogel.mongo.exception.MongoServerException;

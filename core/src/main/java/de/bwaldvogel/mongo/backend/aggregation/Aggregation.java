@@ -10,8 +10,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import de.bwaldvogel.mongo.backend.aggregation.stage.*;
-import de.bwaldvogel.mongo.oplog.Oplog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +17,32 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
+import de.bwaldvogel.mongo.backend.aggregation.stage.AddFieldsStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.AggregationStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.BucketStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.ChangeStreamStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.FacetStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.GraphLookupStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.GroupStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.IndexStatsStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.LimitStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.LookupWithPipelineStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.OutStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.RedactStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.UnsetStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerNotYetImplementedException;
 import de.bwaldvogel.mongo.exception.TypeMismatchException;
+import de.bwaldvogel.mongo.oplog.Oplog;
 
 public class Aggregation {
 

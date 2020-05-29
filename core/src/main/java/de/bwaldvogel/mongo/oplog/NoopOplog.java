@@ -1,11 +1,11 @@
 package de.bwaldvogel.mongo.oplog;
 
+import java.util.List;
+
 import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.backend.EmptyCursor;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
-
-import java.util.List;
 
 public final class NoopOplog implements Oplog {
 
