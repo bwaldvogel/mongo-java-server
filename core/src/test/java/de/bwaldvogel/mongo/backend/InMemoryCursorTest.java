@@ -16,12 +16,6 @@ import de.bwaldvogel.mongo.bson.Document;
 class InMemoryCursorTest {
 
     @Test
-    void testDocumentsCount() {
-        InMemoryCursor cursor = new InMemoryCursor(1L, Collections.singletonList(new Document()));
-        assertThat(cursor.documentsCount()).isEqualTo(1);
-    }
-
-    @Test
     void testIsEmpty() {
         InMemoryCursor cursor = new InMemoryCursor(1L, Collections.singletonList(new Document()));
         assertThat(cursor.isEmpty()).isFalse();

@@ -20,10 +20,6 @@ public class InMemoryCursor extends Cursor {
         return remainingDocuments.isEmpty();
     }
 
-    int documentsCount() {
-        return remainingDocuments.size();
-    }
-
     @Override
     public List<Document> takeDocuments(int numberToReturn) {
         Assert.isTrue(numberToReturn > 0, () -> "Illegal number to return: " + numberToReturn);
