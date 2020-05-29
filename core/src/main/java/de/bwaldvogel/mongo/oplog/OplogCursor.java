@@ -5,11 +5,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import de.bwaldvogel.mongo.backend.AbstractCursor;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
+import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.bson.Document;
 
-class OplogCursor extends AbstractCursor {
+class OplogCursor extends Cursor {
 
     private final Function<OplogPosition, Stream<Document>> oplogStream;
     private OplogPosition position;

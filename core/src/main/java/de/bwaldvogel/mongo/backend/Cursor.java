@@ -4,12 +4,24 @@ import java.util.List;
 
 import de.bwaldvogel.mongo.bson.Document;
 
-public interface Cursor {
+public abstract class Cursor {
 
-    boolean isEmpty();
+    protected final long id;
 
-    long getId();
+    protected Cursor(long id) {
+        this.id = id;
+    }
 
-    List<Document> takeDocuments(int numberToReturn);
+    public long getId() {
+        return id;
+    }
 
+    public abstract boolean isEmpty();
+
+    public abstract List<Document> takeDocuments(int numberToReturn);
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(id: " + id + ")";
+    }
 }

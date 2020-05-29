@@ -5,7 +5,7 @@ import java.util.List;
 
 import de.bwaldvogel.mongo.bson.Document;
 
-public class InMemoryCursor extends AbstractCursor {
+public class InMemoryCursor extends Cursor {
 
     protected List<Document> remainingDocuments;
 
@@ -20,7 +20,7 @@ public class InMemoryCursor extends AbstractCursor {
         return remainingDocuments.isEmpty();
     }
 
-    public int documentsCount() {
+    int documentsCount() {
         return remainingDocuments.size();
     }
 
