@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.backend;
+package de.bwaldvogel.mongo.oplog;
 
 import java.util.Collections;
 import java.util.List;
@@ -6,18 +6,19 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.backend.AbstractCursor;
+import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.oplog.ResumeToken;
 
-public class TailableCursor extends AbstractCursor {
+class OplogCursor extends AbstractCursor {
 
-    private final Function<ResumeToken, Stream<Document>> oplogStream;
-    private ResumeToken resumeToken;
+    private final Function<OplogPosition, Stream<Document>> oplogStream;
+    private OplogPosition position;
 
-    public TailableCursor(long cursorId, Function<ResumeToken, Stream<Document>> oplogStream, ResumeToken resumeToken) {
+    public OplogCursor(long cursorId, Function<OplogPosition, Stream<Document>> oplogStream, OplogPosition position) {
         super(cursorId, Collections.emptyList());
         this.oplogStream = oplogStream;
-        this.resumeToken = resumeToken;
+        this.position = position;
     }
 
     @Override
@@ -27,7 +28,7 @@ public class TailableCursor extends AbstractCursor {
 
     @Override
     public List<Document> takeDocuments(int numberToReturn) {
-        Stream<Document> stream = oplogStream.apply(resumeToken);
+        Stream<Document> stream = oplogStream.apply(position);
 
         if (numberToReturn > 0) {
             stream = stream.limit(numberToReturn);
@@ -40,13 +41,13 @@ public class TailableCursor extends AbstractCursor {
 
     private void updateResumeToken(List<Document> documents) {
         if (!documents.isEmpty()) {
-            resumeToken = getResumeToken(CollectionUtils.getLastElement(documents));
+            position = getOplogPosition(CollectionUtils.getLastElement(documents));
         }
     }
 
-    private static ResumeToken getResumeToken(Document document) {
+    private static OplogPosition getOplogPosition(Document document) {
         Document id = (Document) document.get("_id");
-        return ResumeToken.fromDocument(id);
+        return OplogPosition.fromDocument(id);
     }
 
 }

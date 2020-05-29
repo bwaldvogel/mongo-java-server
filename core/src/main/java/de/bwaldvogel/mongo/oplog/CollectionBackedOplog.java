@@ -9,7 +9,6 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
-import de.bwaldvogel.mongo.backend.TailableCursor;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -61,12 +60,12 @@ public class CollectionBackedOplog implements Oplog {
         );
     }
 
-    private Stream<Document> streamOplog(Document changeStreamDocument, ResumeToken resumeToken) {
+    private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position) {
         return collection.queryAllAsStream()
             .filter(document -> {
                 BsonTimestamp timestamp = (BsonTimestamp) document.get("ts");
-                ResumeToken documentResumeToken = new ResumeToken(timestamp);
-                return documentResumeToken.isAfter(resumeToken);
+                OplogPosition documentOplogPosition = new OplogPosition(timestamp);
+                return documentOplogPosition.isAfter(position);
             })
             .sorted((o1, o2) -> {
                 BsonTimestamp timestamp1 = (BsonTimestamp) o1.get("ts");
@@ -81,19 +80,19 @@ public class CollectionBackedOplog implements Oplog {
         Document startAfter = (Document) changeStreamDocument.get("startAfter");
         Document resumeAfter = (Document) changeStreamDocument.get("resumeAfter");
         BsonTimestamp startAtOperationTime = (BsonTimestamp) changeStreamDocument.get(START_AT_OPERATION_TIME);
-        final ResumeToken initialResumeToken;
+        final OplogPosition initialOplogPosition;
         if (startAfter != null) {
-            initialResumeToken = ResumeToken.fromDocument(startAfter);
+            initialOplogPosition = OplogPosition.fromDocument(startAfter);
         } else if (resumeAfter != null) {
-            initialResumeToken = ResumeToken.fromDocument(resumeAfter);
+            initialOplogPosition = OplogPosition.fromDocument(resumeAfter);
         } else if (startAtOperationTime != null) {
-            initialResumeToken = new ResumeToken(startAtOperationTime).inclusive();
+            initialOplogPosition = new OplogPosition(startAtOperationTime).inclusive();
         } else {
-            initialResumeToken = new ResumeToken(oplogClock.now());
+            initialOplogPosition = new OplogPosition(oplogClock.now());
         }
 
-        Function<ResumeToken, Stream<Document>> streamSupplier = resumeToken -> streamOplog(changeStreamDocument, resumeToken);
-        Cursor cursor = new TailableCursor(cursorRegistry.generateCursorId(), streamSupplier, initialResumeToken);
+        Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
+        Cursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
         cursorRegistry.add(cursor);
         return cursor;
     }
@@ -180,7 +179,7 @@ public class CollectionBackedOplog implements Oplog {
                 documentKey = (Document) oplogDocument.get("o");
                 break;
         }
-        ResumeToken resumeToken = new ResumeToken((BsonTimestamp) oplogDocument.get("ts"));
+        OplogPosition resumeToken = new OplogPosition((BsonTimestamp) oplogDocument.get("ts"));
         return new Document()
             .append("_id", new Document("_data", resumeToken.toHexString()))
             .append("operationType", operationType.getDescription())
