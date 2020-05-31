@@ -34,18 +34,18 @@ class OplogCursor extends Cursor {
         }
 
         List<Document> documents = stream.collect(Collectors.toList());
-        updateResumeToken(documents);
+        updatePosition(documents);
         return documents;
     }
 
-    private void updateResumeToken(List<Document> documents) {
+    private void updatePosition(List<Document> documents) {
         if (!documents.isEmpty()) {
             position = getOplogPosition(CollectionUtils.getLastElement(documents));
         }
     }
 
     private static OplogPosition getOplogPosition(Document document) {
-        Document id = (Document) document.get("_id");
+        Document id = (Document) document.get(OplogDocumentFields.ID);
         return OplogPosition.fromDocument(id);
     }
 

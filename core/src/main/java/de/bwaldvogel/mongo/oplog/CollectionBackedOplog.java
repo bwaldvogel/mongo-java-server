@@ -63,13 +63,13 @@ public class CollectionBackedOplog implements Oplog {
     private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position) {
         return collection.queryAllAsStream()
             .filter(document -> {
-                BsonTimestamp timestamp = (BsonTimestamp) document.get("ts");
+                BsonTimestamp timestamp = (BsonTimestamp) document.get(OplogDocumentFields.TIMESTAMP);
                 OplogPosition documentOplogPosition = new OplogPosition(timestamp);
                 return documentOplogPosition.isAfter(position);
             })
             .sorted((o1, o2) -> {
-                BsonTimestamp timestamp1 = (BsonTimestamp) o1.get("ts");
-                BsonTimestamp timestamp2 = (BsonTimestamp) o2.get("ts");
+                BsonTimestamp timestamp1 = (BsonTimestamp) o1.get(OplogDocumentFields.TIMESTAMP);
+                BsonTimestamp timestamp2 = (BsonTimestamp) o2.get(OplogDocumentFields.TIMESTAMP);
                 return timestamp1.compareTo(timestamp2);
             })
             .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument));
@@ -99,7 +99,7 @@ public class CollectionBackedOplog implements Oplog {
 
     private Document toOplogDocument(OperationType operationType, String namespace) {
         return new Document()
-            .append("ts", oplogClock.incrementAndGet())
+            .append(OplogDocumentFields.TIMESTAMP, oplogClock.incrementAndGet())
             .append("t", ELECTION_TERM)
             .append("h", 0L)
             .append("v", 2L)
@@ -111,18 +111,18 @@ public class CollectionBackedOplog implements Oplog {
 
     private Document toOplogInsertDocument(String namespace, Document document) {
         return toOplogDocument(OperationType.INSERT, namespace)
-            .append("o", document.cloneDeeply());
+            .append(OplogDocumentFields.O, document.cloneDeeply());
     }
 
     private Document toOplogUpdateDocument(String namespace, Document query, Object id) {
         return toOplogDocument(OperationType.UPDATE, namespace)
-            .append("o", query)
-            .append("o2", new Document("_id", id));
+            .append(OplogDocumentFields.O, query)
+            .append(OplogDocumentFields.O2, new Document(OplogDocumentFields.ID, id));
     }
 
     private Document toOplogDeleteDocument(String namespace, Object deletedDocumentId) {
         return toOplogDocument(OperationType.DELETE, namespace)
-            .append("o", new Document("_id", deletedDocumentId));
+            .append(OplogDocumentFields.O, new Document(OplogDocumentFields.ID, deletedDocumentId));
     }
 
     private boolean isOplogCollection(String namespace) {
@@ -132,7 +132,7 @@ public class CollectionBackedOplog implements Oplog {
     private Document getFullDocument(Document changeStreamDocument, Document document, OperationType operationType) {
         switch (operationType) {
             case INSERT:
-                return (Document) document.get("o");
+                return (Document) document.get(OplogDocumentFields.O);
             case DELETE:
                 return null;
             case UPDATE:
@@ -148,10 +148,12 @@ public class CollectionBackedOplog implements Oplog {
             String collectionName = namespace.split("\\.")[1];
             return backend.resolveDatabase(databaseName)
                 .resolveCollection(collectionName, true)
-                .queryAllAsStream().filter(d -> d.get("_id").equals(((Document) document.get("o2")).get("_id")))
-                .findFirst().orElse(getDeltaUpdate((Document) document.get("o")));
+                .queryAllAsStream()
+                .filter(d -> d.get(OplogDocumentFields.ID).equals(((Document) document.get(OplogDocumentFields.O2)).get(OplogDocumentFields.ID)))
+                .findFirst()
+                .orElse(getDeltaUpdate((Document) document.get(OplogDocumentFields.O)));
         }
-        return getDeltaUpdate((Document) document.get("o"));
+        return getDeltaUpdate((Document) document.get(OplogDocumentFields.O));
     }
 
     private Document getDeltaUpdate(Document updateDocument) {
@@ -168,24 +170,26 @@ public class CollectionBackedOplog implements Oplog {
     private Document toChangeStreamResponseDocument(Document oplogDocument, Document changeStreamDocument) {
         OperationType operationType = OperationType.fromCode(oplogDocument.get("op").toString());
         Document documentKey = new Document();
+        Document document = (Document) oplogDocument.get(OplogDocumentFields.O);
         switch (operationType) {
             case UPDATE:
-                documentKey = (Document) oplogDocument.get("o2");
+            case DELETE:
+                documentKey = document;
                 break;
             case INSERT:
-                documentKey.append("_id", ((Document) oplogDocument.get("o")).get("_id"));
+                documentKey.append(OplogDocumentFields.ID, document.get(OplogDocumentFields.ID));
                 break;
-            case DELETE:
-                documentKey = (Document) oplogDocument.get("o");
-                break;
+            default:
+                throw new IllegalArgumentException("Unexpected operation type: " + operationType);
         }
-        OplogPosition resumeToken = new OplogPosition((BsonTimestamp) oplogDocument.get("ts"));
+        BsonTimestamp timestamp = (BsonTimestamp) oplogDocument.get(OplogDocumentFields.TIMESTAMP);
+        OplogPosition oplogPosition = new OplogPosition(timestamp);
         return new Document()
-            .append("_id", new Document("_data", resumeToken.toHexString()))
+            .append(OplogDocumentFields.ID, new Document(OplogDocumentFields.ID_DATA_KEY, oplogPosition.toHexString()))
             .append("operationType", operationType.getDescription())
             .append("fullDocument", getFullDocument(changeStreamDocument, oplogDocument, operationType))
             .append("documentKey", documentKey)
-            .append("clusterTime", oplogDocument.get("ts"));
+            .append("clusterTime", oplogDocument.get(OplogDocumentFields.TIMESTAMP));
     }
 
 }

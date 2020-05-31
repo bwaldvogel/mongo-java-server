@@ -30,7 +30,7 @@ public final class OplogPosition {
     }
 
     public static OplogPosition fromDocument(Document document) {
-        return fromHexString((String) document.get("_data"));
+        return fromHexString((String) document.get(OplogDocumentFields.ID_DATA_KEY));
     }
 
     public String toHexString() {
