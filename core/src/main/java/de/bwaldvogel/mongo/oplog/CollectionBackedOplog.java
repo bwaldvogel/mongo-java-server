@@ -16,6 +16,7 @@ public class CollectionBackedOplog implements Oplog {
 
     private static final long ELECTION_TERM = 1L;
     private static final String START_AT_OPERATION_TIME = "startAtOperationTime";
+    private static final String FULL_DOCUMENT = "fullDocument";
 
     private final OplogClock oplogClock;
     private final MongoCollection<Document> collection;
@@ -63,13 +64,13 @@ public class CollectionBackedOplog implements Oplog {
     private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position) {
         return collection.queryAllAsStream()
             .filter(document -> {
-                BsonTimestamp timestamp = (BsonTimestamp) document.get(OplogDocumentFields.TIMESTAMP);
+                BsonTimestamp timestamp = getOplogTimestamp(document);
                 OplogPosition documentOplogPosition = new OplogPosition(timestamp);
                 return documentOplogPosition.isAfter(position);
             })
             .sorted((o1, o2) -> {
-                BsonTimestamp timestamp1 = (BsonTimestamp) o1.get(OplogDocumentFields.TIMESTAMP);
-                BsonTimestamp timestamp2 = (BsonTimestamp) o2.get(OplogDocumentFields.TIMESTAMP);
+                BsonTimestamp timestamp1 = getOplogTimestamp(o1);
+                BsonTimestamp timestamp2 = getOplogTimestamp(o2);
                 return timestamp1.compareTo(timestamp2);
             })
             .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument));
@@ -104,7 +105,7 @@ public class CollectionBackedOplog implements Oplog {
             .append("h", 0L)
             .append("v", 2L)
             .append("op", operationType.getCode())
-            .append("ns", namespace)
+            .append(OplogDocumentFields.NAMESPACE, namespace)
             .append("ui", ui)
             .append("wall", oplogClock.instant());
     }
@@ -132,7 +133,7 @@ public class CollectionBackedOplog implements Oplog {
     private Document getFullDocument(Document changeStreamDocument, Document document, OperationType operationType) {
         switch (operationType) {
             case INSERT:
-                return (Document) document.get(OplogDocumentFields.O);
+                return getUpdateDocument(document);
             case DELETE:
                 return null;
             case UPDATE:
@@ -142,8 +143,9 @@ public class CollectionBackedOplog implements Oplog {
     }
 
     private Document lookUpUpdateDocument(Document changeStreamDocument, Document document) {
-        if (changeStreamDocument.containsKey("fullDocument") && changeStreamDocument.get("fullDocument").equals("updateLookup")) {
-            String namespace = (String) document.get("ns");
+        Document deltaUpdate = getDeltaUpdate(getUpdateDocument(document));
+        if (changeStreamDocument.containsKey(FULL_DOCUMENT) && changeStreamDocument.get(FULL_DOCUMENT).equals("updateLookup")) {
+            String namespace = (String) document.get(OplogDocumentFields.NAMESPACE);
             String databaseName = namespace.split("\\.")[0];
             String collectionName = namespace.split("\\.")[1];
             return backend.resolveDatabase(databaseName)
@@ -151,9 +153,9 @@ public class CollectionBackedOplog implements Oplog {
                 .queryAllAsStream()
                 .filter(d -> d.get(OplogDocumentFields.ID).equals(((Document) document.get(OplogDocumentFields.O2)).get(OplogDocumentFields.ID)))
                 .findFirst()
-                .orElse(getDeltaUpdate((Document) document.get(OplogDocumentFields.O)));
+                .orElse(deltaUpdate);
         }
-        return getDeltaUpdate((Document) document.get(OplogDocumentFields.O));
+        return deltaUpdate;
     }
 
     private Document getDeltaUpdate(Document updateDocument) {
@@ -170,7 +172,7 @@ public class CollectionBackedOplog implements Oplog {
     private Document toChangeStreamResponseDocument(Document oplogDocument, Document changeStreamDocument) {
         OperationType operationType = OperationType.fromCode(oplogDocument.get("op").toString());
         Document documentKey = new Document();
-        Document document = (Document) oplogDocument.get(OplogDocumentFields.O);
+        Document document = getUpdateDocument(oplogDocument);
         switch (operationType) {
             case UPDATE:
             case DELETE:
@@ -182,14 +184,22 @@ public class CollectionBackedOplog implements Oplog {
             default:
                 throw new IllegalArgumentException("Unexpected operation type: " + operationType);
         }
-        BsonTimestamp timestamp = (BsonTimestamp) oplogDocument.get(OplogDocumentFields.TIMESTAMP);
+        BsonTimestamp timestamp = getOplogTimestamp(oplogDocument);
         OplogPosition oplogPosition = new OplogPosition(timestamp);
         return new Document()
             .append(OplogDocumentFields.ID, new Document(OplogDocumentFields.ID_DATA_KEY, oplogPosition.toHexString()))
             .append("operationType", operationType.getDescription())
-            .append("fullDocument", getFullDocument(changeStreamDocument, oplogDocument, operationType))
+            .append(FULL_DOCUMENT, getFullDocument(changeStreamDocument, oplogDocument, operationType))
             .append("documentKey", documentKey)
-            .append("clusterTime", oplogDocument.get(OplogDocumentFields.TIMESTAMP));
+            .append("clusterTime", timestamp);
+    }
+
+    private static BsonTimestamp getOplogTimestamp(Document document) {
+        return (BsonTimestamp) document.get(OplogDocumentFields.TIMESTAMP);
+    }
+
+    private static Document getUpdateDocument(Document document) {
+        return (Document) document.get(OplogDocumentFields.O);
     }
 
 }
