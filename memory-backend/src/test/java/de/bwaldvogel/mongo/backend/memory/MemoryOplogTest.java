@@ -7,7 +7,7 @@ public class MemoryOplogTest extends AbstractOplogTest {
 
     @Override
     protected MongoBackend createBackend() {
-        return new MemoryBackend();
+        return new MemoryBackend(clock);
     }
 
 }

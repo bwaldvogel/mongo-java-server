@@ -5,7 +5,6 @@ import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.ServerFeatures;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.IndexNotFoundException;
@@ -56,10 +56,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private MongoCollection<P> namespaces;
 
+    private final ServerFeatures serverFeatures;
     protected final CursorRegistry cursorRegistry;
 
-    protected AbstractMongoDatabase(String databaseName, CursorRegistry cursorRegistry) {
+    protected AbstractMongoDatabase(String databaseName, ServerFeatures serverFeatures, CursorRegistry cursorRegistry) {
         this.databaseName = databaseName;
+        this.serverFeatures = serverFeatures;
         this.cursorRegistry = cursorRegistry;
     }
 
@@ -215,24 +217,30 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandFind(String command, Document query) {
-        final List<Document> documents = new ArrayList<>();
         String collectionName = (String) query.get(command);
         MongoCollection<P> collection = resolveCollection(collectionName, false);
-        if (collection != null) {
-            int numberToSkip = ((Number) query.getOrDefault("skip", 0)).intValue();
-            int numberToReturn = ((Number) query.getOrDefault("limit", 0)).intValue();
-            Document projection = (Document) query.get("projection");
-
-            Document querySelector = new Document();
-            querySelector.put("$query", query.getOrDefault("filter", new Document()));
-            querySelector.put("$orderby", query.get("sort"));
-
-            for (Document document : collection.handleQuery(querySelector, numberToSkip, numberToReturn, projection)) {
-                documents.add(document);
-            }
+        if (collection == null) {
+            return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, Collections.emptyList());
         }
+        int numberToSkip = ((Number) query.getOrDefault("skip", 0)).intValue();
+        int numberToReturn = ((Number) query.getOrDefault("limit", 0)).intValue();
+        int batchSize = ((Number) query.getOrDefault("batchSize", 0)).intValue();
+        Document projection = (Document) query.get("projection");
 
-        return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, documents);
+        Document querySelector = new Document();
+        querySelector.put("$query", query.getOrDefault("filter", new Document()));
+        querySelector.put("$orderby", query.get("sort"));
+
+        QueryResult queryResult = collection.handleQuery(querySelector, numberToSkip, numberToReturn, batchSize, projection);
+        return toCursorResponse(collection, queryResult);
+    }
+
+    private Document toCursorResponse(MongoCollection<P> collection, QueryResult queryResult) {
+        List<Document> documents = new ArrayList<>();
+        for (Document document : queryResult) {
+            documents.add(document);
+        }
+        return Utils.firstBatchCursorResponse(collection.getFullName(), documents, queryResult.getCursorId());
     }
 
     private Document commandInsert(Channel channel, String command, Document query, Oplog oplog) {
@@ -492,11 +500,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandGetLastError(Channel channel, String command, Document query) {
-        Iterator<String> it = query.keySet().iterator();
-        String cmd = it.next();
-        Assert.equals(cmd, command);
-        if (it.hasNext()) {
-            String subCommand = it.next();
+        query.forEach((subCommand, value) -> {
+            if (subCommand.equals(command)) {
+                return;
+            }
+
             switch (subCommand) {
                 case "w":
                     // ignore
@@ -504,10 +512,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 case "fsync":
                     // ignore
                     break;
+                case "$db":
+                    Assert.equals(value, getDatabaseName());
+                    break;
                 default:
                     throw new MongoServerException("unknown subcommand: " + subCommand);
             }
-        }
+        });
 
         List<Document> results = lastResults.get(channel);
 
@@ -599,7 +610,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         int numSkip = query.getNumberToSkip();
         int numReturn = query.getNumberToReturn();
         Document fieldSelector = query.getReturnFieldSelector();
-        return collection.handleQuery(query.getQuery(), numSkip, numReturn, fieldSelector);
+        return collection.handleQuery(query.getQuery(), numSkip, numReturn, 0, fieldSelector);
     }
 
     @Override
@@ -945,4 +956,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collectionName.startsWith("system.");
     }
 
+    @Override
+    public ServerFeatures getServerFeatures() {
+        return serverFeatures;
+    }
 }

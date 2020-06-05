@@ -12,9 +12,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 
-public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
+public class MongoWireReplyEncoder extends MessageToByteEncoder<MongoReply> {
 
-    private static final Logger log = LoggerFactory.getLogger(MongoWireEncoder.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoWireReplyEncoder.class);
 
     @Override
     protected void encode(ChannelHandlerContext ctx, MongoReply reply, ByteBuf buf) {

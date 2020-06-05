@@ -9,8 +9,7 @@ public class H2MongoServer extends MongoServer {
 
     private static final Logger log = LoggerFactory.getLogger(H2MongoServer.class);
 
-    public static void main(String[] args) throws Exception {
-
+    public static void main(String[] args) {
         final MongoServer mongoServer;
         if (args.length == 1) {
             String fileName = args[0];

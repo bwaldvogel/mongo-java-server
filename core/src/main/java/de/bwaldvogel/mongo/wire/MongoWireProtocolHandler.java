@@ -16,6 +16,7 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
+import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.buffer.ByteBuf;
@@ -64,12 +65,12 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             return null; // retry
         }
         in = in.readSlice(totalLength - LENGTH_FIELD_LENGTH);
-        int readable = in.readableBytes();
-        Assert.equals(readable, (long) totalLength - LENGTH_FIELD_LENGTH);
+        long readable = in.readableBytes();
+        Assert.equals(readable, totalLength - LENGTH_FIELD_LENGTH);
 
         final int requestID = in.readIntLE();
         final int responseTo = in.readIntLE();
-        final MessageHeader header = new MessageHeader(requestID, responseTo);
+        final MessageHeader header = new MessageHeader(totalLength, requestID, responseTo);
 
         int opCodeId = in.readIntLE();
         final OpCode opCode = OpCode.getById(opCodeId);
@@ -92,6 +93,9 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
                 break;
             case OP_UPDATE:
                 request = handleUpdate(channel, header, in);
+                break;
+            case OP_MSG:
+                request = handleMessage(channel, header, in);
                 break;
             case OP_GET_MORE:
                 request = handleGetMore(channel, header, in);
@@ -214,6 +218,42 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             numberOfCursors--;
         }
         return new MongoKillCursors(channel, header, cursorIds);
+    }
+
+    private ClientRequest handleMessage(Channel channel, MessageHeader header, ByteBuf buffer) {
+        int flags = buffer.readIntLE();
+        if (flags != 0) {
+            throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
+        }
+
+        byte firstSectionKind = buffer.readByte();
+        Assert.equals(firstSectionKind, MongoMessage.SECTION_KIND_BODY);
+        Document document = BsonDecoder.decodeBson(buffer);
+
+        while (readerDidNotReachEnd(header, buffer)) {
+            byte sectionKind = buffer.readByte();
+            Assert.equals(sectionKind, MongoMessage.SECTION_KIND_DOCUMENT_SEQUENCE);
+
+            int sectionSize = buffer.readIntLE();
+            int expectedSize = header.getTotalLength() - buffer.readerIndex();
+            Assert.equals(sectionSize, expectedSize);
+            String documentIdentifier = BsonDecoder.decodeCString(buffer);
+            List<Document> documents = new ArrayList<>();
+            do {
+                Document subDocument = BsonDecoder.decodeBson(buffer);
+                documents.add(subDocument);
+            } while (readerDidNotReachEnd(header, buffer));
+
+            Assert.notEmpty(documents);
+            Object old = document.put(documentIdentifier, documents);
+            Assert.isNull(old);
+        }
+
+        return new MongoMessage(channel, header, document);
+    }
+
+    private static boolean readerDidNotReachEnd(MessageHeader header, ByteBuf buffer) {
+        return buffer.readerIndex() < header.getTotalLength() - LENGTH_FIELD_LENGTH;
     }
 
 }

@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.h2;
 
+import java.time.Clock;
+
 import org.h2.mvstore.MVStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,8 +18,12 @@ public class H2Backend extends AbstractMongoBackend {
     private final MVStore mvStore;
 
     public static H2Backend inMemory() {
+        return inMemory(defaultClock());
+    }
+
+    public static H2Backend inMemory(Clock clock) {
         MVStore mvStore = MVStore.open(null);
-        return new H2Backend(mvStore);
+        return new H2Backend(mvStore, clock);
     }
 
     public void commit() {
@@ -27,6 +33,11 @@ public class H2Backend extends AbstractMongoBackend {
     }
 
     public H2Backend(MVStore mvStore) {
+        this(mvStore, defaultClock());
+    }
+
+    public H2Backend(MVStore mvStore, Clock clock) {
+        super(clock);
         this.mvStore = mvStore;
 
         mvStore.getMapNames().stream()
@@ -50,6 +61,10 @@ public class H2Backend extends AbstractMongoBackend {
         this(openMvStore(fileName));
     }
 
+    public H2Backend(String fileName, Clock clock) {
+        this(openMvStore(fileName), clock);
+    }
+
     private static MVStore openMvStore(String fileName) {
         if (fileName == null) {
             log.info("opening in-memory MVStore");
@@ -61,7 +76,7 @@ public class H2Backend extends AbstractMongoBackend {
 
     @Override
     protected MongoDatabase openOrCreateDatabase(String databaseName) {
-        return new H2Database(databaseName, mvStore, cursorRegistry);
+        return new H2Database(databaseName, mvStore, getServerFeatures(), getCursorRegistry());
     }
 
     public MVStore getMvStore() {

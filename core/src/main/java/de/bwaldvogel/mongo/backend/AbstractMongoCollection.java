@@ -5,6 +5,7 @@ import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -56,7 +57,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return matcher.matches(document, query);
     }
 
-    private QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
+    private QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize) {
         synchronized (indexes) {
             for (Index<P> index : indexes) {
                 if (index.canHandle(query)) {
@@ -66,7 +67,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             }
         }
 
-        return matchDocuments(query, orderBy, numberToSkip, numberToReturn);
+        return matchDocuments(query, orderBy, numberToSkip, numberToReturn, batchSize);
     }
 
     protected void sortDocumentsInMemory(List<Document> documents, Document orderBy) {
@@ -79,7 +80,35 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                  int numberToReturn);
+                                                  int numberToReturn, int batchSize);
+
+    protected QueryResult matchDocumentsFromStream(Stream<Document> documentStream, Document query, Document orderBy,
+                                                   int numberToSkip, int numberToReturn, int batchSize) {
+        Comparator<Document> documentComparator = deriveComparator(orderBy);
+        return matchDocumentsFromStream(query, documentStream, numberToSkip, numberToReturn, batchSize, documentComparator);
+    }
+
+    protected QueryResult matchDocumentsFromStream(Document query, Stream<Document> documentStream,
+                                                   int numberToSkip, int numberToReturn, int batchSize,
+                                                   Comparator<Document> documentComparator) {
+        documentStream = documentStream
+            .filter(document -> documentMatchesQuery(document, query));
+
+        if (documentComparator != null) {
+            documentStream = documentStream.sorted(documentComparator);
+        }
+
+        if (numberToSkip > 0) {
+            documentStream = documentStream.skip(numberToSkip);
+        }
+
+        if (supportsBatchSize() && numberToReturn > 0) {
+            documentStream = documentStream.limit(numberToReturn);
+        }
+
+        List<Document> matchedDocuments = documentStream.collect(Collectors.toList());
+        return createQueryResult(matchedDocuments, numberToReturn, batchSize);
+    }
 
     protected QueryResult matchDocuments(Document query, Iterable<P> positions, Document orderBy,
                                          int numberToSkip, int numberToReturn) {
@@ -421,7 +450,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn, Document fieldSelector) {
+    public QueryResult handleQuery(Document queryObject, int numberToSkip, int numberToReturn, int batchSize, Document fieldSelector) {
         if (numberToReturn < 0) {
             // actually: request to close cursor automatically
             numberToReturn = -numberToReturn;
@@ -440,7 +469,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             orderBy = null;
         }
 
-        QueryResult queryResult = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
+        QueryResult queryResult = queryDocuments(query, orderBy, numberToSkip, numberToReturn, batchSize);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
             // TODO: Handle cursors properly
@@ -456,7 +485,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document filter = (Document) query.getOrDefault("query", new Document());
         Set<Object> values = new TreeSet<>(ValueComparator.ascWithoutListHandling().withDefaultComparatorForUuids());
 
-        for (Document document : queryDocuments(filter, null, 0, 0)) {
+        for (Document document : queryDocuments(filter, null, 0, 0, 0)) {
             Object value = Utils.getSubdocumentValueCollectionAware(document, key);
             if (!(value instanceof Missing)) {
                 if (value instanceof Collection) {
@@ -499,7 +528,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         int nMatched = 0;
         List<Object> updatedIds = new ArrayList<>();
-        for (Document document : queryDocuments(selector, null, 0, 0)) {
+        for (Document document : queryDocuments(selector, null, 0, 0, 0)) {
             Integer matchPos = matcher.matchPosition(document, selector);
             Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
             if (!Utils.nullAwareEquals(oldDocument, document)) {
@@ -652,7 +681,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         int numberToReturn = Math.max(limit, 0);
         int count = 0;
-        Iterator<?> it = queryDocuments(query, null, skip, numberToReturn).iterator();
+        Iterator<?> it = queryDocuments(query, null, skip, numberToReturn, 0).iterator();
         while (it.hasNext()) {
             it.next();
             count++;
@@ -748,22 +777,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract void removeDocument(P position);
 
-    protected static Iterable<Document> applySkipAndLimit(List<Document> documents, int numberToSkip, int numberToReturn) {
-        if (numberToSkip > 0) {
-            if (numberToSkip < documents.size()) {
-                documents = documents.subList(numberToSkip, documents.size());
-            } else {
-                return Collections.emptyList();
-            }
-        }
-
-        if (numberToReturn > 0 && documents.size() > numberToReturn) {
-            documents = documents.subList(0, numberToReturn);
-        }
-
-        return documents;
-    }
-
     protected P findDocumentPosition(Document document) {
         return streamAllDocumentsWithPosition()
             .filter(match -> documentMatchesQuery(match.getDocument(), document))
@@ -778,27 +791,35 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return AbstractMongoDatabase.isSystemCollection(getCollectionName());
     }
 
-    protected QueryResult createQueryResult(List<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
-        Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
-        Iterable<Document> documents = applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult(documents, cursor);
-    }
-
-    protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
-        final List<Document> remainingDocuments;
-        if (numberToReturn > 0 && matchedDocuments.size() > numberToReturn) {
-            remainingDocuments = matchedDocuments.stream()
-                .skip(numberToSkip + numberToReturn)
+    protected QueryResult createQueryResult(List<Document> matchedDocuments, int numberToReturn, int batchSize) {
+        final Collection<Document> firstBatch;
+        if (batchSize > 0) {
+            firstBatch = matchedDocuments.stream()
+                .limit(batchSize)
+                .collect(Collectors.toList());
+        } else if (!supportsBatchSize() && numberToReturn > 0) {
+            firstBatch = matchedDocuments.stream()
+                .limit(numberToReturn)
                 .collect(Collectors.toList());
         } else {
-            remainingDocuments = Collections.emptyList();
+            firstBatch = matchedDocuments;
         }
+        List<Document> remainingDocuments = matchedDocuments.subList(firstBatch.size(), matchedDocuments.size());
 
         if (remainingDocuments.isEmpty()) {
-            return EmptyCursor.get();
+            return new QueryResult(firstBatch);
+        } else {
+            Cursor cursor = createCursor(remainingDocuments);
+            return new QueryResult(firstBatch, cursor);
         }
+    }
 
-        InMemoryCursor cursor = new InMemoryCursor(cursorRegistry.generateCursorId(), new ArrayList<>(remainingDocuments));
+    private boolean supportsBatchSize() {
+        return database.getServerFeatures().supportsBatchSize();
+    }
+
+    protected Cursor createCursor(List<Document> remainingDocuments) {
+        InMemoryCursor cursor = new InMemoryCursor(cursorRegistry.generateCursorId(), remainingDocuments);
         cursorRegistry.add(cursor);
         return cursor;
     }

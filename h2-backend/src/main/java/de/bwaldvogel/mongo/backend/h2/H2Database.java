@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.ServerFeatures;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
@@ -29,8 +30,9 @@ public class H2Database extends AbstractMongoDatabase<Object> {
 
     private final MVStore mvStore;
 
-    public H2Database(String databaseName, MVStore mvStore, CursorRegistry cursorRegistry) {
-        super(databaseName, cursorRegistry);
+    public H2Database(String databaseName, MVStore mvStore,
+                      ServerFeatures serverFeatures, CursorRegistry cursorRegistry) {
+        super(databaseName, serverFeatures, cursorRegistry);
         this.mvStore = mvStore;
         initializeNamespacesAndIndexes();
     }

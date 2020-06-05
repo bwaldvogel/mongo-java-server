@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend.postgresql;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Clock;
 
 import javax.sql.DataSource;
 
@@ -15,6 +16,11 @@ public class PostgresqlBackend extends AbstractMongoBackend {
     private final DataSource dataSource;
 
     public PostgresqlBackend(DataSource dataSource) {
+        this(dataSource, defaultClock());
+    }
+
+    public PostgresqlBackend(DataSource dataSource, Clock clock) {
+        super(clock);
         this.dataSource = dataSource;
     }
 
@@ -35,7 +41,7 @@ public class PostgresqlBackend extends AbstractMongoBackend {
             throw new MongoServerException("failed to open or create database", e);
         }
 
-        return new PostgresqlDatabase(databaseName, this, cursorRegistry);
+        return new PostgresqlDatabase(databaseName, this, getServerFeatures(), getCursorRegistry());
     }
 
     public Connection getConnection() throws SQLException {

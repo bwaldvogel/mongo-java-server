@@ -2,12 +2,12 @@ package de.bwaldvogel.mongo.exception;
 
 public enum ErrorCode {
     BadValue(2),
-    CursorNotFound(3),
     FailedToParse(9),
     TypeMismatch(14),
     IndexNotFound(27),
     PathNotViable(28),
     ConflictingUpdateOperators(40),
+    CursorNotFound(43),
     NamespaceExists(48),
     DollarPrefixedFieldName(52),
     CommandNotFound(59),

@@ -8,7 +8,7 @@ public class H2BackendTest extends AbstractBackendTest {
 
     @Override
     protected MongoBackend createBackend() throws Exception {
-        return H2Backend.inMemory();
+        return H2Backend.inMemory(clock);
     }
 
 }

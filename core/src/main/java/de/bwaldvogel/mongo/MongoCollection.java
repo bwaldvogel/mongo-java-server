@@ -55,10 +55,10 @@ public interface MongoCollection<P> {
     }
 
     default QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn) {
-        return handleQuery(query, numberToSkip, numberToReturn, null);
+        return handleQuery(query, numberToSkip, numberToReturn, 0, null);
     }
 
-    QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn, Document returnFieldSelector);
+    QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn, int batchSize, Document returnFieldSelector);
 
     default void insertDocuments(List<Document> documents) {
         int index = 0;

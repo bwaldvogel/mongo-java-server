@@ -8,7 +8,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
@@ -51,29 +55,36 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
-        List<Document> matchedDocuments = new ArrayList<>();
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize) {
 
         String sql = "SELECT data FROM " + getQualifiedTablename() + " " + convertOrderByToSql(orderBy);
         try (Connection connection = backend.getConnection();
-             PreparedStatement stmt = connection.prepareStatement(sql)
+             PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet resultSet = stmt.executeQuery()
         ) {
-            try (ResultSet resultSet = stmt.executeQuery()) {
-                while (resultSet.next()) {
-                    String data = resultSet.getString("data");
-                    Document document = JsonConverter.fromJson(data);
-                    if (documentMatchesQuery(document, query)) {
-                        matchedDocuments.add(document);
+            Stream<Document> documents = StreamSupport.stream(new AbstractSpliterator<Document>(Long.MAX_VALUE, Spliterator.ORDERED) {
+                @Override
+                public boolean tryAdvance(Consumer<? super Document> consumer) {
+                    try {
+                        if (!resultSet.next()) {
+                            return false;
+                        }
+                        String data = resultSet.getString("data");
+                        Document document = JsonConverter.fromJson(data);
+                        consumer.accept(document);
+                        return true;
+                    } catch (SQLException e) {
+                        throw new MongoServerException("Failed to query " + this, e);
+                    } catch (IOException e) {
+                        throw new MongoServerException("Failed to parse document", e);
                     }
                 }
-            } catch (IOException e) {
-                throw new MongoServerException("failed to parse document", e);
-            }
-        } catch (SQLException e) {
-            throw new MongoServerException("failed to query " + this, e);
-        }
+            }, false);
 
-        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
+            return matchDocumentsFromStream(query, documents, numberToSkip, numberToReturn, batchSize, null);
+        } catch (SQLException e) {
+            throw new MongoServerException("Failed to query " + this, e);
+        }
     }
 
     static String convertOrderByToSql(Document orderBy) {

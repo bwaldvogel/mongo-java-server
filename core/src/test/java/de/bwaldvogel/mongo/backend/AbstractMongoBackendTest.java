@@ -27,7 +27,7 @@ class AbstractMongoBackendTest {
         backend = new AbstractMongoBackend() {
 
             {
-                AbstractMongoBackendTest.this.cursorRegistry = this.cursorRegistry;
+                AbstractMongoBackendTest.this.cursorRegistry = getCursorRegistry();
             }
 
             @Override
@@ -51,7 +51,7 @@ class AbstractMongoBackendTest {
 
         assertThatExceptionOfType(CursorNotFoundException.class)
             .isThrownBy(() -> cursorRegistry.getCursor(cursor.getId()))
-            .withMessage("[Error 3] Cursor id 1 does not exists");
+            .withMessage("[Error 43] Cursor id 1 does not exists");
     }
 
     @Test
@@ -68,7 +68,7 @@ class AbstractMongoBackendTest {
 
         assertThatExceptionOfType(CursorNotFoundException.class)
             .isThrownBy(() -> cursorRegistry.getCursor(cursor1.getId()))
-            .withMessage("[Error 3] Cursor id 1 does not exists");
+            .withMessage("[Error 43] Cursor id 1 does not exists");
 
         assertThat(cursorRegistry.getCursor(cursor2.getId())).isNotNull();
     }

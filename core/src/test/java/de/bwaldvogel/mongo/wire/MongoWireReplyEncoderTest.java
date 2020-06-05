@@ -19,7 +19,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
 @ExtendWith(MockitoExtension.class)
-public class MongoWireEncoderTest {
+public class MongoWireReplyEncoderTest {
 
     @Mock
     private ChannelHandlerContext ctx;
@@ -34,7 +34,7 @@ public class MongoWireEncoderTest {
 
     @Test
     void testExceptionHandling() throws Exception {
-        MongoWireEncoder mongoWireEncoder = new MongoWireEncoder();
+        MongoWireReplyEncoder mongoWireEncoder = new MongoWireReplyEncoder();
 
         MessageHeader header = new MessageHeader(0, 0);
         MongoReply reply = new MongoReply(header, new Document("key", Missing.getInstance()));

@@ -14,8 +14,9 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.wire.MongoDatabaseHandler;
 import de.bwaldvogel.mongo.wire.MongoExceptionHandler;
-import de.bwaldvogel.mongo.wire.MongoWireEncoder;
+import de.bwaldvogel.mongo.wire.MongoWireMessageEncoder;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
+import de.bwaldvogel.mongo.wire.MongoWireReplyEncoder;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -87,7 +88,8 @@ public class MongoServer {
                         if (sslContext != null) {
                             ch.pipeline().addLast(sslContext.newHandler(ch.alloc()));
                         }
-                        ch.pipeline().addLast(new MongoWireEncoder());
+                        ch.pipeline().addLast(new MongoWireReplyEncoder());
+                        ch.pipeline().addLast(new MongoWireMessageEncoder());
                         ch.pipeline().addLast(new MongoWireProtocolHandler());
                         ch.pipeline().addLast(new MongoDatabaseHandler(backend, channelGroup));
                         ch.pipeline().addLast(new MongoExceptionHandler());

@@ -40,4 +40,6 @@ public interface MongoDatabase {
 
     void unregisterCollection(String collectionName);
 
+    ServerFeatures getServerFeatures();
+
 }

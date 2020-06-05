@@ -1,15 +1,10 @@
 package de.bwaldvogel.mongo.wire;
 
-import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -29,6 +24,7 @@ import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
+import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
@@ -44,12 +40,10 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     private final MongoBackend mongoBackend;
 
     private final ChannelGroup channelGroup;
-    private final long started;
 
     public MongoDatabaseHandler(MongoBackend mongoBackend, ChannelGroup channelGroup) {
         this.channelGroup = channelGroup;
         this.mongoBackend = mongoBackend;
-        this.started = System.nanoTime();
     }
 
     @Override
@@ -86,13 +80,30 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             ctx.channel().writeAndFlush(handleGetMore(getMore));
         } else if (object instanceof MongoKillCursors) {
             handleKillCursors((MongoKillCursors) object);
+        } else if (object instanceof MongoMessage) {
+            MongoMessage message = (MongoMessage) object;
+            ctx.channel().writeAndFlush(handleMessage(message));
         } else {
             throw new MongoServerException("unknown message: " + object);
         }
     }
 
+    private MongoMessage handleMessage(MongoMessage message) {
+        Document document;
+        try {
+            document = mongoBackend.handleMessage(message);
+        } catch (MongoServerException e) {
+            if (e.isLogError()) {
+                log.error("failed to handle {}", message.getDocument(), e);
+            }
+            document = errorResponse(e, Collections.emptyMap());
+        }
+        MessageHeader header = createResponseHeader(message);
+        return new MongoMessage(message.getChannel(), header, document);
+    }
+
     private MongoReply handleQuery(MongoQuery query) {
-        MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), query.getHeader().getRequestID());
+        MessageHeader header = createResponseHeader(query);
         try {
             QueryResult queryResult = null;
             List<Document> documents = new ArrayList<>();
@@ -100,9 +111,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                 documents.add(handleCommand(query));
             } else {
                 queryResult = mongoBackend.handleQuery(query);
-                for (Document obj : queryResult) {
-                    documents.add(obj);
-                }
+                documents.addAll(queryResult.collectDocuments());
             }
             return new MongoReply(header, documents, queryResult == null ? 0 : queryResult.getCursorId());
         } catch (NoSuchCommandException e) {
@@ -136,12 +145,21 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         mongoBackend.handleKillCursors(mongoKillCursors);
     }
 
+    private MessageHeader createResponseHeader(ClientRequest request) {
+        return new MessageHeader(idSequence.incrementAndGet(), request.getHeader().getRequestID());
+    }
+
     private MongoReply queryFailure(MessageHeader header, MongoServerException exception) {
         Map<String, ?> additionalInfo = Collections.emptyMap();
         return queryFailure(header, exception, additionalInfo);
     }
 
     private MongoReply queryFailure(MessageHeader header, MongoServerException exception, Map<String, ?> additionalInfo) {
+        Document obj = errorResponse(exception, additionalInfo);
+        return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
+    }
+
+    private Document errorResponse(MongoServerException exception, Map<String, ?> additionalInfo) {
         Document obj = new Document();
         obj.put("$err", exception.getMessageWithoutErrorCode());
         obj.put("errmsg", exception.getMessageWithoutErrorCode());
@@ -152,7 +170,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         }
         obj.putAll(additionalInfo);
         obj.put("ok", Integer.valueOf(0));
-        return new MongoReply(header, obj, ReplyFlag.QUERY_FAILURE);
+        return obj;
     }
 
     Document handleCommand(MongoQuery query) {
@@ -167,7 +185,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
             switch (command) {
                 case "serverStatus":
-                    return getServerStatus();
+                    return mongoBackend.getServerStatus();
                 case "ping":
                     Document response = new Document();
                     Utils.markOkay(response);
@@ -187,41 +205,5 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         throw new MongoServerException("unknown collection: " + collectionName);
     }
 
-    private Document getServerStatus() {
-        Document serverStatus = new Document();
-        try {
-            serverStatus.put("host", InetAddress.getLocalHost().getHostName());
-        } catch (UnknownHostException e) {
-            throw new MongoServerException("failed to get hostname", e);
-        }
-        serverStatus.put("version", Utils.join(mongoBackend.getVersion(), "."));
-        serverStatus.put("process", "java");
-        serverStatus.put("pid", getProcessId());
 
-        serverStatus.put("uptime", Integer.valueOf((int) TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - started)));
-        serverStatus.put("uptimeMillis", Long.valueOf(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started)));
-        serverStatus.put("localTime", Instant.now(mongoBackend.getClock()));
-
-        Document connections = new Document();
-        connections.put("current", Integer.valueOf(channelGroup.size()));
-
-        serverStatus.put("connections", connections);
-
-        Document cursors = new Document();
-        cursors.put("totalOpen", Integer.valueOf(0)); // TODO
-
-        serverStatus.put("cursors", cursors);
-
-        Utils.markOkay(serverStatus);
-
-        return serverStatus;
-    }
-
-    private Integer getProcessId() {
-        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
-        if (runtimeName.contains("@")) {
-            return Integer.valueOf(runtimeName.substring(0, runtimeName.indexOf('@')));
-        }
-        return Integer.valueOf(0);
-    }
 }

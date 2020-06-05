@@ -39,7 +39,7 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
     @Override
     protected MongoBackend createBackend() throws Exception {
-        backend = new H2Backend(tempFile.toString());
+        backend = new H2Backend(tempFile.toString(), clock);
         backend.getMvStore().setAutoCommitDelay(0);
         return backend;
     }

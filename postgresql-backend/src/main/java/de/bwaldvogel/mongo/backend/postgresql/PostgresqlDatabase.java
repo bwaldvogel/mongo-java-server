@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.ServerFeatures;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
@@ -18,8 +19,9 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
 
     private final PostgresqlBackend backend;
 
-    public PostgresqlDatabase(String databaseName, PostgresqlBackend backend, CursorRegistry cursorRegistry) {
-        super(databaseName, cursorRegistry);
+    public PostgresqlDatabase(String databaseName, PostgresqlBackend backend,
+                              ServerFeatures serverFeatures, CursorRegistry cursorRegistry) {
+        super(databaseName, serverFeatures, cursorRegistry);
         this.backend = backend;
         initializeNamespacesAndIndexes();
     }

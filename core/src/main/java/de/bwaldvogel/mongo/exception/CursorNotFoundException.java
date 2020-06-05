@@ -1,7 +1,10 @@
 package de.bwaldvogel.mongo.exception;
 
 public class CursorNotFoundException extends MongoServerError {
-    public CursorNotFoundException(String message) {
-        super(ErrorCode.CursorNotFound, message);
+
+    private static final long serialVersionUID = 1L;
+
+    public CursorNotFoundException(long cursorId) {
+        super(ErrorCode.CursorNotFound, "Cursor id " + cursorId + " does not exists");
     }
 }

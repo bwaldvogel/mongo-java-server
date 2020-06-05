@@ -18,7 +18,7 @@ public class CursorRegistry {
     public Cursor getCursor(long cursorId) {
         Cursor cursor = cursors.get(cursorId);
         if (cursor == null) {
-            throw new CursorNotFoundException(String.format("Cursor id %d does not exists", cursorId));
+            throw new CursorNotFoundException(cursorId);
         }
         return cursor;
     }
@@ -31,4 +31,9 @@ public class CursorRegistry {
         Cursor previousValue = cursors.put(cursor.getId(), cursor);
         Assert.isNull(previousValue);
     }
+
+    public int size() {
+        return cursors.size();
+    }
+
 }

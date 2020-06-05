@@ -7,12 +7,12 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
-import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
@@ -54,21 +54,10 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
-        List<Document> matchedDocuments = new ArrayList<>();
-
-        for (Document document : iterateAllDocuments(orderBy)) {
-            if (documentMatchesQuery(document, query)) {
-                matchedDocuments.add(document);
-            }
-        }
-
-        DocumentComparator documentComparator = deriveComparator(orderBy);
-        if (documentComparator != null) {
-            matchedDocuments.sort(documentComparator);
-        }
-
-        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize) {
+        Iterable<Document> documents = iterateAllDocuments(orderBy);
+        Stream<Document> documentStream = StreamSupport.stream(documents.spliterator(), false);
+        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, numberToReturn, batchSize);
     }
 
     private Iterable<Document> iterateAllDocuments(Document orderBy) {

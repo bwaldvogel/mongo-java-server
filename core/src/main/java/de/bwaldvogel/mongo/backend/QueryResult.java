@@ -1,7 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -27,8 +29,16 @@ public class QueryResult implements Iterable<Document> {
         this(documents, EmptyCursor.get());
     }
 
-    public Iterable<Document> getDocuments() {
-        return documents;
+    public List<Document> collectDocuments() {
+        if (documents instanceof List<?>) {
+            return Collections.unmodifiableList((List<Document>) documents);
+        } else {
+            List<Document> documents = new ArrayList<>();
+            for (Document document : this) {
+                documents.add(document);
+            }
+            return documents;
+        }
     }
 
     @Override

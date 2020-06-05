@@ -519,10 +519,18 @@ public class Utils {
     }
 
     static Document firstBatchCursorResponse(String ns, List<Document> firstBatch, long cursorId) {
+        return firstBatchCursorResponse(ns, "firstBatch", firstBatch, cursorId);
+    }
+
+    static Document nextBatchCursorResponse(String ns, List<Document> nextBatch, long cursorId) {
+        return firstBatchCursorResponse(ns, "nextBatch", nextBatch, cursorId);
+    }
+
+    private static Document firstBatchCursorResponse(String ns, String key, List<Document> documents, long cursorId) {
         Document cursorResponse = new Document();
         cursorResponse.put("id", cursorId);
         cursorResponse.put("ns", ns);
-        cursorResponse.put("firstBatch", firstBatch);
+        cursorResponse.put(key, documents);
 
         Document response = new Document();
         response.put("cursor", cursorResponse);

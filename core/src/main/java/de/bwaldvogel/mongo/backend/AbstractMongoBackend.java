@@ -1,7 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.ServerFeatures;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -33,6 +38,7 @@ import de.bwaldvogel.mongo.wire.message.Message;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
+import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
@@ -49,14 +55,28 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
 
-    private Clock clock = Clock.systemDefaultZone();
+    private final Clock clock;
+    private final Instant started;
 
-    protected final CursorRegistry cursorRegistry = new CursorRegistry();
+    private final CursorRegistry cursorRegistry = new CursorRegistry();
 
     protected Oplog oplog = NoopOplog.get();
 
     private int maxWireVersion = 2;
     private int minWireVersion = 0;
+
+    protected AbstractMongoBackend() {
+        this(defaultClock());
+    }
+
+    protected AbstractMongoBackend(Clock clock) {
+        this.started = Instant.now(clock);
+        this.clock = clock;
+    }
+
+    protected static Clock defaultClock() {
+        return Clock.systemDefaultZone();
+    }
 
     private MongoDatabase resolveDatabase(Message message) {
         return resolveDatabase(message.getDatabaseName());
@@ -71,6 +91,46 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             databases.put(database, db);
         }
         return db;
+    }
+
+    @Override
+    public Document getServerStatus() {
+        Document serverStatus = new Document();
+        try {
+            serverStatus.put("host", InetAddress.getLocalHost().getHostName());
+        } catch (UnknownHostException e) {
+            throw new MongoServerException("failed to get hostname", e);
+        }
+        serverStatus.put("version", Utils.join(getVersion(), "."));
+        serverStatus.put("process", "java");
+        serverStatus.put("pid", getProcessId());
+
+        Duration uptime = Duration.between(started, Instant.now(clock));
+        serverStatus.put("uptime", Integer.valueOf(Math.toIntExact(uptime.getSeconds())));
+        serverStatus.put("uptimeMillis", Long.valueOf(uptime.toMillis()));
+        serverStatus.put("localTime", Instant.now(getClock()));
+
+        Document connections = new Document();
+        connections.put("current", Integer.valueOf(1));
+
+        serverStatus.put("connections", connections);
+
+        Document cursors = new Document();
+        cursors.put("totalOpen", cursorRegistry.size());
+
+        serverStatus.put("cursors", cursors);
+
+        Utils.markOkay(serverStatus);
+
+        return serverStatus;
+    }
+
+    private Integer getProcessId() {
+        String runtimeName = ManagementFactory.getRuntimeMXBean().getName();
+        if (runtimeName.contains("@")) {
+            return Integer.valueOf(runtimeName.substring(0, runtimeName.indexOf('@')));
+        }
+        return Integer.valueOf(0);
     }
 
     private Document getLog(String argument) {
@@ -138,6 +198,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleGetCmdLineOpts();
         } else if (command.equalsIgnoreCase("getFreeMonitoringStatus")) {
             return handleGetFreeMonitoringStatus();
+        } else if (command.equalsIgnoreCase("serverStatus")) {
+            return getServerStatus();
+        } else if (command.equalsIgnoreCase("ping")) {
+            Document response = new Document();
+            Utils.markOkay(response);
+            return response;
         } else {
             throw new NoSuchCommandException(command);
         }
@@ -253,6 +319,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return response;
         } else if (command.equalsIgnoreCase("dropDatabase")) {
             return handleDropDatabase(databaseName);
+        } else if (command.equalsIgnoreCase("getMore")) {
+            return handleGetMore(databaseName, command, query);
         }
 
         if (databaseName.equals(ADMIN_DB_NAME)) {
@@ -309,11 +377,31 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         killCursors.getCursorIds().forEach(cursorRegistry::remove);
     }
 
+    protected Document handleGetMore(String databaseName, String command, Document query) {
+        MongoDatabase mongoDatabase = resolveDatabase(databaseName);
+        String collectionName = (String) query.get("collection");
+        MongoCollection<?> collection = mongoDatabase.resolveCollection(collectionName, true);
+        long cursorId = ((Number) query.get(command)).longValue();
+        int batchSize = ((Number) query.get("batchSize")).intValue();
+        QueryResult queryResult = handleGetMore(cursorId, batchSize);
+        List<Document> nextBatch = queryResult.collectDocuments();
+        return Utils.nextBatchCursorResponse(collection.getFullName(), nextBatch, queryResult.getCursorId());
+    }
+
     protected Document handleDropDatabase(String databaseName) {
         dropDatabase(databaseName);
         Document response = new Document("dropped", databaseName);
         Utils.markOkay(response);
         return response;
+    }
+
+    @Override
+    public Document handleMessage(MongoMessage message) {
+        Channel channel = message.getChannel();
+        String databaseName = message.getDatabaseName();
+        Document query = message.getDocument();
+        String command = query.keySet().iterator().next();
+        return handleCommand(channel, databaseName, command, query);
     }
 
     @Override
@@ -342,12 +430,14 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return version;
     }
 
+    @Override
     public void setVersion(int major, int minor, int patch) {
         version.set(0, major);
         version.set(1, minor);
         version.set(2, patch);
     }
 
+    @Override
     public void setWireVersion(int maxWireVersion, int minWireVersion) {
         this.maxWireVersion = maxWireVersion;
         this.minWireVersion = minWireVersion;
@@ -356,11 +446,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public Clock getClock() {
         return clock;
-    }
-
-    @Override
-    public void setClock(Clock clock) {
-        this.clock = clock;
     }
 
     @Override
@@ -380,6 +465,19 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME, CollectionOptions.withDefaults());
         }
         return new CollectionBackedOplog(this, collection, cursorRegistry);
+    }
+
+    protected CursorRegistry getCursorRegistry() {
+        return cursorRegistry;
+    }
+
+    protected ServerFeatures getServerFeatures() {
+        return new ServerFeatures() {
+            @Override
+            public boolean supportsBatchSize() {
+                return maxWireVersion >= 6;
+            }
+        };
     }
 
 }

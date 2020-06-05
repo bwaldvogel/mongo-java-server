@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.List;
 
+import de.bwaldvogel.mongo.ServerFeatures;
 import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
@@ -11,8 +12,8 @@ import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 
 public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
 
-    public MemoryDatabase(String databaseName, CursorRegistry cursorRegistry) {
-        super(databaseName, cursorRegistry);
+    public MemoryDatabase(String databaseName, ServerFeatures serverFeatures, CursorRegistry cursorRegistry) {
+        super(databaseName, serverFeatures, cursorRegistry);
         initializeNamespacesAndIndexes();
     }
 

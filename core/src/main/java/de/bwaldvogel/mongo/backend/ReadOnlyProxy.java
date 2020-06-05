@@ -14,6 +14,7 @@ import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
+import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
@@ -56,12 +57,16 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public Document handleCommand(Channel channel, String database, String command, Document query)
-            {
+    public Document handleCommand(Channel channel, String database, String command, Document query) {
         if (allowedCommands.contains(command.toLowerCase())) {
             return backend.handleCommand(channel, database, command, query);
         }
         throw new NoSuchCommandException(command);
+    }
+
+    @Override
+    public Document handleMessage(MongoMessage message) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -82,6 +87,16 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public List<Integer> getVersion() {
         return backend.getVersion();
+    }
+
+    @Override
+    public void setVersion(int major, int minor, int patch) {
+        backend.setVersion(major, minor, patch);
+    }
+
+    @Override
+    public void setWireVersion(int maxWireVersion, int minWireVersion) {
+        backend.setWireVersion(maxWireVersion, minWireVersion);
     }
 
     @Override
@@ -110,6 +125,11 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
+    public Document getServerStatus() {
+        return backend.getServerStatus();
+    }
+
+    @Override
     public void close() {
         backend.close();
     }
@@ -117,11 +137,6 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public Clock getClock() {
         return backend.getClock();
-    }
-
-    @Override
-    public void setClock(Clock clock) {
-        backend.setClock(clock);
     }
 
     @Override

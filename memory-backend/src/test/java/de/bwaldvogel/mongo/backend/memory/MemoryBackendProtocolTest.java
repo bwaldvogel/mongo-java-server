@@ -7,7 +7,7 @@ public class MemoryBackendProtocolTest extends AbstractProtocolTest {
 
     @Override
     protected MongoBackend createBackend() throws Exception {
-        return new MemoryBackend();
+        return new MemoryBackend(clock);
     }
 
 }

@@ -1,7 +1,5 @@
 package de.bwaldvogel.mongo.backend.h2;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -19,6 +17,7 @@ import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
@@ -96,22 +95,21 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     @Override
     protected Stream<DocumentWithPosition<Object>> streamAllDocumentsWithPosition() {
-        return dataMap.entrySet().stream().map(entry -> new DocumentWithPosition<>(entry.getValue(), entry.getKey()));
+        return dataMap.entrySet().stream()
+            .map(entry -> new DocumentWithPosition<>(entry.getValue(), entry.getKey()));
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn) {
-        List<Document> matchedDocuments = new ArrayList<>();
-
-        for (Document document : dataMap.values()) {
-            if (documentMatchesQuery(document, query)) {
-                matchedDocuments.add(document);
-            }
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize) {
+        final Stream<Document> documentStream;
+        if (isNaturalDescending(orderBy)) {
+            documentStream = streamAllDocumentsWithPosition()
+                .sorted((o1, o2) -> ValueComparator.desc().compare(o1.getPosition(), o2.getPosition()))
+                .map(DocumentWithPosition::getDocument);
+        } else {
+            documentStream = dataMap.values().stream();
         }
-
-        sortDocumentsInMemory(matchedDocuments, orderBy);
-
-        return createQueryResult(matchedDocuments, numberToSkip, numberToReturn);
+        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, numberToReturn, batchSize);
     }
 
     @Override
