@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
@@ -33,16 +34,17 @@ public final class BsonDecoder {
             throw new IllegalArgumentException("BSON object too large: " + length + " bytes");
         }
 
-        Document object = new Document();
+        Document document = new Document();
         int start = buffer.readerIndex();
         while (buffer.readerIndex() - start < length) {
             byte type = buffer.readByte();
             if (type == BsonConstants.TERMINATING_BYTE) {
-                return object;
+                return document;
             }
             String name = decodeCString(buffer);
             Object value = decodeValue(type, buffer);
-            object.put(name, value);
+            Object existingValue = document.put(name, value);
+            Assert.isNull(existingValue, () -> "Document already contains field '" + name + "'");
         }
         throw new IllegalArgumentException("illegal BSON object. Terminating byte not found. totalObjectLength = " + totalObjectLength);
     }
