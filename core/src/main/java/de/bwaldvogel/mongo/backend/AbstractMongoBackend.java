@@ -44,6 +44,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
+    private static final String ADMIN_DB_NAME = "admin";
+
     private final Map<String, MongoDatabase> databases = new TreeMap<>();
 
     private final List<Integer> version = Arrays.asList(3, 0, 0);
@@ -254,7 +256,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleDropDatabase(databaseName);
         }
 
-        if (databaseName.equals("admin")) {
+        if (databaseName.equals(ADMIN_DB_NAME)) {
             return handleAdminCommand(command, query);
         } else {
             MongoDatabase db = resolveDatabase(databaseName);
