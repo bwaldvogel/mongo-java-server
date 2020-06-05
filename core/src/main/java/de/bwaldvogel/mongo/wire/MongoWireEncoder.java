@@ -17,8 +17,7 @@ public class MongoWireEncoder extends MessageToByteEncoder<MongoReply> {
     private static final Logger log = LoggerFactory.getLogger(MongoWireEncoder.class);
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, MongoReply reply, ByteBuf buf) throws Exception {
-
+    protected void encode(ChannelHandlerContext ctx, MongoReply reply, ByteBuf buf) {
         buf.writeIntLE(0); // write length later
 
         buf.writeIntLE(reply.getHeader().getRequestID());
