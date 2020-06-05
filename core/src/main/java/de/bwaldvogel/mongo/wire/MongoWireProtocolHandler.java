@@ -29,25 +29,23 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
  */
 public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
 
-    public static final int MAX_MESSAGE_SIZE_BYTES = 48 * 1000 * 1000;
-
-    public static final int MAX_WRITE_BATCH_SIZE = 1000;
-
     private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
 
-    private static final int maxFrameLength = Integer.MAX_VALUE;
-    private static final int lengthFieldOffset = 0;
-    private static final int lengthFieldLength = 4;
-    private static final int lengthAdjustment = -lengthFieldLength;
-    private static final int initialBytesToStrip = 0;
+    public static final int MAX_MESSAGE_SIZE_BYTES = 48 * 1000 * 1000;
+    public static final int MAX_WRITE_BATCH_SIZE = 1000;
+
+    private static final int MAX_FRAME_LENGTH = Integer.MAX_VALUE;
+    private static final int LENGTH_FIELD_OFFSET = 0;
+    private static final int LENGTH_FIELD_LENGTH = 4;
+    private static final int LENGTH_ADJUSTMENT = -LENGTH_FIELD_LENGTH;
+    private static final int INITIAL_BYTES_TO_STRIP = 0;
 
     public MongoWireProtocolHandler() {
-        super(maxFrameLength, lengthFieldOffset, lengthFieldLength, lengthAdjustment, initialBytesToStrip);
+        super(MAX_FRAME_LENGTH, LENGTH_FIELD_OFFSET, LENGTH_FIELD_LENGTH, LENGTH_ADJUSTMENT, INITIAL_BYTES_TO_STRIP);
     }
 
     @Override
     protected ClientRequest decode(ChannelHandlerContext ctx, ByteBuf buf) throws Exception {
-
         ByteBuf in = buf;
 
         if (in.readableBytes() < 4) {
@@ -61,13 +59,13 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new IOException("message too large: " + totalLength + " bytes");
         }
 
-        if (in.readableBytes() < totalLength - lengthFieldLength) {
+        if (in.readableBytes() < totalLength - LENGTH_FIELD_LENGTH) {
             in.resetReaderIndex();
             return null; // retry
         }
-        in = in.readSlice(totalLength - lengthFieldLength);
+        in = in.readSlice(totalLength - LENGTH_FIELD_LENGTH);
         int readable = in.readableBytes();
-        Assert.equals(readable, (long) totalLength - lengthFieldLength);
+        Assert.equals(readable, (long) totalLength - LENGTH_FIELD_LENGTH);
 
         final int requestID = in.readIntLE();
         final int responseTo = in.readIntLE();
@@ -114,8 +112,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return request;
     }
 
-    private ClientRequest handleDelete(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
-
+    private ClientRequest handleDelete(Channel channel, MessageHeader header, ByteBuf buffer) {
         buffer.skipBytes(4); // reserved
 
         final String fullCollectionName = BsonDecoder.decodeCString(buffer);
@@ -135,8 +132,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoDelete(channel, header, fullCollectionName, selector, singleRemove);
     }
 
-    private ClientRequest handleUpdate(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
-
+    private ClientRequest handleUpdate(Channel channel, MessageHeader header, ByteBuf buffer) {
         buffer.skipBytes(4); // reserved
 
         final String fullCollectionName = BsonDecoder.decodeCString(buffer);
@@ -151,8 +147,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoUpdate(channel, header, fullCollectionName, selector, update, upsert, multi);
     }
 
-    private ClientRequest handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
-
+    private ClientRequest handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) {
         final int flags = buffer.readIntLE();
         if (flags != 0) {
             throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
@@ -169,8 +164,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return new MongoInsert(channel, header, fullCollectionName, documents);
     }
 
-    private ClientRequest handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) throws IOException {
-
+    private ClientRequest handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) {
         int flags = buffer.readIntLE();
 
         final String fullCollectionName = BsonDecoder.decodeCString(buffer);
