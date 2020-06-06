@@ -126,7 +126,8 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Iterable<Long> positions, Document orderBy, int numberToSkip, int numberToReturn) {
+    protected QueryResult matchDocuments(Document query, Iterable<Long> positions, Document orderBy,
+                                         int numberToSkip, int limit) {
         throw new UnsupportedOperationException("not yet implemented");
     }
 

@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.ServerFeatures;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -491,15 +490,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected CursorRegistry getCursorRegistry() {
         return cursorRegistry;
-    }
-
-    protected ServerFeatures getServerFeatures() {
-        return new ServerFeatures() {
-            @Override
-            public boolean supportsBatchSize() {
-                return maxWireVersion >= 6;
-            }
-        };
     }
 
 }

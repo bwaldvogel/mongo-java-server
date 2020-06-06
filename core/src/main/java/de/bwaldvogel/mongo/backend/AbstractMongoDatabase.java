@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.ServerFeatures;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.IndexNotFoundException;
@@ -56,12 +55,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private MongoCollection<P> namespaces;
 
-    private final ServerFeatures serverFeatures;
     protected final CursorRegistry cursorRegistry;
 
-    protected AbstractMongoDatabase(String databaseName, ServerFeatures serverFeatures, CursorRegistry cursorRegistry) {
+    protected AbstractMongoDatabase(String databaseName, CursorRegistry cursorRegistry) {
         this.databaseName = databaseName;
-        this.serverFeatures = serverFeatures;
         this.cursorRegistry = cursorRegistry;
     }
 
@@ -607,10 +604,16 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (collection == null) {
             return new QueryResult();
         }
-        int numSkip = query.getNumberToSkip();
-        int numReturn = query.getNumberToReturn();
+        int numberToSkip = query.getNumberToSkip();
+        int batchSize = query.getNumberToReturn();
+
+        if (batchSize < -1) {
+            // actually: request to close cursor automatically
+            batchSize = -batchSize;
+        }
+
         Document fieldSelector = query.getReturnFieldSelector();
-        return collection.handleQuery(query.getQuery(), numSkip, numReturn, 0, fieldSelector);
+        return collection.handleQuery(query.getQuery(), numberToSkip, 0, batchSize, fieldSelector);
     }
 
     @Override
@@ -956,8 +959,4 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collectionName.startsWith("system.");
     }
 
-    @Override
-    public ServerFeatures getServerFeatures() {
-        return serverFeatures;
-    }
 }

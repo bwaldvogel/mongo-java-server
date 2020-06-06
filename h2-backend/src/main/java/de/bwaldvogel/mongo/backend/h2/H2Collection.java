@@ -100,7 +100,7 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize) {
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize) {
         final Stream<Document> documentStream;
         if (isNaturalDescending(orderBy)) {
             documentStream = streamAllDocumentsWithPosition()
@@ -109,7 +109,7 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
         } else {
             documentStream = dataMap.values().stream();
         }
-        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, numberToReturn, batchSize);
+        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize);
     }
 
     @Override
