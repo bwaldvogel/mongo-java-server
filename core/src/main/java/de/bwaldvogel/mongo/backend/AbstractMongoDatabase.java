@@ -215,7 +215,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandFind(String command, Document query) {
-
         final List<Document> documents = new ArrayList<>();
         String collectionName = (String) query.get(command);
         MongoCollection<P> collection = resolveCollection(collectionName, false);

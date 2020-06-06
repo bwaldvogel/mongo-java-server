@@ -440,13 +440,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             orderBy = null;
         }
 
-        QueryResult objs = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
+        QueryResult queryResult = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
-            return new QueryResult(new ProjectingIterable(objs, fieldSelector, getIdField()), 0);
+            return new QueryResult(new ProjectingIterable(queryResult, fieldSelector, getIdField()), 0);
         }
 
-        return objs;
+        return queryResult;
     }
 
     @Override
