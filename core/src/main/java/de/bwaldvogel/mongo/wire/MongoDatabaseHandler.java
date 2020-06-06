@@ -120,9 +120,9 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     public MongoReply handleGetMore(MongoGetMore getMore) {
         MessageHeader header = new MessageHeader(idSequence.incrementAndGet(), getMore.getHeader().getRequestID());
         List<Document> documents = new ArrayList<>();
-        QueryResult queryResult;
+        final QueryResult queryResult;
         try {
-            queryResult = mongoBackend.handleGetMore(getMore);
+            queryResult = mongoBackend.handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
         } catch (CursorNotFoundException cursorNotFoundException) {
             return new MongoReply(header, documents, getMore.getCursorId(), ReplyFlag.CURSOR_NOT_FOUND);
         }

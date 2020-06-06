@@ -31,7 +31,6 @@ import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -277,14 +276,14 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public QueryResult handleGetMore(MongoGetMore getMore) {
-        Cursor cursor = cursorRegistry.getCursor(getMore.getCursorId());
-        List<Document> documents = cursor.takeDocuments(getMore.getNumberToReturn());
+    public QueryResult handleGetMore(long cursorId, int numberToReturn) {
+        Cursor cursor = cursorRegistry.getCursor(cursorId);
+        List<Document> documents = cursor.takeDocuments(numberToReturn);
         if (cursor.isEmpty()) {
             log.debug("Removing empty {}", cursor);
             cursorRegistry.remove(cursor.getId());
         }
-        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getId() : getMore.getCursorId());
+        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getId() : cursorId);
     }
 
     @Override

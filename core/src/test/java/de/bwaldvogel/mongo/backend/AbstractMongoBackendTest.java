@@ -47,7 +47,7 @@ class AbstractMongoBackendTest {
         cursorRegistry.add(cursor);
         MongoGetMore getMore = new MongoGetMore(null, null, "testcoll", 3,
             cursor.getId());
-        backend.handleGetMore(getMore);
+        backend.handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
 
         assertThatExceptionOfType(CursorNotFoundException.class)
             .isThrownBy(() -> cursorRegistry.getCursor(cursor.getId()))
