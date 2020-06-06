@@ -3,11 +3,11 @@ package de.bwaldvogel.mongo.backend;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -85,21 +85,6 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public List<Integer> getVersion() {
-        return backend.getVersion();
-    }
-
-    @Override
-    public void setVersion(int major, int minor, int patch) {
-        backend.setVersion(major, minor, patch);
-    }
-
-    @Override
-    public void setWireVersion(int maxWireVersion, int minWireVersion) {
-        backend.setWireVersion(maxWireVersion, minWireVersion);
-    }
-
-    @Override
     public void handleInsert(MongoInsert insert) {
         throw new ReadOnlyException("insert not allowed");
     }
@@ -117,6 +102,11 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public void dropDatabase(String database) {
         throw new ReadOnlyException("dropping of databases is not allowed");
+    }
+
+    @Override
+    public MongoBackend version(ServerVersion version) {
+        throw new ReadOnlyException("not supported");
     }
 
     @Override

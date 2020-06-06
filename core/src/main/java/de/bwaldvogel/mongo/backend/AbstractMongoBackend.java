@@ -8,7 +8,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -52,7 +52,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final Map<String, MongoDatabase> databases = new TreeMap<>();
 
-    private final List<Integer> version = Arrays.asList(3, 0, 0);
+    private ServerVersion version = ServerVersion.MONGO_3_0;
 
     private final Clock clock;
     private final Instant started;
@@ -60,9 +60,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     private final CursorRegistry cursorRegistry = new CursorRegistry();
 
     protected Oplog oplog = NoopOplog.get();
-
-    private int maxWireVersion = 2;
-    private int minWireVersion = 0;
 
     protected AbstractMongoBackend() {
         this(defaultClock());
@@ -100,7 +97,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } catch (UnknownHostException e) {
             throw new MongoServerException("failed to get hostname", e);
         }
-        serverStatus.put("version", Utils.join(getVersion(), "."));
+        serverStatus.put("version", version.toVersionString());
         serverStatus.put("process", "java");
         serverStatus.put("pid", getProcessId());
 
@@ -305,14 +302,14 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             response.put("maxWriteBatchSize", Integer.valueOf(MongoWireProtocolHandler.MAX_WRITE_BATCH_SIZE));
             response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
-            response.put("maxWireVersion", Integer.valueOf(maxWireVersion));
-            response.put("minWireVersion", Integer.valueOf(minWireVersion));
+            response.put("maxWireVersion", Integer.valueOf(version.getWireVersion()));
+            response.put("minWireVersion", Integer.valueOf(0));
             response.put("localTime", Instant.now(clock));
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
-            Document response = new Document("version", Utils.join(version, "."));
-            response.put("versionArray", version);
+            Document response = new Document("version", version.toVersionString());
+            response.put("versionArray", version.getVersionArray());
             response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
             Utils.markOkay(response);
             return response;
@@ -447,21 +444,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public List<Integer> getVersion() {
-        return version;
-    }
-
-    @Override
-    public void setVersion(int major, int minor, int patch) {
-        version.set(0, major);
-        version.set(1, minor);
-        version.set(2, patch);
-    }
-
-    @Override
-    public void setWireVersion(int maxWireVersion, int minWireVersion) {
-        this.maxWireVersion = maxWireVersion;
-        this.minWireVersion = minWireVersion;
+    public MongoBackend version(ServerVersion version) {
+        this.version = version;
+        return this;
     }
 
     @Override

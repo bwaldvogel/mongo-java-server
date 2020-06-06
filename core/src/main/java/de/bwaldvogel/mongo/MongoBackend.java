@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo;
 
 import java.time.Clock;
 import java.util.Collection;
-import java.util.List;
 
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
@@ -40,12 +39,6 @@ public interface MongoBackend {
 
     Document getServerStatus();
 
-    List<Integer> getVersion();
-
-    void setVersion(int major, int minor, int patch);
-
-    void setWireVersion(int maxWireVersion, int minWireVersion);
-
     void close();
 
     Clock getClock();
@@ -55,5 +48,7 @@ public interface MongoBackend {
     void disableOplog();
 
     MongoDatabase resolveDatabase(String database);
+
+    MongoBackend version(ServerVersion version);
 
 }
