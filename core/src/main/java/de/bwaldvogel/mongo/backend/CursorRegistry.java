@@ -23,8 +23,8 @@ public class CursorRegistry {
         return cursor;
     }
 
-    public void remove(long cursorId) {
-        cursors.remove(cursorId);
+    public boolean remove(long cursorId) {
+        return cursors.remove(cursorId) != null;
     }
 
     public void add(Cursor cursor) {

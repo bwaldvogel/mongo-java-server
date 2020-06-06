@@ -321,6 +321,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleDropDatabase(databaseName);
         } else if (command.equalsIgnoreCase("getMore")) {
             return handleGetMore(databaseName, command, query);
+        } else if (command.equalsIgnoreCase("killCursors")) {
+            return handleKillCursors(query);
         }
 
         if (databaseName.equals(ADMIN_DB_NAME)) {
@@ -375,6 +377,26 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public void handleKillCursors(MongoKillCursors killCursors) {
         killCursors.getCursorIds().forEach(cursorRegistry::remove);
+    }
+
+    protected Document handleKillCursors(Document query) {
+        List<Long> cursorIds = (List<Long>) query.get("cursors");
+        List<Long> cursorsKilled = new ArrayList<>();
+        List<Long> cursorsNotFound = new ArrayList<>();
+        for (Long cursorId : cursorIds) {
+            if (cursorRegistry.remove(cursorId)) {
+                log.info("Killed cursor {}", cursorId);
+                cursorsKilled.add(cursorId);
+            } else {
+                log.info("Cursor {} not found", cursorId);
+                cursorsNotFound.add(cursorId);
+            }
+        }
+        Document response = new Document();
+        response.put("cursorsKilled", cursorsKilled);
+        response.put("cursorsNotFound", cursorsNotFound);
+        Utils.markOkay(response);
+        return response;
     }
 
     protected Document handleGetMore(String databaseName, String command, Document query) {

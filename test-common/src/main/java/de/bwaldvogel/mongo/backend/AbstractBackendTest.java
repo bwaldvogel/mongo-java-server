@@ -79,6 +79,7 @@ import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.ReadPreference;
 import com.mongodb.ServerAddress;
+import com.mongodb.ServerCursor;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.bulk.BulkWriteUpsert;
@@ -259,6 +260,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThatExceptionOfType(MongoCursorNotFoundException.class)
             .isThrownBy(cursor::next)
             .withMessageContaining("Query failed with error code -5 and error message");
+    }
+
+    @Test
+    void testKillCursor() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            collection.insertOne(json(""));
+        }
+        MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
+        ServerCursor serverCursor = cursor.getServerCursor();
+        String collectionName = collection.getNamespace().getCollectionName();
+        Document result = runCommand(new Document("killCursors", collectionName).append("cursors", Arrays.asList(serverCursor.getId())));
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
+        assertThat(result.get("cursorsKilled")).isEqualTo(Arrays.asList(serverCursor.getId()));
+        assertThat(result.get("cursorsNotFound")).isEqualTo(Collections.emptyList());
+    }
+
+    @Test
+    void testKillCursor_unknownCursorId() throws Exception {
+        collection.insertOne(json(""));
+        String collectionName = collection.getNamespace().getCollectionName();
+        Document result = runCommand(new Document("killCursors", collectionName).append("cursors", Arrays.asList(987654321L)));
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
+        assertThat(result.get("cursorsKilled")).isEqualTo(Collections.emptyList());
+        assertThat(result.get("cursorsNotFound")).isEqualTo(Arrays.asList(987654321L));
     }
 
     @Test
