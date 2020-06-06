@@ -181,7 +181,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             firstBatch.add(collectionDescription);
         }
 
-        return Utils.cursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
+        return Utils.firstBatchCursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
     }
 
     @VisibleForExternalBackends
@@ -202,7 +202,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Iterable<Document> indexes = Optional.ofNullable(resolveCollection(INDEXES_COLLECTION_NAME, false))
             .map(collection -> collection.handleQuery(new Document("ns", getDatabaseName() + "." + collectionName)))
             .orElse(Collections.emptyList());
-        return Utils.cursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
+        return Utils.firstBatchCursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
     }
 
     private synchronized MongoCollection<P> resolveOrCreateCollection(String collectionName) {
@@ -232,7 +232,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
         }
 
-        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, documents);
+        return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, documents);
     }
 
     private Document commandInsert(Channel channel, String command, Document query, Oplog oplog) {
@@ -572,7 +572,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
         Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection, oplog);
         aggregation.validate(query);
-        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, aggregation.computeResult());
+        return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, aggregation.computeResult());
     }
 
     private Document commandChangeStreamPipeline(Document query, Oplog oplog, String collectionName, Document changeStreamDocument) {
@@ -580,7 +580,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         int batchSize = (int) cursorDocument.getOrDefault("batchSize", 0);
 
         Cursor cursor = oplog.createCursor(changeStreamDocument);
-        return Utils.cursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize), cursor);
+        return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize), cursor);
     }
 
     private int getOptionalNumber(Document query, String fieldName, int defaultValue) {

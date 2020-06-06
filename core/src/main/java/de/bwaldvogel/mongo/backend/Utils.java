@@ -498,27 +498,27 @@ public class Utils {
         }
     }
 
-    static Document cursorResponse(String ns, Document... documents) {
-        return cursorResponse(ns, Arrays.asList(documents));
+    static Document firstBatchCursorResponse(String ns, Document... documents) {
+        return firstBatchCursorResponse(ns, Arrays.asList(documents));
     }
 
-    static Document cursorResponse(String ns, Iterable<Document> documents) {
+    static Document firstBatchCursorResponse(String ns, Iterable<Document> documents) {
         List<Document> firstBatch = new ArrayList<>();
         for (Document document : documents) {
             firstBatch.add(document);
         }
-        return cursorResponse(ns, firstBatch);
+        return firstBatchCursorResponse(ns, firstBatch);
     }
 
-    static Document cursorResponse(String ns, List<Document> firstBatch) {
-        return cursorResponse(ns, firstBatch, EmptyCursor.get());
+    static Document firstBatchCursorResponse(String ns, List<Document> firstBatch) {
+        return firstBatchCursorResponse(ns, firstBatch, EmptyCursor.get());
     }
 
-    static Document cursorResponse(String ns, List<Document> firstBatch, Cursor cursor) {
-        return cursorResponse(ns, firstBatch, cursor.getId());
+    static Document firstBatchCursorResponse(String ns, List<Document> firstBatch, Cursor cursor) {
+        return firstBatchCursorResponse(ns, firstBatch, cursor.getId());
     }
 
-    static Document cursorResponse(String ns, List<Document> firstBatch, long cursorId) {
+    static Document firstBatchCursorResponse(String ns, List<Document> firstBatch, long cursorId) {
         Document cursorResponse = new Document();
         cursorResponse.put("id", cursorId);
         cursorResponse.put("ns", ns);

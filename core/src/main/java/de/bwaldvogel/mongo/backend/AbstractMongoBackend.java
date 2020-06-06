@@ -109,7 +109,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("find")) {
             String collectionName = (String) query.get(command);
             if (collectionName.equals("$cmd.sys.inprog")) {
-                return Utils.cursorResponse(collectionName, new Document("inprog", Collections.emptyList()));
+                return Utils.firstBatchCursorResponse(collectionName, new Document("inprog", Collections.emptyList()));
             } else {
                 throw new NoSuchCommandException(new Document(command, collectionName).toString());
             }
