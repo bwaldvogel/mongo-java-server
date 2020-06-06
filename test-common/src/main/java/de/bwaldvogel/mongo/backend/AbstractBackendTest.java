@@ -19,7 +19,6 @@ import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -159,7 +158,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
         while (cursor.hasNext()) {
             retrievedDocuments.add(cursor.next());
         }
-        assertThrows(NoSuchElementException.class, cursor::next);
+
+        assertThatExceptionOfType(NoSuchElementException.class)
+            .isThrownBy(cursor::next)
+            .withMessage(null);
+
         assertThat(retrievedDocuments).hasSize(expectedCount);
         assertThat(retrievedDocuments).first().isEqualTo(json("_id: 100"));
         assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
@@ -183,7 +186,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
         while (cursor.hasNext()) {
             retrievedDocuments.add(cursor.next());
         }
-        assertThrows(NoSuchElementException.class, cursor::next);
+
+        assertThatExceptionOfType(NoSuchElementException.class)
+            .isThrownBy(cursor::next)
+            .withMessage(null);
+
         assertThat(retrievedDocuments).hasSize(expectedCount);
         assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
         assertThat(retrievedDocuments).last().isEqualTo(json("_id: 119"));
@@ -209,7 +216,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
         while (cursor.hasNext()) {
             retrievedDocuments.add(cursor.next());
         }
-        assertThrows(NoSuchElementException.class, cursor::next);
+
+        assertThatExceptionOfType(NoSuchElementException.class)
+            .isThrownBy(cursor::next)
+            .withMessage(null);
+
         assertThat(retrievedDocuments).hasSize(limit);
         assertThat(retrievedDocuments).first().isEqualTo(json("_id: 105"));
         assertThat(retrievedDocuments).last().isEqualTo(json("_id: 124"));
@@ -230,7 +241,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
         cursor.close();
         assertThat(count).isEqualTo(10);
-        assertThrows(IllegalStateException.class, cursor::next);
+        assertThatExceptionOfType(IllegalStateException.class)
+            .isThrownBy(cursor::next)
+            .withMessage("Cursor has been closed");
     }
 
     @Test
@@ -242,7 +255,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
         cursor.next();
         killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
-        assertThrows(MongoCursorNotFoundException.class, cursor::next);
+
+        assertThatExceptionOfType(MongoCursorNotFoundException.class)
+            .isThrownBy(cursor::next)
+            .withMessageContaining("Query failed with error code -5 and error message");
     }
 
     @Test
