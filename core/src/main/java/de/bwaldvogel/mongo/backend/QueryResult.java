@@ -11,7 +11,11 @@ public class QueryResult implements Iterable<Document> {
     private final long cursorId;
 
     public QueryResult() {
-        this(Collections.emptyList(), 0);
+        this(Collections.emptyList(), EmptyCursor.get());
+    }
+
+    public QueryResult(Iterable<Document> documents, Cursor cursor) {
+        this(documents, cursor.getId());
     }
 
     public QueryResult(Iterable<Document> documents, long cursorId) {
@@ -20,7 +24,7 @@ public class QueryResult implements Iterable<Document> {
     }
 
     public QueryResult(Iterable<Document> documents) {
-        this(documents, 0);
+        this(documents, EmptyCursor.get());
     }
 
     public Iterable<Document> getDocuments() {

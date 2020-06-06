@@ -443,7 +443,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         QueryResult queryResult = queryDocuments(query, orderBy, numberToSkip, numberToReturn);
 
         if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
-            return new QueryResult(new ProjectingIterable(queryResult, fieldSelector, getIdField()), 0);
+            // TODO: Handle cursors properly
+            return new QueryResult(new ProjectingIterable(queryResult, fieldSelector, getIdField()), EmptyCursor.get());
         }
 
         return queryResult;
@@ -780,7 +781,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected QueryResult createQueryResult(List<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
         Cursor cursor = createCursor(matchedDocuments, numberToSkip, numberToReturn);
         Iterable<Document> documents = applySkipAndLimit(matchedDocuments, numberToSkip, numberToReturn);
-        return new QueryResult(documents, cursor.getId());
+        return new QueryResult(documents, cursor);
     }
 
     protected Cursor createCursor(Collection<Document> matchedDocuments, int numberToSkip, int numberToReturn) {
