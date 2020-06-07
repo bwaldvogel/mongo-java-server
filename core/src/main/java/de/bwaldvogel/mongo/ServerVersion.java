@@ -23,7 +23,7 @@ public enum ServerVersion {
     }
 
     public String toVersionString() {
-        return Utils.join(Arrays.asList(versionArray), ".");
+        return Utils.join(versionArray, ".");
     }
 
     public int getWireVersion() {
