@@ -1,7 +1,8 @@
 package de.bwaldvogel.mongo.wire;
 
 public enum UpdateFlag {
-    UPSERT(0), MULTI_UPDATE(1);
+    UPSERT(0),
+    MULTI_UPDATE(1);
 
     private final int value;
 
