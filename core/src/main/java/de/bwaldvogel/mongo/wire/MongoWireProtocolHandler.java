@@ -2,7 +2,10 @@ package de.bwaldvogel.mongo.wire;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +43,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     private static final int LENGTH_FIELD_LENGTH = 4;
     private static final int LENGTH_ADJUSTMENT = -LENGTH_FIELD_LENGTH;
     private static final int INITIAL_BYTES_TO_STRIP = 0;
+    private static final int CHECKSUM_LENGTH = 4;
 
     public MongoWireProtocolHandler() {
         super(MAX_FRAME_LENGTH, LENGTH_FIELD_OFFSET, LENGTH_FIELD_LENGTH, LENGTH_ADJUSTMENT, INITIAL_BYTES_TO_STRIP);
@@ -221,39 +225,67 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
     }
 
     private ClientRequest handleMessage(Channel channel, MessageHeader header, ByteBuf buffer) {
-        int flags = buffer.readIntLE();
-        if (flags != 0) {
-            throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
+        int flagBits = buffer.readIntLE();
+
+        Set<MessageFlag> flags = EnumSet.noneOf(MessageFlag.class);
+        if (MessageFlag.CHECKSUM_PRESENT.isSet(flagBits)) {
+            flagBits = MessageFlag.CHECKSUM_PRESENT.removeFrom(flagBits);
+            flags.add(MessageFlag.CHECKSUM_PRESENT);
         }
 
-        byte firstSectionKind = buffer.readByte();
-        Assert.equals(firstSectionKind, MongoMessage.SECTION_KIND_BODY);
-        Document document = BsonDecoder.decodeBson(buffer);
+        if (flagBits != 0) {
+            throw new UnsupportedOperationException("flags=" + flagBits + " not yet supported");
+        }
 
-        while (readerDidNotReachEnd(header, buffer)) {
+        int expectedPayloadSize = header.getTotalLength() - LENGTH_FIELD_LENGTH;
+        if (flags.contains(MessageFlag.CHECKSUM_PRESENT)) {
+            expectedPayloadSize -= CHECKSUM_LENGTH;
+        }
+
+        Document body = null;
+        Document documentSequence = new Document();
+        while (buffer.readerIndex() < expectedPayloadSize) {
             byte sectionKind = buffer.readByte();
-            Assert.equals(sectionKind, MongoMessage.SECTION_KIND_DOCUMENT_SEQUENCE);
+            switch (sectionKind) {
+                case MongoMessage.SECTION_KIND_BODY:
+                    Assert.isNull(body);
+                    body = BsonDecoder.decodeBson(buffer);
+                    break;
+                case MongoMessage.SECTION_KIND_DOCUMENT_SEQUENCE:
+                    decodeKindDocumentSequence(buffer, documentSequence);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected section kind: " + sectionKind);
+            }
+        }
 
-            int sectionSize = buffer.readIntLE();
-            int expectedSize = header.getTotalLength() - buffer.readerIndex();
-            Assert.equals(sectionSize, expectedSize);
-            String documentIdentifier = BsonDecoder.decodeCString(buffer);
-            List<Document> documents = new ArrayList<>();
-            do {
-                Document subDocument = BsonDecoder.decodeBson(buffer);
-                documents.add(subDocument);
-            } while (readerDidNotReachEnd(header, buffer));
+        if (flags.contains(MessageFlag.CHECKSUM_PRESENT)) {
+            int checksum = buffer.readIntLE();
+            log.trace("Ignoring checksum {}", checksum);
+        }
 
-            Assert.notEmpty(documents);
-            Object old = document.put(documentIdentifier, documents);
+        Assert.notNull(body);
+        for (Map.Entry<String, Object> entry : documentSequence.entrySet()) {
+            Object old = body.put(entry.getKey(), entry.getValue());
             Assert.isNull(old);
         }
 
-        return new MongoMessage(channel, header, document);
+        return new MongoMessage(channel, header, body);
     }
 
-    private static boolean readerDidNotReachEnd(MessageHeader header, ByteBuf buffer) {
-        return buffer.readerIndex() < header.getTotalLength() - LENGTH_FIELD_LENGTH;
+    private void decodeKindDocumentSequence(ByteBuf buffer, Document documentSequence) {
+        int readerStartOffset = buffer.readerIndex();
+        int sectionSize = buffer.readIntLE();
+        String documentIdentifier = BsonDecoder.decodeCString(buffer);
+        List<Document> documents = new ArrayList<>();
+        do {
+            Document subDocument = BsonDecoder.decodeBson(buffer);
+            documents.add(subDocument);
+        } while (buffer.readerIndex() - readerStartOffset < sectionSize);
+
+        Assert.notEmpty(documents);
+        Object old = documentSequence.put(documentIdentifier, documents);
+        Assert.isNull(old);
     }
 
 }

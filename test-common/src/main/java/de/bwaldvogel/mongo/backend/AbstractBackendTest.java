@@ -3992,8 +3992,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, foo: { b: 2 }, bar: { c: 3, d: 4 }, a: 1}"));
 
         assertThatExceptionOfType(MongoWriteException.class)
-            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}")
-            ));
+            .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$rename: {'foo.b.c': 'foo.b.d'}")));
     }
 
     @Test
