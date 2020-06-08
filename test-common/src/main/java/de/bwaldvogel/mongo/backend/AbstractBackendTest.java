@@ -3861,6 +3861,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testLargeBulkInsert() throws Exception {
+        List<WriteModel<Document>> inserts = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            inserts.add(new InsertOneModel<>(new Document("_id", i + 1)
+                .append("data", "some longer string too cause some data on the wire")));
+        }
+
+        BulkWriteResult result = collection.bulkWrite(inserts);
+        assertThat(result.getInsertedCount()).isEqualTo(1000);
+    }
+
+    @Test
     public void testBulkInsert_withDuplicate() throws Exception {
         collection.insertOne(json("_id: 2"));
 
