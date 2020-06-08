@@ -3905,7 +3905,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoBulkWriteException.class)
             .isThrownBy(() -> collection.bulkWrite(inserts, new BulkWriteOptions().ordered(false)))
-            .withMessageContaining("BulkWriteError{index=2, code=11000, message='E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 2 }'");
+            .withMessageContaining("Write errors: [" +
+                "BulkWriteError{index=2, code=11000, message='E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 2 }', details={}}, " +
+                "BulkWriteError{index=4, code=11000, message='E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 3 }', details={}}].");
 
         assertThat(collection.find().sort(json("_id: 1")))
             .containsExactly(

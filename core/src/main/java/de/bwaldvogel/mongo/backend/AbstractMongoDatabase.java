@@ -23,7 +23,6 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.IndexNotFoundException;
-import de.bwaldvogel.mongo.exception.InsertDocumentError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -248,17 +247,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         @SuppressWarnings("unchecked")
         List<Document> documents = (List<Document>) query.get("documents");
 
-        List<Document> writeErrors = new ArrayList<>();
-        try {
-            insertDocuments(channel, collectionName, documents, oplog, isOrdered);
-        } catch (MongoServerError e) {
-            Document error = new Document();
-            error.put("index", getIndex(e));
-            error.put("errmsg", e.getMessageWithoutErrorCode());
-            error.put("code", Integer.valueOf(e.getCode()));
-            error.putIfNotNull("codeName", e.getCodeName());
-            writeErrors.add(error);
-        }
+        List<Document> writeErrors = insertDocuments(channel, collectionName, documents, oplog, isOrdered);
         Document result = new Document();
         result.put("n", Integer.valueOf(documents.size()));
         if (!writeErrors.isEmpty()) {
@@ -267,15 +256,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         // odd by true: also mark error as okay
         Utils.markOkay(result);
         return result;
-    }
-
-    private static int getIndex(MongoServerError e) {
-        if (e instanceof InsertDocumentError) {
-            InsertDocumentError insertDocumentError = (InsertDocumentError) e;
-            return insertDocumentError.getIndex();
-        } else {
-            return 0;
-        }
     }
 
     private Document commandUpdate(Channel channel, String command, Document query, Oplog oplog) {
@@ -793,21 +773,28 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse);
 
-    private void insertDocuments(Channel channel, String collectionName, List<Document> documents, Oplog oplog, boolean isOrdered) {
+    private List<Document> insertDocuments(Channel channel, String collectionName, List<Document> documents, Oplog oplog, boolean isOrdered) {
         clearLastStatus(channel);
         try {
             if (isSystemCollection(collectionName)) {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
             MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-            collection.insertDocuments(documents, isOrdered);
+            List<Document> writeErrors = collection.insertDocuments(documents, isOrdered);
             oplog.handleInsert(collection.getFullName(), documents);
-            Document result = new Document("n", 0);
-            result.put("err", null);
-            putLastResult(channel, result);
+            if (!writeErrors.isEmpty()) {
+                Document writeError = new Document(writeErrors.get(0));
+                writeError.put("err", writeError.remove("errmsg"));
+                putLastResult(channel, writeError);
+            } else {
+                Document result = new Document("n", 0);
+                result.put("err", null);
+                putLastResult(channel, result);
+            }
+            return writeErrors;
         } catch (MongoServerError e) {
             putLastError(channel, e);
-            throw e;
+            return Collections.singletonList(toWriteError(0, e));
         }
     }
 

@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.stream.Stream;
@@ -10,8 +9,6 @@ import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.InsertDocumentError;
-import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
 
@@ -66,26 +63,7 @@ public interface MongoCollection<P> {
         insertDocuments(documents, true);
     }
 
-    default void insertDocuments(List<Document> documents, boolean isOrdered) {
-        int index = 0;
-        List<InsertDocumentError> errors = new ArrayList<>();
-        for (Document document : documents) {
-            try {
-                addDocument(document);
-            } catch (MongoServerError e) {
-                InsertDocumentError error = new InsertDocumentError(e, index);
-                if (isOrdered) {
-                    throw error;
-                } else {
-                    errors.add(error);
-                }
-            }
-            index++;
-        }
-        if (!errors.isEmpty()) {
-            throw errors.get(0);
-        }
-    }
+    List<Document> insertDocuments(List<Document> documents, boolean isOrdered);
 
     Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
                              boolean isMulti, boolean isUpsert, Oplog oplog);

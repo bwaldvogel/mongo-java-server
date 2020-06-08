@@ -450,6 +450,33 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
+    public List<Document> insertDocuments(List<Document> documents, boolean isOrdered) {
+        int index = 0;
+        List<Document> writeErrors = new ArrayList<>();
+        for (Document document : documents) {
+            try {
+                addDocument(document);
+            } catch (MongoServerError e) {
+                writeErrors.add(toErrorDocument(e, index));
+                if (isOrdered) {
+                    break;
+                }
+            }
+            index++;
+        }
+        return writeErrors;
+    }
+
+    private static Document toErrorDocument(MongoServerError e, int index) {
+        Document error = new Document();
+        error.put("index", index);
+        error.put("errmsg", e.getMessageWithoutErrorCode());
+        error.put("code", Integer.valueOf(e.getCode()));
+        error.putIfNotNull("codeName", e.getCodeName());
+        return error;
+    }
+
+    @Override
     public Document handleDistinct(Document query) {
         String key = (String) query.get("key");
         Document filter = (Document) query.getOrDefault("query", new Document());
