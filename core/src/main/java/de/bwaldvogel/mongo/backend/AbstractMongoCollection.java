@@ -15,14 +15,13 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.projection.ProjectingIterable;
-import de.bwaldvogel.mongo.backend.projection.Projection;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
@@ -57,40 +56,33 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return matcher.matches(document, query);
     }
 
-    private QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize) {
+    private QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize,
+                                       Document fieldSelector) {
         synchronized (indexes) {
             for (Index<P> index : indexes) {
                 if (index.canHandle(query)) {
                     Iterable<P> positions = index.getPositions(query);
-                    return matchDocuments(query, positions, orderBy, numberToSkip, limit);
+                    return matchDocuments(query, positions, orderBy, numberToSkip, limit, batchSize, fieldSelector);
                 }
             }
         }
 
-        return matchDocuments(query, orderBy, numberToSkip, limit, batchSize);
-    }
-
-    protected void sortDocumentsInMemory(List<Document> documents, Document orderBy) {
-        DocumentComparator documentComparator = deriveComparator(orderBy);
-        if (documentComparator != null) {
-            documents.sort(documentComparator);
-        } else if (isNaturalDescending(orderBy)) {
-            Collections.reverse(documents);
-        }
+        return matchDocuments(query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
 
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                  int numberToReturn, int batchSize);
+                                                  int numberToReturn, int batchSize, Document fieldSelector);
 
     protected QueryResult matchDocumentsFromStream(Stream<Document> documentStream, Document query, Document orderBy,
-                                                   int numberToSkip, int limit, int batchSize) {
+                                                   int numberToSkip, int limit, int batchSize, Document fieldSelector) {
         Comparator<Document> documentComparator = deriveComparator(orderBy);
-        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator);
+        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector);
     }
 
     protected QueryResult matchDocumentsFromStream(Document query, Stream<Document> documentStream,
                                                    int numberToSkip, int limit, int batchSize,
-                                                   Comparator<Document> documentComparator) {
+                                                   Comparator<Document> documentComparator,
+                                                   Document fieldSelector) {
         documentStream = documentStream
             .filter(document -> documentMatchesQuery(document, query));
 
@@ -106,32 +98,22 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             documentStream = documentStream.limit(limit);
         }
 
+        if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
+            Projection projection = new Projection(fieldSelector, getIdField());
+            documentStream = documentStream.map(projection::projectDocument);
+        }
+
         List<Document> matchedDocuments = documentStream.collect(Collectors.toList());
         return createQueryResult(matchedDocuments, batchSize);
     }
 
     protected QueryResult matchDocuments(Document query, Iterable<P> positions, Document orderBy,
-                                         int numberToSkip, int limit) {
-        List<Document> matchedDocuments = new ArrayList<>();
+                                         int numberToSkip, int limit, int batchSize,
+                                         Document fieldSelector) {
+        Stream<Document> documentStream = StreamSupport.stream(positions.spliterator(), false)
+            .map(position -> getDocument(position));
 
-        for (P position : positions) {
-            Document document = getDocument(position);
-            if (documentMatchesQuery(document, query)) {
-                matchedDocuments.add(document);
-            }
-        }
-
-        sortDocumentsInMemory(matchedDocuments, orderBy);
-
-        if (numberToSkip > 0) {
-            matchedDocuments = matchedDocuments.subList(numberToSkip, matchedDocuments.size());
-        }
-
-        if (limit > 0 && matchedDocuments.size() > limit) {
-            matchedDocuments = matchedDocuments.subList(0, limit);
-        }
-
-        return new QueryResult(matchedDocuments);
+        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
 
     protected static boolean isNaturalDescending(Document orderBy) {
@@ -435,9 +417,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             num++;
         }
 
-        if (query.get("fields") != null) {
-            Document fields = (Document) query.get("fields");
-            returnDocument = Projection.projectDocument(returnDocument, fields, getIdField());
+        Document fields = (Document) query.get("fields");
+        if (fields != null) {
+            returnDocument = new Projection(fields, getIdField()).projectDocument(returnDocument);
         }
 
         Document result = new Document();
@@ -464,14 +446,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             orderBy = null;
         }
 
-        QueryResult queryResult = queryDocuments(query, orderBy, numberToSkip, limit, batchSize);
-
-        if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
-            // TODO: Handle cursors properly
-            return new QueryResult(new ProjectingIterable(queryResult, fieldSelector, getIdField()), EmptyCursor.get());
-        }
-
-        return queryResult;
+        return queryDocuments(query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
 
     @Override
@@ -480,7 +455,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Document filter = (Document) query.getOrDefault("query", new Document());
         Set<Object> values = new TreeSet<>(ValueComparator.ascWithoutListHandling().withDefaultComparatorForUuids());
 
-        for (Document document : queryDocuments(filter, null, 0, 0, 0)) {
+        for (Document document : queryDocuments(filter, null, 0, 0, 0, null)) {
             Object value = Utils.getSubdocumentValueCollectionAware(document, key);
             if (!(value instanceof Missing)) {
                 if (value instanceof Collection) {
@@ -523,7 +498,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         int nMatched = 0;
         List<Object> updatedIds = new ArrayList<>();
-        for (Document document : queryDocuments(selector, null, 0, 0, 0)) {
+        for (Document document : queryDocuments(selector, null, 0, 0, 0, null)) {
             Integer matchPos = matcher.matchPosition(document, selector);
             Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
             if (!Utils.nullAwareEquals(oldDocument, document)) {
@@ -676,7 +651,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         int numberToReturn = Math.max(limit, 0);
         int count = 0;
-        Iterator<?> it = queryDocuments(query, null, skip, numberToReturn, 0).iterator();
+        Iterator<?> it = queryDocuments(query, null, skip, numberToReturn, 0, new Document(getIdField(), 1)).iterator();
         while (it.hasNext()) {
             it.next();
             count++;

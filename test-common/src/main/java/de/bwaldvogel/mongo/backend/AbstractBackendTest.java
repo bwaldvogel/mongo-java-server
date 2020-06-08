@@ -228,6 +228,37 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testCursor_withProjection() {
+        int totalCount = 50;
+        int numToSkip = 5;
+        int limit = 20;
+        int batchSize = 10;
+        for (int i = 0; i < totalCount; i++) {
+            collection.insertOne(new Document("_id", 100 + i).append("x", 1000 + i));
+        }
+        MongoCursor<Document> cursor = collection.find()
+            .sort(json("_id: 1"))
+            .skip(numToSkip)
+            .limit(limit)
+            .batchSize(batchSize)
+            .projection(json("_id: 0, x: 1"))
+            .cursor();
+
+        List<Document> retrievedDocuments = new ArrayList<>();
+        while (cursor.hasNext()) {
+            retrievedDocuments.add(cursor.next());
+        }
+
+        assertThatExceptionOfType(NoSuchElementException.class)
+            .isThrownBy(cursor::next)
+            .withMessage(null);
+
+        assertThat(retrievedDocuments).hasSize(limit);
+        assertThat(retrievedDocuments).first().isEqualTo(json("x: 1005"));
+        assertThat(retrievedDocuments).last().isEqualTo(json("x: 1024"));
+    }
+
+    @Test
     public void testCloseCursor() {
         int expectedCount = 20;
         int batchSize = 5;

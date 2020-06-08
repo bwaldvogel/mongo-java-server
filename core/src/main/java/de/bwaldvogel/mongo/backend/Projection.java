@@ -1,23 +1,27 @@
-package de.bwaldvogel.mongo.backend.projection;
+package de.bwaldvogel.mongo.backend;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 
-import de.bwaldvogel.mongo.backend.DefaultQueryMatcher;
-import de.bwaldvogel.mongo.backend.Missing;
-import de.bwaldvogel.mongo.backend.QueryMatcher;
-import de.bwaldvogel.mongo.backend.QueryOperator;
-import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
 
-public class Projection {
+class Projection {
 
-    public static Document projectDocument(Document document, Document fields, String idField) {
+    private final Document fields;
+    private final String idField;
+    private final boolean onlyExclusions;
+
+    Projection(Document fields, String idField) {
         validateFields(fields);
+        this.fields = fields;
+        this.idField = idField;
+        this.onlyExclusions = onlyExclusions(fields);
+    }
 
+    Document projectDocument(Document document) {
         if (document == null) {
             return null;
         }
@@ -30,7 +34,7 @@ public class Projection {
             newDocument.put(idField, document.get(idField));
         }
 
-        if (onlyExclusions(fields)) {
+        if (onlyExclusions) {
             newDocument.putAll(document);
             for (String excludedField : fields.keySet()) {
                 newDocument.remove(excludedField);

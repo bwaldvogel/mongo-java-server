@@ -54,10 +54,10 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize) {
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize, Document fieldSelector) {
         Iterable<Document> documents = iterateAllDocuments(orderBy);
         Stream<Document> documentStream = StreamSupport.stream(documents.spliterator(), false);
-        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize);
+        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
 
     private Iterable<Document> iterateAllDocuments(Document orderBy) {

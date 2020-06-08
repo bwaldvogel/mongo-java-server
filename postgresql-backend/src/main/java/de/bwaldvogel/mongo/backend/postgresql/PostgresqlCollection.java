@@ -55,8 +55,9 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize) {
-
+    protected QueryResult matchDocuments(Document query, Document orderBy,
+                                         int numberToSkip, int numberToReturn, int batchSize,
+                                         Document fieldSelector) {
         String sql = "SELECT data FROM " + getQualifiedTablename() + " " + convertOrderByToSql(orderBy);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql);
@@ -81,7 +82,7 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
                 }
             }, false);
 
-            return matchDocumentsFromStream(query, documents, numberToSkip, numberToReturn, batchSize, null);
+            return matchDocumentsFromStream(query, documents, numberToSkip, numberToReturn, batchSize, null, fieldSelector);
         } catch (SQLException e) {
             throw new MongoServerException("Failed to query " + this, e);
         }
@@ -127,7 +128,8 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
 
     @Override
     protected QueryResult matchDocuments(Document query, Iterable<Long> positions, Document orderBy,
-                                         int numberToSkip, int limit) {
+                                         int numberToSkip, int limit, int batchSize,
+                                         Document fieldSelector) {
         throw new UnsupportedOperationException("not yet implemented");
     }
 
