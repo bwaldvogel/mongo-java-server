@@ -753,7 +753,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             Index<P> index = openOrCreateIdIndex(collectionName, indexName, ascending);
             log.info("adding unique _id index for collection {}", collectionName);
             collection.addIndex(index);
-        } else if (Utils.isTrue(indexDescription.get("unique"))) {
+        } else {
             List<IndexKey> keys = new ArrayList<>();
             for (Entry<String, Object> entry : key.entrySet()) {
                 String field = entry.getKey();
@@ -762,14 +762,25 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
 
             boolean sparse = Utils.isTrue(indexDescription.get("sparse"));
-            log.info("adding {} unique index {} for collection {}", sparse ? "sparse" : "non-sparse", keys, collectionName);
+            final Index<P> index;
+            if (Utils.isTrue(indexDescription.get("unique"))) {
+                log.info("adding {} unique index {} for collection {}", sparse ? "sparse" : "non-sparse", keys, collectionName);
 
-            Index<P> index = openOrCreateUniqueIndex(collectionName, indexName, keys, sparse);
-            collection.addIndex(index);
-        } else {
-            // TODO: non-unique non-id indexes not yet implemented
-            log.warn("adding non-unique non-id index with key {} is not yet implemented", key);
+                index = openOrCreateUniqueIndex(collectionName, indexName, keys, sparse);
+            } else {
+                index = openOrCreateSecondaryIndex(collectionName, indexName, keys, sparse);
+            }
+
+            if (index != null) {
+                collection.addIndex(index);
+            }
         }
+    }
+
+    @VisibleForExternalBackends
+    protected Index<P> openOrCreateSecondaryIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse) {
+        log.warn("adding secondary index with keys {} is not yet implemented. ignoring", keys);
+        return null;
     }
 
     private static boolean isAscending(Object keyValue) {
