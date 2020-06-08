@@ -3843,7 +3843,34 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessageContaining("BulkWriteError{index=1, code=11000, message='E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 2 }'");
 
         assertThat(collection.find().sort(json("_id: 1")))
-            .containsExactly(json("_id: 1"), json("_id: 2"));
+            .containsExactly(
+                json("_id: 1"),
+                json("_id: 2")
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/142
+    @Test
+    public void testBulkInsert_unordered_withDuplicate() throws Exception {
+        List<WriteModel<Document>> inserts = new ArrayList<>();
+        inserts.add(new InsertOneModel<>(json("_id: 1")));
+        inserts.add(new InsertOneModel<>(json("_id: 2")));
+        inserts.add(new InsertOneModel<>(json("_id: 2")));
+        inserts.add(new InsertOneModel<>(json("_id: 3")));
+        inserts.add(new InsertOneModel<>(json("_id: 3")));
+        inserts.add(new InsertOneModel<>(json("_id: 4")));
+
+        assertThatExceptionOfType(MongoBulkWriteException.class)
+            .isThrownBy(() -> collection.bulkWrite(inserts, new BulkWriteOptions().ordered(false)))
+            .withMessageContaining("BulkWriteError{index=2, code=11000, message='E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 2 }'");
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactly(
+                json("_id: 1"),
+                json("_id: 2"),
+                json("_id: 3"),
+                json("_id: 4")
+            );
     }
 
     @Test

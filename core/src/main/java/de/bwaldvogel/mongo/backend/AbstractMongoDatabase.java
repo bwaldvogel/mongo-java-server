@@ -250,7 +250,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         List<Document> writeErrors = new ArrayList<>();
         try {
-            insertDocuments(channel, collectionName, documents, oplog);
+            insertDocuments(channel, collectionName, documents, oplog, isOrdered);
         } catch (MongoServerError e) {
             Document error = new Document();
             error.put("index", getIndex(e));
@@ -638,7 +638,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
         } else {
             try {
-                insertDocuments(channel, collectionName, documents, oplog);
+                insertDocuments(channel, collectionName, documents, oplog, true);
             } catch (MongoServerException e) {
                 log.error("failed to insert {}", insert, e);
             }
@@ -782,14 +782,14 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse);
 
-    private void insertDocuments(Channel channel, String collectionName, List<Document> documents, Oplog oplog) {
+    private void insertDocuments(Channel channel, String collectionName, List<Document> documents, Oplog oplog, boolean isOrdered) {
         clearLastStatus(channel);
         try {
             if (isSystemCollection(collectionName)) {
                 throw new MongoServerError(16459, "attempt to insert in system namespace");
             }
             MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-            collection.insertDocuments(documents);
+            collection.insertDocuments(documents, isOrdered);
             oplog.handleInsert(collection.getFullName(), documents);
             Document result = new Document("n", 0);
             result.put("err", null);

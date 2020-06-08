@@ -36,8 +36,8 @@ public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMon
     }
 
     @Override
-    public synchronized void insertDocuments(List<Document> documents) {
-        super.insertDocuments(documents);
+    public synchronized void insertDocuments(List<Document> documents, boolean isOrdered) {
+        super.insertDocuments(documents, isOrdered);
     }
 
     @Override
