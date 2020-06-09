@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.util.Arrays;
 import java.util.UUID;
 
+import de.bwaldvogel.mongo.oplog.CollectionBackedOplog;
+import de.bwaldvogel.mongo.oplog.NoopOplog;
 import org.bson.Document;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
@@ -50,7 +52,7 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         PostgresqlBackend backend = new PostgresqlBackend(dataSource, clock);
         for (String db : Arrays.asList(TEST_DATABASE_NAME, OTHER_TEST_DATABASE_NAME)) {
             MongoDatabase mongoDatabase = backend.openOrCreateDatabase(db);
-            mongoDatabase.drop();
+            mongoDatabase.drop(NoopOplog.get());
         }
         return backend;
     }

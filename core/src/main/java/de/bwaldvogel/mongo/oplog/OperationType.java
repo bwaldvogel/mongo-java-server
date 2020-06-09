@@ -8,7 +8,9 @@ import de.bwaldvogel.mongo.backend.Assert;
 public enum OperationType {
     DELETE("d"),
     UPDATE("u"),
-    INSERT("i");
+    INSERT("i"),
+    COMMAND("c"),
+    INVALIDATE("invalidate");
 
     private final String code;
 
@@ -45,6 +47,10 @@ public enum OperationType {
                 return "insert";
             case UPDATE:
                 return "update";
+            case COMMAND:
+                return "command";
+            case INVALIDATE:
+                return "invalidate";
         }
         return null;
     }

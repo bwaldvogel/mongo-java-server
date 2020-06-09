@@ -13,6 +13,7 @@ import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.postgresql.index.PostgresUniqueIndex;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.oplog.Oplog;
 
 public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
 
@@ -25,7 +26,7 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     }
 
     @Override
-    public void drop() {
+    public void drop(Oplog oplog) {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("DROP SCHEMA " + getSchemaName() + " CASCADE")
         ) {
@@ -57,8 +58,8 @@ public class PostgresqlDatabase extends AbstractMongoDatabase<Long> {
     }
 
     @Override
-    public void dropCollection(String collectionName) {
-        super.dropCollection(collectionName);
+    public void dropCollection(String collectionName, Oplog oplog) {
+        super.dropCollection(collectionName, oplog);
         String fullCollectionName = PostgresqlCollection.getQualifiedTablename(getDatabaseName(), collectionName);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("DROP TABLE " + fullCollectionName + "")) {

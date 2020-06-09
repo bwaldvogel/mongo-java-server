@@ -20,6 +20,8 @@ public abstract class Cursor {
 
     public abstract List<Document> takeDocuments(int numberToReturn);
 
+    public abstract Cursor invalidate();
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "(id: " + id + ")";

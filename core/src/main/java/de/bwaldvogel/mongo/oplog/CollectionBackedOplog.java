@@ -9,8 +9,10 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
+import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class CollectionBackedOplog implements Oplog {
 
@@ -61,6 +63,16 @@ public class CollectionBackedOplog implements Oplog {
         );
     }
 
+    @Override
+    public void handleDropCollection(String namespace) {
+        if (isOplogCollection(namespace)) {
+            return;
+        }
+        final String databaseName = Utils.getDatabaseNameFromFullName(namespace);
+        final String collectionName = Utils.getCollectionNameFromFullName(namespace);
+        collection.addDocument(toOplogDropCollection(databaseName, collectionName));
+    }
+
     private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position) {
         return collection.queryAllAsStream()
             .filter(document -> {
@@ -77,15 +89,28 @@ public class CollectionBackedOplog implements Oplog {
     }
 
     @Override
-    public Cursor createCursor(Document changeStreamDocument) {
+    public Cursor createCursor(Document changeStreamDocument, String namespace) {
         Document startAfter = (Document) changeStreamDocument.get("startAfter");
         Document resumeAfter = (Document) changeStreamDocument.get("resumeAfter");
         BsonTimestamp startAtOperationTime = (BsonTimestamp) changeStreamDocument.get(START_AT_OPERATION_TIME);
+        boolean resumeAfterTerminalEvent = false;
         final OplogPosition initialOplogPosition;
         if (startAfter != null) {
             initialOplogPosition = OplogPosition.fromDocument(startAfter);
         } else if (resumeAfter != null) {
             initialOplogPosition = OplogPosition.fromDocument(resumeAfter);
+            String databaseName = Utils.getDatabaseNameFromFullName(namespace);
+            String collectionName = Utils.getCollectionNameFromFullName(namespace);
+            resumeAfterTerminalEvent = collection.queryAllAsStream()
+                .filter(document -> {
+                    BsonTimestamp timestamp = getOplogTimestamp(document);
+                    OplogPosition documentOplogPosition = new OplogPosition(timestamp);
+                    return initialOplogPosition.isAfter(documentOplogPosition.inclusive());
+                })
+                .anyMatch(document -> document.get(OplogDocumentFields.OPERATION_TYPE).equals(OperationType.COMMAND.getCode()) &&
+                    document.get(OplogDocumentFields.NAMESPACE).equals(String.format("%s.$cmd", databaseName)) &&
+                    document.get(OplogDocumentFields.O).equals(new Document("drop", collectionName))
+            );
         } else if (startAtOperationTime != null) {
             initialOplogPosition = new OplogPosition(startAtOperationTime).inclusive();
         } else {
@@ -94,6 +119,9 @@ public class CollectionBackedOplog implements Oplog {
 
         Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
         Cursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
+        if (resumeAfterTerminalEvent) {
+            return cursor.invalidate();
+        }
         cursorRegistry.add(cursor);
         return cursor;
     }
@@ -124,6 +152,11 @@ public class CollectionBackedOplog implements Oplog {
     private Document toOplogDeleteDocument(String namespace, Object deletedDocumentId) {
         return toOplogDocument(OperationType.DELETE, namespace)
             .append(OplogDocumentFields.O, new Document(OplogDocumentFields.ID, deletedDocumentId));
+    }
+
+    private Document toOplogDropCollection(String databaseName, String collectionName) {
+        return toOplogDocument(OperationType.COMMAND, String.format("%s.$cmd", databaseName))
+            .append(OplogDocumentFields.O, new Document("drop", collectionName));
     }
 
     private boolean isOplogCollection(String namespace) {
@@ -173,6 +206,8 @@ public class CollectionBackedOplog implements Oplog {
         OperationType operationType = OperationType.fromCode(oplogDocument.get("op").toString());
         Document documentKey = new Document();
         Document document = getUpdateDocument(oplogDocument);
+        BsonTimestamp timestamp = getOplogTimestamp(oplogDocument);
+        OplogPosition oplogPosition = new OplogPosition(timestamp);
         switch (operationType) {
             case UPDATE:
             case DELETE:
@@ -181,16 +216,29 @@ public class CollectionBackedOplog implements Oplog {
             case INSERT:
                 documentKey.append(OplogDocumentFields.ID, document.get(OplogDocumentFields.ID));
                 break;
+            case COMMAND:
+                return toChangeStreamCommandResponseDocument(oplogDocument, oplogPosition, timestamp);
             default:
                 throw new IllegalArgumentException("Unexpected operation type: " + operationType);
         }
-        BsonTimestamp timestamp = getOplogTimestamp(oplogDocument);
-        OplogPosition oplogPosition = new OplogPosition(timestamp);
+
         return new Document()
             .append(OplogDocumentFields.ID, new Document(OplogDocumentFields.ID_DATA_KEY, oplogPosition.toHexString()))
             .append("operationType", operationType.getDescription())
             .append(FULL_DOCUMENT, getFullDocument(changeStreamDocument, oplogDocument, operationType))
             .append("documentKey", documentKey)
+            .append("clusterTime", timestamp);
+    }
+
+    private Document toChangeStreamCommandResponseDocument(Document oplogDocument, OplogPosition oplogPosition, BsonTimestamp timestamp) {
+        Document document = getUpdateDocument(oplogDocument);
+        String operationType = document.keySet().stream().findFirst().orElseThrow(
+            () -> new MongoServerException("Unspecified command operation type")
+        );
+
+        return new Document()
+            .append(OplogDocumentFields.ID, new Document(OplogDocumentFields.ID_DATA_KEY, oplogPosition.toHexString()))
+            .append("operationType", operationType)
             .append("clusterTime", timestamp);
     }
 

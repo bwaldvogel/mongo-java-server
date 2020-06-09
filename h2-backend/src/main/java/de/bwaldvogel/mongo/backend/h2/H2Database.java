@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import de.bwaldvogel.mongo.oplog.Oplog;
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
@@ -54,8 +55,8 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     @Override
-    public void drop() {
-        super.drop();
+    public void drop(Oplog oplog) {
+        super.drop(oplog);
 
         List<MVMap<?, ?>> maps = mvStore.getMapNames().stream()
             .filter(name -> name.startsWith(databaseName + ".")
@@ -98,8 +99,8 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     @Override
-    public void dropCollection(String collectionName) {
-        super.dropCollection(collectionName);
+    public void dropCollection(String collectionName, Oplog oplog) {
+        super.dropCollection(collectionName, oplog);
         String fullCollectionName = getDatabaseName() + "." + collectionName;
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);

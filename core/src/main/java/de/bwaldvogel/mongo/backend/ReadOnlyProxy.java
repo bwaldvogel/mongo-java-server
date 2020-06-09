@@ -11,12 +11,7 @@ import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
-import de.bwaldvogel.mongo.wire.message.MongoMessage;
-import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
+import de.bwaldvogel.mongo.wire.message.*;
 import io.netty.channel.Channel;
 
 public class ReadOnlyProxy implements MongoBackend {
@@ -82,6 +77,11 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public QueryResult handleGetMore(long cursorId, int numberToReturn) {
         return backend.handleGetMore(cursorId, numberToReturn);
+    }
+
+    @Override
+    public QueryResult handleGetMore(MongoGetMore getMore) {
+        return handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
     }
 
     @Override
