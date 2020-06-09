@@ -35,6 +35,8 @@ public class MongoServer {
 
     private static final Logger log = LoggerFactory.getLogger(MongoServer.class);
 
+    private static final int DEFAULT_NETTY_EVENT_LOOP_THREADS = 0;
+
     private final MongoBackend backend;
 
     private EventLoopGroup bossGroup;
@@ -70,9 +72,13 @@ public class MongoServer {
     }
 
     public void bind(SocketAddress socketAddress) {
+        bind(socketAddress, DEFAULT_NETTY_EVENT_LOOP_THREADS, DEFAULT_NETTY_EVENT_LOOP_THREADS);
+    }
 
-        bossGroup = new NioEventLoopGroup(0, new MongoThreadFactory("mongo-server-boss"));
-        workerGroup = new NioEventLoopGroup(0, new MongoThreadFactory("mongo-server-worker"));
+    public void bind(SocketAddress socketAddress, int numberOfBossThreads, int numberOfWorkerThreads) {
+
+        bossGroup = new NioEventLoopGroup(numberOfBossThreads, new MongoThreadFactory("mongo-server-boss"));
+        workerGroup = new NioEventLoopGroup(numberOfWorkerThreads, new MongoThreadFactory("mongo-server-worker"));
         channelGroup = new DefaultChannelGroup("mongodb-channels", workerGroup.next());
 
         try {
