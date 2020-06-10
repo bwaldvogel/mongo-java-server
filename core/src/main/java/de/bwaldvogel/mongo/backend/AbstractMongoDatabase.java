@@ -587,7 +587,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Document cursorDocument = (Document) query.get("cursor");
         int batchSize = (int) cursorDocument.getOrDefault("batchSize", 0);
 
-        Cursor cursor = oplog.createCursor(changeStreamDocument, String.format("%s.%s", databaseName, collectionName));
+        Cursor cursor = oplog.createCursor(changeStreamDocument, getDatabaseName() + "." + collectionName);
         return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize), cursor);
     }
 
