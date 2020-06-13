@@ -5,12 +5,7 @@ import java.util.Collection;
 
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
-import de.bwaldvogel.mongo.wire.message.MongoMessage;
-import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
+import de.bwaldvogel.mongo.wire.message.*;
 import io.netty.channel.Channel;
 
 public interface MongoBackend {
@@ -22,6 +17,8 @@ public interface MongoBackend {
     QueryResult handleQuery(MongoQuery query);
 
     QueryResult handleGetMore(long cursorId, int numberToReturn);
+
+    QueryResult handleGetMore(MongoGetMore getMore);
 
     void handleInsert(MongoInsert insert);
 

@@ -30,7 +30,12 @@ public final class NoopOplog implements Oplog {
     }
 
     @Override
-    public Cursor createCursor(Document changeStreamDocument) {
+    public void handleDropCollection(String namespace) {
+
+    }
+
+    @Override
+    public Cursor createCursor(Document changeStreamDocument, String namespace) {
         return EmptyCursor.get();
     }
 }

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import de.bwaldvogel.mongo.wire.message.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +34,6 @@ import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
-import de.bwaldvogel.mongo.wire.message.Message;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
-import de.bwaldvogel.mongo.wire.message.MongoMessage;
-import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
 
 public abstract class AbstractMongoBackend implements MongoBackend {
@@ -263,7 +257,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             MongoCollection<?> newCollection = newDatabase.resolveCollection(newCollectionName, false);
             if (newCollection != null) {
                 if (dropTarget) {
-                    newDatabase.dropCollection(newCollectionName);
+                    newDatabase.dropCollection(newCollectionName, oplog);
                 } else {
                     throw new NamespaceExistsException("target namespace exists");
                 }
@@ -353,6 +347,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
+    public QueryResult handleGetMore(MongoGetMore getMore) {
+        return handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
+    }
+
+    @Override
     public void handleInsert(MongoInsert insert) {
         MongoDatabase db = resolveDatabase(insert);
         db.handleInsert(insert, oplog);
@@ -426,7 +425,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     public void dropDatabase(String databaseName) {
         MongoDatabase removedDatabase = databases.remove(databaseName);
         if (removedDatabase != null) {
-            removedDatabase.drop();
+            removedDatabase.drop(oplog);
         }
     }
 

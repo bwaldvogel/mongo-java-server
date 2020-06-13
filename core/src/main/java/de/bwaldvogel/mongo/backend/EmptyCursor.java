@@ -30,6 +30,11 @@ public class EmptyCursor extends Cursor {
     }
 
     @Override
+    public Cursor invalidate() {
+        return this;
+    }
+
+    @Override
     public String toString() {
         return getClass().getSimpleName() + "()";
     }

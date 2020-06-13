@@ -124,7 +124,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             MongoCollection<P> collection = resolveCollection(command, query, true);
             return collection.handleDistinct(query);
         } else if (command.equalsIgnoreCase("drop")) {
-            return commandDrop(query);
+            return commandDrop(query, oplog);
         } else if (command.equalsIgnoreCase("dropIndexes")) {
             return commandDropIndexes(query);
         } else if (command.equalsIgnoreCase("dbstats")) {
@@ -459,7 +459,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     protected abstract long getStorageSize();
 
-    private Document commandDrop(Document query) {
+    private Document commandDrop(Document query, Oplog oplog) {
         String collectionName = query.get("drop").toString();
 
         MongoCollection<P> collection = resolveCollection(collectionName, false);
@@ -468,7 +468,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
 
         int numIndexes = collection.getNumIndexes();
-        dropCollection(collectionName);
+        dropCollection(collectionName, oplog);
         Document response = new Document();
         response.put("nIndexesWas", Integer.valueOf(numIndexes));
         response.put("ns", collection.getFullName());
@@ -567,7 +567,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Document cursorDocument = (Document) query.get("cursor");
         int batchSize = (int) cursorDocument.getOrDefault("batchSize", 0);
 
-        Cursor cursor = oplog.createCursor(changeStreamDocument);
+        Cursor cursor = oplog.createCursor(changeStreamDocument, getDatabaseName() + "." + collectionName);
         return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize), cursor);
     }
 
@@ -889,29 +889,30 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     protected abstract MongoCollection<P> openOrCreateCollection(String collectionName, CollectionOptions options);
 
     @Override
-    public void drop() {
+    public void drop(Oplog oplog) {
         log.debug("dropping {}", this);
         for (String collectionName : collections.keySet()) {
             if (!isSystemCollection(collectionName)) {
-                dropCollection(collectionName);
+                dropCollection(collectionName, oplog);
             }
         }
-        dropCollectionIfExists(INDEXES_COLLECTION_NAME);
-        dropCollectionIfExists(NAMESPACES_COLLECTION_NAME);
+        dropCollectionIfExists(INDEXES_COLLECTION_NAME, oplog);
+        dropCollectionIfExists(NAMESPACES_COLLECTION_NAME, oplog);
     }
 
-    private void dropCollectionIfExists(String collectionName) {
+    private void dropCollectionIfExists(String collectionName, Oplog oplog) {
         if (collections.containsKey(collectionName)) {
-            dropCollection(collectionName);
+            dropCollection(collectionName, oplog);
         }
     }
 
     @Override
-    public void dropCollection(String collectionName) {
+    public void dropCollection(String collectionName, Oplog oplog) {
         MongoCollection<P> collection = resolveCollection(collectionName, true);
         dropAllIndexes(collection);
         collection.drop();
         unregisterCollection(collectionName);
+        oplog.handleDropCollection(String.format("%s.%s", databaseName, collectionName));
     }
 
     private void dropAllIndexes(MongoCollection<P> collection) {

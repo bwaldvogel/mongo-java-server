@@ -32,9 +32,9 @@ public interface MongoDatabase {
 
     MongoCollection<?> resolveCollection(String collectionName, boolean throwIfNotFound);
 
-    void drop();
+    void drop(Oplog oplog);
 
-    void dropCollection(String collectionName);
+    void dropCollection(String collectionName, Oplog oplog);
 
     void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName);
 

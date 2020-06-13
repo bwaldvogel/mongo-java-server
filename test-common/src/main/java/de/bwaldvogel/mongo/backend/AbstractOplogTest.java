@@ -6,20 +6,19 @@ import static com.mongodb.client.model.Updates.unset;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static java.util.Collections.singletonList;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
+import com.mongodb.client.ChangeStreamIterable;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -316,9 +315,25 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    @Ignore
     public void testChangeStreamResumeAfterTerminalEvent() {
-        // ToDo
+        assertThrows(NoSuchElementException.class, () -> {
+            MongoCollection<Document> col = db.getCollection("test-collection");
+            ChangeStreamIterable<Document> watch = col.watch().fullDocument(FullDocument.UPDATE_LOOKUP).batchSize(1);
+            MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = watch.cursor();
+            col.insertOne(json("a: 1"));
+            cursor.next();
+
+            col.drop();
+
+            ChangeStreamDocument<Document> document = cursor.next();
+            BsonDocument resumeToken = document.getResumeToken();
+            cursor = watch.resumeAfter(resumeToken).cursor();
+            document = cursor.next();
+
+            assertThat(document).isNotNull();
+            assertThat(document.getOperationType()).isEqualTo(com.mongodb.client.model.changestream.OperationType.INVALIDATE);
+            cursor.next();
+        });
     }
 
     @Test
@@ -335,12 +350,6 @@ public abstract class AbstractOplogTest extends AbstractTest {
         assertThat(document2.getFullDocument().get("a")).isEqualTo(2);
         document2 = cursor2.next();
         assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
-    }
-
-    @Test
-    @Ignore
-    public void testChangeStreamCollectionDeleted() {
-        // ToDo
     }
 
 }

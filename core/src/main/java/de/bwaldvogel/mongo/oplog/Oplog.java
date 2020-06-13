@@ -13,5 +13,7 @@ public interface Oplog {
 
     void handleDelete(String namespace, Document query, List<Object> deletedIds);
 
-    Cursor createCursor(Document changeStreamDocument);
+    void handleDropCollection(String namespace);
+
+    Cursor createCursor(Document changeStreamDocument, String namespace);
 }
