@@ -52,12 +52,11 @@ public interface MongoCollection<P> {
         return StreamSupport.stream(documents, false);
     }
 
-    default QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn) {
-        return handleQuery(query, numberToSkip, numberToReturn, 0, null);
+    default QueryResult handleQuery(Document query, int numberToSkip, int limit) {
+        return handleQuery(query, numberToSkip, limit, 0, null);
     }
 
-    QueryResult handleQuery(Document query, int numberToSkip, int numberToReturn, int batchSize,
-                            Document returnFieldSelector);
+    QueryResult handleQuery(Document query, int numberToSkip, int limit, int batchSize, Document returnFieldSelector);
 
     default void insertDocuments(List<Document> documents) {
         insertDocuments(documents, true);
