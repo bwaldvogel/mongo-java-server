@@ -30,11 +30,6 @@ public class EmptyCursor extends Cursor {
     }
 
     @Override
-    public Cursor invalidate() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String toString() {
         return getClass().getSimpleName() + "()";
     }

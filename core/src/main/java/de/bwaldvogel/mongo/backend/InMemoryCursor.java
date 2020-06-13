@@ -29,9 +29,4 @@ public class InMemoryCursor extends Cursor {
         return documents;
     }
 
-    @Override
-    public Cursor invalidate() {
-        return new InMemoryCursor(0, remainingDocuments);
-    }
-
 }

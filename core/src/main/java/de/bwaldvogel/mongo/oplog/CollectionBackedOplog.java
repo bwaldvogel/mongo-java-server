@@ -118,9 +118,11 @@ public class CollectionBackedOplog implements Oplog {
         }
 
         Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
-        Cursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
+        OplogCursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
         if (resumeAfterTerminalEvent) {
-            return cursor.invalidate();
+            Cursor invalidateOplogCursor = new InvalidateOplogCursor(cursor.getPosition());
+            cursorRegistry.remove(cursor);
+            return invalidateOplogCursor;
         }
         cursorRegistry.add(cursor);
         return cursor;

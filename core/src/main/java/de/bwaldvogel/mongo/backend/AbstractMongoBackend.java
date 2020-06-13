@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import de.bwaldvogel.mongo.wire.message.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +33,14 @@ import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
+import de.bwaldvogel.mongo.wire.message.Message;
+import de.bwaldvogel.mongo.wire.message.MongoDelete;
+import de.bwaldvogel.mongo.wire.message.MongoGetMore;
+import de.bwaldvogel.mongo.wire.message.MongoInsert;
+import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
+import de.bwaldvogel.mongo.wire.message.MongoMessage;
+import de.bwaldvogel.mongo.wire.message.MongoQuery;
+import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
 
 public abstract class AbstractMongoBackend implements MongoBackend {
@@ -341,7 +348,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         List<Document> documents = cursor.takeDocuments(numberToReturn);
         if (cursor.isEmpty()) {
             log.debug("Removing empty {}", cursor);
-            cursorRegistry.remove(cursor.getId());
+            cursorRegistry.remove(cursor);
         }
         return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getId() : cursorId);
     }

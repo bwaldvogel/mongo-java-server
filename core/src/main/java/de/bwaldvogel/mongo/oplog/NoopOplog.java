@@ -31,7 +31,6 @@ public final class NoopOplog implements Oplog {
 
     @Override
     public void handleDropCollection(String namespace) {
-
     }
 
     @Override
