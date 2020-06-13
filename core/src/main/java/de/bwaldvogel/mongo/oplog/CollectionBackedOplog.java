@@ -93,7 +93,6 @@ public class CollectionBackedOplog implements Oplog {
         Document startAfter = (Document) changeStreamDocument.get("startAfter");
         Document resumeAfter = (Document) changeStreamDocument.get("resumeAfter");
         BsonTimestamp startAtOperationTime = (BsonTimestamp) changeStreamDocument.get(START_AT_OPERATION_TIME);
-        boolean resumeAfterTerminalEvent = false;
         final OplogPosition initialOplogPosition;
         if (startAfter != null) {
             initialOplogPosition = OplogPosition.fromDocument(startAfter);
@@ -101,30 +100,30 @@ public class CollectionBackedOplog implements Oplog {
             initialOplogPosition = OplogPosition.fromDocument(resumeAfter);
             String databaseName = Utils.getDatabaseNameFromFullName(namespace);
             String collectionName = Utils.getCollectionNameFromFullName(namespace);
-            resumeAfterTerminalEvent = collection.queryAllAsStream()
+            boolean resumeAfterTerminalEvent = collection.queryAllAsStream()
                 .filter(document -> {
                     BsonTimestamp timestamp = getOplogTimestamp(document);
                     OplogPosition documentOplogPosition = new OplogPosition(timestamp);
                     return initialOplogPosition.isAfter(documentOplogPosition.inclusive());
                 })
-                .anyMatch(document -> document.get(OplogDocumentFields.OPERATION_TYPE).equals(OperationType.COMMAND.getCode()) &&
-                    document.get(OplogDocumentFields.NAMESPACE).equals(String.format("%s.$cmd", databaseName)) &&
-                    document.get(OplogDocumentFields.O).equals(new Document("drop", collectionName))
+                .anyMatch(document -> document.get(OplogDocumentFields.OPERATION_TYPE).equals(OperationType.COMMAND.getCode())
+                    && document.get(OplogDocumentFields.NAMESPACE).equals(String.format("%s.$cmd", databaseName))
+                    && document.get(OplogDocumentFields.O).equals(new Document("drop", collectionName))
                 );
+
+            if (resumeAfterTerminalEvent) {
+                return new InvalidateOplogCursor(initialOplogPosition);
+            }
         } else if (startAtOperationTime != null) {
             initialOplogPosition = new OplogPosition(startAtOperationTime).inclusive();
         } else {
             initialOplogPosition = new OplogPosition(oplogClock.now());
         }
 
-        if (resumeAfterTerminalEvent) {
-            return new InvalidateOplogCursor(initialOplogPosition);
-        } else {
-            Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
-            OplogCursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
-            cursorRegistry.add(cursor);
-            return cursor;
-        }
+        Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
+        OplogCursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
+        cursorRegistry.add(cursor);
+        return cursor;
     }
 
     private Document toOplogDocument(OperationType operationType, String namespace) {
