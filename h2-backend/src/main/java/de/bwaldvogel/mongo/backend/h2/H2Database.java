@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import de.bwaldvogel.mongo.oplog.Oplog;
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
@@ -20,6 +19,7 @@ import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.oplog.Oplog;
 
 public class H2Database extends AbstractMongoDatabase<Object> {
 
@@ -51,7 +51,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     }
 
     private String mapNameForIndex(String collectionName, String indexName) {
-        return databaseName + "." + collectionName + "._index_" + indexName;
+        return getFullCollectionNamespace(collectionName) + "._index_" + indexName;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
 
     @Override
     protected MongoCollection<Object> openOrCreateCollection(String collectionName, CollectionOptions options) {
-        String fullCollectionName = databaseName + "." + collectionName;
+        String fullCollectionName = getFullCollectionNamespace(collectionName);
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
         return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry);
@@ -101,7 +101,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     @Override
     public void dropCollection(String collectionName, Oplog oplog) {
         super.dropCollection(collectionName, oplog);
-        String fullCollectionName = getDatabaseName() + "." + collectionName;
+        String fullCollectionName = getFullCollectionNamespace(collectionName);
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
         mvStore.removeMap(dataMap);
@@ -112,7 +112,7 @@ public class H2Database extends AbstractMongoDatabase<Object> {
     public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName) {
         super.moveCollection(oldDatabase, collection, newCollectionName);
         String fullCollectionName = collection.getFullName();
-        String newFullName = collection.getDatabaseName() + "." + newCollectionName;
+        String newFullName = getFullCollectionNamespace(newCollectionName);
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
 
