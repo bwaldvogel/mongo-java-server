@@ -190,7 +190,7 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
             return querySingleValue(stmt);
         } catch (SQLException e) {
             if (PostgresqlUtils.isErrorDuplicateKey(e)) {
-                throw new DuplicateKeyError(getDatabaseName() + "." + getCollectionName(), e.getMessage());
+                throw new DuplicateKeyError(getFullName(), e.getMessage());
             }
             throw new MongoServerException("failed to insert " + document, e);
         }
