@@ -31,7 +31,7 @@ public class EmptyCursor extends Cursor {
 
     @Override
     public Cursor invalidate() {
-        return this;
+        throw new UnsupportedOperationException();
     }
 
     @Override
