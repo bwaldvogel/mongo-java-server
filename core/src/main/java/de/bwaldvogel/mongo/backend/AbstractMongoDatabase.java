@@ -198,7 +198,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document listIndexes(String collectionName) {
         Iterable<Document> indexes = Optional.ofNullable(resolveCollection(INDEXES_COLLECTION_NAME, false))
-            .map(collection -> collection.handleQuery(new Document("ns", getDatabaseName() + "." + collectionName)))
+            .map(collection -> collection.handleQuery(new Document("ns", getFullCollectionNamespace(collectionName))))
             .orElse(Collections.emptyList());
         return Utils.firstBatchCursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
     }
@@ -216,7 +216,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         String collectionName = (String) query.get(command);
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
-            return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, Collections.emptyList());
+            return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), Collections.emptyList());
         }
         int numberToSkip = ((Number) query.getOrDefault("skip", 0)).intValue();
         int numberToReturn = ((Number) query.getOrDefault("limit", 0)).intValue();
@@ -347,7 +347,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     public MongoCollection<P> createCollectionOrThrowIfExists(String collectionName, CollectionOptions options) {
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
-            throw new NamespaceExistsException("a collection '" + getDatabaseName() + "." + collectionName + "' already exists");
+            throw new NamespaceExistsException("a collection '" + collection.getFullName() + "' already exists");
         }
 
         return createCollection(collectionName, options);
@@ -560,15 +560,16 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
         Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection, oplog);
         aggregation.validate(query);
-        return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, aggregation.computeResult());
+        return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), aggregation.computeResult());
     }
 
     private Document commandChangeStreamPipeline(Document query, Oplog oplog, String collectionName, Document changeStreamDocument) {
         Document cursorDocument = (Document) query.get("cursor");
         int batchSize = (int) cursorDocument.getOrDefault("batchSize", 0);
 
-        Cursor cursor = oplog.createCursor(changeStreamDocument, getDatabaseName() + "." + collectionName);
-        return Utils.firstBatchCursorResponse(getDatabaseName() + "." + collectionName, cursor.takeDocuments(batchSize), cursor);
+        String namespace = getFullCollectionNamespace(collectionName);
+        Cursor cursor = oplog.createCursor(changeStreamDocument, namespace);
+        return Utils.firstBatchCursorResponse(namespace, cursor.takeDocuments(batchSize), cursor);
     }
 
     private int getOptionalNumber(Document query, String fieldName, int defaultValue) {
@@ -635,7 +636,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         checkCollectionName(collectionName);
         MongoCollection<P> collection = collections.get(collectionName);
         if (collection == null && throwIfNotFound) {
-            throw new MongoServerException("Collection [" + getDatabaseName() + "." + collectionName + "] not found.");
+            throw new MongoServerException("Collection [" + getFullCollectionNamespace(collectionName) + "] not found.");
         }
         return collection;
     }
@@ -803,7 +804,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         try {
             if (isSystemCollection(collectionName)) {
                 throw new MongoServerError(73, "InvalidNamespace",
-                    "cannot write to '" + getDatabaseName() + "." + collectionName + "'");
+                    "cannot write to '" + getFullCollectionNamespace(collectionName) + "'");
             }
             MongoCollection<P> collection = resolveCollection(collectionName, false);
             final int n;
@@ -952,6 +953,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             ArrayFilters.empty(), true, false, NoopOplog.get());
 
         namespaces.insertDocuments(newDocuments);
+    }
+
+    protected String getFullCollectionNamespace(String collectionName) {
+        return getDatabaseName() + "." + collectionName;
     }
 
     static boolean isSystemCollection(String collectionName) {
