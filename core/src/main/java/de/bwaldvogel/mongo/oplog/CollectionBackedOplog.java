@@ -110,22 +110,21 @@ public class CollectionBackedOplog implements Oplog {
                 .anyMatch(document -> document.get(OplogDocumentFields.OPERATION_TYPE).equals(OperationType.COMMAND.getCode()) &&
                     document.get(OplogDocumentFields.NAMESPACE).equals(String.format("%s.$cmd", databaseName)) &&
                     document.get(OplogDocumentFields.O).equals(new Document("drop", collectionName))
-            );
+                );
         } else if (startAtOperationTime != null) {
             initialOplogPosition = new OplogPosition(startAtOperationTime).inclusive();
         } else {
             initialOplogPosition = new OplogPosition(oplogClock.now());
         }
 
-        Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
-        OplogCursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
         if (resumeAfterTerminalEvent) {
-            Cursor invalidateOplogCursor = new InvalidateOplogCursor(cursor.getPosition());
-            cursorRegistry.remove(cursor);
-            return invalidateOplogCursor;
+            return new InvalidateOplogCursor(initialOplogPosition);
+        } else {
+            Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
+            OplogCursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
+            cursorRegistry.add(cursor);
+            return cursor;
         }
-        cursorRegistry.add(cursor);
-        return cursor;
     }
 
     private Document toOplogDocument(OperationType operationType, String namespace) {
