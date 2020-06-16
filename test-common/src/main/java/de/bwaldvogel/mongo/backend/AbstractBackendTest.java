@@ -113,6 +113,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
 
     protected static final String OTHER_TEST_DATABASE_NAME = "bar";
+    private static final String ADMIN_DB_NAME = "admin";
 
     protected Document runCommand(String commandName) {
         return runCommand(new Document(commandName, 1));
@@ -127,7 +128,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     protected MongoDatabase getAdminDb() {
-        return syncClient.getDatabase("admin");
+        return syncClient.getDatabase(ADMIN_DB_NAME);
     }
 
     private String getCollectionName() {
@@ -2233,7 +2234,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testWhatsMyUri() throws Exception {
-        for (String dbName : new String[] { "admin", "local", "test" }) {
+        for (String dbName : new String[] { ADMIN_DB_NAME, "local", "test" }) {
             Document result = syncClient.getDatabase(dbName).runCommand(new Document("whatsmyuri", 1));
             assertThat(result.get("you")).isNotNull();
             assertThat(result.get("you").toString()).matches("\\d+\\.\\d+\\.\\d+\\.\\d+:\\d*");
@@ -6021,6 +6022,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertMongoWriteException(
             () -> collection.updateOne(json("_id: 1"), json("$set: {x: {$expr: {$add: ['$_id', 10]}}}")),
             52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$expr' in 'x.$expr' is not valid for storage.");
+    }
+
+    @Test
+    public void testEndSessions() {
+        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
+            MongoDatabase adminDb = standardUuidClient.getDatabase(ADMIN_DB_NAME);
+            Document result = adminDb.runCommand(new Document("endSessions",
+                Arrays.asList(new Document("id", UUID.randomUUID()))));
+            assertThat(result.get("ok")).isEqualTo(1.0);
+        }
     }
 
 }

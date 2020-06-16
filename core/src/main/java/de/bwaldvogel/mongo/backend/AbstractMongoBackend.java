@@ -177,10 +177,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("renameCollection")) {
             return handleRenameCollection(command, query);
         } else if (command.equalsIgnoreCase("getLastError")) {
-            Document response = new Document();
             log.debug("getLastError on admin database");
-            Utils.markOkay(response);
-            return response;
+            return successResponse();
         } else if (command.equalsIgnoreCase("connectionStatus")) {
             Document response = new Document();
             response.append("authInfo", new Document()
@@ -198,12 +196,19 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("serverStatus")) {
             return getServerStatus();
         } else if (command.equalsIgnoreCase("ping")) {
-            Document response = new Document();
-            Utils.markOkay(response);
-            return response;
+            return successResponse();
+        } else if (command.equalsIgnoreCase("endSessions")) {
+            log.debug("endSessions on admin database");
+            return successResponse();
         } else {
             throw new NoSuchCommandException(command);
         }
+    }
+
+    private static Document successResponse() {
+        Document response = new Document();
+        Utils.markOkay(response);
+        return response;
     }
 
     private Document handleHostInfo() {
