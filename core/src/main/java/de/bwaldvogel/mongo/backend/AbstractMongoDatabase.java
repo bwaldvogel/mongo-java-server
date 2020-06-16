@@ -115,7 +115,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("create")) {
             return commandCreate(command, query);
         } else if (command.equalsIgnoreCase("createIndexes")) {
-            return commandCreateIndexes(query);
+            String collectionName = (String) query.get(command);
+            return commandCreateIndexes(query, collectionName);
         } else if (command.equalsIgnoreCase("count")) {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("aggregate")) {
@@ -352,11 +353,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return createCollection(collectionName, options);
     }
 
-    private Document commandCreateIndexes(Document query) {
+    private Document commandCreateIndexes(Document query, String collectionName) {
         int indexesBefore = countIndexes();
 
-        @SuppressWarnings("unchecked") final Collection<Document> indexDescriptions = (Collection<Document>) query.get("indexes");
+        @SuppressWarnings("unchecked")
+        Collection<Document> indexDescriptions = (Collection<Document>) query.get("indexes");
         for (Document indexDescription : indexDescriptions) {
+            indexDescription.putIfAbsent("ns", getFullCollectionNamespace(collectionName));
             addIndex(indexDescription);
         }
 

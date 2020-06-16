@@ -551,6 +551,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testCreateIndexesWithoutNamespace() {
+        collection.insertOne(json("_id: 1, b: 1"));
+
+        Document result = db.runCommand(json("createIndexes: 'testcoll', indexes: [{key: {b: 1}, name: 'b_1'}]"));
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+            );
+    }
+
+    @Test
     public void testDropAndRecreateIndex() throws Exception {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));
