@@ -182,10 +182,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return Utils.firstBatchCursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
     }
 
-    @VisibleForExternalBackends
-    protected static Document getPrimaryKeyIndexDescription(String namespace) {
+    private static Document getPrimaryKeyIndexDescription(String namespace) {
         return new Document("key", new Document(ID_FIELD, 1))
-            .append("name", "_id_")
+            .append("name", Constants.PRIMARY_KEY_INDEX_NAME)
             .append("ns", namespace)
             .append("v", 2);
     }
@@ -729,7 +728,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         String indexName = (String) indexDescription.get("name");
         Document key = (Document) indexDescription.get("key");
-        if (key.keySet().equals(Collections.singleton(ID_FIELD))) {
+        if (indexName.equals(Constants.PRIMARY_KEY_INDEX_NAME)) {
             boolean ascending = isAscending(key.get(ID_FIELD));
             Index<P> index = openOrCreateIdIndex(collectionName, indexName, ascending);
             log.info("adding unique _id index for collection {}", collectionName);
