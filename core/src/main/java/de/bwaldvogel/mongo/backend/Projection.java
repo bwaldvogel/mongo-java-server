@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
 
-import javax.print.Doc;
 
 class Projection {
 
@@ -22,9 +21,6 @@ class Projection {
         validateFields(fields);
         this.fields = fields;
         this.idField = idField;
-
-
-
         this.onlyExclusions = onlyExclusions(fields);
     }
 
