@@ -79,7 +79,7 @@ class Projection {
         if(inclusions > 0 && exclusions > 0) {
             throw new BadValueException("Projections cannot have a mix of inclusion and exclusions");
         }
-        return exclusions>0;
+        return !(inclusions>0);
     }
 
     private static void projectField(Document document, Document newDocument, String key, Object projectionValue) {

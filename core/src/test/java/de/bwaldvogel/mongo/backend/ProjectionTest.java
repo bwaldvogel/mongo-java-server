@@ -24,6 +24,9 @@ public class ProjectionTest {
         assertThat(projectDocument(json("_id: 100, foo: 123"), json("_id: 1"), "_id"))
             .isEqualTo(json("_id: 100"));
 
+        assertThat(projectDocument(json("_id: 100, foo: 123"), json("_id: 0"), "_id"))
+            .isEqualTo(json("foo: 123"));
+
         assertThat(projectDocument(json("_id: 100, foo: 123"), json("_id: 0, foo: 1"), "_id"))
             .isEqualTo(json("foo: 123"));
 
