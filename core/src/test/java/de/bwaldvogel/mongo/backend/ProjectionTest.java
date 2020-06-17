@@ -2,7 +2,9 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import de.bwaldvogel.mongo.exception.BadValueException;
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -39,7 +41,61 @@ public class ProjectionTest {
 
         assertThat(projectDocument(json("_id: 1, foo: {a: 'x', b: 'y', c: 'z'}"), json("'foo.a': 1, 'foo.c': 1"), "_id"))
             .isEqualTo(json("_id: 1, foo: {a: 'x', c: 'z'}"));
+
+        assertThat(projectDocument(json("_id: 1, foo: {a: 'x', b: 'y', c: 'z'}"), json("'foo.b': 0"), "_id"))
+            .isEqualTo(json("_id: 1, foo: {a: 'x', c: 'z'}"));
     }
+
+    @Test
+    void testInvalidMixedProjections() throws Exception {
+        assertThatExceptionOfType(BadValueException.class).isThrownBy(
+            ()-> projectDocument(json("{}"), json("_id: 1, foo: 0"), "_id")
+        ).withMessageContaining("Projections cannot have a mix");
+        assertThatExceptionOfType(BadValueException.class).isThrownBy(
+            ()-> projectDocument(json("{}"), json("_id: 1, foo: 1, bar: 0"), "_id")
+        ).withMessageContaining("Projections cannot have a mix");
+        assertThatExceptionOfType(BadValueException.class).isThrownBy(
+            ()-> projectDocument(json("{}"), json("_id: 1, 'foo.a': 1, 'foo.b': 0"), "_id")
+        ).withMessageContaining("Projections cannot have a mix");
+    }
+
+    @Test
+    void testProjectIn() {
+        Document document = json("_id: 1, students: [" +
+            "{name: 'john', school: 'A', age: 10}, " +
+            "{name: 'jess', school: 'B', age: 12}, " +
+            "{name: 'jeff', school: 'A', age: 12}" +
+            "]");
+
+        assertThat(projectDocument(document, json("_id: 1, \"students.name\": 1")))
+            .isEqualTo(json("_id:1, students: [{name: 'john'}, {name: 'jess'}, {name: 'jeff'}]"));
+
+        Document document2 = json("_id: 1, students: {name: 'john', school: 'A', age: 10}");
+
+        assertThat(projectDocument(document2, json("_id: 1, \"students.name\": 1")))
+            .isEqualTo(json("_id:1, students: {name: 'john'}"));
+
+    }
+
+
+    @Test
+    void testProjectOut() {
+        Document document = json("_id: 1, students: [" +
+            "{name: 'john', school: 'A', age: 10}, " +
+            "{name: 'jess', school: 'B', age: 12}, " +
+            "{name: 'jeff', school: 'A', age: 12}" +
+            "]");
+
+        assertThat(projectDocument(document, json("\"students.school\": 0,  \"students.age\": 0")))
+            .isEqualTo(json("_id:1, students: [{name: 'john'}, {name: 'jess'}, {name: 'jeff'}]"));
+
+        Document document2 = json("_id: 1, students: {name: 'john', school: 'A', age: 10}");
+
+        assertThat(projectDocument(document2, json("\"students.school\": 0,  \"students.age\": 0")))
+            .isEqualTo(json("_id:1, students: {name: 'john'}"));
+
+    }
+
 
     @Test
     void testProjectMissingValue() throws Exception {
@@ -67,8 +123,17 @@ public class ProjectionTest {
         assertThat(projectDocument(json("_id: 1, a: [{x: 10, y: 100}, 100, {x: 20, y: 200}, {x: 3}, {z: 4}]"), json("'a.x': 1, 'a.y': 1"), "_id"))
             .isEqualTo(json("_id: 1, a: [{x: 10, y: 100}, {x: 20, y: 200}, {x: 3}, {}]"));
 
+        assertThat(projectDocument(json("_id: 1, a: [{x: 10, y: 100}, 100, {x: 20, y: 200}, {x: 3}, {z: 4}]"), json("'a.z': 0"), "_id"))
+            .isEqualTo(json("_id: 1, a: [{x: 10, y: 100}, 100, {x: 20, y: 200}, {x: 3}, {}]"));
+
         assertThat(projectDocument(json("_id: 1, a: [100, {z: 4}, {y: 3}, {x: 1, y: 4}]"), json("'a.x': 1, 'a.y': 1"), "_id"))
             .isEqualTo(json("_id: 1, a: [{}, {y: 3}, {x: 1, y: 4}]"));
+
+        assertThat(projectDocument(json("_id: 1, a: [100, {z: 4}, {y: 3}, {x: 1, y: 4}]"), json("'a.z': 0"), "_id"))
+            .isEqualTo(json("_id: 1, a: [100, {}, {y: 3}, {x: 1, y: 4}]"));
+
+        assertThat(projectDocument(json("_id: 1, a: [100, {z: 4}, {y: 3}, {x: 1, y: 4}]"), json("'a.x': 0, 'a.z': 0"), "_id"))
+            .isEqualTo(json("_id: 1, a: [100, {}, {y: 3}, {y: 4}]"));
     }
 
     @Test
@@ -113,6 +178,7 @@ public class ProjectionTest {
             .isEqualTo(json("_id: 1, students: [{name: 'john', school: 'A', age: 10}]"));
     }
 
+
     @Test
     void testProjectWithSlice() throws Exception {
         Document document = json("_id: 1, values: [1, 2, 3, 4], value: 'other'");
@@ -134,6 +200,10 @@ public class ProjectionTest {
 
         assertThat(projectDocument(document, json("value: {$slice: 2}"), "_id"))
             .isEqualTo(json("_id: 1, value: 'other'"));
+    }
+
+    private Document projectDocument(Document document, Document fields) {
+        return projectDocument(document, fields, "_id");
     }
 
     private Document projectDocument(Document document, Document fields, String idField) {
