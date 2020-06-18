@@ -62,23 +62,35 @@ class Projection {
         }
     }
 
+    private enum Type {
+        INCLUSIONS, EXCLUSIONS;
+
+        private static Type fromValue(Object value) {
+            if (Utils.isTrue(value)) {
+                return INCLUSIONS;
+            } else {
+                return EXCLUSIONS;
+            }
+        }
+    }
+
     private boolean onlyExclusions(Document fields) {
-        Map<Boolean, Long> result = fields.entrySet().stream()
-            //Special case: if the idField is to be excluded that's always ok:
+        Map<Type, Long> nonIdInclusionsAndExclusions = fields.entrySet().stream()
+            // Special case: if the idField is to be excluded that's always ok:
             .filter(entry -> !(entry.getKey().equals(idField) && !Utils.isTrue(entry.getValue())))
-            .collect(Collectors.partitioningBy(
-                entry -> Utils.isTrue(fields.get(entry.getKey())),
+            .collect(Collectors.groupingBy(
+                entry -> Type.fromValue(entry.getValue()),
                 Collectors.counting()
             ));
 
-        //Mongo will police that all the entries are inclusions or exclusions.
-        long inclusions = result.get(true);
-        long exclusions = result.get(false);
+        // Mongo will police that all the entries are inclusions or exclusions.
+        long inclusions = nonIdInclusionsAndExclusions.getOrDefault(Type.INCLUSIONS, 0L);
+        long exclusions = nonIdInclusionsAndExclusions.getOrDefault(Type.EXCLUSIONS, 0L);
 
         if (inclusions > 0 && exclusions > 0) {
             throw new BadValueException("Projection cannot have a mix of inclusion and exclusion.");
         }
-        return !(inclusions > 0);
+        return (inclusions == 0);
     }
 
     private static void projectField(Document document, Document newDocument, String key, Object projectionValue) {
@@ -104,28 +116,26 @@ class Projection {
                     }
                 } else {
                     if (projectedValues.isEmpty()) {
-                        //In this case we're projecting in, so start with empty documents:
+                        // In this case we're projecting in, so start with empty documents:
                         for (Object value : values) {
                             if (value instanceof Document) {
                                 projectedValues.add(new Document());
-                            } //Primatives can never be projected-in.
+                            } // Primitives can never be projected-in.
                         }
                     }
 
-                    //Now loop over the underlying values and project
+                    // Now loop over the underlying values and project
                     int idx = 0;
                     for (Object value : values) {
                         if (value instanceof Document) {
-                            final Document projectedDocument;
-
                             //If this fails it means the newDocument's list differs from the oldDocuments list
-                            projectedDocument = (Document) projectedValues.get(idx);
+                            Document projectedDocument = (Document) projectedValues.get(idx);
 
                             projectField((Document) value, projectedDocument, subKey, projectionValue);
                             idx++;
                         }
-                        //Bit of a kludge here: if we're projecting in then we need to count only the Document instances
-                        //but if we're projecting away we need to count everything.
+                        // Bit of a kludge here: if we're projecting in then we need to count only the Document instances
+                        // but if we're projecting away we need to count everything.
                         else if (!Utils.isTrue(projectionValue)) {
                             idx++;
                         }
