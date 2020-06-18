@@ -63,7 +63,6 @@ class Projection {
     }
 
     private boolean onlyExclusions(Document fields) {
-
         Map<Boolean, Long> result = fields.entrySet().stream()
             //Special case: if the idField is to be excluded that's always ok:
             .filter(entry -> !(entry.getKey().equals(idField) && !Utils.isTrue(entry.getValue())))
@@ -77,7 +76,7 @@ class Projection {
         long exclusions = result.get(false);
 
         if (inclusions > 0 && exclusions > 0) {
-            throw new BadValueException("Projections cannot have a mix of inclusion and exclusion.");
+            throw new BadValueException("Projection cannot have a mix of inclusion and exclusion.");
         }
         return !(inclusions > 0);
     }

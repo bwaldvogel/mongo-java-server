@@ -41,7 +41,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.assertj.core.api.Assertions;
 import org.bson.BsonInt32;
 import org.bson.BsonJavaScript;
 import org.bson.BsonObjectId;
@@ -4169,11 +4168,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document obj = json("_id: 1, order:1, visits: 2, eid: 12345");
         collection.insertOne(obj);
 
-        //When I try this on actual mongo I get an error!
-        Assertions.assertThatExceptionOfType(MongoQueryException.class)
-            .isThrownBy(
-                ()-> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first()
-            ).withMessageContaining("Projections cannot have a mix of inclusion and exclusion");
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first())
+            .withMessageContaining("Query failed with error code 2 and error message " +
+                "'Projection cannot have a mix of inclusion and exclusion.'");
     }
 
     @Test
