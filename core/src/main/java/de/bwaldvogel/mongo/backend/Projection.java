@@ -3,10 +3,13 @@ package de.bwaldvogel.mongo.backend;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
+
 
 class Projection {
 
@@ -36,17 +39,12 @@ class Projection {
 
         if (onlyExclusions) {
             newDocument.putAll(document);
-            for (String excludedField : fields.keySet()) {
-                newDocument.remove(excludedField);
-            }
-        } else {
-            for (Entry<String, Object> entry : fields.entrySet()) {
-                String key = entry.getKey();
-                Object value = entry.getValue();
-                if (Utils.isTrue(value)) {
-                    projectField(document, newDocument, key, value);
-                }
-            }
+        }
+
+        for (Entry<String, Object> entry : fields.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            projectField(document, newDocument, key, value);
         }
 
         return newDocument;
@@ -64,13 +62,24 @@ class Projection {
         }
     }
 
-    private static boolean onlyExclusions(Document fields) {
-        for (String key : fields.keySet()) {
-            if (Utils.isTrue(fields.get(key))) {
-                return false;
-            }
+    private boolean onlyExclusions(Document fields) {
+
+        Map<Boolean, Long> result = fields.entrySet().stream()
+            //Special case: if the idField is to be excluded that's always ok:
+            .filter(entry->!(entry.getKey().equals(idField) && !Utils.isTrue(entry.getValue())))
+            .collect(Collectors.partitioningBy(
+                entry -> Utils.isTrue(fields.get(entry.getKey())),
+                Collectors.counting()
+            ));
+
+        //Mongo will police that all the entries are inclusions or exclusions.
+        long inclusions = result.get(true);
+        long exclusions = result.get(false);
+
+        if(inclusions > 0 && exclusions > 0) {
+            throw new BadValueException("Projections cannot have a mix of inclusion and exclusion.");
         }
-        return true;
+        return !(inclusions>0);
     }
 
     private static void projectField(Document document, Document newDocument, String key, Object projectionValue) {
@@ -87,26 +96,38 @@ class Projection {
                 projectField((Document) object, subDocument, subKey, projectionValue);
             } else if (object instanceof List) {
                 List<?> values = (List<?>) object;
-                List<Document> projectedValues = (List<Document>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
-                boolean wasEmpty = projectedValues.isEmpty();
-                int idx = 0;
+                List<Object> projectedValues = (List<Object>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
 
                 if ("$".equals(subKey) && !values.isEmpty()) {
                     Object firstValue = values.get(0);
                     if (firstValue instanceof Document) {
-                        projectedValues.add((Document) firstValue);
+                        projectedValues.add(firstValue);
                     }
                 } else {
+                    if(projectedValues.isEmpty()) {
+                        //In this case we're projecting in, so start with empty documents:
+                        for (Object value : values) {
+                            if (value instanceof Document) {
+                                projectedValues.add(new Document());
+                            } //Primatives can never be projected-in.
+                        }
+                    }
+
+                    //Now loop over the underlying values and project
+                    int idx = 0;
                     for (Object value : values) {
                         if (value instanceof Document) {
                             final Document projectedDocument;
-                            if (wasEmpty) {
-                                projectedDocument = new Document();
-                                projectedValues.add(projectedDocument);
-                            } else {
-                                projectedDocument = projectedValues.get(idx);
-                            }
+
+                            //If this fails it means the newDocument's list differs from the oldDocuments list
+                            projectedDocument = (Document)projectedValues.get(idx);
+
                             projectField((Document) value, projectedDocument, subKey, projectionValue);
+                            idx++;
+                        }
+                        //Bit of a kludge here: if we're projecting in then we need to count only the Document instances
+                        //but if we're projecting away we need to count everything.
+                        else if(!Utils.isTrue(projectionValue)) {
                             idx++;
                         }
                     }
@@ -126,8 +147,14 @@ class Projection {
                 } else {
                     throw new IllegalArgumentException("Unsupported projection: " + projectionValue);
                 }
-            } else if (!(value instanceof Missing)) {
-                newDocument.put(key, value);
+            } else {
+                if (Utils.isTrue(projectionValue)) {
+                    if(!(value instanceof Missing)) {
+                        newDocument.put(key, value);
+                    }
+                } else {
+                    newDocument.remove(key);
+                }
             }
         }
     }
