@@ -66,7 +66,7 @@ class Projection {
 
         Map<Boolean, Long> result = fields.entrySet().stream()
             //Special case: if the idField is to be excluded that's always ok:
-            .filter(entry->!(entry.getKey().equals(idField) && !Utils.isTrue(entry.getValue())))
+            .filter(entry -> !(entry.getKey().equals(idField) && !Utils.isTrue(entry.getValue())))
             .collect(Collectors.partitioningBy(
                 entry -> Utils.isTrue(fields.get(entry.getKey())),
                 Collectors.counting()
@@ -76,10 +76,10 @@ class Projection {
         long inclusions = result.get(true);
         long exclusions = result.get(false);
 
-        if(inclusions > 0 && exclusions > 0) {
+        if (inclusions > 0 && exclusions > 0) {
             throw new BadValueException("Projections cannot have a mix of inclusion and exclusion.");
         }
-        return !(inclusions>0);
+        return !(inclusions > 0);
     }
 
     private static void projectField(Document document, Document newDocument, String key, Object projectionValue) {
@@ -104,7 +104,7 @@ class Projection {
                         projectedValues.add(firstValue);
                     }
                 } else {
-                    if(projectedValues.isEmpty()) {
+                    if (projectedValues.isEmpty()) {
                         //In this case we're projecting in, so start with empty documents:
                         for (Object value : values) {
                             if (value instanceof Document) {
@@ -120,14 +120,14 @@ class Projection {
                             final Document projectedDocument;
 
                             //If this fails it means the newDocument's list differs from the oldDocuments list
-                            projectedDocument = (Document)projectedValues.get(idx);
+                            projectedDocument = (Document) projectedValues.get(idx);
 
                             projectField((Document) value, projectedDocument, subKey, projectionValue);
                             idx++;
                         }
                         //Bit of a kludge here: if we're projecting in then we need to count only the Document instances
                         //but if we're projecting away we need to count everything.
-                        else if(!Utils.isTrue(projectionValue)) {
+                        else if (!Utils.isTrue(projectionValue)) {
                             idx++;
                         }
                     }
@@ -149,7 +149,7 @@ class Projection {
                 }
             } else {
                 if (Utils.isTrue(projectionValue)) {
-                    if(!(value instanceof Missing)) {
+                    if (!(value instanceof Missing)) {
                         newDocument.put(key, value);
                     }
                 } else {
