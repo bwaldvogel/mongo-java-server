@@ -34,6 +34,12 @@ public interface MongoCollection<P> {
 
     void removeDocument(Document document);
 
+    default void addDocumentIfMissing(Document document) {
+        if (!handleQuery(document, 0, 1).iterator().hasNext()) {
+            addDocument(document);
+        }
+    }
+
     default Iterable<Document> queryAll() {
         return handleQuery(new Document());
     }

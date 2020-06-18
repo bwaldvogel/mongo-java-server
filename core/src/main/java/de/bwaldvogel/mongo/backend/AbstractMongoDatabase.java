@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+import static de.bwaldvogel.mongo.backend.Constants.PRIMARY_KEY_INDEX_NAME;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -704,7 +705,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             indexDescription.put("v", 2);
         }
         openOrCreateIndex(indexDescription);
-        getOrCreateIndexesCollection().addDocument(indexDescription);
     }
 
     private MongoCollection<P> getOrCreateIndexesCollection() {
@@ -726,16 +726,26 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private void openOrCreateIndex(Document indexDescription) {
         String ns = indexDescription.get("ns").toString();
         String collectionName = extractCollectionNameFromNamespace(ns);
-
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
+        Index<P> index = openOrCreateIndex(collectionName, indexDescription);
+        if (index != null) {
+            collection.addIndex(index);
+            getOrCreateIndexesCollection().addDocumentIfMissing(indexDescription);
+        }
+    }
 
+    private Index<P> openOrCreateIndex(String collectionName, Document indexDescription) {
         String indexName = (String) indexDescription.get("name");
         Document key = (Document) indexDescription.get("key");
-        if (indexName.equals(Constants.PRIMARY_KEY_INDEX_NAME)) {
+        if (isPrimaryKeyIndex(key)) {
+            if (!indexName.equals(PRIMARY_KEY_INDEX_NAME)) {
+                log.warn("Ignoring primary key index with name '{}'", indexName);
+                return null;
+            }
             boolean ascending = isAscending(key.get(ID_FIELD));
             Index<P> index = openOrCreateIdIndex(collectionName, indexName, ascending);
             log.info("adding unique _id index for collection {}", collectionName);
-            collection.addIndex(index);
+            return index;
         } else {
             List<IndexKey> keys = new ArrayList<>();
             for (Entry<String, Object> entry : key.entrySet()) {
@@ -745,25 +755,25 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
 
             boolean sparse = Utils.isTrue(indexDescription.get("sparse"));
-            final Index<P> index;
             if (Utils.isTrue(indexDescription.get("unique"))) {
                 log.info("adding {} unique index {} for collection {}", sparse ? "sparse" : "non-sparse", keys, collectionName);
 
-                index = openOrCreateUniqueIndex(collectionName, indexName, keys, sparse);
+                return openOrCreateUniqueIndex(collectionName, indexName, keys, sparse);
             } else {
-                index = openOrCreateSecondaryIndex(collectionName, indexName, keys, sparse);
-            }
-
-            if (index != null) {
-                collection.addIndex(index);
+                return openOrCreateSecondaryIndex(collectionName, indexName, keys, sparse);
             }
         }
     }
 
     @VisibleForExternalBackends
+    protected boolean isPrimaryKeyIndex(Document key) {
+        return key.keySet().equals(Collections.singleton(ID_FIELD));
+    }
+
+    @VisibleForExternalBackends
     protected Index<P> openOrCreateSecondaryIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse) {
         log.warn("adding secondary index with keys {} is not yet implemented. ignoring", keys);
-        return null;
+        return new EmptyIndex<>(indexName, keys);
     }
 
     private static boolean isAscending(Object keyValue) {

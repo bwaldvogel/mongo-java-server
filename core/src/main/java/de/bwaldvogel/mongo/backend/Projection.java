@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
 
-
 class Projection {
 
     private final Document fields;

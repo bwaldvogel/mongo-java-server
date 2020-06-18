@@ -13,6 +13,8 @@ import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.client.model.IndexOptions;
+
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 import de.bwaldvogel.mongo.backend.h2.H2Backend;
@@ -101,11 +103,11 @@ public class H2OnDiskBackendTest extends AbstractBackendTest {
 
     @Test
     void testShutdownAndRestartKeepsStatistics() throws Exception {
-        collection.createIndex(json("a: 1"));
-        collection.createIndex(json("b: 1"));
+        collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+        collection.createIndex(json("b: 1"), new IndexOptions().unique(true));
 
-        collection.insertOne(json("_id: 1"));
-        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 1, a: 10, b: 100"));
+        collection.insertOne(json("_id: 2, a: 20, b: 200"));
 
         backend.commit();
 
