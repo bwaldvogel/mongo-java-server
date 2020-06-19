@@ -173,7 +173,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             index.add(document, position, this);
         }
 
-        updateDataSize(Utils.calculateSize(document));
+        if (tracksDataSize()) {
+            updateDataSize(Utils.calculateSize(document));
+        }
     }
 
     @Override
@@ -570,9 +572,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 index.updateInPlace(oldDocument, newDocument, position, this);
             }
 
-            int oldSize = Utils.calculateSize(oldDocument);
-            int newSize = Utils.calculateSize(newDocument);
-            updateDataSize(newSize - oldSize);
+            if (tracksDataSize()) {
+                int oldSize = Utils.calculateSize(oldDocument);
+                int newSize = Utils.calculateSize(newDocument);
+                updateDataSize(newSize - oldSize);
+            }
 
             // only keep fields that are also in the updated document
             Set<String> fields = new LinkedHashSet<>(document.keySet());
@@ -741,9 +745,16 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return;
         }
 
-        updateDataSize(-Utils.calculateSize(document));
+        if (tracksDataSize()) {
+            updateDataSize(-Utils.calculateSize(document));
+        }
 
         removeDocument(position);
+    }
+
+    @VisibleForExternalBackends
+    protected boolean tracksDataSize() {
+        return true;
     }
 
     @Override
