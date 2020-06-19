@@ -84,8 +84,7 @@ public class Utils {
     }
 
     public static String getCollectionNameFromFullName(String fullName) {
-        List<String> pathFragments = splitPath(fullName);
-        return joinTail(pathFragments);
+        return fullName.substring(fullName.indexOf(PATH_DELIMITER) + 1);
     }
 
     public static boolean isTrue(Object value) {
@@ -555,8 +554,11 @@ public class Utils {
     }
 
     public static String firstFragment(String input) {
-        List<String> fragments = splitPath(input);
-        return fragments.get(0);
+        int delimiterIndex = input.indexOf(PATH_DELIMITER);
+        if (delimiterIndex == -1) {
+            return input;
+        }
+        return input.substring(0, delimiterIndex);
     }
 
     public static List<String> splitPath(String input) {
