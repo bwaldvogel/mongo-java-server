@@ -581,6 +581,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testCreateIndexOnNonExistingDatabase() {
+        db.drop();
+
+        Document result = db.runCommand(json("createIndexes: 'sometable', indexes: [{key: {_id: 1}, name: '_id_1'}]"));
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
+
+        db.drop();
+    }
+
+    @Test
     public void testDropAndRecreateIndex() throws Exception {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));
