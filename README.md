@@ -171,24 +171,6 @@ Postgres and each MongoDB collection is stored as a table.
 </dependency>
 ```
 
-For integration tests, a PostgreSQL instance can be created in a docker container:
-
-```
-$ docker-compose up -d postgres
-```
-
-or manually with:
-
-```
-$ docker run --name postgres-mongo-java-server-test \
-             -p 5432:5432 \
-             --tmpfs /var/lib/postgresql/data:rw \
-             -e POSTGRES_USER=mongo-java-server-test \
-             -e POSTGRES_PASSWORD=mongo-java-server-test \
-             -e POSTGRES_DB=mongo-java-server-test \
-             -d postgres:9.6-alpine
-```
-
 
 ### Example ###
 

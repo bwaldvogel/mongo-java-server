@@ -8,15 +8,7 @@ jdk:
     - openjdk14
 
 services:
-    - postgresql
     - docker
-
-before_script:
-    - psql -c $'create role "mongo-java-server-test" login password \'mongo-java-server-test\';' -U postgres
-    - psql -c 'create database "mongo-java-server-test" with owner = "mongo-java-server-test";' -U postgres
-
-addons:
-    postgresql: "9.5"
 
 after_success:
     - ./gradlew jacocoTestReport coveralls
