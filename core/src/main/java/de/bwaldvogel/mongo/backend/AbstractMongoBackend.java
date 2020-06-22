@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CompletionStage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.oplog.CollectionBackedOplog;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
+import de.bwaldvogel.mongo.util.FutureUtils;
 import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
@@ -49,7 +51,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
-    private static final String ADMIN_DB_NAME = "admin";
+    static final String ADMIN_DB_NAME = "admin";
 
     private final Map<String, MongoDatabase> databases = new TreeMap<>();
 
@@ -81,13 +83,10 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public synchronized MongoDatabase resolveDatabase(String database) {
-        MongoDatabase db = databases.get(database);
-        if (db == null) {
-            db = openOrCreateDatabase(database);
-            log.info("created database {}", db.getDatabaseName());
-            databases.put(database, db);
-        }
-        return db;
+        return databases.computeIfAbsent(database, dbName -> {
+            log.info("created database {}", database);
+            return openOrCreateDatabase(dbName);
+        });
     }
 
     @Override
@@ -295,8 +294,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
 
-    @Override
-    public Document handleCommand(Channel channel, String databaseName, String command, Document query) {
+    // handle command synchronously
+    private Document handleCommandSync(Channel channel, String databaseName, String command, Document query) {
         if (command.equalsIgnoreCase("whatsmyuri")) {
             Document response = new Document();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
@@ -326,13 +325,53 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("killCursors")) {
             return handleKillCursors(query);
         }
+        return null;
+    }
+
+    @Override
+    public Document handleCommand(Channel channel, String databaseName, String command, Document query) {
+        Document commandSync = handleCommandSync(channel, databaseName, command, query);
+        if (commandSync != null) {
+            return commandSync;
+        }
 
         if (databaseName.equals(ADMIN_DB_NAME)) {
             return handleAdminCommand(command, query);
-        } else {
-            MongoDatabase db = resolveDatabase(databaseName);
-            return db.handleCommand(channel, command, query, oplog);
         }
+
+        return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog);
+    }
+
+    @Override
+    public CompletionStage<Document> handleCommandAsync(Channel channel,
+                                                        String database,
+                                                        String command,
+                                                        Document query) {
+        if ("dropDatabase".equalsIgnoreCase(command)) {
+            return dropDatabaseAsync(database)
+                .handle((aVoid, ex) -> {
+                    Document response = new Document("dropped", database);
+                    if (ex != null) {
+                        response.put("errmsg", ex.getMessage());
+                        response.put("ok", 0.0);
+                        log.error("dropDatabase " + database + " error!", ex);
+                    } else {
+                        Utils.markOkay(response);
+                    }
+                    return response;
+                });
+        }
+
+        Document commandSync = handleCommandSync(channel, database, command, query);
+        if (commandSync != null) {
+            return FutureUtils.wrap(() -> commandSync);
+        }
+
+        if (database.equals(ADMIN_DB_NAME)) {
+            return FutureUtils.wrap(() -> handleAdminCommand(command, query));
+        }
+
+        return resolveDatabase(database).handleCommandAsync(channel, command, query, oplog);
     }
 
     @Override
@@ -343,8 +382,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public QueryResult handleQuery(MongoQuery query) {
-        MongoDatabase db = resolveDatabase(query);
-        return db.handleQuery(query);
+        return resolveDatabase(query).handleQuery(query);
+    }
+
+    @Override
+    public CompletionStage<QueryResult> handleQueryAsync(MongoQuery query) {
+        return resolveDatabase(query).handleQueryAsync(query);
     }
 
     @Override
@@ -365,20 +408,32 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public void handleInsert(MongoInsert insert) {
-        MongoDatabase db = resolveDatabase(insert);
-        db.handleInsert(insert, oplog);
+        resolveDatabase(insert).handleInsert(insert, oplog);
+    }
+
+    @Override
+    public CompletionStage<Void> handleInsertAsync(MongoInsert insert) {
+        return resolveDatabase(insert).handleInsertAsync(insert, oplog);
     }
 
     @Override
     public void handleDelete(MongoDelete delete) {
-        MongoDatabase db = resolveDatabase(delete);
-        db.handleDelete(delete, oplog);
+        resolveDatabase(delete).handleDelete(delete, oplog);
+    }
+
+    @Override
+    public CompletionStage<Void> handleDeleteAsync(MongoDelete delete) {
+        return resolveDatabase(delete).handleDeleteAsync(delete, oplog);
     }
 
     @Override
     public void handleUpdate(MongoUpdate update) {
-        MongoDatabase db = resolveDatabase(update);
-        db.handleUpdate(update, oplog);
+        resolveDatabase(update).handleUpdate(update, oplog);
+    }
+
+    @Override
+    public CompletionStage<Void> handleUpdateAsync(MongoUpdate update) {
+        return resolveDatabase(update).handleUpdateAsync(update, oplog);
     }
 
     @Override
