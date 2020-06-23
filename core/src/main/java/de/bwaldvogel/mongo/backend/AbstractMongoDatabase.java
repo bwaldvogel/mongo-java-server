@@ -728,9 +728,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         String collectionName = extractCollectionNameFromNamespace(ns);
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
         Index<P> index = openOrCreateIndex(collectionName, indexDescription);
+        MongoCollection<P> indexesCollection = getOrCreateIndexesCollection();
         if (index != null) {
             collection.addIndex(index);
-            getOrCreateIndexesCollection().addDocumentIfMissing(indexDescription);
+            indexesCollection.addDocumentIfMissing(indexDescription);
         }
     }
 
