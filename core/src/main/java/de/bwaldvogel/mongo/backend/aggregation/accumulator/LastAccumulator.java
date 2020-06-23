@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
+import de.bwaldvogel.mongo.backend.Missing;
+
 public class LastAccumulator extends Accumulator {
 
     private Object lastValue;
@@ -10,7 +12,9 @@ public class LastAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        lastValue = value;
+        if (!(value instanceof Missing)) {
+            lastValue = value;
+        }
     }
 
     @Override

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -77,6 +80,9 @@ public abstract class AbstractBackendSpringDataTest {
     @Autowired
     private TestRepository testRepository;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     @BeforeEach
     void deleteAll() throws Exception {
         accountRepository.deleteAll();
@@ -86,7 +92,6 @@ public abstract class AbstractBackendSpringDataTest {
 
     @Test
     public void testSaveFindModifyAndUpdate() throws Exception {
-
         Person billy = personRepository.save(new Person("Billy", 123));
         personRepository.save(new Person("Joe", 456));
 
@@ -162,6 +167,19 @@ public abstract class AbstractBackendSpringDataTest {
         assertThat(testRepository.countByValueData("v1")).isEqualTo(2);
         assertThat(testRepository.countByValueData("v2")).isEqualTo(1);
         assertThat(testRepository.countByValueData("v3")).isEqualTo(0);
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/148
+    @Test
+    void testAggregation() throws Exception {
+        testRepository.save(new TestEntity("1", "text"));
+
+        Aggregation agg = Aggregation.newAggregation(
+            Aggregation.match(new Criteria("id").exists(true).ne(null)),
+            Aggregation.group("id").last("value").as("value"));
+        List<TestEntity> results = mongoTemplate.aggregate(agg, TestEntity.class, TestEntity.class).getMappedResults();
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).getId()).isEqualTo("1");
     }
 
 }

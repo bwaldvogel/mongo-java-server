@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
+import de.bwaldvogel.mongo.backend.Missing;
+
 public class FirstAccumulator extends Accumulator {
 
     private Object firstValue;
@@ -11,7 +13,7 @@ public class FirstAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        if (first) {
+        if (first && !(value instanceof Missing)) {
             firstValue = value;
             first = false;
         }
