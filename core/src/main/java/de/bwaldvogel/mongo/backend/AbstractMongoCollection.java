@@ -56,14 +56,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return matcher.matches(document, query);
     }
 
-    private QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize,
-                                       Document fieldSelector) {
-        synchronized (indexes) {
-            for (Index<P> index : indexes) {
-                if (index.canHandle(query)) {
-                    Iterable<P> positions = index.getPositions(query);
-                    return matchDocuments(query, positions, orderBy, numberToSkip, limit, batchSize, fieldSelector);
-                }
+    protected QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize,
+                                         Document fieldSelector) {
+        for (Index<P> index : indexes) {
+            if (index.canHandle(query)) {
+                Iterable<P> positions = index.getPositions(query);
+                return matchDocuments(query, positions, orderBy, numberToSkip, limit, batchSize, fieldSelector);
             }
         }
 
