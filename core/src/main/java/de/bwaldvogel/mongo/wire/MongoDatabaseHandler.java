@@ -100,16 +100,15 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     private MongoMessage createResponseMongoMessage(MongoMessage message, Document document, Throwable ex) {
         if (ex != null) {
             MongoServerException e;
-            if (!(ex instanceof MongoServerException)) {
-                e = new MongoServerException("Unknown error: " + ex.getMessage(), ex);
-            } else {
+            if (ex instanceof MongoServerException) {
                 e = (MongoServerException) ex;
+                if (e.isLogError()) {
+                    log.error("failed to handle {}", message.getDocument(), e);
+                }
+            } else {
+                log.error("Unknown error!", ex);
+                e = new MongoServerException("Unknown error: " + ex.getMessage(), ex);
             }
-
-            if (e.isLogError()) {
-                log.error("failed to handle {}", message.getDocument(), e);
-            }
-
             document = errorResponse(e, Collections.emptyMap());
         }
         return new MongoMessage(message.getChannel(), createResponseHeader(message), document);
@@ -164,6 +163,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             return queryFailure(header, (MongoServerException) t, Collections.emptyMap());
         }
 
+        log.error("Unknown error!", t);
         return queryFailure(header,
             new MongoServerException("Unknown error: " + t.getMessage(), t),
             Collections.emptyMap());
@@ -195,6 +195,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                 ReplyFlag.CURSOR_NOT_FOUND);
         }
 
+        log.error("Unknown error!", t);
         return queryFailure(header,
             new MongoServerException("Unknown error: " + t.getMessage(), t),
             Collections.emptyMap());
