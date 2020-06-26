@@ -4626,6 +4626,27 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testProjectionWithExclusion() throws Exception {
+        collection.insertOne(json("_id: 1, states: [{state: 'A', key: 'abc'}, {state: 'B', key: 'efg'}]"));
+        collection.insertOne(json("_id: 2, states: [{state: 'B', key: 'abc'}, {state: 'B', key: 'efg'}]"));
+
+        assertThat(collection.find().
+            projection(json("{'states.key': 0}")))
+            .containsExactly(
+                json("_id: 1, states: [{state: 'A'}, {state: 'B'}]"),
+                json("_id: 2, states: [{state: 'B'}, {state: 'B'}]")
+            );
+
+        //And check we didn't mess up any data in the process!
+        assertThat(collection.find())
+            .containsExactly(
+                json("_id: 1, states: [{state: 'A', key: 'abc'}, {state: 'B', key: 'efg'}]"),
+                json("_id: 2, states: [{state: 'B', key: 'abc'}, {state: 'B', key: 'efg'}]")
+            );
+
+    }
+
+    @Test
     public void testProjectionWithSlice() throws Exception {
         collection.insertOne(json("_id: 1, values: ['a', 'b', 'c', 'd', 'e']"));
         collection.insertOne(json("_id: 2, values: 'xyz'"));

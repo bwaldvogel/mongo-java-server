@@ -37,7 +37,7 @@ class Projection {
         }
 
         if (onlyExclusions) {
-            newDocument.putAll(document);
+            newDocument = document.cloneDeeply();
         }
 
         for (Entry<String, Object> entry : fields.entrySet()) {
@@ -102,23 +102,23 @@ class Projection {
             Object object = document.get(mainKey);
             // do not project the subdocument if it is not of type Document
             if (object instanceof Document) {
-                Document subDocument = (Document) newDocument.computeIfAbsent(mainKey, k -> new Document());
-                projectField((Document) object, subDocument, subKey, projectionValue);
+                Document newsubDocument = (Document) newDocument.computeIfAbsent(mainKey, k -> new Document());
+                projectField((Document) object, newsubDocument, subKey, projectionValue);
             } else if (object instanceof List) {
                 List<?> values = (List<?>) object;
-                List<Object> projectedValues = (List<Object>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
+                List<Object> newprojectedValues = (List<Object>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
 
                 if ("$".equals(subKey) && !values.isEmpty()) {
                     Object firstValue = values.get(0);
                     if (firstValue instanceof Document) {
-                        projectedValues.add(firstValue);
+                        newprojectedValues.add(firstValue);
                     }
                 } else {
-                    if (projectedValues.isEmpty()) {
+                    if (newprojectedValues.isEmpty()) {
                         // In this case we're projecting in, so start with empty documents:
                         for (Object value : values) {
                             if (value instanceof Document) {
-                                projectedValues.add(new Document());
+                                newprojectedValues.add(new Document());
                             } // Primitives can never be projected-in.
                         }
                     }
@@ -128,9 +128,9 @@ class Projection {
                     for (Object value : values) {
                         if (value instanceof Document) {
                             //If this fails it means the newDocument's list differs from the oldDocuments list
-                            Document projectedDocument = (Document) projectedValues.get(idx);
+                            Document newprojectedDocument = (Document) newprojectedValues.get(idx);
 
-                            projectField((Document) value, projectedDocument, subKey, projectionValue);
+                            projectField((Document) value, newprojectedDocument, subKey, projectionValue);
                             idx++;
                         }
                         // Bit of a kludge here: if we're projecting in then we need to count only the Document instances
