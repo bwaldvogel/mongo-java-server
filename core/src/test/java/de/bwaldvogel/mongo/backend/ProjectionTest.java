@@ -4,10 +4,10 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import de.bwaldvogel.mongo.exception.BadValueException;
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.BadValueException;
 
 public class ProjectionTest {
 
@@ -51,15 +51,17 @@ public class ProjectionTest {
 
     @Test
     void testInvalidMixedProjections() throws Exception {
-        assertThatExceptionOfType(BadValueException.class).isThrownBy(
-            ()-> projectDocument(json("{}"), json("_id: 1, foo: 0"), "_id")
-        ).withMessageContaining("Projections cannot have a mix");
-        assertThatExceptionOfType(BadValueException.class).isThrownBy(
-            ()-> projectDocument(json("{}"), json("_id: 1, foo: 1, bar: 0"), "_id")
-        ).withMessageContaining("Projections cannot have a mix");
-        assertThatExceptionOfType(BadValueException.class).isThrownBy(
-            ()-> projectDocument(json("{}"), json("_id: 1, 'foo.a': 1, 'foo.b': 0"), "_id")
-        ).withMessageContaining("Projections cannot have a mix");
+        assertThatExceptionOfType(BadValueException.class)
+            .isThrownBy(() -> projectDocument(json("{}"), json("_id: 1, foo: 0"), "_id"))
+            .withMessage("[Error 2] Projection cannot have a mix of inclusion and exclusion.");
+
+        assertThatExceptionOfType(BadValueException.class)
+            .isThrownBy(() -> projectDocument(json("{}"), json("_id: 1, foo: 1, bar: 0"), "_id"))
+            .withMessage("[Error 2] Projection cannot have a mix of inclusion and exclusion.");
+
+        assertThatExceptionOfType(BadValueException.class)
+            .isThrownBy(() -> projectDocument(json("{}"), json("_id: 1, 'foo.a': 1, 'foo.b': 0"), "_id"))
+            .withMessage("[Error 2] Projection cannot have a mix of inclusion and exclusion.");
     }
 
     @Test
@@ -77,9 +79,7 @@ public class ProjectionTest {
 
         assertThat(projectDocument(document2, json("_id: 1, \"students.name\": 1")))
             .isEqualTo(json("_id:1, students: {name: 'john'}"));
-
     }
-
 
     @Test
     void testProjectOut() {

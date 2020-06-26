@@ -84,12 +84,6 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    public void testFieldSelection_selectAndDeselectFields() {
-        assumeStrictMode();
-        super.testFieldSelection_selectAndDeselectFields();
-    }
-
-    @Override
     public void testInsertInSystemNamespace() throws Exception {
         assumeStrictMode();
         super.testInsertInSystemNamespace();

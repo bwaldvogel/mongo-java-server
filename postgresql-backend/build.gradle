@@ -7,5 +7,6 @@ dependencies {
 
     testRuntimeOnly "org.postgresql:postgresql:latest.release"
     testImplementation "com.zaxxer:HikariCP:latest.release"
+    testImplementation 'org.testcontainers:testcontainers:latest.release'
     testImplementation project(':mongo-java-server-test-common')
 }

@@ -4,15 +4,15 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.UUID;
 
-import de.bwaldvogel.mongo.oplog.CollectionBackedOplog;
-import de.bwaldvogel.mongo.oplog.NoopOplog;
 import org.bson.Document;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.GenericContainer;
 
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoClient;
@@ -25,18 +25,29 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 import de.bwaldvogel.mongo.backend.AbstractTest;
+import de.bwaldvogel.mongo.oplog.NoopOplog;
 
 public class PostgresqlBackendTest extends AbstractBackendTest {
 
+    private static GenericContainer<?> postgresContainer;
     private static HikariDataSource dataSource;
 
     @BeforeAll
     static void initializeDataSource() {
+        String password = UUID.randomUUID().toString();
+        postgresContainer = new GenericContainer<>("postgres:9.6-alpine")
+            .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"))
+            .withEnv("POSTGRES_USER", "mongo-java-server-test")
+            .withEnv("POSTGRES_PASSWORD", password)
+            .withEnv("POSTGRES_DB", "mongo-java-server-test")
+            .withExposedPorts(5432);
+        postgresContainer.start();
+
         HikariConfig config = new HikariConfig();
 
-        config.setJdbcUrl("jdbc:postgresql://localhost/mongo-java-server-test");
+        config.setJdbcUrl("jdbc:postgresql://localhost:" + postgresContainer.getFirstMappedPort() + "/mongo-java-server-test");
         config.setUsername("mongo-java-server-test");
-        config.setPassword("mongo-java-server-test");
+        config.setPassword(password);
         config.setMaximumPoolSize(5);
 
         dataSource = new HikariDataSource(config);
@@ -45,6 +56,7 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     @AfterAll
     static void closeDataSource() {
         dataSource.close();
+        postgresContainer.stop();
     }
 
     @Override

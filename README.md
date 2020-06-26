@@ -25,7 +25,7 @@ Add the following Maven dependency to your project:
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server</artifactId>
-    <version>1.30.0</version>
+    <version>1.32.0</version>
 </dependency>
 ```
 
@@ -140,7 +140,7 @@ can either be in-memory or on-disk.
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server-h2-backend</artifactId>
-    <version>1.30.0</version>
+    <version>1.32.0</version>
 </dependency>
 ```
 
@@ -167,26 +167,8 @@ Postgres and each MongoDB collection is stored as a table.
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server-postgresql-backend</artifactId>
-    <version>1.30.0</version>
+    <version>1.32.0</version>
 </dependency>
-```
-
-For integration tests, a PostgreSQL instance can be created in a docker container:
-
-```
-$ docker-compose up -d postgres
-```
-
-or manually with:
-
-```
-$ docker run --name postgres-mongo-java-server-test \
-             -p 5432:5432 \
-             --tmpfs /var/lib/postgresql/data:rw \
-             -e POSTGRES_USER=mongo-java-server-test \
-             -e POSTGRES_PASSWORD=mongo-java-server-test \
-             -e POSTGRES_DB=mongo-java-server-test \
-             -d postgres:9.6-alpine
 ```
 
 

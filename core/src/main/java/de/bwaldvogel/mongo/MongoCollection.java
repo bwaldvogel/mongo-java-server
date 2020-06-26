@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo;
 
 import java.util.List;
 import java.util.Spliterator;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -11,8 +12,9 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
+import de.bwaldvogel.mongo.util.FutureUtils;
 
-public interface MongoCollection<P> {
+public interface MongoCollection<P> extends AsyncMongoCollection {
 
     MongoDatabase getDatabase();
 
@@ -33,6 +35,12 @@ public interface MongoCollection<P> {
     void addDocument(Document document);
 
     void removeDocument(Document document);
+
+    default void addDocumentIfMissing(Document document) {
+        if (!handleQuery(document, 0, 1).iterator().hasNext()) {
+            addDocument(document);
+        }
+    }
 
     default Iterable<Document> queryAll() {
         return handleQuery(new Document());
@@ -58,8 +66,13 @@ public interface MongoCollection<P> {
 
     QueryResult handleQuery(Document query, int numberToSkip, int limit, int batchSize, Document returnFieldSelector);
 
-    default void insertDocuments(List<Document> documents) {
-        insertDocuments(documents, true);
+    @Override
+    default CompletionStage<QueryResult> handleQueryAsync(Document query, int numberToSkip, int limit, int batchSize, Document returnFieldSelector) {
+        return FutureUtils.wrap(() -> handleQuery(query, numberToSkip, limit, batchSize, returnFieldSelector));
+    }
+
+    default List<Document> insertDocuments(List<Document> documents) {
+        return insertDocuments(documents, true);
     }
 
     List<Document> insertDocuments(List<Document> documents, boolean isOrdered);

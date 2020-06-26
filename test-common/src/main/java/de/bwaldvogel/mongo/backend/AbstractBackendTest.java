@@ -41,7 +41,6 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import org.assertj.core.api.Assertions;
 import org.bson.BsonInt32;
 import org.bson.BsonJavaScript;
 import org.bson.BsonObjectId;
@@ -564,6 +563,31 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
                 json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
             );
+    }
+
+    @Test
+    public void testCreateSecondPrimaryKeyIndex() {
+        collection.insertOne(json("_id: 1, b: 1"));
+
+        Document result = db.runCommand(json("createIndexes: 'testcoll', indexes: [{key: {_id: 1}, name: '_id_1'}]"));
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2)
+            );
+
+        db.drop();
+    }
+
+    @Test
+    public void testCreateIndexOnNonExistingDatabase() {
+        db.drop();
+
+        Document result = db.runCommand(json("createIndexes: 'sometable', indexes: [{key: {_id: 1}, name: '_id_1'}]"));
+        assertThat(result.getDouble("ok")).isEqualTo(1.0);
+
+        db.drop();
     }
 
     @Test
@@ -4169,11 +4193,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document obj = json("_id: 1, order:1, visits: 2, eid: 12345");
         collection.insertOne(obj);
 
-        //When I try this on actual mongo I get an error!
-        Assertions.assertThatExceptionOfType(MongoQueryException.class)
-            .isThrownBy(
-                ()-> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first()
-            ).withMessageContaining("Projections cannot have a mix of inclusion and exclusion");
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first())
+            .withMessageContaining("Query failed with error code 2 and error message " +
+                "'Projection cannot have a mix of inclusion and exclusion.'");
     }
 
     @Test
