@@ -50,7 +50,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
-    private static final String ADMIN_DB_NAME = "admin";
+    protected static final String ADMIN_DB_NAME = "admin";
 
     private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
@@ -148,7 +148,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return response;
     }
 
-    private Document handleAdminCommand(String command, Document query) {
+    protected Document handleAdminCommand(String command, Document query) {
         if (command.equalsIgnoreCase("listdatabases")) {
             List<Document> databases = listDatabaseNames().stream()
                 .sorted()
@@ -296,8 +296,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
 
-    @Override
-    public Document handleCommand(Channel channel, String databaseName, String command, Document query) {
+    protected Document handleCommandSync(Channel channel, String databaseName, String command, Document query) {
         if (command.equalsIgnoreCase("whatsmyuri")) {
             Document response = new Document();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
@@ -327,13 +326,21 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("killCursors")) {
             return handleKillCursors(query);
         }
+        return null;
+    }
+
+    @Override
+    public Document handleCommand(Channel channel, String databaseName, String command, Document query) {
+        Document commandResponse = handleCommandSync(channel, databaseName, command, query);
+        if (commandResponse != null) {
+            return commandResponse;
+        }
 
         if (databaseName.equals(ADMIN_DB_NAME)) {
             return handleAdminCommand(command, query);
-        } else {
-            MongoDatabase db = resolveDatabase(databaseName);
-            return db.handleCommand(channel, command, query, oplog);
         }
+
+        return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog);
     }
 
     @Override
