@@ -39,9 +39,9 @@ import io.netty.channel.Channel;
 
 public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
-    private static final String NAMESPACES_COLLECTION_NAME = "system.namespaces";
+    protected static final String NAMESPACES_COLLECTION_NAME = "system.namespaces";
 
-    private static final String INDEXES_COLLECTION_NAME = "system.indexes";
+    protected static final String INDEXES_COLLECTION_NAME = "system.indexes";
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoDatabase.class);
 
@@ -94,17 +94,17 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    @Override
-    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog) {
+    protected Document commandError(Channel channel, String command, Document query) {
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
         } else if (command.equalsIgnoreCase("reseterror")) {
             return commandResetError(channel);
         }
+        return null;
+    }
 
-        clearLastStatus(channel);
-
+    protected Document handleSupportedCommand(Channel channel, String command, Document query, Oplog oplog) {
         if (command.equalsIgnoreCase("find")) {
             return commandFind(command, query);
         } else if (command.equalsIgnoreCase("insert")) {
@@ -163,6 +163,18 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         throw new NoSuchCommandException(command);
     }
 
+    @Override
+    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog) {
+        Document commandErrorDocument = commandError(channel, command, query);
+        if (commandErrorDocument != null) {
+            return commandErrorDocument;
+        }
+
+        clearLastStatus(channel);
+
+        return handleSupportedCommand(channel, command, query, oplog);
+    }
+
     private Document listCollections() {
         List<Document> firstBatch = new ArrayList<>();
         for (String namespace : listCollectionNamespaces()) {
@@ -176,8 +188,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             collectionDescription.put("options", collectionOptions);
             collectionDescription.put("info", new Document("readOnly", false));
             collectionDescription.put("type", "collection");
-            collectionDescription.put("idIndex", getPrimaryKeyIndexDescription(namespace)
-            );
+            collectionDescription.put("idIndex", getPrimaryKeyIndexDescription(namespace));
             firstBatch.add(collectionDescription);
         }
 
@@ -237,7 +248,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return new QueryParameters(querySelector, numberToSkip, numberToReturn, batchSize, projection);
     }
 
-    private QueryParameters toQueryParameters(MongoQuery query, int numberToSkip, int batchSize) {
+    private static QueryParameters toQueryParameters(MongoQuery query, int numberToSkip, int batchSize) {
         return new QueryParameters(query.getQuery(), numberToSkip, 0, batchSize, query.getReturnFieldSelector());
     }
 
@@ -851,12 +862,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collection.updateDocuments(selector, update, arrayFilters, multi, upsert, oplog);
     }
 
-    private void putLastError(Channel channel, MongoServerException ex) {
+    protected void putLastError(Channel channel, MongoServerException ex) {
         Document error = toError(channel, ex);
         putLastResult(channel, error);
     }
 
-    private Document toWriteError(int index, MongoServerException e) {
+    protected Document toWriteError(int index, MongoServerException e) {
         Document error = new Document();
         error.put("index", index);
         error.put("errmsg", e.getMessageWithoutErrorCode());
@@ -976,7 +987,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getDatabaseName() + "." + collectionName;
     }
 
-    static boolean isSystemCollection(String collectionName) {
+    protected static boolean isSystemCollection(String collectionName) {
         return collectionName.startsWith("system.");
     }
 
