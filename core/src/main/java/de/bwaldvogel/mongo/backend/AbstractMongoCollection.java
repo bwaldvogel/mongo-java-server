@@ -283,7 +283,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             newDocument.put(getIdField(), oldId);
         }
 
-        cloneInto(oldDocument, newDocument);
+        newDocument.cloneInto(oldDocument);
     }
 
     Object deriveDocumentId(Document selector) {
@@ -330,7 +330,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (numStartsWithDollar == update.keySet().size()) {
             validateUpdateQuery(update);
-            cloneInto(newDocument, oldDocument);
+            oldDocument.cloneInto(newDocument);
             for (String key : update.keySet()) {
                 modifyField(newDocument, key, update, arrayFilters, matchPos, isUpsert);
             }
@@ -557,9 +557,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private Document updateDocument(Document document, Document updateQuery,
                                     ArrayFilters arrayFilters, Integer matchPos) {
-        // copy document
-        Document oldDocument = new Document();
-        cloneInto(oldDocument, document);
+        Document oldDocument = document.cloneDeeply();
 
         Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, matchPos, false);
 
@@ -610,30 +608,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract void handleUpdate(P position, Document oldDocument, Document newDocument);
-
-    private void cloneInto(Document targetDocument, Document sourceDocument) {
-        for (String key : sourceDocument.keySet()) {
-            targetDocument.put(key, cloneValue(sourceDocument.get(key)));
-        }
-    }
-
-    private Object cloneValue(Object value) {
-        if (value instanceof Document) {
-            Document newValue = new Document();
-            cloneInto(newValue, (Document) value);
-            return newValue;
-        } else if (value instanceof List<?>) {
-            @SuppressWarnings("unchecked")
-            List<Object> list = (List<Object>) value;
-            List<Object> newValue = new ArrayList<>();
-            for (Object v : list) {
-                newValue.add(cloneValue(v));
-            }
-            return newValue;
-        } else {
-            return value;
-        }
-    }
 
     private Document handleUpsert(Document updateQuery, Document selector, ArrayFilters arrayFilters) {
         Document document = convertSelectorToDocument(selector);

@@ -30,6 +30,12 @@ public final class Document implements Map<String, Object>, Bson {
         putAll(map);
     }
 
+    public void cloneInto(Document targetDocument) {
+        for (Entry<String, Object> entry : entrySet()) {
+            targetDocument.put(entry.getKey(), cloneDeeply(entry.getValue()));
+        }
+    }
+
     public Document cloneDeeply() {
         return cloneDeeply(this);
     }
