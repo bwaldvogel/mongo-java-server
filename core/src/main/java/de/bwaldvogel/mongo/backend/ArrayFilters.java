@@ -108,8 +108,9 @@ public class ArrayFilters {
         return new ArrayFilters(Collections.emptyMap());
     }
 
-    private boolean isEmpty() {
-        return values.isEmpty();
+    @VisibleForExternalBackends
+    public boolean isEmpty() {
+        return getValues().isEmpty();
     }
 
     @Override
