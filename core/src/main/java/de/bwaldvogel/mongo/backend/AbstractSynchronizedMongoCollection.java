@@ -25,9 +25,8 @@ public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMon
     }
 
     @Override
-    public synchronized QueryResult handleQuery(Document queryObject, int numberToSkip, int limit,
-                                                int batchSize, Document fieldSelector) {
-        return super.handleQuery(queryObject, numberToSkip, limit, batchSize, fieldSelector);
+    public synchronized QueryResult handleQuery(QueryParameters queryParameters) {
+        return super.handleQuery(queryParameters);
     }
 
     @Override

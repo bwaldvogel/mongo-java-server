@@ -1,21 +1,20 @@
 package de.bwaldvogel.mongo.backend;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
 import io.netty.channel.Channel;
-import org.mockito.Mockito;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.when;
 
 class AbstractMongoDatabaseTest {
 
@@ -50,11 +49,9 @@ class AbstractMongoDatabaseTest {
 
                 QueryResult queryResult = new QueryResult(Collections.singletonList(new Document("_id", 1)));
 
-                when(collection.handleQuery(any(), anyInt(), anyInt(), anyInt(), any()))
-                    .thenReturn(queryResult);
+                when(collection.handleQuery(any(QueryParameters.class))).thenReturn(queryResult);
 
-                when(collection.handleQueryAsync(any(), anyInt(), anyInt(), anyInt(), any()))
-                    .thenCallRealMethod();
+                when(collection.handleQueryAsync(any())).thenCallRealMethod();
 
                 return collection;
             }

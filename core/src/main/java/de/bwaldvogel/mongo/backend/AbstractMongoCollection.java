@@ -432,21 +432,23 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     @Override
-    public QueryResult handleQuery(Document queryObject, int numberToSkip, int limit, int batchSize, Document fieldSelector) {
+    public QueryResult handleQuery(QueryParameters queryParameters) {
         final Document query;
         final Document orderBy;
-        if (queryObject.containsKey("query")) {
-            query = (Document) queryObject.get("query");
-            orderBy = (Document) queryObject.get("orderby");
-        } else if (queryObject.containsKey("$query")) {
-            query = (Document) queryObject.get("$query");
-            orderBy = (Document) queryObject.get("$orderby");
+        Document querySelector = queryParameters.getQuerySelector();
+        if (querySelector.containsKey("query")) {
+            query = (Document) querySelector.get("query");
+            orderBy = (Document) querySelector.get("orderby");
+        } else if (querySelector.containsKey("$query")) {
+            query = (Document) querySelector.get("$query");
+            orderBy = (Document) querySelector.get("$orderby");
         } else {
-            query = queryObject;
+            query = querySelector;
             orderBy = null;
         }
 
-        return queryDocuments(query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+        return queryDocuments(query, orderBy, queryParameters.getNumberToSkip(), queryParameters.getLimit(),
+            queryParameters.getBatchSize(), queryParameters.getProjection());
     }
 
     @Override

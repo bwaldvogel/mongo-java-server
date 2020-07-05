@@ -1,5 +1,8 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
+import static de.bwaldvogel.mongo.backend.Constants.PRIMARY_KEY_INDEX_NAME;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -35,9 +38,6 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
-
-import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
-import static de.bwaldvogel.mongo.backend.Constants.PRIMARY_KEY_INDEX_NAME;
 
 public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
@@ -249,27 +249,24 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (collection == null) {
             return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), Collections.emptyList());
         }
-        int numberToSkip = ((Number) query.getOrDefault("skip", 0)).intValue();
-        int numberToReturn = ((Number) query.getOrDefault("limit", 0)).intValue();
-        int batchSize = ((Number) query.getOrDefault("batchSize", 0)).intValue();
-
-        Document querySelector = new Document();
-        querySelector.put("$query", query.getOrDefault("filter", new Document()));
-        querySelector.put("$orderby", query.get("sort"));
-
-        QueryResult queryResult = collection.handleQuery(querySelector, numberToSkip, numberToReturn, batchSize,
-            (Document) query.get("projection"));
+        QueryParameters queryParameters = toQueryParameters(query);
+        QueryResult queryResult = collection.handleQuery(queryParameters);
         return toCursorResponse(collection, queryResult);
     }
 
-    // TODO: clean up redundant code
     private CompletionStage<Document> commandFindAsync(String command, Document query) {
         String collectionName = (String) query.get(command);
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
             return FutureUtils.wrap(() -> Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName),
-                                                                         Collections.emptyList()));
+                Collections.emptyList()));
         }
+        QueryParameters queryParameters = toQueryParameters(query);
+        return collection.handleQueryAsync(queryParameters)
+            .thenApply(queryResult -> toCursorResponse(collection, queryResult));
+    }
+
+    private static QueryParameters toQueryParameters(Document query) {
         int numberToSkip = ((Number) query.getOrDefault("skip", 0)).intValue();
         int numberToReturn = ((Number) query.getOrDefault("limit", 0)).intValue();
         int batchSize = ((Number) query.getOrDefault("batchSize", 0)).intValue();
@@ -278,9 +275,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         querySelector.put("$query", query.getOrDefault("filter", new Document()));
         querySelector.put("$orderby", query.get("sort"));
 
-        return collection.handleQueryAsync(querySelector, numberToSkip, numberToReturn, batchSize,
-            (Document) query.get("projection"))
-            .thenApply(queryResult -> toCursorResponse(collection, queryResult));
+        Document projection = (Document) query.get("projection");
+        return new QueryParameters(querySelector, numberToSkip, numberToReturn, batchSize, projection);
+    }
+
+    private QueryParameters toQueryParameters(MongoQuery query, int numberToSkip, int batchSize) {
+        return new QueryParameters(query.getQuery(), numberToSkip, 0, batchSize, query.getReturnFieldSelector());
     }
 
     private Document toCursorResponse(MongoCollection<P> collection, QueryResult queryResult) {
@@ -647,8 +647,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             batchSize = -batchSize;
         }
 
-        return collection.handleQuery(query.getQuery(), numberToSkip, 0, batchSize,
-            query.getReturnFieldSelector());
+        QueryParameters queryParameters = toQueryParameters(query, numberToSkip, batchSize);
+        return collection.handleQuery(queryParameters);
     }
 
     @Override
@@ -667,8 +667,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             batchSize = -batchSize;
         }
 
-        return collection.handleQueryAsync(query.getQuery(), numberToSkip, 0, batchSize,
-            query.getReturnFieldSelector());
+        QueryParameters queryData = toQueryParameters(query, numberToSkip, batchSize);
+        return collection.handleQueryAsync(queryData);
     }
 
     @Override

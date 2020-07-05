@@ -8,6 +8,7 @@ import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.QueryParameters;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
@@ -61,14 +62,14 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
     }
 
     default QueryResult handleQuery(Document query, int numberToSkip, int limit) {
-        return handleQuery(query, numberToSkip, limit, 0, null);
+        return handleQuery(new QueryParameters(query, numberToSkip, limit));
     }
 
-    QueryResult handleQuery(Document query, int numberToSkip, int limit, int batchSize, Document returnFieldSelector);
+    QueryResult handleQuery(QueryParameters queryParameters);
 
     @Override
-    default CompletionStage<QueryResult> handleQueryAsync(Document query, int numberToSkip, int limit, int batchSize, Document returnFieldSelector) {
-        return FutureUtils.wrap(() -> handleQuery(query, numberToSkip, limit, batchSize, returnFieldSelector));
+    default CompletionStage<QueryResult> handleQueryAsync(QueryParameters queryParameters) {
+        return FutureUtils.wrap(() -> handleQuery(queryParameters));
     }
 
     default List<Document> insertDocuments(List<Document> documents) {

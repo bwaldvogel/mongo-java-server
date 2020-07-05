@@ -347,10 +347,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public CompletionStage<Document> handleCommandAsync(Channel channel,
-                                                        String database,
-                                                        String command,
-                                                        Document query) {
+    public CompletionStage<Document> handleCommandAsync(Channel channel, String database,
+                                                        String command, Document query) {
         if ("dropDatabase".equalsIgnoreCase(command)) {
             return dropDatabaseAsync(database)
                 .handle((aVoid, ex) -> {
