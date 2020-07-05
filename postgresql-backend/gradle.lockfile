@@ -3,10 +3,10 @@
 # This file is expected to be part of source control.
 ch.qos.logback:logback-classic:1.2.3=testRuntimeClasspath
 ch.qos.logback:logback-core:1.2.3=testRuntimeClasspath
-com.fasterxml.jackson.core:jackson-annotations:2.11.0=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-com.fasterxml.jackson.core:jackson-core:2.11.0=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-com.fasterxml.jackson.core:jackson-databind:2.11.0=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.0=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-annotations:2.11.1=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-core:2.11.1=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-databind:2.11.1=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.1=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.kohlschutter.junixsocket:junixsocket-common:2.0.4=testCompileClasspath,testRuntimeClasspath
 com.kohlschutter.junixsocket:junixsocket-native-common:2.0.4=testCompileClasspath,testRuntimeClasspath
 com.zaxxer:HikariCP:3.4.5=testCompileClasspath,testRuntimeClasspath
