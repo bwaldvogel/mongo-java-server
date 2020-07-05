@@ -168,6 +168,8 @@ public class Aggregation {
                     break;
                 case "$geoNear":
                     throw new MongoServerNotYetImplementedException(138, stageOperation);
+                case "$merge":
+                    throw new MongoServerNotYetImplementedException(152, stageOperation);
                 default:
                     throw new MongoServerError(40324, "Unrecognized pipeline stage name: '" + stageOperation + "'");
             }
