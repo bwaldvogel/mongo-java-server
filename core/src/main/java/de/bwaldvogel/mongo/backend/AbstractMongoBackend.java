@@ -13,7 +13,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private static final String ADMIN_DB_NAME = "admin";
 
-    private final Map<String, MongoDatabase> databases = new TreeMap<>();
+    private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
     private ServerVersion version = ServerVersion.MONGO_3_0;
 
@@ -80,14 +81,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public synchronized MongoDatabase resolveDatabase(String database) {
-        MongoDatabase db = databases.get(database);
-        if (db == null) {
-            db = openOrCreateDatabase(database);
-            log.info("created database {}", db.getDatabaseName());
-            databases.put(database, db);
-        }
-        return db;
+    public MongoDatabase resolveDatabase(String databaseName) {
+        return databases.computeIfAbsent(databaseName, name -> {
+            MongoDatabase database = openOrCreateDatabase(databaseName);
+            log.info("created database {}", database.getDatabaseName());
+            return database;
+        });
     }
 
     @Override
@@ -151,15 +150,17 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private Document handleAdminCommand(String command, Document query) {
         if (command.equalsIgnoreCase("listdatabases")) {
+            List<Document> databases = listDatabaseNames().stream()
+                .sorted()
+                .map(databaseName -> {
+                    MongoDatabase database = openOrCreateDatabase(databaseName);
+                    Document dbObj = new Document("name", database.getDatabaseName());
+                    dbObj.put("empty", Boolean.valueOf(database.isEmpty()));
+                    return dbObj;
+                })
+                .collect(Collectors.toList());
             Document response = new Document();
-            List<Document> dbs = new ArrayList<>();
-            for (String databaseName : listDatabaseNames()) {
-                MongoDatabase db = openOrCreateDatabase(databaseName);
-                Document dbObj = new Document("name", db.getDatabaseName());
-                dbObj.put("empty", Boolean.valueOf(db.isEmpty()));
-                dbs.add(dbObj);
-            }
-            response.put("databases", dbs);
+            response.put("databases", databases);
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("find")) {
