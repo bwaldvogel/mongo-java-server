@@ -469,7 +469,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return writeErrors;
     }
 
-    private static Document toErrorDocument(MongoServerError e, int index) {
+    @VisibleForExternalBackends
+    public static Document toErrorDocument(MongoServerError e, int index) {
         Document error = new Document();
         error.put("index", index);
         error.put("errmsg", e.getMessageWithoutErrorCode());
@@ -769,7 +770,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract Stream<DocumentWithPosition<P>> streamAllDocumentsWithPosition();
 
-    private boolean isSystemCollection() {
+    protected boolean isSystemCollection() {
         return AbstractMongoDatabase.isSystemCollection(getCollectionName());
     }
 
