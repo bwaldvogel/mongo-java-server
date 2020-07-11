@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
@@ -197,6 +198,8 @@ public class BsonEncoder {
             return BsonConstants.TYPE_MIN_KEY;
         } else if (value instanceof BsonJavaScript) {
             return BsonConstants.TYPE_JAVASCRIPT_CODE;
+        } else if (value instanceof Missing) {
+            throw new IllegalArgumentException("Unexpected missing value. This must not happen. Please report a bug.");
         } else {
             throw new IllegalArgumentException("Unknown type: " + value.getClass());
         }

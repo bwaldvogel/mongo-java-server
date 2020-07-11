@@ -41,7 +41,7 @@ public class MongoWireMessageEncoderTest {
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> mongoWireEncoder.encode(ctx, reply, Unpooled.buffer()))
-            .withMessageContaining("Unknown type: class de.bwaldvogel.mongo.backend.Missing");
+            .withMessageContaining("Unexpected missing value. This must not happen. Please report a bug.");
 
         verify(channel).close();
     }
