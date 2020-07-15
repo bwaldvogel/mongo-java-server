@@ -3353,6 +3353,27 @@ public abstract class AbstractBackendTest extends AbstractTest {
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 2 }");
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/154
+    @Test
+    public void testReplaceOneWithIdAndRevision() throws Exception {
+        collection.insertOne(json("_id: 1, revision: 1"));
+        collection.createIndex(json("revision: 1"));
+
+        UpdateResult firstUpdateResult = collection.replaceOne(json("_id: 1, revision: 1"),
+            json("_id: 1, revision: 2, value: 'abc'"));
+        assertThat(firstUpdateResult.getModifiedCount()).isEqualTo(1);
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 1, revision: 2, value: 'abc'"));
+
+        UpdateResult secondUpdateResult = collection.replaceOne(json("_id: 1, revision: 1"),
+            json("_id: 1, revision: 3, value: 'xyz'"));
+        assertThat(secondUpdateResult.getModifiedCount()).isZero();
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 1, revision: 2, value: 'abc'"));
+    }
+
     @Test
     public void testReplaceOneUpsertsWithGeneratedId() throws Exception {
         collection.replaceOne(json("value: 'abc'"), json("value: 'abc'"), new ReplaceOptions().upsert(true));

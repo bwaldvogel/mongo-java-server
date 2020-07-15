@@ -14,7 +14,7 @@ public class EmptyIndex<P> extends Index<P> {
 
     @Override
     public P getPosition(Document document) {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
@@ -54,12 +54,12 @@ public class EmptyIndex<P> extends Index<P> {
 
     @Override
     public void checkUpdate(Document oldDocument, Document newDocument, MongoCollection<P> collection) {
-        throw new UnsupportedOperationException();
+        // ignore
     }
 
     @Override
     public void updateInPlace(Document oldDocument, Document newDocument, P position, MongoCollection<P> collection) throws KeyConstraintError {
-        throw new UnsupportedOperationException();
+        // ignore
     }
 
     @Override
