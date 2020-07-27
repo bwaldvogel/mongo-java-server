@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
+import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.Index;
@@ -21,7 +21,7 @@ import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
 
-public class H2Database extends AbstractMongoDatabase<Object> {
+public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(H2Database.class);
 

@@ -2,14 +2,14 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.List;
 
-import de.bwaldvogel.mongo.backend.AbstractMongoDatabase;
+import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 
-public class MemoryDatabase extends AbstractMongoDatabase<Integer> {
+public class MemoryDatabase extends AbstractSynchronizedMongoDatabase<Integer> {
 
     public MemoryDatabase(String databaseName, CursorRegistry cursorRegistry) {
         super(databaseName, cursorRegistry);

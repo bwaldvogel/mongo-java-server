@@ -51,7 +51,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private final Map<String, MongoCollection<P>> collections = new ConcurrentHashMap<>();
 
-    private final AtomicReference<MongoCollection<P>> indexes = new AtomicReference<>();
+    protected final AtomicReference<MongoCollection<P>> indexes = new AtomicReference<>();
 
     private final Map<Channel, List<Document>> lastResults = new ConcurrentHashMap<>();
 
@@ -234,7 +234,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return Utils.firstBatchCursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
     }
 
-    private synchronized MongoCollection<P> resolveOrCreateCollection(String collectionName) {
+    protected MongoCollection<P> resolveOrCreateCollection(String collectionName) {
         final MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             return collection;
@@ -449,11 +449,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         collection.dropIndex(indexName);
     }
 
-    private int countIndexes() {
-        final MongoCollection<P> indexesCollection;
-        synchronized (indexes) {
-            indexesCollection = indexes.get();
-        }
+    protected int countIndexes() {
+        MongoCollection<P> indexesCollection = indexes.get();
         if (indexesCollection == null) {
             return 0;
         } else {
@@ -676,7 +673,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         lastResults.remove(channel);
     }
 
-    private synchronized void clearLastStatus(Channel channel) {
+    protected void clearLastStatus(Channel channel) {
         List<Document> results = lastResults.computeIfAbsent(channel, k -> new LimitedList<>(10));
         results.add(null);
     }
@@ -706,7 +703,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public synchronized MongoCollection<P> resolveCollection(String collectionName, boolean throwIfNotFound) {
+    public MongoCollection<P> resolveCollection(String collectionName, boolean throwIfNotFound) {
         checkCollectionName(collectionName);
         MongoCollection<P> collection = collections.get(collectionName);
         if (collection == null && throwIfNotFound) {
@@ -778,15 +775,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         openOrCreateIndex(indexDescription);
     }
 
-    private MongoCollection<P> getOrCreateIndexesCollection() {
-        synchronized (indexes) {
-            if (indexes.get() == null) {
-                MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, CollectionOptions.withoutIdField());
-                addNamespace(indexCollection);
-                indexes.set(indexCollection);
-            }
-            return indexes.get();
+    protected MongoCollection<P> getOrCreateIndexesCollection() {
+        if (indexes.get() == null) {
+            MongoCollection<P> indexCollection = openOrCreateCollection(INDEXES_COLLECTION_NAME, CollectionOptions.withoutIdField());
+            addNamespace(indexCollection);
+            indexes.set(indexCollection);
         }
+        return indexes.get();
     }
 
     private String extractCollectionNameFromNamespace(String namespace) {
@@ -947,7 +942,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return error;
     }
 
-    private synchronized void putLastResult(Channel channel, Document result) {
+    protected void putLastResult(Channel channel, Document result) {
         List<Document> results = lastResults.get(channel);
         // list must not be empty
         Document last = results.get(results.size() - 1);
