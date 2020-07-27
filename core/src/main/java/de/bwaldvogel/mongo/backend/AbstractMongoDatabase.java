@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -32,7 +31,6 @@ import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import de.bwaldvogel.mongo.util.FutureUtils;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -96,18 +94,17 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    private Document commandError(Channel channel, String command, Document query) {
+    @Override
+    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog) {
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
         } else if (command.equalsIgnoreCase("reseterror")) {
             return commandResetError(channel);
         }
-        return null;
-    }
 
-    // handle command synchronously
-    private Document handleCommandSync(Channel channel, String command, Document query, Oplog oplog) {
+        clearLastStatus(channel);
+
         if (command.equalsIgnoreCase("find")) {
             return commandFind(command, query);
         } else if (command.equalsIgnoreCase("insert")) {
@@ -166,34 +163,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         throw new NoSuchCommandException(command);
     }
 
-    @Override
-    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog) {
-        Document commandErrorDocument = commandError(channel, command, query);
-        if (commandErrorDocument != null) {
-            return commandErrorDocument;
-        }
-
-        clearLastStatus(channel);
-
-        return handleCommandSync(channel, command, query, oplog);
-    }
-
-    @Override
-    public CompletionStage<Document> handleCommandAsync(Channel channel, String command, Document query, Oplog oplog) {
-        Document commandErrorDocument = commandError(channel, command, query);
-        if (commandErrorDocument != null) {
-            return FutureUtils.wrap(() -> commandErrorDocument);
-        }
-
-        clearLastStatus(channel);
-
-        if ("find".equalsIgnoreCase(command)) {
-            return commandFindAsync(command, query);
-        }
-
-        return FutureUtils.wrap(() -> handleCommandSync(channel, command, query, oplog));
-    }
-
     private Document listCollections() {
         List<Document> firstBatch = new ArrayList<>();
         for (String namespace : listCollectionNamespaces()) {
@@ -207,7 +176,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             collectionDescription.put("options", collectionOptions);
             collectionDescription.put("info", new Document("readOnly", false));
             collectionDescription.put("type", "collection");
-            collectionDescription.put("idIndex", getPrimaryKeyIndexDescription(namespace));
+            collectionDescription.put("idIndex", getPrimaryKeyIndexDescription(namespace)
+            );
             firstBatch.add(collectionDescription);
         }
 
@@ -252,18 +222,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         QueryParameters queryParameters = toQueryParameters(query);
         QueryResult queryResult = collection.handleQuery(queryParameters);
         return toCursorResponse(collection, queryResult);
-    }
-
-    private CompletionStage<Document> commandFindAsync(String command, Document query) {
-        String collectionName = (String) query.get(command);
-        MongoCollection<P> collection = resolveCollection(collectionName, false);
-        if (collection == null) {
-            return FutureUtils.wrap(() -> Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName),
-                Collections.emptyList()));
-        }
-        QueryParameters queryParameters = toQueryParameters(query);
-        return collection.handleQueryAsync(queryParameters)
-            .thenApply(queryResult -> toCursorResponse(collection, queryResult));
     }
 
     private static QueryParameters toQueryParameters(Document query) {
@@ -649,26 +607,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public CompletionStage<QueryResult> handleQueryAsync(MongoQuery query) {
-        clearLastStatus(query.getChannel());
-        String collectionName = query.getCollectionName();
-        MongoCollection<P> collection = resolveCollection(collectionName, false);
-        if (collection == null) {
-            return FutureUtils.wrap(QueryResult::new);
-        }
-        int numberToSkip = query.getNumberToSkip();
-        int batchSize = query.getNumberToReturn();
-
-        if (batchSize < -1) {
-            // actually: request to close cursor automatically
-            batchSize = -batchSize;
-        }
-
-        QueryParameters queryData = toQueryParameters(query, numberToSkip, batchSize);
-        return collection.handleQueryAsync(queryData);
-    }
-
-    @Override
     public void handleClose(Channel channel) {
         lastResults.remove(channel);
     }
@@ -1031,7 +969,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             new Document("$set", new Document("ns", newCollection.getFullName())),
             ArrayFilters.empty(), true, false, NoopOplog.get());
 
-        namespaces.insertDocuments(newDocuments, true);
+        namespaces.insertDocuments(newDocuments);
     }
 
     protected String getFullCollectionNamespace(String collectionName) {
