@@ -67,7 +67,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testListDatabaseNames() throws Exception {
+    public void testListDatabaseNames() {
         assertThat(listDatabaseNames()).contains(LOCAL_DATABASE);
         collection.insertOne(json(""));
         assertThat(listDatabaseNames()).containsExactlyInAnyOrder(db.getName(), LOCAL_DATABASE);
@@ -127,7 +127,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testQueryOplogWhenOplogIsDisabled() throws Exception {
+    public void testQueryOplogWhenOplogIsDisabled() {
         backend.disableOplog();
         collection.insertOne(json("_id: 1"));
         assertThat(getOplogCollection().find()).isEmpty();
@@ -360,17 +360,24 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamAndReplaceOne() throws InterruptedException {
+    public void testChangeStreamAndReplaceOneWithUpsertTrue() throws InterruptedException {
 
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).subscribe(streamSubscriber);
 
         TestSubscriber<UpdateResult> replaceOneSubscriber = new TestSubscriber<>();
-        asyncCollection.replaceOne(json("a: 1"), json("a: 1"), new ReplaceOptions().upsert(true)).subscribe(replaceOneSubscriber);
+        asyncCollection.replaceOne(json("a: 1"), json("a: 1"), new ReplaceOptions().upsert(true))
+            .subscribe(replaceOneSubscriber);
 
         replaceOneSubscriber.awaitTerminalEvent();
         replaceOneSubscriber.assertComplete();
         replaceOneSubscriber.assertNoErrors();
+
+        TestSubscriber<Document> findSubscriber = new TestSubscriber<>();
+        asyncCollection.find(json("a:1")).subscribe(findSubscriber);
+        findSubscriber.awaitTerminalEvent();
+        findSubscriber.assertValueCount(1);
+        assertThat(findSubscriber.values().get(0).get("a")).isEqualTo(1);
 
         streamSubscriber.await(1, TimeUnit.SECONDS);
         streamSubscriber.assertValueCount(1);
