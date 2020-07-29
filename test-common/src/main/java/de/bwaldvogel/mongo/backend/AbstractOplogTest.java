@@ -379,8 +379,10 @@ public abstract class AbstractOplogTest extends AbstractTest {
         findSubscriber.assertValueCount(1);
         assertThat(findSubscriber.values().get(0).get("a")).isEqualTo(1);
 
-        streamSubscriber.await(1, TimeUnit.SECONDS);
+        streamSubscriber.awaitCount(1);
         streamSubscriber.assertValueCount(1);
+        assertThat(streamSubscriber.values().get(0).getOperationType().getValue()).isEqualTo("insert");
+        assertThat(streamSubscriber.values().get(0).getFullDocument()).isEqualTo(findSubscriber.values().get(0));
     }
 
 }
