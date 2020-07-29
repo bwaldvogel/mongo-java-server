@@ -16,7 +16,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.result.UpdateResult;
@@ -67,7 +66,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testListDatabaseNames() {
+    public void testListDatabaseNames() throws Exception {
         assertThat(listDatabaseNames()).contains(LOCAL_DATABASE);
         collection.insertOne(json(""));
         assertThat(listDatabaseNames()).containsExactlyInAnyOrder(db.getName(), LOCAL_DATABASE);
@@ -127,14 +126,13 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testQueryOplogWhenOplogIsDisabled() {
+    public void testQueryOplogWhenOplogIsDisabled() throws Exception {
         backend.disableOplog();
         collection.insertOne(json("_id: 1"));
         assertThat(getOplogCollection().find()).isEmpty();
     }
 
     @Test
-    @Disabled("This test represents a missing feature") //Todo. Support replace one.
     public void testSetOplogReplaceOneById() {
         collection.insertOne(json("_id: 1, b: 6"));
         collection.replaceOne(json("_id: 1"), json("a: 5, b: 7"));
@@ -360,7 +358,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamAndReplaceOneWithUpsertTrue() throws InterruptedException {
+    public void testChangeStreamAndReplaceOneWithUpsertTrue() throws Exception {
 
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).subscribe(streamSubscriber);
