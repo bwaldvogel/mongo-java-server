@@ -16,7 +16,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import com.mongodb.client.model.ReplaceOptions;
+import com.mongodb.client.result.UpdateResult;
+import io.reactivex.subscribers.TestSubscriber;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonTimestamp;
@@ -353,6 +357,23 @@ public abstract class AbstractOplogTest extends AbstractTest {
         assertThat(document2.getFullDocument().get("a")).isEqualTo(2);
         document2 = cursor2.next();
         assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+    }
+
+    @Test
+    public void testChangeStreamAndReplaceOne() throws InterruptedException {
+
+        TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
+        asyncCollection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).subscribe(streamSubscriber);
+
+        TestSubscriber<UpdateResult> replaceOneSubscriber = new TestSubscriber<>();
+        asyncCollection.replaceOne(json("a: 1"), json("a: 1"), new ReplaceOptions().upsert(true)).subscribe(replaceOneSubscriber);
+
+        replaceOneSubscriber.awaitTerminalEvent();
+        replaceOneSubscriber.assertComplete();
+        replaceOneSubscriber.assertNoErrors();
+
+        streamSubscriber.await(1, TimeUnit.SECONDS);
+        streamSubscriber.assertValueCount(1);
     }
 
 }
