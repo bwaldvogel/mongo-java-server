@@ -75,7 +75,7 @@ public class CollectionBackedOplog implements Oplog {
     }
 
     private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position, Aggregation aggregation) {
-        return aggregation.runStages(collection.queryAllAsStream()
+        return aggregation.runStagesAsStream(collection.queryAllAsStream()
             .filter(document -> {
                 BsonTimestamp timestamp = getOplogTimestamp(document);
                 OplogPosition documentOplogPosition = new OplogPosition(timestamp);
@@ -86,8 +86,7 @@ public class CollectionBackedOplog implements Oplog {
                 BsonTimestamp timestamp2 = getOplogTimestamp(o2);
                 return timestamp1.compareTo(timestamp2);
             })
-            .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument)))
-            .stream();
+            .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument)));
     }
 
     @Override

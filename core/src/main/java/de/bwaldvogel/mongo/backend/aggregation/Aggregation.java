@@ -182,6 +182,10 @@ public class Aggregation {
     }
 
     public List<Document> runStages(Stream<Document> stream) {
+        return runStagesAsStream(stream).collect(Collectors.toList());
+    }
+
+    public Stream<Document> runStagesAsStream(Stream<Document> stream) {
         if (hasVariables()) {
             stream = stream.map(this::addAllVariables);
         }
@@ -191,7 +195,7 @@ public class Aggregation {
         if (hasVariables()) {
             stream = stream.map(this::removeAllVariables);
         }
-        return stream.collect(Collectors.toList());
+        return stream;
     }
 
     private boolean hasVariables() {
