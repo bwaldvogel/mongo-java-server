@@ -605,8 +605,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         List<Document> pipeline = Aggregation.parse(pipelineObject);
         if (!pipeline.isEmpty()) {
             Document changeStream = (Document) pipeline.get(0).get("$changeStream");
+            Aggregation aggregation = Aggregation.fromPipeline(pipeline.subList(1, pipeline.size()), this, collection, oplog);
+            aggregation.validate(query);
             if (changeStream != null) {
-                return commandChangeStreamPipeline(query, oplog, collectionName, changeStream);
+                return commandChangeStreamPipeline(query, oplog, collectionName, changeStream, aggregation);
             }
         }
         Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection, oplog);
@@ -614,12 +616,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), aggregation.computeResult());
     }
 
-    private Document commandChangeStreamPipeline(Document query, Oplog oplog, String collectionName, Document changeStreamDocument) {
+    private Document commandChangeStreamPipeline(Document query, Oplog oplog, String collectionName, Document changeStreamDocument,
+                                                 Aggregation aggregation) {
         Document cursorDocument = (Document) query.get("cursor");
         int batchSize = (int) cursorDocument.getOrDefault("batchSize", 0);
 
         String namespace = getFullCollectionNamespace(collectionName);
-        Cursor cursor = oplog.createCursor(changeStreamDocument, namespace);
+        Cursor cursor = oplog.createCursor(changeStreamDocument, namespace, aggregation);
         return Utils.firstBatchCursorResponse(namespace, cursor.takeDocuments(batchSize), cursor);
     }
 

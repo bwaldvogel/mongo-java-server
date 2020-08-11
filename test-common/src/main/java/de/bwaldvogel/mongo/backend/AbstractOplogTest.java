@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Updates.set;
 import static com.mongodb.client.model.Updates.unset;
@@ -19,6 +20,7 @@ import java.util.UUID;
 
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.result.UpdateResult;
+import com.mongodb.reactivestreams.client.Success;
 import io.reactivex.subscribers.TestSubscriber;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
@@ -235,7 +237,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
         List<Document> insert = new ArrayList<>();
         List<Document> update = new ArrayList<>();
         List<ChangeStreamDocument<Document>> changeStreamsResult = new ArrayList<>();
-        List<Bson> pipeline = singletonList(Aggregates.match(Filters.or(
+        List<Bson> pipeline = singletonList(match(Filters.or(
             Document.parse("{'fullDocument.b': 1}")))
         );
 
@@ -381,6 +383,31 @@ public abstract class AbstractOplogTest extends AbstractTest {
         streamSubscriber.assertValueCount(1);
         assertThat(streamSubscriber.values().get(0).getOperationType().getValue()).isEqualTo("insert");
         assertThat(streamSubscriber.values().get(0).getFullDocument()).isEqualTo(findSubscriber.values().get(0));
+    }
+
+    @Test
+    public void testSimpleChangeStreamWithFilter() {
+        TestSubscriber<Success> insertSubscriber = new TestSubscriber<>();
+        TestSubscriber<Success> insertSubscriber2 = new TestSubscriber<>();
+        TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
+
+        asyncCollection.insertOne(json("_id: 2")).subscribe(insertSubscriber);
+        insertSubscriber.awaitTerminalEvent();
+
+        Bson filter = match(Filters.eq("fullDocument.bu", "abc"));
+        List<Bson> pipeline = singletonList(filter);
+
+        asyncCollection.watch(pipeline).subscribe(streamSubscriber);
+
+        insertSubscriber = new TestSubscriber<>();
+        asyncCollection.insertOne(json("_id: 2, bu: 'abc'")).subscribe(insertSubscriber);
+        asyncCollection.insertOne(json("_id: 3, bu: 'xyz'")).subscribe(insertSubscriber2);
+        insertSubscriber.awaitTerminalEvent();
+        insertSubscriber2.awaitTerminalEvent();
+
+        streamSubscriber.awaitCount(1);
+        streamSubscriber.assertValueCount(1);
+        assertThat(streamSubscriber.values().get(0).getFullDocument().get("bu")).isEqualTo("abc");
     }
 
 }

@@ -10,6 +10,7 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -73,8 +74,8 @@ public class CollectionBackedOplog implements Oplog {
         collection.addDocument(toOplogDropCollection(databaseName, collectionName));
     }
 
-    private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position) {
-        return collection.queryAllAsStream()
+    private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position, Aggregation aggregation) {
+        return aggregation.runStages(collection.queryAllAsStream()
             .filter(document -> {
                 BsonTimestamp timestamp = getOplogTimestamp(document);
                 OplogPosition documentOplogPosition = new OplogPosition(timestamp);
@@ -85,11 +86,12 @@ public class CollectionBackedOplog implements Oplog {
                 BsonTimestamp timestamp2 = getOplogTimestamp(o2);
                 return timestamp1.compareTo(timestamp2);
             })
-            .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument));
+            .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument)))
+            .stream();
     }
 
     @Override
-    public Cursor createCursor(Document changeStreamDocument, String namespace) {
+    public Cursor createCursor(Document changeStreamDocument, String namespace, Aggregation aggregation) {
         Document startAfter = (Document) changeStreamDocument.get("startAfter");
         Document resumeAfter = (Document) changeStreamDocument.get("resumeAfter");
         BsonTimestamp startAtOperationTime = (BsonTimestamp) changeStreamDocument.get(START_AT_OPERATION_TIME);
@@ -120,7 +122,7 @@ public class CollectionBackedOplog implements Oplog {
             initialOplogPosition = new OplogPosition(oplogClock.now());
         }
 
-        Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position);
+        Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position, aggregation);
         OplogCursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
         cursorRegistry.add(cursor);
         return cursor;
