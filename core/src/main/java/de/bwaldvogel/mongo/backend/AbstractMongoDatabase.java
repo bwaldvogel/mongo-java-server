@@ -605,9 +605,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         List<Document> pipeline = Aggregation.parse(pipelineObject);
         if (!pipeline.isEmpty()) {
             Document changeStream = (Document) pipeline.get(0).get("$changeStream");
-            Aggregation aggregation = Aggregation.fromPipeline(pipeline.subList(1, pipeline.size()), this, collection, oplog);
-            aggregation.validate(query);
             if (changeStream != null) {
+                Aggregation aggregation = Aggregation.fromPipeline(pipeline.subList(1, pipeline.size()), this, collection, oplog);
+                aggregation.validate(query);
                 return commandChangeStreamPipeline(query, oplog, collectionName, changeStream, aggregation);
             }
         }
