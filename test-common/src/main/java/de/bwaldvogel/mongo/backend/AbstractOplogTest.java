@@ -18,10 +18,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import com.mongodb.client.model.ReplaceOptions;
-import com.mongodb.client.result.UpdateResult;
-import com.mongodb.reactivestreams.client.Success;
-import io.reactivex.subscribers.TestSubscriber;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonTimestamp;
@@ -35,10 +31,12 @@ import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoChangeStreamCursor;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
+import com.mongodb.client.result.UpdateResult;
+import com.mongodb.reactivestreams.client.Success;
 
 import de.bwaldvogel.mongo.oplog.OperationType;
 
@@ -361,7 +359,6 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     @Test
     public void testChangeStreamAndReplaceOneWithUpsertTrue() throws Exception {
-
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).subscribe(streamSubscriber);
 
@@ -370,44 +367,40 @@ public abstract class AbstractOplogTest extends AbstractTest {
             .subscribe(replaceOneSubscriber);
 
         replaceOneSubscriber.awaitTerminalEvent();
-        replaceOneSubscriber.assertComplete();
         replaceOneSubscriber.assertNoErrors();
 
         TestSubscriber<Document> findSubscriber = new TestSubscriber<>();
         asyncCollection.find(json("a:1")).subscribe(findSubscriber);
         findSubscriber.awaitTerminalEvent();
-        findSubscriber.assertValueCount(1);
-        assertThat(findSubscriber.values().get(0).get("a")).isEqualTo(1);
+        assertThat(findSubscriber.getSingleValue().get("a")).isEqualTo(1);
 
         streamSubscriber.awaitCount(1);
-        streamSubscriber.assertValueCount(1);
         assertThat(streamSubscriber.values().get(0).getOperationType().getValue()).isEqualTo("insert");
         assertThat(streamSubscriber.values().get(0).getFullDocument()).isEqualTo(findSubscriber.values().get(0));
     }
 
     @Test
-    public void testSimpleChangeStreamWithFilter() {
-        TestSubscriber<Success> insertSubscriber = new TestSubscriber<>();
+    public void testSimpleChangeStreamWithFilter() throws Exception {
+        TestSubscriber<Success> insertSubscriber1 = new TestSubscriber<>();
         TestSubscriber<Success> insertSubscriber2 = new TestSubscriber<>();
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
 
-        asyncCollection.insertOne(json("_id: 2")).subscribe(insertSubscriber);
-        insertSubscriber.awaitTerminalEvent();
+        asyncCollection.insertOne(json("_id: 2")).subscribe(insertSubscriber1);
+        insertSubscriber1.awaitTerminalEvent();
 
         Bson filter = match(Filters.eq("fullDocument.bu", "abc"));
         List<Bson> pipeline = singletonList(filter);
 
         asyncCollection.watch(pipeline).subscribe(streamSubscriber);
 
-        insertSubscriber = new TestSubscriber<>();
-        asyncCollection.insertOne(json("_id: 2, bu: 'abc'")).subscribe(insertSubscriber);
+        insertSubscriber1 = new TestSubscriber<>();
+        asyncCollection.insertOne(json("_id: 2, bu: 'abc'")).subscribe(insertSubscriber1);
         asyncCollection.insertOne(json("_id: 3, bu: 'xyz'")).subscribe(insertSubscriber2);
-        insertSubscriber.awaitTerminalEvent();
+        insertSubscriber1.awaitTerminalEvent();
         insertSubscriber2.awaitTerminalEvent();
 
         streamSubscriber.awaitCount(1);
-        streamSubscriber.assertValueCount(1);
-        assertThat(streamSubscriber.values().get(0).getFullDocument().get("bu")).isEqualTo("abc");
+        assertThat(streamSubscriber.getSingleValue().getFullDocument().get("bu")).isEqualTo("abc");
     }
 
 }
