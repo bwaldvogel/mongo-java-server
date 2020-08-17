@@ -19,4 +19,17 @@ public class MongoGetMore extends ClientRequest {
     public int getNumberToReturn() {
         return numberToReturn;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getSimpleName()).append("(");
+        sb.append("header: ").append(getHeader());
+        sb.append(", collection: ").append(getFullCollectionName());
+        sb.append(", cursorId: ").append(cursorId);
+        sb.append(", numberToReturn: ").append(numberToReturn);
+        sb.append(")");
+        return sb.toString();
+    }
+
 }
