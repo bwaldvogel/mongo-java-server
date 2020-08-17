@@ -2787,6 +2787,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
         expected.putAll(json("other: {foo: 42, bar: 'x'}"));
         assertThat(collection.find(object).first()).isEqualTo(expected);
 
+        collection.updateOne(object, json("$set: {'other.bar': null}"));
+        expected.putAll(json("other: {foo: 42, bar: null}"));
+        assertThat(collection.find(object).first()).isEqualTo(expected);
+
+        collection.updateOne(object, json("$set: {'other.missing': null}"));
+        expected.putAll(json("other: {foo: 42, bar: null, missing: null}"));
+        assertThat(collection.find(object).first()).isEqualTo(expected);
+
         collection.updateOne(object, json("$set: {'other': null}"));
         expected.putAll(json("other: null"));
         assertThat(collection.find(object).first()).isEqualTo(expected);

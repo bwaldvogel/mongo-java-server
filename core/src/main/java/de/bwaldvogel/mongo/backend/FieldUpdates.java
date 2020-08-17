@@ -256,7 +256,9 @@ class FieldUpdates {
     private void handleSet(String key, Object newValue) {
         Object oldValue = getSubdocumentValue(document, key);
 
-        if (Utils.nullAwareEquals(newValue, oldValue)) {
+        boolean oldValueIsMissing = oldValue instanceof Missing;
+        boolean newValueIsNotMissing = !(newValue instanceof Missing);
+        if (Utils.nullAwareEquals(newValue, oldValue) && !(oldValueIsMissing && newValueIsNotMissing)) {
             // no change
             return;
         }
