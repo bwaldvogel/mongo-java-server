@@ -5685,6 +5685,29 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    public void testCompoundMultikeyIndex_multiple_document_keys() throws Exception {
+        collection.createIndex(json("item: 1, 'stock.size': 1, 'stock.color': 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, item: 'abc'"));
+        collection.insertOne(json("_id: 4, item: 'abc', stock: [{color: 'red'}]"));
+        collection.insertOne(json("_id: 5, item: 'abc', stock: [{size: 'L', color: 'red'}]"));
+        collection.insertOne(json("_id: 6, item: 'abc', stock: [{size: 'L'}, {size: 'XL'}]"));
+        collection.insertOne(json("_id: 7, item: 'abc', stock: [{size: 'S', color: 'red'}]"));
+        collection.insertOne(json("_id: 8, item: 'xyz', stock: [{size: 'S', color: 'red'}]"));
+        collection.insertOne(json("_id: 9, item: 'xyz', stock: [1, 2, 3]"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("item: 'abc'")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1_stock.color_1 dup key: { item: \"abc\", stock.size: null, stock.color: null }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{color: 'red'}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1_stock.color_1 dup key: { item: \"abc\", stock.size: null, stock.color: \"red\" }");
+
+        assertMongoWriteException(() -> collection.insertOne(json("item: 'abc', stock: [{size: 'XL'}]")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: item_1_stock.size_1_stock.color_1 dup key: { item: \"abc\", stock.size: \"XL\", stock.color: null }");
+    }
+
+    @Test
     public void testCompoundMultikeyIndex_deepDocuments() throws Exception {
         collection.createIndex(json("'a.b.c': 1"), new IndexOptions().unique(true));
 
