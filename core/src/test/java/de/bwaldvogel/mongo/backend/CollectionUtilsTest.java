@@ -64,15 +64,26 @@ public class CollectionUtilsTest {
         List<Object> values = Arrays.asList(1, 2);
         List<Object> collection = Arrays.asList("abc", "def", values);
 
-        assertThat(CollectionUtils.multiplyWithOtherElements(collection, values))
+        assertThat(CollectionUtils.multiplyWithOtherElements(collection, Arrays.asList(values)))
             .containsExactly(
                 Arrays.asList("abc", "def", 1),
                 Arrays.asList("abc", "def", 2)
             );
 
         assertThatExceptionOfType(IllegalArgumentException.class)
-            .isThrownBy(() -> CollectionUtils.multiplyWithOtherElements(collection, Arrays.asList(1, 2, 3)))
+            .isThrownBy(() -> CollectionUtils.multiplyWithOtherElements(collection, Arrays.asList(Arrays.asList(1, 2, 3))))
             .withMessage("Expected [1, 2, 3] to be part of [abc, def, [1, 2]]");
+    }
+
+    @Test
+    void testMultiplyWithOtherElementsWrongSize() throws Exception {
+        List<Object> smallValues = Arrays.asList(1, 2);
+        List<Object> bigValues = Arrays.asList(1, 2, 3);
+        List<Object> collection = Arrays.asList("abc", "def", smallValues, bigValues);
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> CollectionUtils.multiplyWithOtherElements(collection, Arrays.asList(smallValues, bigValues)))
+            .withMessage("Expected [1, 2, 3] to be size 2");
     }
 
     @Test

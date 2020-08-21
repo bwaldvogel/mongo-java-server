@@ -72,6 +72,28 @@ public class MemoryUniqueIndexTest {
         );
     }
 
+    @Test
+    void testGetKeyValues_multiKey_nested_objects_multiple_keys() throws Exception {
+        Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
+            new IndexKey("item", true),
+            new IndexKey("stock.size", true),
+            new IndexKey("stock.quantity", true)
+        ), false);
+
+        assertThat(index.getKeyValues(
+            new Document("stock", Arrays.asList(
+                new Document("size", "S").append("color", "red").append("quantity", 25),
+                new Document("size", "S").append("color", "blue").append("quantity", 10),
+                new Document("size", "M").append("color", "blue").append("quantity", 50)
+            ))
+                .append("item", "abc")
+        )).containsExactly(
+            new KeyValue("abc", "S", 25.0),
+            new KeyValue("abc", "S", 10.0),
+            new KeyValue("abc", "M", 50.0)
+        );
+    }
+
     private static Document jsonDocument(String json) {
         return convert(json(json));
     }
