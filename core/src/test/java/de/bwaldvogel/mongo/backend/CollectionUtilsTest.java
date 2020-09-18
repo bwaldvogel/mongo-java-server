@@ -73,6 +73,15 @@ public class CollectionUtilsTest {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> CollectionUtils.multiplyWithOtherElements(collection, Arrays.asList(Arrays.asList(1, 2, 3))))
             .withMessage("Expected [1, 2, 3] to be part of [abc, def, [1, 2]]");
+
+        List<Object> first = Arrays.asList("abc", "xyz", Arrays.asList("L", "M", "S"), Arrays.asList("red", "green", "blue"));
+        List<List<Object>> second = Arrays.asList(Arrays.asList("L", "M", "S"), Arrays.asList("red", "green", "blue"));
+        assertThat(CollectionUtils.multiplyWithOtherElements(first, second))
+            .containsExactly(
+                Arrays.asList("abc", "xyz", "L", "red"),
+                Arrays.asList("abc", "xyz", "M", "green"),
+                Arrays.asList("abc", "xyz", "S", "blue")
+            );
     }
 
     @Test
