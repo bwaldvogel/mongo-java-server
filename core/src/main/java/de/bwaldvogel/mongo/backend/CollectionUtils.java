@@ -37,22 +37,30 @@ public final class CollectionUtils {
         return value;
     }
 
-    static <T> List<List<T>> multiplyWithOtherElements(Collection<?> allValues, Collection<T> collectionValues) {
-        Assert.isTrue(allValues.contains(collectionValues), () -> "Expected " + collectionValues + " to be part of " + allValues);
-        List<List<T>> result = new ArrayList<>();
-        for (T collectionValue : collectionValues) {
-            List<T> values = new ArrayList<>();
+    static <T> List<List<T>> multiplyWithOtherElements(Collection<T> allValues, Collection<? extends Collection<T>> collectionValues) {
+        // Ex: multiplyWithOtherElements([abc, xyz, [L, M, S], [red, green, blue]], [[L, M, S], [red, green, blue]])
+        //         --> [[abc, xyz, L, red], [abc, xyz, M, green], [abc, xyz, S, blue]]
+        final int collectionValueSize = CollectionUtils.getElementAtPosition(collectionValues, 0).size();
+        for (Collection<T> collectionValue : collectionValues) {
+            Assert.isTrue(allValues.contains(collectionValue), () -> "Expected " + collectionValue + " to be part of " + allValues);
+            Assert.isTrue(collectionValue.size() == collectionValueSize, () -> "Expected " + collectionValue + " to be size " + collectionValueSize);
+        }
+
+        List<List<T>> result = new ArrayList<>(collectionValueSize);
+        for (int i = 0; i < collectionValueSize; i++) {
+            final ArrayList<T> newValues = new ArrayList();
 
             for (Object value : allValues) {
-                if (value == collectionValues) {
-                    values.add(collectionValue);
+                if (collectionValues.contains(value)) {
+                    newValues.add(CollectionUtils.getElementAtPosition((Collection<T>) value, i));
                 } else {
-                    values.add((T) value);
+                    newValues.add((T) value);
                 }
             }
 
-            result.add(values);
+            result.add(newValues);
         }
+
         return result;
     }
 

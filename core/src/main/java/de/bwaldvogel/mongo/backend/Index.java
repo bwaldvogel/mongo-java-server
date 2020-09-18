@@ -65,20 +65,16 @@ public abstract class Index<P> {
             valuesPerKey.replaceAll((key, value) -> Utils.normalizeValue(value));
         }
 
-        List<Collection<?>> collectionValues = valuesPerKey.values().stream()
+        List<Collection<Object>> collectionValues = valuesPerKey.values().stream()
             .filter(value -> value instanceof Collection)
-            .map(value -> (Collection<?>) value)
+            .map(value -> (Collection<Object>) value)
             .collect(Collectors.toList());
 
-        if (collectionValues.size() == 1) {
-            @SuppressWarnings("unchecked")
-            Collection<Object> collectionValue = (Collection<Object>) CollectionUtils.getSingleElement(collectionValues);
-            return CollectionUtils.multiplyWithOtherElements(valuesPerKey.values(), collectionValue).stream()
+        if (collectionValues.size() > 0) {
+            validateHasNoParallelArrays(document);
+            return CollectionUtils.multiplyWithOtherElements(valuesPerKey.values(), collectionValues).stream()
                 .map(KeyValue::new)
                 .collect(StreamUtils.toLinkedHashSet());
-        } else if (collectionValues.size() > 1) {
-            validateHasNoParallelArrays(document);
-            return collectCollectionValues(collectionValues);
         } else {
             return Collections.singleton(new KeyValue(valuesPerKey.values()));
         }
