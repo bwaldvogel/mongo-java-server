@@ -426,17 +426,33 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document commandDropIndexes(Document query) {
         String collectionName = (String) query.get("dropIndexes");
-        MongoCollection<P> collection = resolveCollection(collectionName, true);
-        Document indexKeys = (Document) query.get("index");
-        Document indexQuery = new Document("key", indexKeys);
-        MongoCollection<P> indexCollection = indexes.get();
-        Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
-            () -> new IndexNotFoundException(indexKeys));
-        int numDeleted = dropIndex(collection, indexToDrop);
-        Assert.equals(numDeleted, 1, () -> "Expected one deleted document");
+        MongoCollection<P> collection = resolveCollection(collectionName, false);
+        if (collection != null) {
+            dropIndexes(collection, query);
+        }
         Document response = new Document();
         Utils.markOkay(response);
         return response;
+    }
+
+    private void dropIndexes(MongoCollection<P> collection, Document query) {
+        Object index = query.get("index");
+        MongoCollection<P> indexCollection = indexes.get();
+        if (Objects.equals(index, "*")) {
+            for (Document indexDocument : indexCollection.queryAll()) {
+                Document indexKeys = (Document) indexDocument.get("key");
+                if (!isPrimaryKeyIndex(indexKeys)) {
+                    dropIndex(collection, indexDocument);
+                }
+            }
+        } else {
+            Document indexKeys = (Document) index;
+            Document indexQuery = new Document("key", indexKeys);
+            Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
+                () -> new IndexNotFoundException(indexKeys));
+            int numDeleted = dropIndex(collection, indexToDrop);
+            Assert.equals(numDeleted, 1, () -> "Expected one deleted document");
+        }
     }
 
     private int dropIndex(MongoCollection<P> collection, Document indexDescription) {

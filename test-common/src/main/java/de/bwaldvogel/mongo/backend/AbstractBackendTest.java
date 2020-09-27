@@ -638,6 +638,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    void testDropIndexes() throws Exception {
+        collection.insertOne(json("_id: 1, c: 10"));
+
+        collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "c_1").append("unique", true).append("v", 2)
+            );
+
+        collection.dropIndexes();
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2)
+            );
+
+        collection.dropIndexes();
+        collection.drop();
+        collection.dropIndexes();
+    }
+
+    @Test
     public void testCurrentOperations() throws Exception {
         Document currentOperations = getAdminDb().getCollection("$cmd.sys.inprog").find().first();
         assertThat(currentOperations).isNotNull();
