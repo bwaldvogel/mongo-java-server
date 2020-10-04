@@ -1307,7 +1307,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document result = collection.findOneAndUpdate(json("_id: 1"), json("$inc: {a: 1}"),
             new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
 
-        assertThat(result).isEqualTo(json(""));
+        assertThat(result).isNull();
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
     }
 

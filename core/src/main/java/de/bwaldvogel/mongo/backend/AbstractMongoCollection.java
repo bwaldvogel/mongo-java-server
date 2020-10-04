@@ -412,7 +412,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             if (returnNew) {
                 returnDocument = newDocument;
             } else {
-                returnDocument = new Document();
+                returnDocument = null;
             }
             num++;
         }
