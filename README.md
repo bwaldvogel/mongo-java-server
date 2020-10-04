@@ -42,7 +42,9 @@ public class SimpleTest {
     public void setUp() {
         server = new MongoServer(new MemoryBackend());
 
-        // optionally: server.enableSsl(key, keyPassword, certificate);
+        // optionally:
+        // server.enableSsl(key, keyPassword, certificate);
+        // server.enableOplog();
 
         // bind on a random local port
         InetSocketAddress serverAddress = server.bind();

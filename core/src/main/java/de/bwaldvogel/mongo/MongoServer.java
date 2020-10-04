@@ -53,9 +53,8 @@ public class MongoServer {
         this.backend = backend;
     }
 
-    public MongoServer withOplogEnabled() {
+    public void enableOplog() {
         this.backend.enableOplog();
-        return this;
     }
 
     public void enableSsl(PrivateKey key, String keyPassword, X509Certificate... keyCertChain) {
