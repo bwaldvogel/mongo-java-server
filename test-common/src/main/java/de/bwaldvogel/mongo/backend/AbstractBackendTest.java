@@ -93,6 +93,7 @@ import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.EstimatedDocumentCountOptions;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.RenameCollectionOptions;
@@ -1306,7 +1307,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document result = collection.findOneAndUpdate(json("_id: 1"), json("$inc: {a: 1}"),
             new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
 
-        assertThat(result).isEqualTo(json(""));
+        assertThat(result).isNull();
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, a: 1"));
     }
 
@@ -5849,6 +5850,46 @@ public abstract class AbstractBackendTest extends AbstractTest {
             new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
         assertThat(result).isEqualTo(json("_id: 1, a: [1, 1]"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/164
+    @Test
+    public void testFindOneAndUpdateWithReturnDocumentBeforeWhenDocumentDidNotExist() throws Exception {
+        Document result = collection.findOneAndUpdate(json("_id: 1, a: [5, 8]"), json("$set: {'a.$[]': 1}"),
+            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
+
+        assertThat(result).isNull();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/164
+    @Test
+    public void testFindOneAndReplaceWithReturnDocumentBeforeWhenDocumentDidNotExist() throws Exception {
+        Document result = collection.findOneAndReplace(json("_id: 1"), json("_id: 1, a: [5, 8]"),
+            new FindOneAndReplaceOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
+
+        assertThat(result).isNull();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/164
+    @Test
+    public void testFindOneAndUpdateWithReturnDocumentBeforeWhenDocumentExists() throws Exception {
+        collection.insertOne(json("_id: 1, a: [5, 8]"));
+
+        Document result = collection.findOneAndUpdate(json("_id: 1, a: [5, 8]"), json("$set: {'a.$[]': 1}"),
+            new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
+
+        assertThat(result).isEqualTo(json("_id: 1, a: [5, 8]"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/164
+    @Test
+    public void testFindOneAndReplaceWithReturnDocumentBeforeWhenDocumentExists() throws Exception {
+        collection.insertOne(json("_id: 1, a: [5, 8]"));
+
+        Document result = collection.findOneAndReplace(json("_id: 1"), json("_id: 1, a: [3, 3]"),
+            new FindOneAndReplaceOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
+
+        assertThat(result).isEqualTo(json("_id: 1, a: [5, 8]"));
     }
 
     @Test
