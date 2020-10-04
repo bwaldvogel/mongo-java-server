@@ -120,12 +120,6 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    public void testFindOneAndUpdateUpsertReturnBefore() {
-        assumeStrictMode();
-        super.testFindOneAndUpdateUpsertReturnBefore();
-    }
-
-    @Override
     public void testQueryWithSubdocumentIndex() throws Exception {
         assumeStrictMode();
         super.testQueryWithSubdocumentIndex();
