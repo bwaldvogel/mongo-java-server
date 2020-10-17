@@ -3,12 +3,12 @@
 # This file is expected to be part of source control.
 ch.qos.logback:logback-classic:1.2.3=testRuntimeClasspath
 ch.qos.logback:logback-core:1.2.3=testRuntimeClasspath
-io.netty:netty-buffer:4.1.52.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-codec:4.1.52.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-common:4.1.52.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-handler:4.1.52.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-resolver:4.1.52.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-transport:4.1.52.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-buffer:4.1.53.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-codec:4.1.53.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-common:4.1.53.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-handler:4.1.53.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-resolver:4.1.53.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-transport:4.1.53.Final=default,runtimeClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy-agent:1.10.15=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy:1.10.15=testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.0=testCompileClasspath,testRuntimeClasspath
