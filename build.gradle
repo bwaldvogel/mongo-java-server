@@ -201,6 +201,10 @@ javadoc {
     options.addBooleanOption('html5', true)
 }
 
+jacoco {
+    toolVersion = "0.8.6"
+}
+
 coveralls {
     sourceDirs = subprojects.sourceSets.main.allSource.srcDirs.flatten()
     jacocoReportPath = "${buildDir}/reports/jacoco/jacocoRootReport/jacocoRootReport.xml"
