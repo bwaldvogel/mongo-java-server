@@ -931,6 +931,36 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    void testAggregateWithGroupingAndFirstMissing() throws Exception {
+        Document sort = json("$sort: {_id: 1}");
+        Document group = json("$group: {_id: '$group', first: { $first: '$field1' }}");
+        List<Document> pipeline = Arrays.asList(sort, group);
+
+        collection.insertOne(json("_id: 1, group: 1"));
+        collection.insertOne(json("_id: 2, group: 1, field1: 'abc'"));
+
+        assertThat(collection.aggregate(pipeline))
+                .containsExactly(
+                        json("_id: 1, first: null")
+                );
+    }
+
+    @Test
+    void testAggregateWithGroupingAndLastMissing() throws Exception {
+        Document sort = json("$sort: {_id: 1}");
+        Document group = json("$group: {_id: '$group', last: { $last: '$field1' }}");
+        List<Document> pipeline = Arrays.asList(sort, group);
+
+        collection.insertOne(json("_id: 1, group: 1, field1: 'abc'"));
+        collection.insertOne(json("_id: 2, group: 1"));
+
+        assertThat(collection.aggregate(pipeline))
+                .containsExactly(
+                        json("_id: 1, last: null")
+                );
+    }
+
+    @Test
     void testAggregateWithPush() throws Exception {
         List<Document> pipeline = jsonList("$group: {_id: null, a: {$push: '$a'}, b: {$push: {v: '$b'}}, c: {$push: '$c'}}");
 
