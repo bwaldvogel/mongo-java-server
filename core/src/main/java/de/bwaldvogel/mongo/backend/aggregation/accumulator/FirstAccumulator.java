@@ -13,8 +13,12 @@ public class FirstAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        if (first && !(value instanceof Missing)) {
-            firstValue = value;
+        if (first) {
+            if (!(value instanceof Missing)) {
+                firstValue = value;
+            } else {
+                firstValue = null;
+            }
             first = false;
         }
     }
