@@ -14,6 +14,8 @@ public class LastAccumulator extends Accumulator {
     public void aggregate(Object value) {
         if (!(value instanceof Missing)) {
             lastValue = value;
+        } else {
+            lastValue = null;
         }
     }
 
