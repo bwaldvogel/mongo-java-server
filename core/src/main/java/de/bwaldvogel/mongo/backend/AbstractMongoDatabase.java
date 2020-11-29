@@ -447,7 +447,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             }
         } else {
             Document indexKeys = (Document) index;
-            Document indexQuery = new Document("key", indexKeys);
+            Document indexQuery = new Document("key", indexKeys).append("ns", collection.getFullName());
             Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
                 () -> new IndexNotFoundException(indexKeys));
             int numDeleted = dropIndex(collection, indexToDrop);

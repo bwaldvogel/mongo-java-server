@@ -662,6 +662,43 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.dropIndexes();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/171
+    @Test
+    void testDropIndexes_twoIndexesWithTheSameKey() throws Exception {
+        collection.insertOne(json("_id: 1, c: 10"));
+
+        MongoCollection<Document> otherCollection = getCollection("other");
+        otherCollection.insertOne(json("_id: 1, c: 10"));
+
+        collection.createIndex(new Document("c", 1));
+        otherCollection.createIndex(new Document("c", 1));
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "c_1").append("v", 2)
+            );
+
+        assertThat(otherCollection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "c_1").append("v", 2)
+            );
+
+        collection.dropIndex(json("c: 1"));
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2)
+            );
+
+        assertThat(otherCollection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "c_1").append("v", 2)
+            );
+    }
+
     @Test
     public void testCurrentOperations() throws Exception {
         Document currentOperations = getAdminDb().getCollection("$cmd.sys.inprog").find().first();
