@@ -16,6 +16,7 @@ import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class MemoryCollection extends AbstractSynchronizedMongoCollection<Integer> {
 
@@ -109,6 +110,11 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     @Override
     protected void handleUpdate(Integer position, Document oldDocument, Document newDocument) {
         // noop
+    }
+
+    @Override
+    public Object clone() {
+        throw new NotImplementedException();
     }
 
 }

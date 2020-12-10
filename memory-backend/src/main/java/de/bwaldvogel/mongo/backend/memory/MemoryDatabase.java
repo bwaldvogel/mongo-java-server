@@ -2,6 +2,9 @@ package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.List;
 
+import com.google.gson.Gson;
+
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
@@ -36,4 +39,9 @@ public class MemoryDatabase extends AbstractSynchronizedMongoDatabase<Integer> {
         return 0;
     }
 
+    @Override
+    public MemoryDatabase deepClone() {
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(this), MemoryDatabase.class);
+    }
 }

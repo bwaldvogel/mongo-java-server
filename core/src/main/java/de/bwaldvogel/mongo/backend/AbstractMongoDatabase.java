@@ -38,6 +38,7 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
@@ -62,6 +63,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     protected AbstractMongoDatabase(String databaseName, CursorRegistry cursorRegistry) {
         this.databaseName = databaseName;
         this.cursorRegistry = cursorRegistry;
+    }
+
+    protected AbstractMongoDatabase(AbstractMongoDatabase<P> mongoDatabase) {
+        this.databaseName = mongoDatabase.getDatabaseName();
+        this.cursorRegistry = new CursorRegistry();
+        collections.putAll(mongoDatabase.collections);
     }
 
     protected void initializeNamespacesAndIndexes() {

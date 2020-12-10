@@ -102,6 +102,10 @@ public class MongoServer {
                 });
 
             channel = bootstrap.bind().syncUninterruptibly().channel();
+            InetSocketAddress localAddress = getLocalAddress();
+            if (localAddress != null) {
+                backend.setServerAddress(String.format("%s:%d", localAddress.getHostName(), localAddress.getPort()));
+            }
 
             log.info("started {}", this);
         } catch (RuntimeException e) {

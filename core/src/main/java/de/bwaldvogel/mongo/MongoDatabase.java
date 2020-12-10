@@ -2,6 +2,8 @@ package de.bwaldvogel.mongo;
 
 import java.util.concurrent.CompletionStage;
 
+import com.google.gson.Gson;
+
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
@@ -76,5 +78,7 @@ public interface MongoDatabase extends AsyncMongoDatabase {
     void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName);
 
     void unregisterCollection(String collectionName);
+
+    MongoDatabase deepClone();
 
 }

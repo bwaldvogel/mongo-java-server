@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
+import de.bwaldvogel.mongo.MongoDatabase;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -15,6 +17,7 @@ import org.mockito.Mockito;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
 import io.netty.channel.Channel;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 class AbstractMongoDatabaseTest {
 
@@ -26,6 +29,11 @@ class AbstractMongoDatabaseTest {
         cursorRegistry = Mockito.mock(CursorRegistry.class);
 
         database = new AbstractMongoDatabase<Object>("testdb", cursorRegistry) {
+
+            @Override
+            public MongoDatabase deepClone() {
+                throw new NotImplementedException();
+            }
 
             @Override
             protected long getFileSize() {

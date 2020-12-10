@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -64,6 +65,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     private final CursorRegistry cursorRegistry = new CursorRegistry();
 
     protected Oplog oplog = NoopOplog.get();
+    private String serverAddress;
+
+    private final ConcurrentHashMap<UUID, Session> sessions = new ConcurrentHashMap<>();
 
     protected AbstractMongoBackend() {
         this(defaultClock());
@@ -314,6 +318,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("maxWireVersion", Integer.valueOf(version.getWireVersion()));
             response.put("minWireVersion", Integer.valueOf(0));
             response.put("localTime", Instant.now(clock));
+            response.put("setName", "rs0");
+            response.put("hosts", Collections.singleton(serverAddress));
+            response.put("me", serverAddress);
+            response.put("primary", serverAddress);
+            response.put("logicalSessionTimeoutMinutes", 100);
+            response.put("connectionId", 21210);
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
@@ -328,6 +338,14 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleGetMore(databaseName, command, query);
         } else if (command.equalsIgnoreCase("killCursors")) {
             return handleKillCursors(query);
+        } else if (command.equalsIgnoreCase("commitTransaction")) {
+            try {
+                UUID sessionId = Utils.getSessionId(query);
+                return new Document("lsid", sessionId);
+            } finally {
+                // Releasing the lock as the transaction completes
+//                transactionLatch.countDown();
+            }
         }
         return null;
     }
@@ -343,7 +361,22 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleAdminCommand(command, query);
         }
 
-        return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog);
+        if ((boolean)query.getOrDefault("autocommit", true)) {
+            return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog);
+        }
+
+        UUID sessionId = Utils.getSessionId(query);
+        if (sessionId == null) {
+            throw new RuntimeException("SessionId cannot be null. Make sure you are using a mongo driver version tha support sessions and transactions.");
+        }
+        Session session;
+        if (sessions.containsKey(sessionId)) {
+            session = sessions.get(sessionId);
+        } else {
+            session = new Session(sessionId, resolveDatabase(sessionId.toString()), clock);
+            sessions.put(sessionId, session);
+        }
+        return session.handleCommand(resolveDatabase(databaseName), channel, command, query);
     }
 
     @Override
@@ -496,6 +529,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         if (removedDatabase != null) {
             removedDatabase.drop(oplog);
         }
+    }
+
+    @Override
+    public void setServerAddress(String serverAddress) {
+        this.serverAddress = serverAddress;
     }
 
     @Override

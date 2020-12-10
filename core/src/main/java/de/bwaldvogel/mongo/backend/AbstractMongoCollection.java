@@ -32,6 +32,7 @@ import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.oplog.Oplog;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 

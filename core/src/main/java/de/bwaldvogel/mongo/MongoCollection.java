@@ -6,6 +6,8 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import com.google.gson.Gson;
+
 import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.QueryParameters;
@@ -112,5 +114,10 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
     void renameTo(MongoDatabase newDatabase, String newCollectionName);
 
     void drop();
+
+    default MongoCollection<P> deepClone() {
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(this), MongoCollection.class);
+    }
 
 }

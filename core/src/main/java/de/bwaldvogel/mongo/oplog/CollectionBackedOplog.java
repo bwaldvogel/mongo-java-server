@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.oplog;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -32,6 +33,13 @@ public class CollectionBackedOplog implements Oplog {
         this.collection = collection;
         this.backend = backend;
         this.cursorRegistry = cursorRegistry;
+    }
+
+    public CollectionBackedOplog(Clock clock, MongoCollection<Document> collection, CursorRegistry cursorRegistry) {
+        this.oplogClock = new OplogClock(clock);
+        this.collection = collection;
+        this.cursorRegistry = cursorRegistry;
+        this.backend = null;
     }
 
     @Override

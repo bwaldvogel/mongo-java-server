@@ -10,6 +10,10 @@ public abstract class AbstractSynchronizedMongoDatabase<P> extends AbstractMongo
         super(databaseName, cursorRegistry);
     }
 
+    protected AbstractSynchronizedMongoDatabase(AbstractSynchronizedMongoDatabase database) {
+        super(database);
+    }
+
     @Override
     protected synchronized MongoCollection<P> resolveOrCreateCollection(String collectionName) {
         return super.resolveOrCreateCollection(collectionName);

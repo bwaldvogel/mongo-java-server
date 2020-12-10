@@ -148,4 +148,8 @@ public class ReadOnlyProxy implements MongoBackend {
         backend.handleKillCursors(mongoKillCursors);
     }
 
+    @Override
+    public void setServerAddress(String serverAddress) {
+    }
+
 }

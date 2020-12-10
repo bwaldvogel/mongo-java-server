@@ -41,7 +41,7 @@ allprojects {
     }
 
     dependencyLocking {
-        lockAllConfigurations()
+//        lockAllConfigurations()
     }
 
     task resolveAndLockAll {
@@ -60,6 +60,7 @@ allprojects {
 subprojects {
     dependencies {
         implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.release'
+        implementation group: 'com.google.code.gson', name: 'gson', version: 'latest.release'
 
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: 'latest.release'
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: 'latest.release'

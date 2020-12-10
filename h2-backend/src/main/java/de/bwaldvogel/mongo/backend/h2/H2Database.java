@@ -20,6 +20,7 @@ import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
@@ -118,6 +119,11 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
         mvStore.renameMap(dataMap, DATABASES_PREFIX + newFullName);
         mvStore.renameMap(metaMap, META_PREFIX + newFullName);
+    }
+
+    @Override
+    public MongoDatabase deepClone() {
+        throw new NotImplementedException();
     }
 
 }

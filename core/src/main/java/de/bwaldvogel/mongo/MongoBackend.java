@@ -132,4 +132,6 @@ public interface MongoBackend extends AsyncMongoBackend {
 
     MongoBackend version(ServerVersion version);
 
+    void setServerAddress(String serverAddress);
+
 }
