@@ -1,10 +1,18 @@
 package de.bwaldvogel.mongo.backend.h2;
 
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.h2.mvstore.MVMap;
+import org.h2.mvstore.tx.Transaction;
+import org.h2.mvstore.tx.TransactionMap;
+import org.h2.mvstore.tx.TransactionStore;
+import org.h2.mvstore.type.DataType;
+import org.h2.mvstore.type.ObjectDataType;
+import org.h2.value.VersionedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,13 +32,14 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(H2Collection.class);
 
-    private final MVMap<Object, Document> dataMap;
+    private final MVMap<Object, VersionedValue> dataMap;
     private final MVMap<String, Object> metaMap;
 
     private static final String DATA_SIZE_KEY = "dataSize";
+    private TransactionStore transactionStore;
 
     public H2Collection(MongoDatabase database, String collectionName, CollectionOptions options,
-                        MVMap<Object, Document> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry) {
+                        MVMap<Object, VersionedValue> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry) {
         super(database, collectionName, options, cursorRegistry);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
@@ -39,6 +48,13 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
         } else {
             log.debug("dataSize of {}: {}", getFullName(), getDataSize());
         }
+    }
+
+    public H2Collection(MongoDatabase database, String collectionName, CollectionOptions options,
+                        MVMap<Object, VersionedValue> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry,
+                        TransactionStore transactionStore) {
+        this(database, collectionName, options, dataMap, metaMap, cursorRegistry);
+        this.transactionStore = transactionStore;
     }
 
     @Override
@@ -65,7 +81,15 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
             key = UUID.randomUUID();
         }
 
-        Document previous = dataMap.put(Missing.ofNullable(key), document);
+        Document previous;
+        if (!dataMap.getName().contains("system")) {
+            Transaction tx = transactionStore.begin();
+            TransactionMap<Object, Object> txMap = tx.openMap((MVMap<Object, VersionedValue>) dataMap);
+            previous = (Document) txMap.put(Missing.ofNullable(key), document);
+            tx.commit();
+        } else {
+            previous = (Document) dataMap.put(Missing.ofNullable(key), document);
+        }
         Assert.isNull(previous, () -> "Document with key '" + key + "' already existed in " + this + ": " + previous);
         return key;
     }
@@ -82,12 +106,12 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     @Override
     protected Document getDocument(Object position) {
-        return dataMap.get(position);
+        return (Document) dataMap.get(position);
     }
 
     @Override
     protected void removeDocument(Object position) {
-        Document remove = dataMap.remove(position);
+        Document remove = (Document) dataMap.remove(position);
         if (remove == null) {
             throw new NoSuchElementException("No document with key " + position);
         }
@@ -96,7 +120,7 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
     @Override
     protected Stream<DocumentWithPosition<Object>> streamAllDocumentsWithPosition() {
         return dataMap.entrySet().stream()
-            .map(entry -> new DocumentWithPosition<>(entry.getValue(), entry.getKey()));
+            .map(entry -> new DocumentWithPosition<>((Document) entry.getValue(), entry.getKey()));
     }
 
     @Override
@@ -108,14 +132,17 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
                 .sorted((o1, o2) -> ValueComparator.desc().compare(o1.getPosition(), o2.getPosition()))
                 .map(DocumentWithPosition::getDocument);
         } else {
-            documentStream = dataMap.values().stream();
+            documentStream = dataMap.values().stream().map(v -> (Document) v);
         }
         return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
 
     @Override
     protected void handleUpdate(Object position, Document oldDocument, Document newDocument) {
-        dataMap.put(Missing.ofNullable(position), newDocument);
+        Transaction tx = transactionStore.begin();
+        TransactionMap<Object, Document> txMap = tx.openMap(dataMap);
+        txMap.put(Missing.ofNullable(position), newDocument);
+        tx.commit();
     }
 
 }

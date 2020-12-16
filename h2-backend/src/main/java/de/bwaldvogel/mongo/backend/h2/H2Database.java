@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
+import org.h2.mvstore.tx.TransactionStore;
+import org.h2.value.DataType;
+import org.h2.value.VersionedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +33,13 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
     static final String DATABASES_PREFIX = "databases.";
 
     private final MVStore mvStore;
+    private TransactionStore transactionStore;
 
     public H2Database(String databaseName, MVStore mvStore, CursorRegistry cursorRegistry) {
         super(databaseName, cursorRegistry);
         this.mvStore = mvStore;
+        transactionStore = new TransactionStore(mvStore);
+        transactionStore.init();
         initializeNamespacesAndIndexes();
     }
 
@@ -75,9 +81,9 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
     @Override
     protected MongoCollection<Object> openOrCreateCollection(String collectionName, CollectionOptions options) {
         String fullCollectionName = getFullCollectionNamespace(collectionName);
-        MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
+        MVMap<Object, VersionedValue> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
-        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry);
+        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry, transactionStore);
     }
 
     @Override

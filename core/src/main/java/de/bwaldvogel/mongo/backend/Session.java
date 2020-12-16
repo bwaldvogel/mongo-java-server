@@ -39,8 +39,8 @@ public class Session {
         if (databases.containsKey(database.getDatabaseName())) {
             sessionDatabase = databases.get(database.getDatabaseName());
         } else {
-            sessionDatabase = database.deepClone();
-//            sessionDatabase = database;
+//            sessionDatabase = database.deepClone();
+            sessionDatabase = database;
             databases.put(sessionDatabase.getDatabaseName(), sessionDatabase);
         }
         return sessionDatabase.handleCommand(channel, command, query, oplog);
