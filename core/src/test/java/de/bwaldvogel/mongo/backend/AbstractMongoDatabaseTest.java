@@ -31,11 +31,6 @@ class AbstractMongoDatabaseTest {
         database = new AbstractMongoDatabase<Object>("testdb", cursorRegistry) {
 
             @Override
-            public MongoDatabase deepClone() {
-                throw new NotImplementedException();
-            }
-
-            @Override
             protected long getFileSize() {
                 return 0;
             }
@@ -75,7 +70,7 @@ class AbstractMongoDatabaseTest {
         Document query = new Document();
         query.put("find", "testCollection");
 
-        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null);
+        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null, null);
         Document response = responseFuture.toCompletableFuture().get();
 
         assertThat(response).isNotNull();
@@ -89,7 +84,7 @@ class AbstractMongoDatabaseTest {
         Document query = new Document();
         query.put("find", "mockCollection");
 
-        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null);
+        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null, null);
         Document response = responseFuture.toCompletableFuture().get();
 
         assertThat(response).isNotNull();

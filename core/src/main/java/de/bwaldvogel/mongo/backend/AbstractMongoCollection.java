@@ -58,15 +58,15 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize,
-                                         Document fieldSelector) {
+                                         Document fieldSelector, MongoSession mongoSession) {
         for (Index<P> index : indexes) {
             if (index.canHandle(query)) {
                 Iterable<P> positions = index.getPositions(query);
-                return matchDocuments(query, positions, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+                return matchDocuments(query, positions, orderBy, numberToSkip, limit, batchSize, fieldSelector, mongoSession);
             }
         }
 
-        return matchDocuments(query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+        return matchDocuments(query, orderBy, numberToSkip, limit, batchSize, fieldSelector, mongoSession);
     }
 
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
@@ -108,9 +108,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected QueryResult matchDocuments(Document query, Iterable<P> positions, Document orderBy,
                                          int numberToSkip, int limit, int batchSize,
-                                         Document fieldSelector) {
+                                         Document fieldSelector, MongoSession mongoSession) {
         Stream<Document> documentStream = StreamSupport.stream(positions.spliterator(), false)
-            .map(position -> getDocument(position));
+            .map(position -> getDocument(position, mongoSession));
 
         return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
@@ -140,6 +140,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             }
         }
         return null;
+    }
+
+    protected Document getDocument(P position, MongoSession mongoSession) {
+        return getDocument(position);
     }
 
     protected abstract Document getDocument(P position);
@@ -363,6 +367,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public Document findAndModify(Document query) {
+        return findAndModify(query, null);
+    }
+
+    public Document findAndModify(Document query, MongoSession mongoSession) {
         boolean returnNew = Utils.isTrue(query.get("new"));
 
         if (!query.containsKey("remove") && !query.containsKey("update")) {
@@ -395,7 +403,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 Integer matchPos = matcher.matchPosition(document, (Document) queryObject.get("query"));
 
                 ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
-                Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
+                Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos, mongoSession);
                 if (returnNew) {
                     returnDocument = document;
                 } else {
@@ -434,6 +442,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public QueryResult handleQuery(QueryParameters queryParameters) {
+        return handleQuery(queryParameters, null);
+    }
+
+    @Override
+    public QueryResult handleQuery(QueryParameters queryParameters, MongoSession mongoSession) {
         final Document query;
         final Document orderBy;
         Document querySelector = queryParameters.getQuerySelector();
@@ -449,7 +462,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         return queryDocuments(query, orderBy, queryParameters.getNumberToSkip(), queryParameters.getLimit(),
-            queryParameters.getBatchSize(), queryParameters.getProjection());
+            queryParameters.getBatchSize(), queryParameters.getProjection(), mongoSession);
     }
 
     @Override
@@ -481,11 +494,15 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public Document handleDistinct(Document query) {
+        return handleDistinct(query, null);
+    }
+
+    public Document handleDistinct(Document query, MongoSession mongoSession) {
         String key = (String) query.get("key");
         Document filter = (Document) query.getOrDefault("query", new Document());
         Set<Object> values = new TreeSet<>(ValueComparator.ascWithoutListHandling().withDefaultComparatorForUuids());
 
-        for (Document document : queryDocuments(filter, null, 0, 0, 0, null)) {
+        for (Document document : queryDocuments(filter, null, 0, 0, 0, null, mongoSession)) {
             Object value = Utils.getSubdocumentValueCollectionAware(document, key);
             if (!(value instanceof Missing)) {
                 if (value instanceof Collection) {
@@ -518,6 +535,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     @Override
     public Document updateDocuments(Document selector, Document updateQuery, ArrayFilters arrayFilters,
                                     boolean isMulti, boolean isUpsert, Oplog oplog) {
+        return updateDocuments(selector, updateQuery, arrayFilters, isMulti, isUpsert, oplog, null);
+    }
+
+    public Document updateDocuments(Document selector, Document updateQuery, ArrayFilters arrayFilters,
+                                    boolean isMulti, boolean isUpsert, Oplog oplog, MongoSession mongoSession) {
         if (isMulti) {
             for (String key : updateQuery.keySet()) {
                 if (!key.startsWith("$")) {
@@ -528,9 +550,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         int nMatched = 0;
         List<Object> updatedIds = new ArrayList<>();
-        for (Document document : queryDocuments(selector, null, 0, 0, 0, null)) {
+        for (Document document : queryDocuments(selector, null, 0, 0, 0, null, mongoSession)) {
             Integer matchPos = matcher.matchPosition(document, selector);
-            Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
+            Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos, mongoSession);
             if (!Utils.nullAwareEquals(oldDocument, document)) {
                 updatedIds.add(document.get(getIdField()));
             }
@@ -558,7 +580,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     private Document updateDocument(Document document, Document updateQuery,
-                                    ArrayFilters arrayFilters, Integer matchPos) {
+                                    ArrayFilters arrayFilters, Integer matchPos, MongoSession mongoSession) {
         Document oldDocument = document.cloneDeeply();
 
         Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, matchPos, false);
@@ -593,7 +615,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 }
                 document.put(key, newDocument.get(key));
             }
-            handleUpdate(position, oldDocument, document);
+            handleUpdate(position, oldDocument, document, mongoSession);
         }
         return oldDocument;
     }
@@ -610,6 +632,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract void handleUpdate(P position, Document oldDocument, Document newDocument);
+
+    protected abstract void handleUpdate(P position, Document oldDocument, Document newDocument, MongoSession mongoSession);
 
     private Document handleUpsert(Document updateQuery, Document selector, ArrayFilters arrayFilters) {
         Document document = convertSelectorToDocument(selector);
@@ -645,6 +669,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public int count(Document query, int skip, int limit) {
+        return count(query, skip, limit, null);
+    }
+
+    @Override
+    public int count(Document query, int skip, int limit, MongoSession mongoSession) {
         if (query == null || query.keySet().isEmpty()) {
             int count = count();
             if (skip > 0) {
@@ -658,7 +687,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         int numberToReturn = Math.max(limit, 0);
         int count = 0;
-        Iterator<?> it = queryDocuments(query, null, skip, numberToReturn, 0, new Document(getIdField(), 1)).iterator();
+        Iterator<?> it = queryDocuments(
+            query, null, skip, numberToReturn, 0, new Document(getIdField(), 1), mongoSession
+        ).iterator();
         while (it.hasNext()) {
             it.next();
             count++;

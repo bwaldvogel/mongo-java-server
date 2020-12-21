@@ -14,8 +14,10 @@ import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
+import de.bwaldvogel.mongo.backend.MongoSession;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.InvalidOptionsException;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class MemoryCollection extends AbstractSynchronizedMongoCollection<Integer> {
@@ -113,8 +115,8 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     }
 
     @Override
-    public Object clone() {
-        throw new NotImplementedException();
+    protected void handleUpdate(Integer position, Document oldDocument, Document newDocument, MongoSession mongoSession) {
+        handleUpdate(position, oldDocument, newDocument);
     }
 
 }

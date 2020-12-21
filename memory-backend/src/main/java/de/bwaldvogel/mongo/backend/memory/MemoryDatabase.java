@@ -39,9 +39,4 @@ public class MemoryDatabase extends AbstractSynchronizedMongoDatabase<Integer> {
         return 0;
     }
 
-    @Override
-    public MemoryDatabase deepClone() {
-        Gson gson = new Gson();
-        return gson.fromJson(gson.toJson(this), MemoryDatabase.class);
-    }
 }

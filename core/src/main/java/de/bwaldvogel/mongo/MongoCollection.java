@@ -10,6 +10,7 @@ import com.google.gson.Gson;
 
 import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
+import de.bwaldvogel.mongo.backend.MongoSession;
 import de.bwaldvogel.mongo.backend.QueryParameters;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
@@ -69,6 +70,8 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
 
     QueryResult handleQuery(QueryParameters queryParameters);
 
+    QueryResult handleQuery(QueryParameters queryParameters, MongoSession mongoSession);
+
     @Override
     default CompletionStage<QueryResult> handleQueryAsync(QueryParameters queryParameters) {
         return FutureUtils.wrap(() -> handleQuery(queryParameters));
@@ -83,6 +86,11 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
     Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
                              boolean isMulti, boolean isUpsert, Oplog oplog);
 
+    default Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
+                             boolean isMulti, boolean isUpsert, Oplog oplog, MongoSession mongoSession) {
+        return updateDocuments(selector, update, arrayFilters, isMulti, isUpsert, oplog, mongoSession);
+    }
+
     default int deleteDocuments(Document selector, int limit) {
         return deleteDocuments(selector, limit, NoopOplog.get());
     }
@@ -91,6 +99,8 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
 
     Document handleDistinct(Document query);
 
+    Document handleDistinct(Document query, MongoSession mongoSession);
+
     Document getStats();
 
     Document validate();
@@ -98,6 +108,8 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
     Document findAndModify(Document query);
 
     int count(Document query, int skip, int limit);
+
+    int count(Document query, int skip, int limit, MongoSession mongoSession);
 
     default boolean isEmpty() {
         return count() == 0;
@@ -114,10 +126,4 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
     void renameTo(MongoDatabase newDatabase, String newCollectionName);
 
     void drop();
-
-    default MongoCollection<P> deepClone() {
-        Gson gson = new Gson();
-        return gson.fromJson(gson.toJson(this), MongoCollection.class);
-    }
-
 }

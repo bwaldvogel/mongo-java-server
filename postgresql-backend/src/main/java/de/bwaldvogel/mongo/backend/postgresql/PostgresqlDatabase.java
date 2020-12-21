@@ -72,11 +72,6 @@ public class PostgresqlDatabase extends AbstractSynchronizedMongoDatabase<Long> 
     }
 
     @Override
-    public MongoDatabase deepClone() {
-        throw new NotImplementedException();
-    }
-
-    @Override
     protected MongoCollection<Long> openOrCreateCollection(String collectionName, CollectionOptions options) {
         String tableName = PostgresqlCollection.getTablename(collectionName);
         String fullCollectionName = PostgresqlCollection.getQualifiedTablename(getDatabaseName(), collectionName);

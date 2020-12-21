@@ -18,6 +18,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.h2.mvstore.tx.TransactionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
-    static final String ADMIN_DB_NAME = "admin";
+    public static final String ADMIN_DB_NAME = "admin";
 
     private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
@@ -67,7 +68,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     protected Oplog oplog = NoopOplog.get();
     private String serverAddress;
 
-    private final ConcurrentHashMap<UUID, Session> sessions = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<UUID, MongoSession> sessions = new ConcurrentHashMap<>();
+    protected TransactionStore transactionStore;
 
     protected AbstractMongoBackend() {
         this(defaultClock());
@@ -154,7 +156,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return response;
     }
 
-    private Document handleAdminCommand(String command, Document query) {
+    protected Document handleAdminCommand(String command, Document query) {
         if (command.equalsIgnoreCase("listdatabases")) {
             List<Document> databases = listDatabaseNames().stream()
                 .sorted()
@@ -303,7 +305,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
 
     // handle command synchronously
-    private Document handleCommandSync(Channel channel, String databaseName, String command, Document query) {
+    protected Document handleCommandSync(Channel channel, String databaseName, String command, Document query) {
         if (command.equalsIgnoreCase("whatsmyuri")) {
             Document response = new Document();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
@@ -362,21 +364,21 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         }
 
         if ((boolean)query.getOrDefault("autocommit", true)) {
-            return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog);
+            return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog, null);
         }
 
         UUID sessionId = Utils.getSessionId(query);
         if (sessionId == null) {
             throw new RuntimeException("SessionId cannot be null. Make sure you are using a mongo driver version tha support sessions and transactions.");
         }
-        Session session;
+        MongoSession mongoSession;
         if (sessions.containsKey(sessionId)) {
-            session = sessions.get(sessionId);
+            mongoSession = sessions.get(sessionId);
         } else {
-            session = new Session(sessionId, resolveDatabase(sessionId.toString()), clock);
-            sessions.put(sessionId, session);
+            mongoSession = new MongoSession(sessionId, transactionStore.begin());
+            sessions.put(sessionId, mongoSession);
         }
-        return session.handleCommand(resolveDatabase(databaseName), channel, command, query);
+        return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog, mongoSession);
     }
 
     @Override
@@ -406,7 +408,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return FutureUtils.wrap(() -> handleAdminCommand(command, query));
         }
 
-        return resolveDatabase(database).handleCommandAsync(channel, command, query, oplog);
+        return resolveDatabase(database).handleCommandAsync(channel, command, query, oplog, null);
     }
 
     @Override

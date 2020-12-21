@@ -8,7 +8,6 @@ import org.h2.mvstore.FileStore;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.MVStore;
 import org.h2.mvstore.tx.TransactionStore;
-import org.h2.value.DataType;
 import org.h2.value.VersionedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +22,6 @@ import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
@@ -83,7 +81,7 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
         String fullCollectionName = getFullCollectionNamespace(collectionName);
         MVMap<Object, VersionedValue> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
-        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry, transactionStore);
+        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry);
     }
 
     @Override
@@ -125,11 +123,6 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
         mvStore.renameMap(dataMap, DATABASES_PREFIX + newFullName);
         mvStore.renameMap(metaMap, META_PREFIX + newFullName);
-    }
-
-    @Override
-    public MongoDatabase deepClone() {
-        throw new NotImplementedException();
     }
 
 }

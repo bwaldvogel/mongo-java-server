@@ -19,9 +19,11 @@ import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
+import de.bwaldvogel.mongo.backend.MongoSession;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
+import de.bwaldvogel.mongo.exception.InvalidOptionsException;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Long> {
@@ -129,7 +131,7 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     @Override
     protected QueryResult matchDocuments(Document query, Iterable<Long> positions, Document orderBy,
                                          int numberToSkip, int limit, int batchSize,
-                                         Document fieldSelector) {
+                                         Document fieldSelector, MongoSession mongoSession) {
         throw new UnsupportedOperationException("not yet implemented");
     }
 
@@ -279,6 +281,11 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
         } catch (SQLException e) {
             throw new MongoServerException("failed to update document in " + this, e);
         }
+    }
+
+    @Override
+    protected void handleUpdate(Long position, Document oldDocument, Document newDocument, MongoSession mongoSession) {
+        handleUpdate(position, oldDocument, newDocument);
     }
 
     @Override
