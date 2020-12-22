@@ -95,9 +95,7 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     protected Document getDocument(Object position, MongoSession mongoSession) {
         if (mongoSession == null) {
-            Transaction t = transactionStore.begin();
-            TransactionMap<Object, Document> txMap = t.openMap(dataMap);
-            return txMap.get(position);
+            return getDocument(position);
         }
         TransactionMap<Object, Document> txMap = mongoSession.getTransaction().openMap(dataMap);
         return txMap.get(position);

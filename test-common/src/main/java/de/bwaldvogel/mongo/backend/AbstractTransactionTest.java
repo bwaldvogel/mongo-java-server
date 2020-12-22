@@ -49,7 +49,6 @@ public abstract class AbstractTransactionTest extends AbstractTest {
         ClientSession clientSession = syncClient.startSession();
         clientSession.startTransaction();
         collection.updateOne(clientSession, json("_id: 1"), set("value", 2));
-//        collection.updateOne(clientSession, json("_id: 1"), set("value", 4));
 
         Document doc = collection.find(json("_id: 1")).first();
         assertThat(doc).isNotNull();
@@ -65,7 +64,7 @@ public abstract class AbstractTransactionTest extends AbstractTest {
 
         doc = collection.find(json("_id: 1")).first();
         assertThat(doc).isNotNull();
-        assertThat(doc.get("value")).isEqualTo(4);
+        assertThat(doc.get("value")).isEqualTo(2);
         Thread.yield();
     }
 
