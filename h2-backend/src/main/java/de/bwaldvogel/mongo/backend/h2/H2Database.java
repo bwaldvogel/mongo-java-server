@@ -38,6 +38,7 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
         this.mvStore = mvStore;
         transactionStore = new TransactionStore(mvStore);
         transactionStore.init();
+
         initializeNamespacesAndIndexes();
     }
 
@@ -81,7 +82,7 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
         String fullCollectionName = getFullCollectionNamespace(collectionName);
         MVMap<Object, VersionedValue> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
-        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry);
+        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry, transactionStore);
     }
 
     @Override

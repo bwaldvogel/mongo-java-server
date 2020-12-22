@@ -18,6 +18,7 @@ import de.bwaldvogel.mongo.backend.MongoSession;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.InvalidOptionsException;
+import de.bwaldvogel.mongo.exception.MongoServerException;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class MemoryCollection extends AbstractSynchronizedMongoCollection<Integer> {
@@ -111,7 +112,14 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
 
     @Override
     protected void handleUpdate(Integer position, Document oldDocument, Document newDocument) {
-        // noop
+        Document doc = documents.get(position);
+        for (String key : newDocument.keySet()) {
+            if (key.contains(".")) {
+                throw new MongoServerException(
+                    "illegal field name. must not happen as it must be caught by the driver");
+            }
+            doc.put(key, newDocument.get(key));
+        }
     }
 
     @Override

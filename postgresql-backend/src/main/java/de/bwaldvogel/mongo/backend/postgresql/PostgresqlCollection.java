@@ -84,7 +84,7 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
                 }
             }, false);
 
-            return matchDocumentsFromStream(query, documents, numberToSkip, numberToReturn, batchSize, null, fieldSelector);
+            return matchDocumentsFromStream(query, documents, numberToSkip, numberToReturn, batchSize, null, fieldSelector, null);
         } catch (SQLException e) {
             throw new MongoServerException("Failed to query " + this, e);
         }

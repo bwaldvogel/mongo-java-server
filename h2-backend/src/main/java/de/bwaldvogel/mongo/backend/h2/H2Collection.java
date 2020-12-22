@@ -1,10 +1,12 @@
 package de.bwaldvogel.mongo.backend.h2;
 
+import java.util.AbstractMap;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.h2.mvstore.MVMap;
+import org.h2.mvstore.tx.Transaction;
 import org.h2.mvstore.tx.TransactionMap;
 import org.h2.mvstore.tx.TransactionStore;
 import org.h2.value.VersionedValue;
@@ -23,6 +25,7 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
@@ -30,14 +33,16 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     private final MVMap<Object, VersionedValue> dataMap;
     private final MVMap<String, Object> metaMap;
+    private TransactionStore transactionStore;
 
     private static final String DATA_SIZE_KEY = "dataSize";
 
     public H2Collection(MongoDatabase database, String collectionName, CollectionOptions options,
-                        MVMap<Object, VersionedValue> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry) {
+                        MVMap<Object, VersionedValue> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry, TransactionStore transactionStore) {
         super(database, collectionName, options, cursorRegistry);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
+        this.transactionStore = transactionStore;
         if (!this.metaMap.containsKey(DATA_SIZE_KEY)) {
             this.metaMap.put(DATA_SIZE_KEY, Long.valueOf(0));
         } else {
@@ -90,7 +95,9 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     protected Document getDocument(Object position, MongoSession mongoSession) {
         if (mongoSession == null) {
-            return getDocument(position);
+            Transaction t = transactionStore.begin();
+            TransactionMap<Object, Document> txMap = t.openMap(dataMap);
+            return txMap.get(position);
         }
         TransactionMap<Object, Document> txMap = mongoSession.getTransaction().openMap(dataMap);
         return txMap.get(position);
@@ -111,22 +118,41 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     @Override
     protected Stream<DocumentWithPosition<Object>> streamAllDocumentsWithPosition() {
-        return dataMap.entrySet().stream()
+        return streamAllDocumentsWithPosition(dataMap);
+    }
+
+    @Override
+    protected Stream<DocumentWithPosition<Object>> streamAllDocumentsWithPosition(MongoSession mongoSession) {
+        if (mongoSession == null) {
+            return streamAllDocumentsWithPosition();
+        }
+        TransactionMap<Object, Document> txMap = mongoSession.getTransaction().openMap(dataMap);
+        return streamAllDocumentsWithPosition(txMap.map);
+    }
+
+    private Stream<DocumentWithPosition<Object>> streamAllDocumentsWithPosition(AbstractMap<Object, VersionedValue> map) {
+        return map.entrySet().stream()
             .map(entry -> new DocumentWithPosition<>((Document) entry.getValue(), entry.getKey()));
     }
 
     @Override
+    protected QueryResult matchDocuments(
+        Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize, Document fieldSelector) {
+        return null;
+    }
+
+    @Override
     protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize,
-                                         Document fieldSelector) {
+                                         Document fieldSelector, MongoSession mongoSession) {
         final Stream<Document> documentStream;
         if (isNaturalDescending(orderBy)) {
-            documentStream = streamAllDocumentsWithPosition()
+            documentStream = streamAllDocumentsWithPosition(mongoSession)
                 .sorted((o1, o2) -> ValueComparator.desc().compare(o1.getPosition(), o2.getPosition()))
                 .map(DocumentWithPosition::getDocument);
         } else {
             documentStream = dataMap.values().stream().map(v -> (Document) v);
         }
-        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector, mongoSession);
     }
 
     @Override
@@ -135,7 +161,9 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
             dataMap.put(Missing.ofNullable(position), newDocument);
             return;
         }
-        TransactionMap<Object, Document> txMap = mongoSession.getTransaction().openMap(dataMap);
+        Transaction tx = mongoSession.getTransaction();
+        TransactionMap<Object, Document> txMap = tx.openMap(dataMap);
+        newDocument.setOperationId(tx.getId());
         txMap.put(Missing.ofNullable(position), newDocument);
     }
 

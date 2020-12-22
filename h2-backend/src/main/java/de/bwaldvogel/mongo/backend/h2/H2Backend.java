@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.h2;
 
 import java.time.Clock;
-import java.util.UUID;
 
 import org.h2.mvstore.MVStore;
 import org.h2.mvstore.tx.TransactionStore;
@@ -11,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoBackend;
 import de.bwaldvogel.mongo.backend.Utils;
-import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class H2Backend extends AbstractMongoBackend {

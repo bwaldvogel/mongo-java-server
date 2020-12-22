@@ -45,7 +45,7 @@ public abstract class AbstractTransactionTest extends AbstractTest {
 
     @Test
     public void testTransactionShouldOnlyApplyChangesAfterCommitting() throws InterruptedException {
-        collection.insertOne(json("_id: 1, value: 1"));
+        collection.insertOne(json("_id: 1, value: 100"));
         ClientSession clientSession = syncClient.startSession();
         clientSession.startTransaction();
         collection.updateOne(clientSession, json("_id: 1"), set("value", 2));
@@ -53,7 +53,7 @@ public abstract class AbstractTransactionTest extends AbstractTest {
 
         Document doc = collection.find(json("_id: 1")).first();
         assertThat(doc).isNotNull();
-        assertThat(doc.get("value")).isEqualTo(1);
+        assertThat(doc.get("value")).isEqualTo(100);
 
         try {
             clientSession.commitTransaction();

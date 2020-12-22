@@ -203,4 +203,19 @@ public class Document extends VersionedValue implements Map<String, Object>, Bso
         }
     }
 
+    long operationId = 0L;
+
+    @Override
+    public long getOperationId() {
+        return operationId;
+    }
+
+    @Override
+    public boolean isCommitted() {
+        return false;
+    }
+
+    public void setOperationId(long operationId) {
+        this.operationId = operationId;
+    }
 }

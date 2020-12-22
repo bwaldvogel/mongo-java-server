@@ -568,6 +568,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 case "$db":
                     Assert.equals(value, getDatabaseName());
                     break;
+                case "lsid":
+                    break;
+                case "$readPreference":
+                    break;
                 default:
                     throw new MongoServerException("unknown subcommand: " + subCommand);
             }

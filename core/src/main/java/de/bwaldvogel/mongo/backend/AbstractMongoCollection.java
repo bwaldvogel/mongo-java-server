@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,6 +10,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -72,16 +74,37 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
                                                   int numberToReturn, int batchSize, Document fieldSelector);
 
+    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
+                                         int numberToReturn, int batchSize, Document fieldSelector, MongoSession mongoSession) {
+        if (mongoSession == null) {
+            return matchDocuments(query, orderBy, numberToSkip, numberToReturn, batchSize, fieldSelector);
+        }
+
+        throw new RuntimeException("Not implemented");
+    }
+
     protected QueryResult matchDocumentsFromStream(Stream<Document> documentStream, Document query, Document orderBy,
                                                    int numberToSkip, int limit, int batchSize, Document fieldSelector) {
         Comparator<Document> documentComparator = deriveComparator(orderBy);
-        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector);
+        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector, null);
+    }
+
+    protected QueryResult matchDocumentsFromStream(Stream<Document> documentStream, Document query, Document orderBy,
+                                                   int numberToSkip, int limit, int batchSize, Document fieldSelector,
+                                                   MongoSession mongoSession) {
+        if (mongoSession == null) {
+            return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+        }
+        Comparator<Document> documentComparator = deriveComparator(orderBy);
+        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector,
+            mongoSession);
+
     }
 
     protected QueryResult matchDocumentsFromStream(Document query, Stream<Document> documentStream,
                                                    int numberToSkip, int limit, int batchSize,
                                                    Comparator<Document> documentComparator,
-                                                   Document fieldSelector) {
+                                                   Document fieldSelector, MongoSession mongoSession) {
         documentStream = documentStream
             .filter(document -> documentMatchesQuery(document, query));
 
@@ -112,7 +135,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Stream<Document> documentStream = StreamSupport.stream(positions.spliterator(), false)
             .map(position -> getDocument(position, mongoSession));
 
-        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+        return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector, mongoSession);
     }
 
     protected static boolean isNaturalDescending(Document orderBy) {
@@ -143,7 +166,10 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected Document getDocument(P position, MongoSession mongoSession) {
-        return getDocument(position);
+        if (mongoSession == null) {
+            return getDocument(position);
+        }
+        throw new RuntimeException("Not implemented");
     }
 
     protected abstract Document getDocument(P position);
@@ -403,11 +429,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 Integer matchPos = matcher.matchPosition(document, (Document) queryObject.get("query"));
 
                 ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
-                Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos, mongoSession);
+                Map.Entry<Document, Document> oldAndNewDocs = updateDocument(document, updateQuery, arrayFilters, matchPos, mongoSession);
                 if (returnNew) {
-                    returnDocument = document;
+                    returnDocument = oldAndNewDocs.getValue();
                 } else {
-                    returnDocument = oldDocument;
+                    returnDocument = oldAndNewDocs.getKey();
                 }
                 lastErrorObject = new Document("updatedExisting", Boolean.TRUE);
                 lastErrorObject.put("n", Integer.valueOf(1));
@@ -552,9 +578,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         List<Object> updatedIds = new ArrayList<>();
         for (Document document : queryDocuments(selector, null, 0, 0, 0, null, mongoSession)) {
             Integer matchPos = matcher.matchPosition(document, selector);
-            Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos, mongoSession);
-            if (!Utils.nullAwareEquals(oldDocument, document)) {
-                updatedIds.add(document.get(getIdField()));
+            Map.Entry<Document, Document> oldAndNew = updateDocument(document, updateQuery, arrayFilters, matchPos, mongoSession);
+            Document oldDocument = oldAndNew.getKey();
+            Document newDocument = oldAndNew.getValue();
+            if (!Utils.nullAwareEquals(oldDocument, newDocument)) {
+                updatedIds.add(newDocument.get(getIdField()));
             }
             nMatched++;
 
@@ -579,8 +607,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return result;
     }
 
-    private Document updateDocument(Document document, Document updateQuery,
-                                    ArrayFilters arrayFilters, Integer matchPos, MongoSession mongoSession) {
+    private Map.Entry<Document, Document> updateDocument(Document document, Document updateQuery,
+                                                         ArrayFilters arrayFilters, Integer matchPos, MongoSession mongoSession) {
         Document oldDocument = document.cloneDeeply();
 
         Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, matchPos, false);
@@ -608,16 +636,16 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             }
 
             // update the fields
-            for (String key : newDocument.keySet()) {
-                if (key.contains(".")) {
-                    throw new MongoServerException(
-                        "illegal field name. must not happen as it must be caught by the driver");
-                }
-                document.put(key, newDocument.get(key));
-            }
-            handleUpdate(position, oldDocument, document, mongoSession);
+//            for (String key : newDocument.keySet()) {
+//                if (key.contains(".")) {
+//                    throw new MongoServerException(
+//                        "illegal field name. must not happen as it must be caught by the driver");
+//                }
+//                document.put(key, newDocument.get(key));
+//            }
+            handleUpdate(position, oldDocument, newDocument, mongoSession);
         }
-        return oldDocument;
+        return new AbstractMap.SimpleEntry<>(oldDocument, newDocument);
     }
 
     private P getSinglePosition(Document document) {
@@ -801,6 +829,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract Stream<DocumentWithPosition<P>> streamAllDocumentsWithPosition();
+
+    protected Stream<DocumentWithPosition<P>> streamAllDocumentsWithPosition(MongoSession mongoSession) {
+        if (mongoSession == null) {
+            return streamAllDocumentsWithPosition();
+        }
+        throw new RuntimeException("Not Implemented");
+    }
 
     private boolean isSystemCollection() {
         return AbstractMongoDatabase.isSystemCollection(getCollectionName());
