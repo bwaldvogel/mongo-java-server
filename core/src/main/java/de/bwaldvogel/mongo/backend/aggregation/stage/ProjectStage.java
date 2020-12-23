@@ -2,7 +2,9 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 
 import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.backend.Missing;
@@ -54,7 +56,15 @@ public class ProjectStage implements AggregationStage {
                 } else {
                     Utils.removeSubdocumentValue(result, field);
                 }
-            } else if (projectionValue == null) {
+            }
+            else if (projectionValue instanceof List) {
+                List<Object> resolvedProjectionValues = ((List<Object>) projectionValue)
+                    .stream()
+                    .map(value -> Expression.evaluateDocument(value, document))
+                    .collect(Collectors.toList());
+                result.put(field, resolvedProjectionValues);
+            }
+            else if (projectionValue == null) {
                 result.put(field, null);
             } else {
                 Object value = Expression.evaluateDocument(projectionValue, document);

@@ -4,6 +4,8 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.util.Collections;
+
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -39,6 +41,24 @@ public class ProjectStageTest {
     void testProject_withNestedInclusion() throws Exception {
         assertThat(project(json("_id: 1, x: {a: 1, b: 2, c: 3}"), json("'x.b': 1, 'x.c': 1, 'y': 1, 'x.d': 1")))
             .isEqualTo(json("_id: 1, x: {b: 2, c: 3}"));
+    }
+
+    @Test
+    void testProject_withFieldToBeEvaluated() {
+        Document projection = new Document();
+        projection.put("_id", 1);
+        projection.put("x", new Document("count", "$count"));
+        assertThat(project(json("_id: 1, count: 5"), projection))
+            .isEqualTo(json("_id: 1, x: {count: 5}"));
+    }
+
+    @Test
+    void testProject_withFieldWithinArrayToBeEvaluated() {
+        Document projection = new Document();
+        projection.put("_id", 1);
+        projection.put("x", Collections.singletonList(new Document("count", "$count")));
+        assertThat(project(json("_id: 1, count: 5"), projection))
+            .isEqualTo(json("_id: 1, x: [{count: 5}]"));
     }
 
     private static Document project(Document document, Document projection) {
