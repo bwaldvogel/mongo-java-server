@@ -161,7 +161,6 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
         }
         Transaction tx = mongoSession.getTransaction();
         TransactionMap<Object, Document> txMap = tx.openMap(dataMap);
-        newDocument.setOperationId(tx.getId());
         txMap.put(Missing.ofNullable(position), newDocument);
     }
 

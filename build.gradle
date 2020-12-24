@@ -41,7 +41,7 @@ allprojects {
     }
 
     dependencyLocking {
-//        lockAllConfigurations()
+        lockAllConfigurations()
     }
 
     task resolveAndLockAll {

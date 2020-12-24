@@ -625,7 +625,7 @@ public class Utils {
     }
 
     public static UUID getSessionId(Document document) {
-        if (document.containsKey("lsid")) {
+        if (document != null && document.containsKey("lsid")) {
             return (UUID) ((Document)document.get("lsid")).get("id");
         }
         return null;

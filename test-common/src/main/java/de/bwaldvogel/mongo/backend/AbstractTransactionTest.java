@@ -28,6 +28,7 @@ public abstract class AbstractTransactionTest extends AbstractTest {
             .writeConcern(WriteConcern.MAJORITY)
             .build();
         clientSession.startTransaction(txnOptions);
+        collection.updateOne(clientSession, json("_id: 5"), set("value", 3));
         collection.updateOne(clientSession, json("_id: 5"), set("value", 2));
 
         Document doc = collection.find(json("_id: 5")).first();

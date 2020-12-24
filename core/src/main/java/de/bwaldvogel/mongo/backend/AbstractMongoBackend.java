@@ -372,23 +372,24 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         if (databaseName.equals(ADMIN_DB_NAME)) {
             return handleAdminCommand(command, query);
         }
+        MongoSession mongoSession = MongoSession.NoopSession();
+        if (query != null) {
+            if ((boolean)query.getOrDefault("autocommit", true)) {
+                return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog, null);
+            }
 
-        if ((boolean)query.getOrDefault("autocommit", true)) {
-            return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog, null);
-        }
-
-        UUID sessionId = Utils.getSessionId(query);
-        if (sessionId == null) {
-            throw new RuntimeException("SessionId cannot be null. Make sure you are using a mongo driver version tha support sessions and transactions.");
-        }
-        MongoSession mongoSession;
-        if (sessions.containsKey(sessionId)) {
-            mongoSession = sessions.get(sessionId);
-        } else {
-            Transaction transaction = transactionStore.begin();
-            log.info(String.format("Starting new transaction with id %d: %s", transaction.getId(), transaction.getName()));
-            mongoSession = new MongoSession(sessionId, transactionStore.begin());
-            sessions.put(sessionId, mongoSession);
+            UUID sessionId = Utils.getSessionId(query);
+            if (sessionId == null) {
+                throw new RuntimeException("SessionId cannot be null. Make sure you are using a mongo driver version that support sessions and transactions.");
+            }
+            if (sessions.containsKey(sessionId)) {
+                mongoSession = sessions.get(sessionId);
+            } else {
+                Transaction transaction = transactionStore.begin();
+                log.info(String.format("Starting new transaction with id %d: %s", transaction.getId(), transaction.getName()));
+                mongoSession = new MongoSession(sessionId, transactionStore.begin());
+                sessions.put(sessionId, mongoSession);
+            }
         }
         return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog, mongoSession);
     }

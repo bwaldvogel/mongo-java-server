@@ -41,4 +41,8 @@ public class MongoSession {
         }
     }
 
+    public static MongoSession NoopSession() {
+        return new MongoSession();
+    }
+
 }

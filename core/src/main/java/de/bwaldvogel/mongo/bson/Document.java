@@ -13,7 +13,7 @@ import de.bwaldvogel.mongo.backend.Missing;
 
 import org.h2.value.VersionedValue;
 
-public class Document extends VersionedValue implements Map<String, Object>, Bson {
+public final class Document extends VersionedValue implements Map<String, Object>, Bson {
 
     private static final long serialVersionUID = 1L;
 
@@ -203,24 +203,4 @@ public class Document extends VersionedValue implements Map<String, Object>, Bso
         }
     }
 
-    long operationId = 0L;
-    boolean isCommitted = false;
-
-    @Override
-    public long getOperationId() {
-        return operationId;
-    }
-
-    @Override
-    public boolean isCommitted() {
-        return isCommitted;
-    }
-
-    public void setOperationId(long operationId) {
-        this.operationId = operationId;
-    }
-
-    public void setCommitted(boolean isCommitted) {
-        this.isCommitted = isCommitted;
-    }
 }
