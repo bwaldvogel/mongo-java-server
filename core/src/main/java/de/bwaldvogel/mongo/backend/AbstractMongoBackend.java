@@ -216,14 +216,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     private void handleEndSessions(Document query) {
-        log.debug("endSessions on admin database");
+        log.debug("endSessions");
         ArrayList<Document> endingSessions = (ArrayList<Document>)query.get("endSessions");
         endingSessions.stream().map(s -> s.get("id"))
             .filter(sessions::containsKey)
-            .forEach(sid -> {
-//                sessions.get(sid).commit();
-                sessions.remove(sid);
-            });
+            .forEach(sessions::remove);
     }
 
     private static Document successResponse() {
@@ -317,7 +314,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
 
     // handle command synchronously
-    protected Document handleCommandSync(Channel channel, String databaseName, String command, Document query) {
+    private Document handleCommandSync(Channel channel, String databaseName, String command, Document query) {
         if (command.equalsIgnoreCase("whatsmyuri")) {
             Document response = new Document();
             InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();

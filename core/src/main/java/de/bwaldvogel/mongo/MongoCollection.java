@@ -6,8 +6,6 @@ import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.gson.Gson;
-
 import de.bwaldvogel.mongo.backend.ArrayFilters;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.MongoSession;

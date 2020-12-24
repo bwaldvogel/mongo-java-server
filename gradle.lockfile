@@ -1,7 +1,6 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.google.code.gson:gson:2.8.6=default,runtimeClasspath,testRuntimeClasspath
 com.h2database:h2:1.4.200=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.netty:netty-buffer:4.1.56.Final=default,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-codec:4.1.56.Final=default,runtimeClasspath,testRuntimeClasspath

@@ -3,7 +3,6 @@
 # This file is expected to be part of source control.
 ch.qos.logback:logback-classic:1.2.3=testRuntimeClasspath
 ch.qos.logback:logback-core:1.2.3=testRuntimeClasspath
-com.google.code.gson:gson:2.8.6=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.h2database:h2:1.4.200=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.netty:netty-buffer:4.1.56.Final=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.netty:netty-codec:4.1.56.Final=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
