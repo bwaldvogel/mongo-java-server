@@ -1,13 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.UUID;
-
 import org.h2.mvstore.tx.Transaction;
 
 public class MongoSession {
     public final UUID id;
     private Transaction tx;
-    private boolean autocommit = false;
 
     public MongoSession(UUID id, Transaction tx) {
         this.id = id;
@@ -34,13 +32,13 @@ public class MongoSession {
     }
 
     public void commit() {
-        if (tx != null) {
-            tx.commit();
+        try {
+            if (tx != null) {
+                tx.commit();
+            }
+        } catch (Exception ex) {
+            tx.rollback();
         }
-    }
-
-    private boolean getAutocommit() {
-        return autocommit;
     }
 
 }

@@ -19,8 +19,8 @@ public abstract class AbstractTransactionTest extends AbstractTest {
     private static final Logger log = LoggerFactory.getLogger(AbstractTransactionTest.class);
 
     @Test
-    public void testSimpleTransaction() {
-        collection.insertOne(json("_id: 100, value: 1"));
+    public void testTransactionUpdate() {
+        collection.insertOne(json("_id: 5, value: 100"));
         ClientSession clientSession = syncClient.startSession();
         TransactionOptions txnOptions = TransactionOptions.builder()
             .readPreference(ReadPreference.primary())
@@ -28,44 +28,22 @@ public abstract class AbstractTransactionTest extends AbstractTest {
             .writeConcern(WriteConcern.MAJORITY)
             .build();
         clientSession.startTransaction(txnOptions);
-        collection.insertOne(clientSession, json("_id: 1, name: \"testDoc\""));
+        collection.updateOne(clientSession, json("_id: 5"), set("value", 2));
 
-        try {
-            clientSession.commitTransaction();
-        } catch (RuntimeException e) {
-            log.error(e.getMessage());
-            // some error handling
-        } finally {
-            clientSession.close();
-        }
-        Document doc = collection.find(json("_id: 1")).first();
-        assertThat(doc).isNotNull();
-        assertThat(doc.get("name")).isEqualTo("testDoc");
-    }
-
-    @Test
-    public void testTransactionShouldOnlyApplyChangesAfterCommitting() throws InterruptedException {
-        collection.insertOne(json("_id: 1, value: 100"));
-        ClientSession clientSession = syncClient.startSession();
-        clientSession.startTransaction();
-        collection.updateOne(clientSession, json("_id: 1"), set("value", 2));
-
-        Document doc = collection.find(json("_id: 1")).first();
+        Document doc = collection.find(json("_id: 5")).first();
         assertThat(doc).isNotNull();
         assertThat(doc.get("value")).isEqualTo(100);
 
         try {
             clientSession.commitTransaction();
         } catch (RuntimeException e) {
-            System.out.println(e.getMessage());
+            log.error(e.getMessage());
         } finally {
             clientSession.close();
         }
 
-        doc = collection.find(json("_id: 1")).first();
+        doc = collection.find(json("_id: 5")).first();
         assertThat(doc).isNotNull();
         assertThat(doc.get("value")).isEqualTo(2);
-        Thread.yield();
     }
-
 }

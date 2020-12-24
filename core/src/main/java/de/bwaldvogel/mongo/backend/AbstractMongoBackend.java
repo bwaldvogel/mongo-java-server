@@ -18,6 +18,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.h2.mvstore.tx.Transaction;
 import org.h2.mvstore.tx.TransactionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -207,11 +208,22 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("ping")) {
             return successResponse();
         } else if (command.equalsIgnoreCase("endSessions")) {
-            log.debug("endSessions on admin database");
+            handleEndSessions(query);
             return successResponse();
         } else {
             throw new NoSuchCommandException(command);
         }
+    }
+
+    private void handleEndSessions(Document query) {
+        log.debug("endSessions on admin database");
+        ArrayList<Document> endingSessions = (ArrayList<Document>)query.get("endSessions");
+        endingSessions.stream().map(s -> s.get("id"))
+            .filter(sessions::containsKey)
+            .forEach(sid -> {
+//                sessions.get(sid).commit();
+                sessions.remove(sid);
+            });
     }
 
     private static Document successResponse() {
@@ -341,13 +353,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("killCursors")) {
             return handleKillCursors(query);
         } else if (command.equalsIgnoreCase("commitTransaction")) {
-            try {
-                UUID sessionId = Utils.getSessionId(query);
-                return new Document("lsid", sessionId);
-            } finally {
-                // Releasing the lock as the transaction completes
-//                transactionLatch.countDown();
-            }
+            UUID sessionId = Utils.getSessionId(query);
+            sessions.get(sessionId).commit();
+            Document response = new Document("lsid", sessionId);
+            Utils.markOkay(response);
+            return response;
         }
         return null;
     }
@@ -375,6 +385,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         if (sessions.containsKey(sessionId)) {
             mongoSession = sessions.get(sessionId);
         } else {
+            Transaction transaction = transactionStore.begin();
+            log.info(String.format("Starting new transaction with id %d: %s", transaction.getId(), transaction.getName()));
             mongoSession = new MongoSession(sessionId, transactionStore.begin());
             sessions.put(sessionId, mongoSession);
         }

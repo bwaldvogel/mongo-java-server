@@ -204,6 +204,7 @@ public class Document extends VersionedValue implements Map<String, Object>, Bso
     }
 
     long operationId = 0L;
+    boolean isCommitted = false;
 
     @Override
     public long getOperationId() {
@@ -212,10 +213,14 @@ public class Document extends VersionedValue implements Map<String, Object>, Bso
 
     @Override
     public boolean isCommitted() {
-        return false;
+        return isCommitted;
     }
 
     public void setOperationId(long operationId) {
         this.operationId = operationId;
+    }
+
+    public void setCommitted(boolean isCommitted) {
+        this.isCommitted = isCommitted;
     }
 }

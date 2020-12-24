@@ -42,7 +42,7 @@ public abstract class AbstractTest {
     static com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection;
 
     private static MongoServer mongoServer;
-    private static MongoClient asyncClient;
+    protected static MongoClient asyncClient;
     protected static InetSocketAddress serverAddress;
     protected static MongoBackend backend;
 
