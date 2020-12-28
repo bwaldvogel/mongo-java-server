@@ -1,4 +1,4 @@
-![CI](https://github.com/bwaldvogel/mongo-java-server/workflows/CI/badge.svg)
+[![CI](https://github.com/bwaldvogel/mongo-java-server/workflows/CI/badge.svg)](https://github.com/cronn/reflection-util/actions)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/de.bwaldvogel/mongo-java-server/badge.svg)](http://maven-badges.herokuapp.com/maven-central/de.bwaldvogel/mongo-java-server)
 [![Coverage Status](https://coveralls.io/repos/github/bwaldvogel/mongo-java-server/badge.svg?branch=master)](https://coveralls.io/github/bwaldvogel/mongo-java-server?branch=master)
 [![BSD 3-Clause License](https://img.shields.io/github/license/bwaldvogel/mongo-java-server.svg)](https://opensource.org/licenses/BSD-3-Clause)
