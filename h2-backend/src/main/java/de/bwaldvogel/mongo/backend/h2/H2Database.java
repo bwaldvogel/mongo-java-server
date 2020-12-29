@@ -82,7 +82,7 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
         String fullCollectionName = getFullCollectionNamespace(collectionName);
         MVMap<Object, VersionedValue> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
-        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry, transactionStore);
+        return new H2Collection(this, collectionName, options, dataMap, metaMap, cursorRegistry);
     }
 
     @Override

@@ -34,7 +34,6 @@ import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
@@ -72,21 +71,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                                  int numberToReturn, int batchSize, Document fieldSelector);
-
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                         int numberToReturn, int batchSize, Document fieldSelector, MongoSession mongoSession) {
-        if (mongoSession == null) {
-            return matchDocuments(query, orderBy, numberToSkip, numberToReturn, batchSize, fieldSelector);
-        }
-
-        throw new RuntimeException("Not implemented");
-    }
+                                                  int numberToReturn, int batchSize, Document fieldSelector,
+                                                  MongoSession mongoSession);
 
     protected QueryResult matchDocumentsFromStream(Stream<Document> documentStream, Document query, Document orderBy,
                                                    int numberToSkip, int limit, int batchSize, Document fieldSelector) {
         Comparator<Document> documentComparator = deriveComparator(orderBy);
-        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector, null);
+        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector);
     }
 
     protected QueryResult matchDocumentsFromStream(Stream<Document> documentStream, Document query, Document orderBy,
@@ -96,15 +87,15 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
         }
         Comparator<Document> documentComparator = deriveComparator(orderBy);
-        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector,
-            mongoSession);
+        return matchDocumentsFromStream(query, documentStream, numberToSkip, limit, batchSize, documentComparator, fieldSelector
+        );
 
     }
 
     protected QueryResult matchDocumentsFromStream(Document query, Stream<Document> documentStream,
                                                    int numberToSkip, int limit, int batchSize,
                                                    Comparator<Document> documentComparator,
-                                                   Document fieldSelector, MongoSession mongoSession) {
+                                                   Document fieldSelector) {
         documentStream = documentStream
             .filter(document -> documentMatchesQuery(document, query));
 

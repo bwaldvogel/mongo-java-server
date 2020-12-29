@@ -47,7 +47,8 @@ public class AbstractMongoCollectionTest {
 
         @Override
         protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                             int numberToReturn, int batchSize, Document fieldSelector) {
+                                             int numberToReturn, int batchSize, Document fieldSelector,
+                                             MongoSession mongoSession) {
             throw new UnsupportedOperationException();
         }
 

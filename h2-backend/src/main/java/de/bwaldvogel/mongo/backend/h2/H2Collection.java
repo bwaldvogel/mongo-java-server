@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 import org.h2.mvstore.MVMap;
 import org.h2.mvstore.tx.Transaction;
 import org.h2.mvstore.tx.TransactionMap;
-import org.h2.mvstore.tx.TransactionStore;
 import org.h2.value.VersionedValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +24,6 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
@@ -33,18 +31,16 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     private final MVMap<Object, VersionedValue> dataMap;
     private final MVMap<String, Object> metaMap;
-    private TransactionStore transactionStore;
 
     private static final String DATA_SIZE_KEY = "dataSize";
 
     public H2Collection(MongoDatabase database, String collectionName, CollectionOptions options,
-                        MVMap<Object, VersionedValue> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry, TransactionStore transactionStore) {
+                        MVMap<Object, VersionedValue> dataMap, MVMap<String, Object> metaMap, CursorRegistry cursorRegistry) {
         super(database, collectionName, options, cursorRegistry);
         this.dataMap = dataMap;
         this.metaMap = metaMap;
-        this.transactionStore = transactionStore;
         if (!this.metaMap.containsKey(DATA_SIZE_KEY)) {
-            this.metaMap.put(DATA_SIZE_KEY, Long.valueOf(0));
+            this.metaMap.put(DATA_SIZE_KEY, 0L);
         } else {
             log.debug("dataSize of {}: {}", getFullName(), getDataSize());
         }
@@ -54,7 +50,7 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
     protected void updateDataSize(int sizeDelta) {
         synchronized (metaMap) {
             Number value = (Number) metaMap.get(DATA_SIZE_KEY);
-            Long newValue = Long.valueOf(value.longValue() + sizeDelta);
+            Long newValue = value.longValue() + sizeDelta;
             metaMap.put(DATA_SIZE_KEY, newValue);
         }
     }
@@ -80,7 +76,18 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
 
     @Override
     protected void handleUpdate(Object position, Document oldDocument, Document newDocument) {
-        handleUpdate(position, oldDocument, newDocument, null);
+        dataMap.put(Missing.ofNullable(position), newDocument);
+    }
+
+    @Override
+    protected void handleUpdate(Object position, Document oldDocument, Document newDocument, MongoSession mongoSession) {
+        if (mongoSession == null) {
+            handleUpdate(position, oldDocument, newDocument);
+            return;
+        }
+        Transaction tx = mongoSession.getTransaction();
+        TransactionMap<Object, Document> txMap = tx.openMap(dataMap);
+        txMap.put(Missing.ofNullable(position), newDocument);
     }
 
     @Override
@@ -134,12 +141,6 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
     }
 
     @Override
-    protected QueryResult matchDocuments(
-        Document query, Document orderBy, int numberToSkip, int numberToReturn, int batchSize, Document fieldSelector) {
-        return null;
-    }
-
-    @Override
     protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize,
                                          Document fieldSelector, MongoSession mongoSession) {
         final Stream<Document> documentStream;
@@ -151,17 +152,6 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
             documentStream = dataMap.values().stream().map(v -> (Document) v);
         }
         return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector, mongoSession);
-    }
-
-    @Override
-    protected void handleUpdate(Object position, Document oldDocument, Document newDocument, MongoSession mongoSession) {
-        if (mongoSession == null) {
-            dataMap.put(Missing.ofNullable(position), newDocument);
-            return;
-        }
-        Transaction tx = mongoSession.getTransaction();
-        TransactionMap<Object, Document> txMap = tx.openMap(dataMap);
-        txMap.put(Missing.ofNullable(position), newDocument);
     }
 
 }

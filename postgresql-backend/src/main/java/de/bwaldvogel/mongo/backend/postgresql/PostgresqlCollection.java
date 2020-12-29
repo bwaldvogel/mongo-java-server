@@ -23,7 +23,6 @@ import de.bwaldvogel.mongo.backend.MongoSession;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.DuplicateKeyError;
-import de.bwaldvogel.mongo.exception.InvalidOptionsException;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
 public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Long> {
@@ -59,7 +58,7 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     @Override
     protected QueryResult matchDocuments(Document query, Document orderBy,
                                          int numberToSkip, int numberToReturn, int batchSize,
-                                         Document fieldSelector) {
+                                         Document fieldSelector, MongoSession mongoSession) {
         String sql = "SELECT data FROM " + getQualifiedTablename() + " " + convertOrderByToSql(orderBy);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql);
@@ -84,7 +83,7 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
                 }
             }, false);
 
-            return matchDocumentsFromStream(query, documents, numberToSkip, numberToReturn, batchSize, null, fieldSelector, null);
+            return matchDocumentsFromStream(query, documents, numberToSkip, numberToReturn, batchSize, null, fieldSelector);
         } catch (SQLException e) {
             throw new MongoServerException("Failed to query " + this, e);
         }
