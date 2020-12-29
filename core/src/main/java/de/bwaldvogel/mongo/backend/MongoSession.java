@@ -3,7 +3,7 @@ package de.bwaldvogel.mongo.backend;
 import java.util.UUID;
 import org.h2.mvstore.tx.Transaction;
 
-public class MongoSession {
+public class MongoSession implements Cloneable {
     public final UUID id;
     private Transaction tx;
 
@@ -41,8 +41,13 @@ public class MongoSession {
         }
     }
 
+    public MongoSession clone() {
+        return new MongoSession(id, tx);
+    }
+
     public static MongoSession NoopSession() {
         return new MongoSession();
     }
+
 
 }
