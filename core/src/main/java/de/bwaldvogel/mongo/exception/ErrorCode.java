@@ -15,9 +15,16 @@ public enum ErrorCode {
     InvalidOptions(72),
     IndexOptionsConflict(85),
     CannotIndexParallelArrays(171),
+    ConversionFailure(241),
     DuplicateKey(11000);
 
     private final int id;
-    ErrorCode(int id) { this.id = id; }
-    public int getValue() { return id; }
+
+    ErrorCode(int id) {
+        this.id = id;
+    }
+
+    public int getValue() {
+        return id;
+    }
 }

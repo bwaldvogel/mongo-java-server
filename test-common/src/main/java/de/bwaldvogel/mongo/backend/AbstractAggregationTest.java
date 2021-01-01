@@ -6,7 +6,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -1999,8 +1999,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
 
-        List<Document> redactedDocuments = collection.aggregate(pipeline).into(new ArrayList<>());
-        assertThat(redactedDocuments)
+        assertThat(collection.aggregate(pipeline))
             .containsOnly(json("_id: 1"));
     }
 
@@ -2012,6 +2011,45 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
             .withMessageContaining("Command failed with error -1: '$geoNear is not yet implemented. See https://github.com/bwaldvogel/mongo-java-server/issues/138'");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/172
+    @Test
+    void testAggregateWithToDouble() throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toDouble: '$x'}}");
+
+        collection.insertOne(json("_id: 1, x: '12'"));
+        collection.insertOne(json("_id: 2, x: '7.5'"));
+        collection.insertOne(json("_id: 3, x: 9"));
+        collection.insertOne(json("_id: 4, x: false"));
+        collection.insertOne(json("_id: 5, x: true"));
+        collection.insertOne(json("_id: 6").append("x", Instant.ofEpochMilli(1234567890L)));
+        collection.insertOne(json("_id: 7"));
+        collection.insertOne(json("_id: 8, x: null"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(
+                json("_id: 1, value: 12.0"),
+                json("_id: 2, value: 7.5"),
+                json("_id: 3, value: 9.0"),
+                json("_id: 4, value: 0.0"),
+                json("_id: 5, value: 1.0"),
+                json("_id: 6, value: 1234567890.0"),
+                json("_id: 7, value: null"),
+                json("_id: 8, value: null")
+            );
+    }
+
+    @Test
+    void testAggregateWithConvertToDouble_illegalValue() throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toDouble: '$x'}}");
+
+        collection.insertOne(json("_id: 1, x: 'abc'"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
+                "'Failed to parse number 'abc' in $convert with no onError value: Did not consume whole number.'");
     }
 
     private static Function<Document, Document> withSortedStringList(String key) {
