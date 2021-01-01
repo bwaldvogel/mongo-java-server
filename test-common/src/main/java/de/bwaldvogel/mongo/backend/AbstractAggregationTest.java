@@ -2052,6 +2052,76 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "'Failed to parse number 'abc' in $convert with no onError value: Did not consume whole number.'");
     }
 
+    @Test
+    void testAggregateWithToInt() throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toInt: '$x'}}");
+
+        collection.insertOne(json("_id: 1, x: '12'"));
+        collection.insertOne(json("_id: 2, x: 9"));
+        collection.insertOne(json("_id: 3, x: false"));
+        collection.insertOne(json("_id: 4, x: true"));
+        collection.insertOne(json("_id: 5"));
+        collection.insertOne(json("_id: 6, x: null"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(
+                json("_id: 1, value: 12"),
+                json("_id: 2, value: 9"),
+                json("_id: 3, value: 0"),
+                json("_id: 4, value: 1"),
+                json("_id: 5, value: null"),
+                json("_id: 6, value: null")
+            );
+    }
+
+    @Test
+    void testAggregateWithConvertToInt_illegalValue() throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toInt: '$x'}}");
+
+        collection.insertOne(json("_id: 1, x: 'abc'"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
+                "'Failed to parse number 'abc' in $convert with no onError value");
+    }
+
+    @Test
+    void testAggregateWithToLong() throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toLong: '$x'}}");
+
+        collection.insertOne(json("_id: 1, x: '12'"));
+        collection.insertOne(json("_id: 2, x: 9"));
+        collection.insertOne(json("_id: 3, x: false"));
+        collection.insertOne(json("_id: 4, x: true"));
+        collection.insertOne(json("_id: 5"));
+        collection.insertOne(json("_id: 6, x: null"));
+        collection.insertOne(json("_id: 7").append("x", Instant.ofEpochMilli(123456789L)));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(
+                json("_id: 1").append("value", 12L),
+                json("_id: 2").append("value", 9L),
+                json("_id: 3").append("value", 0L),
+                json("_id: 4").append("value", 1L),
+                json("_id: 5").append("value", null),
+                json("_id: 6").append("value", null),
+                json("_id: 7").append("value", 123456789L)
+            );
+    }
+
+    @Test
+    void testAggregateWithConvertToLong_illegalValue() throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toLong: '$x'}}");
+
+        collection.insertOne(json("_id: 1, x: 'abc'"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
+                "'Failed to parse number 'abc' in $convert with no onError value");
+    }
+
     private static Function<Document, Document> withSortedStringList(String key) {
         return document -> {
             @SuppressWarnings("unchecked")
