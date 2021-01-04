@@ -209,7 +209,15 @@ class FieldUpdates {
             newValue.sort(comparator);
         }
         if (slice != null) {
-            newValue = newValue.subList(0, Math.min(slice.intValue(), newValue.size()));
+            int sliceValue = slice.intValue();
+            if (sliceValue < 0) {
+                int fromIndex = Math.max(0, newValue.size() + sliceValue);
+                newValue = newValue.subList(fromIndex, newValue.size());
+            } else {
+                int toIndex = Math.min(sliceValue, newValue.size());
+                newValue = newValue.subList(0, toIndex);
+            }
+            newValue = new ArrayList<>(newValue);
         }
         changeSubdocumentValue(document, key, newValue);
     }

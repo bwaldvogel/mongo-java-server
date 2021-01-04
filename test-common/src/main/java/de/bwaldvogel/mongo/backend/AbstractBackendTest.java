@@ -2556,6 +2556,27 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(json("_id: 1, value: ['a', 'b', 'c', 1]"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/166
+    @Test
+    public void testUpdatePushWithNegativeAndZeroSlice() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: ['a', 'b', 'c'], $slice: -2}}"));
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 1, value: ['b', 'c']"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: [1, 2], $slice: -5}}"));
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 1, value: ['b', 'c', 1, 2]"));
+
+        collection.updateOne(json(""), json("$push: {value: {$each: ['x', 'y', 'z'], $slice: 0}}"));
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 1, value: []"));
+    }
+
     @Test
     public void testUpdatePushSort() throws Exception {
         collection.insertOne(json("_id: 1"));

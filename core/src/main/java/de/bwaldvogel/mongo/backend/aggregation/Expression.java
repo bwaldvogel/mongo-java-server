@@ -37,6 +37,7 @@ import de.bwaldvogel.mongo.backend.NumericUtils;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
@@ -1378,6 +1379,85 @@ public enum Expression implements ExpressionTraits {
             }
             int endIndex = Math.min(value.length(), startIndex + length);
             return value.substring(startIndex, endIndex);
+        }
+    },
+
+    $toDouble {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            if (Missing.isNullOrMissing(value)) {
+                return null;
+            } else if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.doubleValue();
+            } else if (value instanceof Boolean) {
+                Boolean booleanValue = (Boolean) value;
+                return booleanValue.booleanValue() ? 1.0 : 0.0;
+            } else if (value instanceof Instant) {
+                Instant instant = (Instant) value;
+                return (double) instant.toEpochMilli();
+            } else {
+                try {
+                    String string = convertToString(value);
+                    return Double.valueOf(string);
+                } catch (NumberFormatException e) {
+                    throw new MongoServerError(ErrorCode.ConversionFailure,
+                        "Failed to parse number '" + value + "' in $convert with no onError value:" +
+                            " Did not consume whole number.");
+                }
+            }
+        }
+    },
+
+    $toInt {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            if (Missing.isNullOrMissing(value)) {
+                return null;
+            } else if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.intValue();
+            } else if (value instanceof Boolean) {
+                Boolean booleanValue = (Boolean) value;
+                return booleanValue.booleanValue() ? 1 : 0;
+            } else {
+                try {
+                    String string = convertToString(value);
+                    return Integer.valueOf(string);
+                } catch (NumberFormatException e) {
+                    throw new MongoServerError(ErrorCode.ConversionFailure,
+                        "Failed to parse number '" + value + "' in $convert with no onError value.");
+                }
+            }
+        }
+    },
+
+    $toLong {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            if (Missing.isNullOrMissing(value)) {
+                return null;
+            } else if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.longValue();
+            } else if (value instanceof Boolean) {
+                Boolean booleanValue = (Boolean) value;
+                return booleanValue.booleanValue() ? 1L : 0L;
+            } else if (value instanceof Instant) {
+                Instant instant = (Instant) value;
+                return instant.toEpochMilli();
+            } else {
+                try {
+                    String string = convertToString(value);
+                    return Long.valueOf(string);
+                } catch (NumberFormatException e) {
+                    throw new MongoServerError(ErrorCode.ConversionFailure,
+                        "Failed to parse number '" + value + "' in $convert with no onError value.");
+                }
+            }
         }
     },
 
