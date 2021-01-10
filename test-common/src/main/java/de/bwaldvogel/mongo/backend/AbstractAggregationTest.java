@@ -2107,6 +2107,54 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    void testAggregateWithToBool() throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toBool: '$x'}}");
+
+        collection.insertOne(json("_id: 1, x: 'abc'"));
+        collection.insertOne(json("_id: 2, x: 9"));
+        collection.insertOne(json("_id: 3, x: 0"));
+        collection.insertOne(json("_id: 4, x: -1"));
+        collection.insertOne(json("_id: 5").append("x", 0L));
+        collection.insertOne(json("_id: 6").append("x", 1L));
+        collection.insertOne(json("_id: 7").append("x", 2L));
+        collection.insertOne(json("_id: 8").append("x", -1L));
+        collection.insertOne(json("_id: 9, x: false"));
+        collection.insertOne(json("_id: 10, x: true"));
+        collection.insertOne(json("_id: 11"));
+        collection.insertOne(json("_id: 12, x: null"));
+        collection.insertOne(json("_id: 13, x: 0.5"));
+        collection.insertOne(json("_id: 14, x: 0.0"));
+        collection.insertOne(json("_id: 15, x: 2.0"));
+        collection.insertOne(json("_id: 16").append("x", new ObjectId()));
+        collection.insertOne(json("_id: 17").append("x", Instant.ofEpochMilli(123456L)));
+        collection.insertOne(json("_id: 18, x: [false, true]"));
+        collection.insertOne(json("_id: 19, x: []"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(
+                json("_id: 1, value: true"),
+                json("_id: 2, value: true"),
+                json("_id: 3, value: false"),
+                json("_id: 4, value: true"),
+                json("_id: 5, value: false"),
+                json("_id: 6, value: true"),
+                json("_id: 7, value: true"),
+                json("_id: 8, value: true"),
+                json("_id: 9, value: false"),
+                json("_id: 10, value: true"),
+                json("_id: 11, value: null"),
+                json("_id: 12, value: null"),
+                json("_id: 13, value: true"),
+                json("_id: 14, value: false"),
+                json("_id: 15, value: true"),
+                json("_id: 16, value: true"),
+                json("_id: 17, value: true"),
+                json("_id: 18, value: true"),
+                json("_id: 19, value: true")
+            );
+    }
+
+    @Test
     void testAggregateWithToLong() throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toLong: '$x'}}");
 
