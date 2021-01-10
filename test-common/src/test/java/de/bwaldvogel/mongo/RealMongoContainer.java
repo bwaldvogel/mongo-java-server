@@ -8,7 +8,7 @@ public final class RealMongoContainer {
     }
 
     public static GenericContainer<?> start() {
-        GenericContainer<?> mongoContainer = new GenericContainer<>("mongo:4.2.8").withExposedPorts(27017);
+        GenericContainer<?> mongoContainer = new GenericContainer<>("mongo:4.2.11").withExposedPorts(27017);
         mongoContainer.start();
         return mongoContainer;
     }
