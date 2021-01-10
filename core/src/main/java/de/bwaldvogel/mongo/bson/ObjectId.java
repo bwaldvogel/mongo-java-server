@@ -4,12 +4,15 @@ import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.backend.Assert;
 
 public class ObjectId implements Bson, Comparable<ObjectId> {
 
     private static final long serialVersionUID = 1L;
+
+    private static final Pattern PATTERN = Pattern.compile("^[a-f0-9]{24}$");
 
     private final byte[] data = new byte[LENGTH_OBJECTID];
 
@@ -20,6 +23,9 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
     }
 
     public ObjectId(String hexString) {
+        if (!PATTERN.matcher(hexString).matches()) {
+            throw new IllegalArgumentException("Failed to parse '" + hexString + "'");
+        }
         int len = hexString.length();
         Assert.equals(hexString.length(), data.length * 2L);
         for (int i = 0; i < len; i += 2) {

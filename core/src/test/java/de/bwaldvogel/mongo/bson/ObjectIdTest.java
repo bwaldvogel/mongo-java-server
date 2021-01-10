@@ -1,8 +1,11 @@
 package de.bwaldvogel.mongo.bson;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.bwaldvogel.mongo.wire.BsonConstants;
 
@@ -31,6 +34,33 @@ public class ObjectIdTest {
         ObjectId objectId = new ObjectId();
         ObjectId clone = new ObjectId(objectId.getHexData());
         assertThat(clone).isEqualTo(objectId);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "abcdefabcdefabcdefabcdef",
+        "abcdef123456789abcdef000",
+        "deadbeefcafebabedeadbeef",
+    })
+    void testFromValidHexString(String hexString) throws Exception {
+        ObjectId objectId = new ObjectId(hexString);
+        assertThat(objectId.getHexData()).isEqualTo(hexString);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "",
+        " ",
+        "abcdefghijklmn",
+        "ABCDEFABCDEFABCDEFABCDEF",
+        "                        ",
+        "abcdefabcdefabcdefabcde",
+        "abcdefabcdefabcdefabcdeff"
+    })
+    void testFromIllegalHexString(String hexString) throws Exception {
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> new ObjectId(hexString))
+            .withMessage("Failed to parse '" + hexString + "'");
     }
 
 }

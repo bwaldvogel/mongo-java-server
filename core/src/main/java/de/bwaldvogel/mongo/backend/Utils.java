@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.DollarPrefixedFieldNameException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -477,7 +478,7 @@ public class Utils {
         }
     }
 
-    private static String describeType(Class<?> type) {
+    public static String describeType(Class<?> type) {
         if (Missing.class.isAssignableFrom(type)) {
             return "missing";
         } else if (Document.class.isAssignableFrom(type)) {
@@ -492,6 +493,8 @@ public class Utils {
             return "long";
         } else if (Double.class.isAssignableFrom(type)) {
             return "double";
+        } else if (ObjectId.class.isAssignableFrom(type)) {
+            return "objectId";
         } else {
             return type.getName();
         }

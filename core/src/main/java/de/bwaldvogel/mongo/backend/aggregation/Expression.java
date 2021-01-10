@@ -37,9 +37,11 @@ import de.bwaldvogel.mongo.backend.NumericUtils;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
+import de.bwaldvogel.mongo.exception.UnsupportedConversionError;
 
 public enum Expression implements ExpressionTraits {
 
@@ -1384,7 +1386,7 @@ public enum Expression implements ExpressionTraits {
 
     $toDouble {
         @Override
-        Object apply(List<?> expressionValue, Document document) {
+        Double apply(List<?> expressionValue, Document document) {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
@@ -1397,22 +1399,24 @@ public enum Expression implements ExpressionTraits {
             } else if (value instanceof Instant) {
                 Instant instant = (Instant) value;
                 return (double) instant.toEpochMilli();
-            } else {
+            } else if (value instanceof String) {
+                String string = (String) value;
                 try {
-                    String string = convertToString(value);
                     return Double.valueOf(string);
                 } catch (NumberFormatException e) {
                     throw new MongoServerError(ErrorCode.ConversionFailure,
                         "Failed to parse number '" + value + "' in $convert with no onError value:" +
                             " Did not consume whole number.");
                 }
+            } else {
+                throw new UnsupportedConversionError(value, Double.class);
             }
         }
     },
 
     $toInt {
         @Override
-        Object apply(List<?> expressionValue, Document document) {
+        Integer apply(List<?> expressionValue, Document document) {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
@@ -1422,21 +1426,23 @@ public enum Expression implements ExpressionTraits {
             } else if (value instanceof Boolean) {
                 Boolean booleanValue = (Boolean) value;
                 return booleanValue.booleanValue() ? 1 : 0;
-            } else {
+            } else if (value instanceof String) {
+                String string = (String) value;
                 try {
-                    String string = convertToString(value);
                     return Integer.valueOf(string);
                 } catch (NumberFormatException e) {
                     throw new MongoServerError(ErrorCode.ConversionFailure,
                         "Failed to parse number '" + value + "' in $convert with no onError value.");
                 }
+            } else {
+                throw new UnsupportedConversionError(value, Integer.class);
             }
         }
     },
 
     $toLong {
         @Override
-        Object apply(List<?> expressionValue, Document document) {
+        Long apply(List<?> expressionValue, Document document) {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
@@ -1449,14 +1455,16 @@ public enum Expression implements ExpressionTraits {
             } else if (value instanceof Instant) {
                 Instant instant = (Instant) value;
                 return instant.toEpochMilli();
-            } else {
+            } else if (value instanceof String) {
+                String string = (String) value;
                 try {
-                    String string = convertToString(value);
                     return Long.valueOf(string);
                 } catch (NumberFormatException e) {
                     throw new MongoServerError(ErrorCode.ConversionFailure,
                         "Failed to parse number '" + value + "' in $convert with no onError value.");
                 }
+            } else {
+                throw new UnsupportedConversionError(value, Long.class);
             }
         }
     },
@@ -1465,6 +1473,26 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             return evaluateString(expressionValue, String::toLowerCase);
+        }
+    },
+
+    $toObjectId {
+        @Override
+        ObjectId apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            if (Missing.isNullOrMissing(value)) {
+                return null;
+            } else if (value instanceof String) {
+                String string = (String) value;
+                try {
+                    return new ObjectId(string);
+                } catch (RuntimeException e) {
+                    throw new MongoServerError(ErrorCode.ConversionFailure,
+                        "Failed to parse objectId '" + value + "' in $convert with no onError value.");
+                }
+            } else {
+                throw new UnsupportedConversionError(value, ObjectId.class);
+            }
         }
     },
 
