@@ -2264,20 +2264,27 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
-    @Test
-    void testAggregateWithToObjectId() throws Exception {
+    private static Stream<Arguments> aggregateWithToObjectIdArguments() {
+        return Stream.of(
+            Arguments.of("5ab9cbfa31c2ab715d42129e", new ObjectId("5ab9cbfa31c2ab715d42129e")),
+            Arguments.of(Missing.getInstance(), null),
+            Arguments.of(null, null)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToObjectIdArguments")
+    void testAggregateWithToObjectId(Object given, ObjectId expected) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toObjectId: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: '5ab9cbfa31c2ab715d42129e'"));
-        collection.insertOne(json("_id: 2"));
-        collection.insertOne(json("_id: 3, x: null"));
+        Document document = json("_id: 1");
+        if (!(given instanceof Missing)) {
+            document.put("x", given);
+        }
+        collection.insertOne(document);
 
         assertThat(collection.aggregate(pipeline))
-            .containsOnly(
-                json("_id: 1").append("value", new ObjectId("5ab9cbfa31c2ab715d42129e")),
-                json("_id: 2, value: null"),
-                json("_id: 3, value: null")
-            );
+            .containsOnly(json("_id: 1").append("value", expected));
     }
 
     private static Stream<Arguments> aggregateWithToObjectIdArguments_illegalValue() {
