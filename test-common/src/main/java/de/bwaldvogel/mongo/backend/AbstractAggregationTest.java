@@ -2136,6 +2136,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             Arguments.of(0.5, true),
             Arguments.of(0.1, true),
             Arguments.of(0.0, false),
+            Arguments.of(-0.0, false),
             Arguments.of(-0.5, true),
             Arguments.of(5, true),
             Arguments.of(new ObjectId(), true),

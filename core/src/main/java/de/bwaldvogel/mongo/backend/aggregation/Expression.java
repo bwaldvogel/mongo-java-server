@@ -1392,7 +1392,7 @@ public enum Expression implements ExpressionTraits {
                 return null;
             } else if (value instanceof Number) {
                 Number number = (Number) value;
-                return Double.compare(number.doubleValue(), 0.0) != 0;
+                return number.doubleValue() != 0.0;
             } else if (value instanceof Boolean) {
                 return (Boolean) value;
             } else {
