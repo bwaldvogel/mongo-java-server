@@ -14,6 +14,7 @@ import java.util.List;
 import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.mongodb.Function;
@@ -21,6 +22,11 @@ import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
 
 public abstract class AbstractAggregationTest extends AbstractTest {
+
+    @BeforeEach
+    void dropAllDatabasesBeforeEachTest() {
+        dropAllDatabases();
+    }
 
     @Test
     void testUnrecognizedAggregatePipelineStage() throws Exception {
