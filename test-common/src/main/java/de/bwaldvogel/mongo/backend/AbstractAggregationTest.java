@@ -2054,23 +2054,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsOnly(json("_id: 1").append("value", expected));
     }
 
-    @Test
-    void testAggregateWithConvertToDouble_illegalValue() throws Exception {
+    private static Stream<Arguments> aggregateWithToDoubleArguments_illegalValue() {
+        return Stream.of(
+            Arguments.of("abc", "'Failed to parse number 'abc' in $convert with no onError value"),
+            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to double in $convert with no onError value'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToDoubleArguments_illegalValue")
+    void testAggregateWithConvertToDouble_illegalValue(Object given, String expectedMessagePart) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toDouble: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: 'abc'"));
+        collection.insertOne(json("_id: 1").append("x", given));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Failed to parse number 'abc' in $convert with no onError value: Did not consume whole number.'");
-
-        collection.replaceOne(json("_id: 1"), json("_id: 1, x: [123]"));
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Unsupported conversion from array to double in $convert with no onError value'");
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Stream<Arguments> aggregateWithToIntArguments() {
@@ -2099,23 +2099,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsOnly(json("_id: 1").append("value", expected));
     }
 
-    @Test
-    void testAggregateWithConvertToInt_illegalValue() throws Exception {
+    private static Stream<Arguments> aggregateWithToIntArguments_illegalValue() {
+        return Stream.of(
+            Arguments.of("abc", "'Failed to parse number 'abc' in $convert with no onError value"),
+            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to int in $convert with no onError value'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToIntArguments_illegalValue")
+    void testAggregateWithConvertToInt_illegalValue(Object given, String expectedMessagePart) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toInt: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: 'abc'"));
+        collection.insertOne(json("_id: 1").append("x", given));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Failed to parse number 'abc' in $convert with no onError value");
-
-        collection.replaceOne(json("_id: 1"), json("_id: 1, x: [123]"));
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Unsupported conversion from array to int in $convert with no onError value'");
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Stream<Arguments> aggregateWithToBoolArguments() {
@@ -2189,23 +2189,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsOnly(json("_id: 1").append("value", expected));
     }
 
-    @Test
-    void testAggregateWithConvertToLong_illegalValue() throws Exception {
+    private static Stream<Arguments> aggregateWithToLongArguments_illegalValue() {
+        return Stream.of(
+            Arguments.of("abc", "'Failed to parse number 'abc' in $convert with no onError value"),
+            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to long in $convert with no onError value'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToLongArguments_illegalValue")
+    void testAggregateWithConvertToLong_illegalValue(Object given, String expectedMessagePart) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toLong: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: 'abc'"));
+        collection.insertOne(json("_id: 1").append("x", given));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Failed to parse number 'abc' in $convert with no onError value");
-
-        collection.replaceOne(json("_id: 1"), json("_id: 1, x: [123]"));
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Unsupported conversion from array to long in $convert with no onError value'");
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     @Test
@@ -2224,37 +2224,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
-    @Test
-    void testAggregateWithConvertToObjectId_illegalValue() throws Exception {
+    private static Stream<Arguments> aggregateWithToObjectIdArguments_illegalValue() {
+        return Stream.of(
+            Arguments.of("5ab9cbfa31c2ab715d42129", "'Failed to parse objectId '5ab9cbfa31c2ab715d42129' in $convert with no onError value"),
+            Arguments.of("5ab9cbfa31c2ab715d42129z", "'Failed to parse objectId '5ab9cbfa31c2ab715d42129z' in $convert with no onError value"),
+            Arguments.of(123, "'Unsupported conversion from int to objectId in $convert with no onError value'"),
+            Arguments.of(Arrays.asList("5ab9cbfa31c2ab715d421290"), "'Unsupported conversion from array to objectId in $convert with no onError value'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToObjectIdArguments_illegalValue")
+    void testAggregateWithConvertToObjectId_illegalValue(Object given, String expectedMessagePart) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toObjectId: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: '5ab9cbfa31c2ab715d42129'"));
+        collection.insertOne(json("_id: 1").append("x", given));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Failed to parse objectId '5ab9cbfa31c2ab715d42129' in $convert with no onError value");
-
-        collection.replaceOne(json("_id: 1"), json("_id: 1, x: '5ab9cbfa31c2ab715d42129z'"));
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Failed to parse objectId '5ab9cbfa31c2ab715d42129z' in $convert with no onError value");
-
-        collection.replaceOne(json("_id: 1"), json("_id: 1, x: ['5ab9cbfa31c2ab715d42129z']"));
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Unsupported conversion from array to objectId in $convert with no onError value'");
-
-        collection.replaceOne(json("_id: 1"), json("_id: 1, x: 123"));
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " +
-                "'Unsupported conversion from int to objectId in $convert with no onError value'");
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Function<Document, Document> withSortedStringList(String key) {
