@@ -7,15 +7,20 @@ import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import com.mongodb.Function;
 import com.mongodb.MongoCommandException;
@@ -2019,31 +2024,34 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageContaining("Command failed with error -1: '$geoNear is not yet implemented. See https://github.com/bwaldvogel/mongo-java-server/issues/138'");
     }
 
+    private static Stream<Arguments> aggregateWithToDoubleArguments() {
+        return Stream.of(
+            Arguments.of("12", 12.0),
+            Arguments.of("7.5", 7.5),
+            Arguments.of(9, 9.0),
+            Arguments.of(9.5, 9.5),
+            Arguments.of(false, 0.0),
+            Arguments.of(true, 1.0),
+            Arguments.of(Missing.getInstance(), null),
+            Arguments.of(null, null),
+            Arguments.of(Instant.ofEpochMilli(1234567890L), 1234567890.0)
+        );
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/172
-    @Test
-    void testAggregateWithToDouble() throws Exception {
+    @ParameterizedTest
+    @MethodSource("aggregateWithToDoubleArguments")
+    void testAggregateWithToInt(Object given, Double expected) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toDouble: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: '12'"));
-        collection.insertOne(json("_id: 2, x: '7.5'"));
-        collection.insertOne(json("_id: 3, x: 9"));
-        collection.insertOne(json("_id: 4, x: false"));
-        collection.insertOne(json("_id: 5, x: true"));
-        collection.insertOne(json("_id: 6").append("x", Instant.ofEpochMilli(1234567890L)));
-        collection.insertOne(json("_id: 7"));
-        collection.insertOne(json("_id: 8, x: null"));
+        Document document = json("_id: 1");
+        if (!(given instanceof Missing)) {
+            document.put("x", given);
+        }
+        collection.insertOne(document);
 
         assertThat(collection.aggregate(pipeline))
-            .containsOnly(
-                json("_id: 1, value: 12.0"),
-                json("_id: 2, value: 7.5"),
-                json("_id: 3, value: 9.0"),
-                json("_id: 4, value: 0.0"),
-                json("_id: 5, value: 1.0"),
-                json("_id: 6, value: 1234567890.0"),
-                json("_id: 7, value: null"),
-                json("_id: 8, value: null")
-            );
+            .containsOnly(json("_id: 1").append("value", expected));
     }
 
     @Test
@@ -2065,26 +2073,30 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "'Unsupported conversion from array to double in $convert with no onError value'");
     }
 
-    @Test
-    void testAggregateWithToInt() throws Exception {
+    private static Stream<Arguments> aggregateWithToIntArguments() {
+        return Stream.of(
+            Arguments.of("12", 12),
+            Arguments.of(9, 9),
+            Arguments.of(false, 0),
+            Arguments.of(true, 1),
+            Arguments.of(Missing.getInstance(), null),
+            Arguments.of(null, null)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToIntArguments")
+    void testAggregateWithToInt(Object given, Integer expected) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toInt: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: '12'"));
-        collection.insertOne(json("_id: 2, x: 9"));
-        collection.insertOne(json("_id: 3, x: false"));
-        collection.insertOne(json("_id: 4, x: true"));
-        collection.insertOne(json("_id: 5"));
-        collection.insertOne(json("_id: 6, x: null"));
+        Document document = json("_id: 1");
+        if (!(given instanceof Missing)) {
+            document.put("x", given);
+        }
+        collection.insertOne(document);
 
         assertThat(collection.aggregate(pipeline))
-            .containsOnly(
-                json("_id: 1, value: 12"),
-                json("_id: 2, value: 9"),
-                json("_id: 3, value: 0"),
-                json("_id: 4, value: 1"),
-                json("_id: 5, value: null"),
-                json("_id: 6, value: null")
-            );
+            .containsOnly(json("_id: 1").append("value", expected));
     }
 
     @Test
@@ -2106,78 +2118,74 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "'Unsupported conversion from array to int in $convert with no onError value'");
     }
 
-    @Test
-    void testAggregateWithToBool() throws Exception {
-        List<Document> pipeline = jsonList("$project: {value: {$toBool: '$x'}}");
-
-        collection.insertOne(json("_id: 1, x: 'abc'"));
-        collection.insertOne(json("_id: 2, x: 9"));
-        collection.insertOne(json("_id: 3, x: 0"));
-        collection.insertOne(json("_id: 4, x: -1"));
-        collection.insertOne(json("_id: 5").append("x", 0L));
-        collection.insertOne(json("_id: 6").append("x", 1L));
-        collection.insertOne(json("_id: 7").append("x", 2L));
-        collection.insertOne(json("_id: 8").append("x", -1L));
-        collection.insertOne(json("_id: 9, x: false"));
-        collection.insertOne(json("_id: 10, x: true"));
-        collection.insertOne(json("_id: 11"));
-        collection.insertOne(json("_id: 12, x: null"));
-        collection.insertOne(json("_id: 13, x: 0.5"));
-        collection.insertOne(json("_id: 14, x: 0.0"));
-        collection.insertOne(json("_id: 15, x: 2.0"));
-        collection.insertOne(json("_id: 16").append("x", new ObjectId()));
-        collection.insertOne(json("_id: 17").append("x", Instant.ofEpochMilli(123456L)));
-        collection.insertOne(json("_id: 18, x: [false, true]"));
-        collection.insertOne(json("_id: 19, x: []"));
-
-        assertThat(collection.aggregate(pipeline))
-            .containsOnly(
-                json("_id: 1, value: true"),
-                json("_id: 2, value: true"),
-                json("_id: 3, value: false"),
-                json("_id: 4, value: true"),
-                json("_id: 5, value: false"),
-                json("_id: 6, value: true"),
-                json("_id: 7, value: true"),
-                json("_id: 8, value: true"),
-                json("_id: 9, value: false"),
-                json("_id: 10, value: true"),
-                json("_id: 11, value: null"),
-                json("_id: 12, value: null"),
-                json("_id: 13, value: true"),
-                json("_id: 14, value: false"),
-                json("_id: 15, value: true"),
-                json("_id: 16, value: true"),
-                json("_id: 17, value: true"),
-                json("_id: 18, value: true"),
-                json("_id: 19, value: true")
-            );
+    private static Stream<Arguments> aggregateWithToBoolArguments() {
+        return Stream.of(
+            Arguments.of("abc", true),
+            Arguments.of(9, true),
+            Arguments.of(0, false),
+            Arguments.of(-1, true),
+            Arguments.of(0L, false),
+            Arguments.of(1L, true),
+            Arguments.of(-1L, true),
+            Arguments.of(-2L, true),
+            Arguments.of(2L, true),
+            Arguments.of(false, false),
+            Arguments.of(true, true),
+            Arguments.of(Missing.getInstance(), null),
+            Arguments.of(null, null),
+            Arguments.of(0.5, true),
+            Arguments.of(0.1, true),
+            Arguments.of(0.0, false),
+            Arguments.of(-0.5, true),
+            Arguments.of(5, true),
+            Arguments.of(new ObjectId(), true),
+            Arguments.of(Instant.ofEpochMilli(123456L), true),
+            Arguments.of(Arrays.asList(false, true), true),
+            Arguments.of(new ArrayList<>(), true)
+        );
     }
 
-    @Test
-    void testAggregateWithToLong() throws Exception {
-        List<Document> pipeline = jsonList("$project: {value: {$toLong: '$x'}}");
+    @ParameterizedTest
+    @MethodSource("aggregateWithToBoolArguments")
+    void testAggregateWithToBool(Object given, Boolean expected) throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toBool: '$x'}}");
 
-        collection.insertOne(json("_id: 1, x: '12'"));
-        collection.insertOne(json("_id: 2, x: 9"));
-        collection.insertOne(json("_id: 3, x: 9.5"));
-        collection.insertOne(json("_id: 4, x: false"));
-        collection.insertOne(json("_id: 5, x: true"));
-        collection.insertOne(json("_id: 6"));
-        collection.insertOne(json("_id: 7, x: null"));
-        collection.insertOne(json("_id: 8").append("x", Instant.ofEpochMilli(123456789L)));
+        Document document = json("_id: 1");
+        if (!(given instanceof Missing)) {
+            document.put("x", given);
+        }
+        collection.insertOne(document);
 
         assertThat(collection.aggregate(pipeline))
-            .containsOnly(
-                json("_id: 1").append("value", 12L),
-                json("_id: 2").append("value", 9L),
-                json("_id: 3").append("value", 9L),
-                json("_id: 4").append("value", 0L),
-                json("_id: 5").append("value", 1L),
-                json("_id: 6").append("value", null),
-                json("_id: 7").append("value", null),
-                json("_id: 8").append("value", 123456789L)
-            );
+            .containsOnly(json("_id: 1").append("value", expected));
+    }
+
+    private static Stream<Arguments> aggregateWithToLongArguments() {
+        return Stream.of(
+            Arguments.of("12", 12L),
+            Arguments.of(9, 9L),
+            Arguments.of(9.5, 9L),
+            Arguments.of(false, 0L),
+            Arguments.of(true, 1L),
+            Arguments.of(Missing.getInstance(), null),
+            Arguments.of(null, null),
+            Arguments.of(Instant.ofEpochMilli(123456789L), 123456789L)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToLongArguments")
+    void testAggregateWithToLong(Object given, Long expected) throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toLong: '$x'}}");
+
+        Document document = json("_id: 1");
+        if (!(given instanceof Missing)) {
+            document.put("x", given);
+        }
+        collection.insertOne(document);
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(json("_id: 1").append("value", expected));
     }
 
     @Test
