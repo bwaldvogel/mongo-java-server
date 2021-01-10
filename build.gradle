@@ -170,7 +170,7 @@ allprojects {
 }
 
 wrapper {
-    gradleVersion = "6.7.1"
+    gradleVersion = "6.8"
     distributionType = Wrapper.DistributionType.ALL
 }
 
@@ -200,10 +200,6 @@ task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
 
 javadoc {
     options.addBooleanOption('html5', true)
-}
-
-jacoco {
-    toolVersion = "0.8.6"
 }
 
 coveralls {
