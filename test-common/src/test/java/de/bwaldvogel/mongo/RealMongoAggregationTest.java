@@ -1,32 +1,18 @@
 package de.bwaldvogel.mongo;
 
-import java.net.InetSocketAddress;
-
 import org.junit.Assume;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.testcontainers.containers.GenericContainer;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import de.bwaldvogel.mongo.backend.AbstractAggregationTest;
 
 public class RealMongoAggregationTest extends AbstractAggregationTest {
 
-    private static GenericContainer<?> mongoContainer;
-
-    @BeforeAll
-    public static void setUpMongoContainer() {
-        mongoContainer = RealMongoContainer.start();
-    }
+    @RegisterExtension
+    static RealMongoContainer realMongoContainer = new RealMongoContainer();
 
     @Override
     protected void setUpBackend() throws Exception {
-        serverAddress = new InetSocketAddress(mongoContainer.getFirstMappedPort());
-    }
-
-    @AfterAll
-    public static void tearDownServer() {
-        mongoContainer.stop();
-        mongoContainer = null;
+        serverAddress = realMongoContainer.getServerAddress();
     }
 
     @Override
