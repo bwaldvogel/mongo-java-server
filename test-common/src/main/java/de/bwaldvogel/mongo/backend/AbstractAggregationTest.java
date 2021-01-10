@@ -6,7 +6,9 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import java.sql.Date;
 import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -2065,6 +2067,60 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @MethodSource("aggregateWithToDoubleArguments_illegalValue")
     void testAggregateWithConvertToDouble_illegalValue(Object given, String expectedMessagePart) throws Exception {
         List<Document> pipeline = jsonList("$project: {value: {$toDouble: '$x'}}");
+
+        collection.insertOne(json("_id: 1").append("x", given));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
+    }
+
+    private static Stream<Arguments> aggregateWithToDateArguments() {
+        return Stream.of(
+            Arguments.of(Missing.getInstance(), null),
+            Arguments.of(null, null),
+            Arguments.of(1234567890L, Instant.ofEpochMilli(1234567890L)),
+            Arguments.of(1234567890.0, Instant.ofEpochMilli(1234567890L)),
+            Arguments.of("2020-07", Instant.parse("2020-07-01T00:00:00Z")),
+            Arguments.of("2020-07-13", Instant.parse("2020-07-13T00:00:00Z")),
+            Arguments.of("2020-07-13T14:30:57Z", Instant.parse("2020-07-13T14:30:57Z")),
+            Arguments.of("2020-07-13T14:30:57.123Z", Instant.parse("2020-07-13T14:30:57.123Z")),
+            Arguments.of("2020-07-13T14:30:57+0500", ZonedDateTime.parse("2020-07-13T14:30:57+05:00").toInstant()),
+            Arguments.of("2020-07-13T14:30:57.123+0500", ZonedDateTime.parse("2020-07-13T14:30:57.123+05:00").toInstant()),
+            Arguments.of("2020-07-13T14:30:57-0500", ZonedDateTime.parse("2020-07-13T14:30:57-05:00").toInstant()),
+            Arguments.of(Instant.ofEpochMilli(1234567890L), Instant.ofEpochMilli(1234567890L))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToDateArguments")
+    void testAggregateWithToDate(Object given, Instant expected) throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toDate: '$x'}}");
+
+        Document document = json("_id: 1");
+        if (!(given instanceof Missing)) {
+            document.put("x", given);
+        }
+        collection.insertOne(document);
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(json("_id: 1").append("value", expected != null ? Date.from(expected) : null));
+    }
+
+    private static Stream<Arguments> aggregateWithToDateArguments_illegalValue() {
+        return Stream.of(
+            Arguments.of("abc", "'Error parsing date string 'abc';"),
+            Arguments.of(123, "'Unsupported conversion from int to date in $convert with no onError value'"),
+            Arguments.of("123456789", "'Error parsing date string '123456789';"),
+            Arguments.of("2020-07-13T14", "'Error parsing date string '2020-07-13T14';"),
+            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to date in $convert with no onError value'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithToDateArguments_illegalValue")
+    void testAggregateWithConvertToDate_illegalValue(Object given, String expectedMessagePart) throws Exception {
+        List<Document> pipeline = jsonList("$project: {value: {$toDate: '$x'}}");
 
         collection.insertOne(json("_id: 1").append("x", given));
 

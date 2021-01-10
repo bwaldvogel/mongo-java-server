@@ -12,15 +12,20 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.IsoFields;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.OptionalDouble;
@@ -1397,6 +1402,49 @@ public enum Expression implements ExpressionTraits {
                 return (Boolean) value;
             } else {
                 return true;
+            }
+        }
+    },
+
+    $toDate {
+        private final DateTimeFormatter YEAR_MONTH = DateTimeFormatter.ofPattern("yyyy-MM", Locale.ROOT);
+        private final DateTimeFormatter OFFSET_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss[.SSS]XXXX", Locale.ROOT);
+
+        @Override
+        Instant apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            if (Missing.isNullOrMissing(value)) {
+                return null;
+            } else if (value instanceof Long || value instanceof Double) {
+                Number number = (Number) value;
+                return Instant.ofEpochMilli(number.longValue());
+            } else if (value instanceof Instant) {
+                return (Instant) value;
+            } else if (value instanceof String) {
+                String dateString = (String) value;
+                try {
+                    return Instant.parse(dateString);
+                } catch (DateTimeParseException e1) {
+                    try {
+                        return LocalDate.parse(dateString).atStartOfDay(ZoneOffset.UTC).toInstant();
+                    } catch (DateTimeParseException e2) {
+                        try {
+                            return ZonedDateTime.parse(dateString, OFFSET_DATE_TIME).toInstant();
+                        } catch (DateTimeParseException e3) {
+                            try {
+                                TemporalAccessor temporalAccessor = YEAR_MONTH.parse(dateString);
+                                int year = temporalAccessor.get(ChronoField.YEAR);
+                                int month = temporalAccessor.get(ChronoField.MONTH_OF_YEAR);
+                                return LocalDate.of(year, month, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
+                            } catch (DateTimeParseException e) {
+                                throw new MongoServerError(ErrorCode.ConversionFailure,
+                                    "Error parsing date string '" + dateString + "';");
+                            }
+                        }
+                    }
+                }
+            } else {
+                throw new UnsupportedConversionError(value, Instant.class);
             }
         }
     },

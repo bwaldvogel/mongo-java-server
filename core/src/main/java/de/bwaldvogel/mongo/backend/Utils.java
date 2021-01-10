@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -495,6 +496,8 @@ public class Utils {
             return "double";
         } else if (ObjectId.class.isAssignableFrom(type)) {
             return "objectId";
+        } else if (Instant.class.isAssignableFrom(type)) {
+            return "date";
         } else {
             return type.getName();
         }

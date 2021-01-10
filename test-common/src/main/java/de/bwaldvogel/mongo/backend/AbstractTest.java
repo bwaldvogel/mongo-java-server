@@ -97,8 +97,12 @@ public abstract class AbstractTest {
     }
 
     private static void closeClients() {
-        syncClient.close();
-        asyncClient.close();
+        if (syncClient != null) {
+            syncClient.close();
+        }
+        if (asyncClient != null) {
+            asyncClient.close();
+        }
     }
 
     private static void tearDownBackend() {
