@@ -17,7 +17,7 @@ import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 
-enum BsonType {
+public enum BsonType {
 
     DOUBLE(1, "double", Double.class),
     STRING(2, "string", String.class),

@@ -2308,6 +2308,101 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
+    private static Stream<Arguments> aggregateWithConvertArguments() {
+        return Stream.of(
+            Arguments.of("input: 1.5, to: null", null),
+
+            Arguments.of("input: 1.5, to: 'double'", 1.5),
+            Arguments.of("input: 1.5, to: 1", 1.5),
+
+            Arguments.of("input: 25, to: 'string'", "25"),
+            Arguments.of("input: 25, to: 2", "25"),
+
+            Arguments.of("input: 'cafebabedeadbeefcafebabe', to: 'objectId'", new ObjectId("cafebabedeadbeefcafebabe")),
+            Arguments.of("input: 'cafebabedeadbeefcafebabe', to: 7", new ObjectId("cafebabedeadbeefcafebabe")),
+
+            Arguments.of("input: true, to: 'bool'", true),
+            Arguments.of("input: true, to: 8", true),
+
+            Arguments.of("input: '2020-10-07', to: 'date'", Date.from(Instant.parse("2020-10-07T00:00:00Z"))),
+            Arguments.of("input: '2020-10-07', to: 9", Date.from(Instant.parse("2020-10-07T00:00:00Z"))),
+
+            Arguments.of("input: '27', to: 'int'", 27),
+            Arguments.of("input: '27', to: 16", 27),
+
+            Arguments.of("input: '27', to: 'long'", 27L),
+            Arguments.of("input: '27', to: 18", 27L),
+
+            Arguments.of("input: '27.8', to: 'long', onError: 29", 29),
+            Arguments.of("input: null, to: 'long', onNull: 29", 29)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithConvertArguments")
+    void testAggregateWithConvert(String given, Object expected) throws Exception {
+        List<Document> pipeline = Collections.singletonList(new Document("$project",
+            new Document("value",
+                new Document("$convert", json(given)))));
+
+        Document document = json("_id: 1");
+        collection.insertOne(document);
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(json("_id: 1").append("value", expected));
+    }
+
+    private static Stream<Arguments> aggregateWithConvertArguments_illegalValue() {
+        return Stream.of(
+            Arguments.of("input: 123, to: 'unknown'",
+                "Command failed with error 2 (BadValue): 'Failed to optimize pipeline :: caused by :: Unknown type name: unknown'"),
+
+            Arguments.of("input: 123, to: 12.5",
+                "Command failed with error 9 (FailedToParse): 'Failed to optimize pipeline :: caused by :: In $convert, numeric 'to' argument is not an integer'"),
+
+            Arguments.of("input: 123, to: [1, 2]",
+                "Command failed with error 9 (FailedToParse): 'Failed to optimize pipeline :: caused by :: $convert's 'to' argument must be a string or number, but is array'"),
+
+            Arguments.of("x: 123",
+                "Command failed with error 9 (FailedToParse): '$convert found an unknown argument: x'"),
+
+            Arguments.of("to: 'int'",
+                "Command failed with error 9 (FailedToParse): 'Missing 'input' parameter to $convert'"),
+
+            Arguments.of("input: 123, onError: 123",
+                "Command failed with error 9 (FailedToParse): 'Missing 'to' parameter to $convert'"),
+
+            Arguments.of("input: 123, to: 'int', onElse: 123",
+                "Command failed with error 9 (FailedToParse): '$convert found an unknown argument: onElse'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithConvertArguments_illegalValue")
+    void testAggregateWithConvert_illegalValue(String given, String expectedMessageStartingWith) throws Exception {
+        List<Document> pipeline = Collections.singletonList(new Document("$project",
+            new Document("value", new Document("$convert", json(given)))));
+
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageStartingWith(expectedMessageStartingWith);
+    }
+
+    @Test
+    void testAggregateWithConvert_noDocument() throws Exception {
+        List<Document> pipeline = Collections.singletonList(new Document("$project",
+            new Document("value",
+                new Document("$convert", 123))));
+
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): '$convert expects an object of named arguments but found: int'");
+    }
+
     private static Function<Document, Document> withSortedStringList(String key) {
         return document -> {
             @SuppressWarnings("unchecked")

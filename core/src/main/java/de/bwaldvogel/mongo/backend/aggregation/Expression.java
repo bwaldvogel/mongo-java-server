@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.backend.Assert;
+import de.bwaldvogel.mongo.backend.BsonType;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.LinkedTreeSet;
 import de.bwaldvogel.mongo.backend.Missing;
@@ -43,8 +44,10 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
+import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.UnsupportedConversionError;
 
@@ -312,6 +315,103 @@ public enum Expression implements ExpressionTraits {
                 return evaluate(thenExpression, document);
             } else {
                 return evaluate(elseExpression, document);
+            }
+        }
+    },
+
+    $convert {
+        @Override
+        Object apply(List<?> expression, Document document) {
+            Object expressionValue = CollectionUtils.getSingleElement(expression);
+            if (!(expressionValue instanceof Document)) {
+                throw new FailedToParseException(name() + " expects an object of named arguments but found: " + describeType(expressionValue));
+            }
+            Document convertDocument = (Document) expressionValue;
+
+            List<String> supportedKeys = asList("input", "to", "onError", "onNull");
+            for (String key : convertDocument.keySet()) {
+                if (!supportedKeys.contains(key)) {
+                    throw new FailedToParseException(name() + " found an unknown argument: " + key);
+                }
+            }
+
+            List<String> requiredParameters = asList("input", "to");
+            for (String requiredParameter : requiredParameters) {
+                if (!convertDocument.containsKey(requiredParameter)) {
+                    throw new FailedToParseException("Missing '" + requiredParameter + "' parameter to " + name());
+                }
+            }
+
+            Object to = convertDocument.get("to");
+            if (to == null) {
+                return null;
+            }
+
+            Object inputValue = convertDocument.get("input");
+
+            if (inputValue == null && convertDocument.containsKey("onNull")) {
+                return convertDocument.get("onNull");
+            }
+
+            final BsonType bsonType = getBsonType(to);
+
+            return convert(inputValue, bsonType, document, convertDocument);
+        }
+
+        private BsonType getBsonType(Object to) {
+            try {
+                if (to instanceof String) {
+                    return BsonType.forString((String) to);
+                } else if (to instanceof Integer) {
+                    return BsonType.forNumber((Integer) to);
+                } else if (to instanceof Number) {
+                    throw new IllegalArgumentException("In $convert, numeric 'to' argument is not an integer");
+                } else {
+                    throw new IllegalArgumentException("$convert's 'to' argument must be a string or number, but is " + describeType(to));
+                }
+            } catch (BadValueException e) {
+                throw new BadValueException("Failed to optimize pipeline :: caused by :: Unknown type name: " + to);
+            } catch (IllegalArgumentException e) {
+                throw new FailedToParseException("Failed to optimize pipeline :: caused by :: " + e.getMessage());
+            }
+        }
+
+        private Object convert(Object inputValue, BsonType bsonType, Document document, Document convertDocument) {
+            try {
+                switch (bsonType) {
+                    case DOUBLE:
+                        return $toDouble.apply(inputValue, document);
+                    case STRING:
+                        return $toString.apply(inputValue, document);
+                    case OBJECT_ID:
+                        return $toObjectId.apply(inputValue, document);
+                    case BOOL:
+                        return $toBool.apply(inputValue, document);
+                    case DATE:
+                        return $toDate.apply(inputValue, document);
+                    case INT:
+                        return $toInt.apply(inputValue, document);
+                    case LONG:
+                        return $toLong.apply(inputValue, document);
+                    case OBJECT:
+                    case ARRAY:
+                    case BIN_DATA:
+                    case NULL:
+                    case REGEX:
+                    case TIMESTAMP:
+                    case DECIMAL128:
+                    case MIN_KEY:
+                    case MAX_KEY:
+                    default:
+                        throw new UnsupportedOperationException("Unsupported conversion to type " + bsonType);
+                }
+            } catch (MongoServerError e) {
+                if (e.getCode() == ErrorCode.ConversionFailure.getValue()) {
+                    if (convertDocument.containsKey("onError")) {
+                        return convertDocument.get("onError");
+                    }
+                }
+                throw e;
             }
         }
     },
