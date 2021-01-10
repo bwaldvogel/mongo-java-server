@@ -16,9 +16,11 @@ ij_wrap_on_typing = false
 indent_size = 2
 indent_style = space
 
-[*.java]
+[*.{java,gradle}]
 indent_size = 4
 indent_style = space
+
+[*.java]
 ij_continuation_indent_size = 4
 ij_java_align_consecutive_assignments = false
 ij_java_align_consecutive_variable_declarations = false
