@@ -14,8 +14,12 @@ import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoCollection;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
 import de.bwaldvogel.mongo.backend.DocumentWithPosition;
+import de.bwaldvogel.mongo.backend.MongoSession;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.InvalidOptionsException;
+import de.bwaldvogel.mongo.exception.MongoServerException;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class MemoryCollection extends AbstractSynchronizedMongoCollection<Integer> {
 
@@ -54,7 +58,9 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     }
 
     @Override
-    protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize, Document fieldSelector) {
+    protected QueryResult matchDocuments(
+        Document query, Document orderBy, int numberToSkip, int limit, int batchSize, Document fieldSelector,
+        MongoSession mongoSession) {
         Iterable<Document> documents = iterateAllDocuments(orderBy);
         Stream<Document> documentStream = StreamSupport.stream(documents.spliterator(), false);
         return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
@@ -108,7 +114,19 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
 
     @Override
     protected void handleUpdate(Integer position, Document oldDocument, Document newDocument) {
-        // noop
+        Document doc = documents.get(position);
+        for (String key : newDocument.keySet()) {
+            if (key.contains(".")) {
+                throw new MongoServerException(
+                    "illegal field name. must not happen as it must be caught by the driver");
+            }
+            doc.put(key, newDocument.get(key));
+        }
+    }
+
+    @Override
+    protected void handleUpdate(Integer position, Document oldDocument, Document newDocument, MongoSession mongoSession) {
+        handleUpdate(position, oldDocument, newDocument);
     }
 
 }

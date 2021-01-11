@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import de.bwaldvogel.mongo.MongoCollection;
+import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractSynchronizedMongoDatabase;
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.CursorRegistry;
@@ -14,6 +15,7 @@ import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.postgresql.index.PostgresUniqueIndex;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.oplog.Oplog;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class PostgresqlDatabase extends AbstractSynchronizedMongoDatabase<Long> {
 

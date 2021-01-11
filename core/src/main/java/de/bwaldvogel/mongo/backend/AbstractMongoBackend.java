@@ -13,10 +13,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.h2.mvstore.tx.Transaction;
+import org.h2.mvstore.tx.TransactionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +55,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
-    static final String ADMIN_DB_NAME = "admin";
+    public static final String ADMIN_DB_NAME = "admin";
 
     private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
@@ -64,6 +67,10 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     private final CursorRegistry cursorRegistry = new CursorRegistry();
 
     protected Oplog oplog = NoopOplog.get();
+    private String serverAddress;
+
+    protected final ConcurrentHashMap<UUID, MongoSession> sessions = new ConcurrentHashMap<>();
+    protected TransactionStore transactionStore;
 
     protected AbstractMongoBackend() {
         this(defaultClock());
@@ -150,7 +157,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return response;
     }
 
-    private Document handleAdminCommand(String command, Document query) {
+    protected Document handleAdminCommand(String command, Document query) {
         if (command.equalsIgnoreCase("listdatabases")) {
             List<Document> databases = listDatabaseNames().stream()
                 .sorted()
@@ -201,11 +208,19 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         } else if (command.equalsIgnoreCase("ping")) {
             return successResponse();
         } else if (command.equalsIgnoreCase("endSessions")) {
-            log.debug("endSessions on admin database");
+            handleEndSessions(query);
             return successResponse();
         } else {
             throw new NoSuchCommandException(command);
         }
+    }
+
+    private void handleEndSessions(Document query) {
+        log.debug("endSessions");
+        ArrayList<Document> endingSessions = (ArrayList<Document>)query.get("endSessions");
+        endingSessions.stream().map(s -> s.get("id"))
+            .filter(sessions::containsKey)
+            .forEach(sessions::remove);
     }
 
     private static Document successResponse() {
@@ -314,6 +329,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             response.put("maxWireVersion", Integer.valueOf(version.getWireVersion()));
             response.put("minWireVersion", Integer.valueOf(0));
             response.put("localTime", Instant.now(clock));
+            response.put("setName", "rs0");
+            response.put("hosts", Collections.singleton(serverAddress));
+            response.put("me", serverAddress);
+            response.put("primary", serverAddress);
+            response.put("logicalSessionTimeoutMinutes", 100);
+            response.put("connectionId", 21210);
             Utils.markOkay(response);
             return response;
         } else if (command.equalsIgnoreCase("buildinfo")) {
@@ -328,6 +349,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleGetMore(databaseName, command, query);
         } else if (command.equalsIgnoreCase("killCursors")) {
             return handleKillCursors(query);
+        } else if (command.equalsIgnoreCase("commitTransaction")) {
+            UUID sessionId = Utils.getSessionId(query);
+            sessions.get(sessionId).commit();
+            Document response = new Document("lsid", sessionId);
+            Utils.markOkay(response);
+            return response;
         }
         return null;
     }
@@ -342,8 +369,26 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         if (databaseName.equals(ADMIN_DB_NAME)) {
             return handleAdminCommand(command, query);
         }
+        MongoSession mongoSession = MongoSession.NoopSession();
+        if (query != null) {
+            if ((boolean)query.getOrDefault("autocommit", true)) {
+                return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog, null);
+            }
 
-        return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog);
+            UUID sessionId = Utils.getSessionId(query);
+            if (sessionId == null) {
+                throw new RuntimeException("SessionId cannot be null. Make sure you are using a mongo driver version that support sessions and transactions.");
+            }
+            if (sessions.containsKey(sessionId)) {
+                mongoSession = sessions.get(sessionId);
+            } else {
+                Transaction transaction = transactionStore.begin();
+                log.info(String.format("Starting new transaction with id %d: %s", transaction.getId(), transaction.getName()));
+                mongoSession = new MongoSession(sessionId, transactionStore.begin());
+                sessions.put(sessionId, mongoSession);
+            }
+        }
+        return resolveDatabase(databaseName).handleCommand(channel, command, query, oplog, mongoSession);
     }
 
     @Override
@@ -373,7 +418,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return FutureUtils.wrap(() -> handleAdminCommand(command, query));
         }
 
-        return resolveDatabase(database).handleCommandAsync(channel, command, query, oplog);
+        return resolveDatabase(database).handleCommandAsync(channel, command, query, oplog, null);
     }
 
     @Override
@@ -496,6 +541,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         if (removedDatabase != null) {
             removedDatabase.drop(oplog);
         }
+    }
+
+    @Override
+    public void setServerAddress(String serverAddress) {
+        this.serverAddress = serverAddress;
     }
 
     @Override

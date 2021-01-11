@@ -11,7 +11,9 @@ import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.backend.Missing;
 
-public final class Document implements Map<String, Object>, Bson {
+import org.h2.value.VersionedValue;
+
+public final class Document extends VersionedValue implements Map<String, Object>, Bson {
 
     private static final long serialVersionUID = 1L;
 

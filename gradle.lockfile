@@ -1,6 +1,7 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
+com.h2database:h2:1.4.200=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 io.netty:netty-buffer:4.1.56.Final=default,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-codec:4.1.56.Final=default,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-common:4.1.56.Final=default,runtimeClasspath,testRuntimeClasspath
@@ -16,4 +17,4 @@ org.ow2.asm:asm-commons:8.0.1=jacocoAnt
 org.ow2.asm:asm-tree:8.0.1=jacocoAnt
 org.ow2.asm:asm:8.0.1=jacocoAnt
 org.slf4j:slf4j-api:1.7.30=default,runtimeClasspath,testRuntimeClasspath
-empty=annotationProcessor,archives,compile,compileClasspath,compileOnly,runtime,shadow,signatures,testAnnotationProcessor,testCompile,testCompileClasspath,testCompileOnly,testRuntime
+empty=annotationProcessor,archives,compile,compileOnly,runtime,shadow,signatures,testAnnotationProcessor,testCompile,testCompileOnly,testRuntime

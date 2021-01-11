@@ -4,6 +4,7 @@ import java.util.concurrent.CompletionStage;
 
 import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.QueryResult;
+import de.bwaldvogel.mongo.backend.MongoSession;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.util.FutureUtils;
@@ -19,11 +20,11 @@ public interface MongoDatabase extends AsyncMongoDatabase {
 
     void handleClose(Channel channel);
 
-    Document handleCommand(Channel channel, String command, Document query, Oplog oplog);
+    Document handleCommand(Channel channel, String command, Document query, Oplog oplog, MongoSession mongoSession);
 
     @Override
-    default CompletionStage<Document> handleCommandAsync(Channel channel, String command, Document query, Oplog oplog) {
-        return FutureUtils.wrap(() -> handleCommand(channel, command, query, oplog));
+    default CompletionStage<Document> handleCommandAsync(Channel channel, String command, Document query, Oplog oplog, MongoSession mongoSession) {
+        return FutureUtils.wrap(() -> handleCommand(channel, command, query, oplog, mongoSession));
     }
 
     QueryResult handleQuery(MongoQuery query);
@@ -54,6 +55,8 @@ public interface MongoDatabase extends AsyncMongoDatabase {
     }
 
     void handleUpdate(MongoUpdate update, Oplog oplog);
+
+    void handleUpdate(MongoUpdate update, Oplog oplog, MongoSession mongoSession);
 
     @Override
     default CompletionStage<Void> handleUpdateAsync(MongoUpdate update, Oplog oplog) {

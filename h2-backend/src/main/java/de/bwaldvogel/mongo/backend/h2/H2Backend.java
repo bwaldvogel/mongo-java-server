@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.backend.h2;
 import java.time.Clock;
 
 import org.h2.mvstore.MVStore;
+import org.h2.mvstore.tx.TransactionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class H2Backend extends AbstractMongoBackend {
     public H2Backend(MVStore mvStore, Clock clock) {
         super(clock);
         this.mvStore = mvStore;
-
+        transactionStore = new TransactionStore(mvStore);
         mvStore.getMapNames().stream()
             .filter(mapName -> mapName.startsWith(H2Database.DATABASES_PREFIX))
             .map(mapName -> {
@@ -101,4 +102,5 @@ public class H2Backend extends AbstractMongoBackend {
             return getClass().getSimpleName() + "[" + mvStore.getFileStore().getFileName() + "]";
         }
     }
+
 }

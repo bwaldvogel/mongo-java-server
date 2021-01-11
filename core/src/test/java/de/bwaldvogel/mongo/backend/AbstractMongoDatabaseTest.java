@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
 
+import de.bwaldvogel.mongo.MongoDatabase;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -15,6 +17,7 @@ import org.mockito.Mockito;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
 import io.netty.channel.Channel;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 class AbstractMongoDatabaseTest {
 
@@ -67,7 +70,7 @@ class AbstractMongoDatabaseTest {
         Document query = new Document();
         query.put("find", "testCollection");
 
-        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null);
+        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null, null);
         Document response = responseFuture.toCompletableFuture().get();
 
         assertThat(response).isNotNull();
@@ -81,7 +84,7 @@ class AbstractMongoDatabaseTest {
         Document query = new Document();
         query.put("find", "mockCollection");
 
-        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null);
+        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "find", query, null, null);
         Document response = responseFuture.toCompletableFuture().get();
 
         assertThat(response).isNotNull();

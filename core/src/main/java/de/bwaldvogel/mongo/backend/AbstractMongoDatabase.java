@@ -38,6 +38,7 @@ import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
@@ -62,6 +63,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     protected AbstractMongoDatabase(String databaseName, CursorRegistry cursorRegistry) {
         this.databaseName = databaseName;
         this.cursorRegistry = cursorRegistry;
+    }
+
+    protected AbstractMongoDatabase(AbstractMongoDatabase<P> mongoDatabase) {
+        this.databaseName = mongoDatabase.getDatabaseName();
+        this.cursorRegistry = new CursorRegistry();
+        collections.putAll(mongoDatabase.collections);
     }
 
     protected void initializeNamespacesAndIndexes() {
@@ -96,7 +103,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    private Document commandError(Channel channel, String command, Document query) {
+    protected Document commandError(Channel channel, String command, Document query) {
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
@@ -107,13 +114,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     // handle command synchronously
-    private Document handleCommandSync(Channel channel, String command, Document query, Oplog oplog) {
+    private Document handleCommandSync(Channel channel, String command, Document query, Oplog oplog, MongoSession mongoSession) {
         if (command.equalsIgnoreCase("find")) {
             return commandFind(command, query);
         } else if (command.equalsIgnoreCase("insert")) {
             return commandInsert(channel, command, query, oplog);
         } else if (command.equalsIgnoreCase("update")) {
-            return commandUpdate(channel, command, query, oplog);
+            return commandUpdate(channel, command, query, oplog, mongoSession);
         } else if (command.equalsIgnoreCase("delete")) {
             return commandDelete(channel, command, query, oplog);
         } else if (command.equalsIgnoreCase("create")) {
@@ -167,7 +174,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog) {
+    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog, MongoSession mongoSession) {
         Document commandErrorDocument = commandError(channel, command, query);
         if (commandErrorDocument != null) {
             return commandErrorDocument;
@@ -175,11 +182,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         clearLastStatus(channel);
 
-        return handleCommandSync(channel, command, query, oplog);
+        return handleCommandSync(channel, command, query, oplog, mongoSession);
     }
 
     @Override
-    public CompletionStage<Document> handleCommandAsync(Channel channel, String command, Document query, Oplog oplog) {
+    public CompletionStage<Document> handleCommandAsync(
+        Channel channel, String command, Document query, Oplog oplog, MongoSession mongoSession
+    ) {
         Document commandErrorDocument = commandError(channel, command, query);
         if (commandErrorDocument != null) {
             return FutureUtils.wrap(() -> commandErrorDocument);
@@ -191,7 +200,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             return commandFindAsync(command, query);
         }
 
-        return FutureUtils.wrap(() -> handleCommandSync(channel, command, query, oplog));
+        return FutureUtils.wrap(() -> handleCommandSync(channel, command, query, oplog, mongoSession));
     }
 
     private Document listCollections() {
@@ -310,7 +319,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return result;
     }
 
-    private Document commandUpdate(Channel channel, String command, Document query, Oplog oplog) {
+    private Document commandUpdate(Channel channel, String command, Document query, Oplog oplog, MongoSession mongoSession) {
         clearLastStatus(channel);
         String collectionName = query.get(command).toString();
         boolean isOrdered = Utils.isTrue(query.get("ordered"));
@@ -334,7 +343,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             boolean upsert = Utils.isTrue(updateObj.get("upsert"));
             final Document result;
             try {
-                result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert, oplog);
+                result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert, oplog, mongoSession);
             } catch (MongoServerException e) {
                 writeErrors.add(toWriteError(i, e));
                 continue;
@@ -559,6 +568,10 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 case "$db":
                     Assert.equals(value, getDatabaseName());
                     break;
+                case "lsid":
+                    break;
+                case "$readPreference":
+                    break;
                 default:
                     throw new MongoServerException("unknown subcommand: " + subCommand);
             }
@@ -769,6 +782,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @Override
     public void handleUpdate(MongoUpdate updateCommand, Oplog oplog) {
+        handleUpdate(updateCommand, oplog, null);
+    }
+
+    @Override
+    public void handleUpdate(MongoUpdate updateCommand, Oplog oplog, MongoSession mongoSession) {
         Channel channel = updateCommand.getChannel();
         String collectionName = updateCommand.getCollectionName();
         Document selector = updateCommand.getSelector();
@@ -779,7 +797,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         clearLastStatus(channel);
         try {
-            Document result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert, oplog);
+            Document result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert, oplog, mongoSession);
             putLastResult(channel, result);
         } catch (MongoServerException e) {
             putLastError(channel, e);
@@ -922,14 +940,14 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document updateDocuments(String collectionName, Document selector,
                                      Document update, ArrayFilters arrayFilters,
-                                     boolean multi, boolean upsert, Oplog oplog) {
+                                     boolean multi, boolean upsert, Oplog oplog, MongoSession mongoSession) {
 
         if (isSystemCollection(collectionName)) {
             throw new MongoServerError(10156, "cannot update system collection");
         }
 
         MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-        return collection.updateDocuments(selector, update, arrayFilters, multi, upsert, oplog);
+        return collection.updateDocuments(selector, update, arrayFilters, multi, upsert, oplog, mongoSession);
     }
 
     private void putLastError(Channel channel, MongoServerException ex) {

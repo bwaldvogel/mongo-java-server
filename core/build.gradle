@@ -2,6 +2,7 @@ dependencies {
     implementation group: 'io.netty', name: 'netty-transport', version: 'latest.release'
     implementation group: 'io.netty', name: 'netty-codec', version: 'latest.release'
     implementation group: 'io.netty', name: 'netty-handler', version: 'latest.release'
+    api group: 'com.h2database', name: 'h2', version: 'latest.release'
 
     testImplementation group: 'org.mongodb', name: 'mongo-java-driver', version: 'latest.release'
     testImplementation "org.mockito:mockito-core:latest.release"

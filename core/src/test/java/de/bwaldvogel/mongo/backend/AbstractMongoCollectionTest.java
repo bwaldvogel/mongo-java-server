@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.stream.Stream;
 
+import de.bwaldvogel.mongo.exception.InvalidOptionsException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -45,7 +47,8 @@ public class AbstractMongoCollectionTest {
 
         @Override
         protected QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,
-                                             int numberToReturn, int batchSize, Document fieldSelector) {
+                                             int numberToReturn, int batchSize, Document fieldSelector,
+                                             MongoSession mongoSession) {
             throw new UnsupportedOperationException();
         }
 
@@ -61,6 +64,11 @@ public class AbstractMongoCollectionTest {
         @Override
         protected void handleUpdate(Object position, Document oldDocument, Document newDocument) {
             // noop
+        }
+
+        @Override
+        protected void handleUpdate(Object position, Document oldDocument, Document newDocument, MongoSession mongoSession) {
+            throw new InvalidOptionsException("Sessions and transaction is not supported on on this backend, please use H2Backend");
         }
 
         @Override

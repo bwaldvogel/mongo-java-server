@@ -11,6 +11,7 @@ com.fasterxml.jackson:jackson-bom:2.12.1=compileClasspath,default,runtimeClasspa
 com.github.docker-java:docker-java-api:3.2.7=testCompileClasspath,testRuntimeClasspath
 com.github.docker-java:docker-java-transport-zerodep:3.2.7=testCompileClasspath,testRuntimeClasspath
 com.github.docker-java:docker-java-transport:3.2.7=testCompileClasspath,testRuntimeClasspath
+com.h2database:h2:1.4.200=compileClasspath,default,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 com.zaxxer:HikariCP:3.4.5=testCompileClasspath,testRuntimeClasspath
 io.netty:netty-buffer:4.1.56.Final=default,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-codec:4.1.56.Final=default,runtimeClasspath,testRuntimeClasspath

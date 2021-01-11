@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo;
 
+import java.io.Serializable;
 import java.util.concurrent.CompletionStage;
 
 import de.bwaldvogel.mongo.backend.QueryParameters;
