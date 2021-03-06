@@ -912,6 +912,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(1, 2, 3, 4, 5);
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/178
+    @Test
+    public void testDistinct_missingCollection() throws Exception {
+        MongoCollection<Document> missingCollection = db.getCollection("does-not-exist");
+
+        assertThat(missingCollection.distinct("x", Integer.class)).isEmpty();
+    }
+
     @Test
     public void testInsertQueryAndSortBinaryTypes() throws Exception {
         byte[] highBytes = new byte[16];

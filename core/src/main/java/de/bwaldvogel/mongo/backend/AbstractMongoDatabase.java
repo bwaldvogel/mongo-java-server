@@ -126,8 +126,14 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("aggregate")) {
             return commandAggregate(command, query, oplog);
         } else if (command.equalsIgnoreCase("distinct")) {
-            MongoCollection<P> collection = resolveCollection(command, query, true);
-            return collection.handleDistinct(query);
+            MongoCollection<P> collection = resolveCollection(command, query);
+            if (collection == null) {
+                Document response = new Document("values", Collections.emptyList());
+                Utils.markOkay(response);
+                return response;
+            } else {
+                return collection.handleDistinct(query);
+            }
         } else if (command.equalsIgnoreCase("drop")) {
             return commandDrop(query, oplog);
         } else if (command.equalsIgnoreCase("dropIndexes")) {
@@ -135,7 +141,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("dbstats")) {
             return commandDatabaseStats();
         } else if (command.equalsIgnoreCase("collstats")) {
-            MongoCollection<P> collection = resolveCollection(command, query, false);
+            MongoCollection<P> collection = resolveCollection(command, query);
             if (collection == null) {
                 Document emptyStats = new Document()
                     .append("count", 0)
@@ -146,7 +152,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 return collection.getStats();
             }
         } else if (command.equalsIgnoreCase("validate")) {
-            MongoCollection<P> collection = resolveCollection(command, query, false);
+            MongoCollection<P> collection = resolveCollection(command, query);
             if (collection == null) {
                 throw new MongoServerError(26, "NamespaceNotFound", "ns not found");
             }
@@ -600,7 +606,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandCount(String command, Document query) {
-        MongoCollection<P> collection = resolveCollection(command, query, false);
+        MongoCollection<P> collection = resolveCollection(command, query);
         Document response = new Document();
         if (collection == null) {
             response.put("n", Integer.valueOf(0));
@@ -716,9 +722,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private MongoCollection<P> resolveCollection(String command, Document query, boolean throwIfNotFound) {
+    private MongoCollection<P> resolveCollection(String command, Document query) {
         String collectionName = query.get(command).toString();
-        return resolveCollection(collectionName, throwIfNotFound);
+        return resolveCollection(collectionName, false);
     }
 
     @Override
