@@ -2340,12 +2340,29 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @ParameterizedTest
     @MethodSource("aggregateWithConvertArguments")
-    void testAggregateWithConvert(String given, Object expected) throws Exception {
+    void testAggregateWithConvert_literals(String given, Object expected) throws Exception {
         List<Document> pipeline = Collections.singletonList(new Document("$project",
             new Document("value",
                 new Document("$convert", json(given)))));
 
         Document document = json("_id: 1");
+        collection.insertOne(document);
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(json("_id: 1").append("value", expected));
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithConvertArguments")
+    void testAggregateWithConvert_indirect(String given, Object expected) throws Exception {
+        Document convertDocument = json(given);
+        Object inputValue = convertDocument.put("input", "$x");
+
+        List<Document> pipeline = Collections.singletonList(new Document("$project",
+            new Document("value",
+                new Document("$convert", convertDocument))));
+
+        Document document = json("_id: 1").append("x", inputValue);
         collection.insertOne(document);
 
         assertThat(collection.aggregate(pipeline))
