@@ -3,10 +3,10 @@ package de.bwaldvogel.mongo.oplog;
 import java.util.Collections;
 import java.util.List;
 
-import de.bwaldvogel.mongo.backend.Cursor;
+import de.bwaldvogel.mongo.backend.AbstractCursor;
 import de.bwaldvogel.mongo.bson.Document;
 
-class InvalidateOplogCursor extends Cursor {
+class InvalidateOplogCursor extends AbstractCursor {
     private final OplogPosition position;
 
     InvalidateOplogCursor(OplogPosition position) {

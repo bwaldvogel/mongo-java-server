@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 
 import de.bwaldvogel.mongo.bson.Document;
 
-public class EmptyCursor extends Cursor {
+public class EmptyCursor extends AbstractCursor {
 
     private static final long EMPTY_CURSOR_ID = 0L;
 
