@@ -74,12 +74,12 @@ public class CollectionBackedOplog implements Oplog {
         collection.addDocument(toOplogDropCollection(databaseName, collectionName));
     }
 
-    private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position, Aggregation aggregation) {
+    private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position, Aggregation aggregation, String namespace) {
         return aggregation.runStagesAsStream(collection.queryAllAsStream()
             .filter(document -> {
                 BsonTimestamp timestamp = getOplogTimestamp(document);
                 OplogPosition documentOplogPosition = new OplogPosition(timestamp);
-                return documentOplogPosition.isAfter(position);
+                return filterNamespace(document, namespace) && documentOplogPosition.isAfter(position);
             })
             .sorted((o1, o2) -> {
                 BsonTimestamp timestamp1 = getOplogTimestamp(o1);
@@ -87,6 +87,18 @@ public class CollectionBackedOplog implements Oplog {
                 return timestamp1.compareTo(timestamp2);
             })
             .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument)));
+    }
+
+    private boolean filterNamespace(Document document, String namespace) {
+        String docNS = (String) document.get("ns");
+        if (docNS.equals(namespace)) {
+            return true;
+        }
+        if (Utils.getDatabaseNameFromFullName(namespace).equals(Utils.getDatabaseNameFromFullName(docNS))
+        && Utils.getCollectionNameFromFullName(docNS).equals("$cmd")) {
+            return true;
+        }
+        throw new MongoServerException("Missing feature");
     }
 
     @Override
@@ -121,7 +133,8 @@ public class CollectionBackedOplog implements Oplog {
             initialOplogPosition = new OplogPosition(oplogClock.now());
         }
 
-        Function<OplogPosition, Stream<Document>> streamSupplier = position -> streamOplog(changeStreamDocument, position, aggregation);
+        Function<OplogPosition, Stream<Document>> streamSupplier =
+            position -> streamOplog(changeStreamDocument, position, aggregation, namespace);
         OplogCursor cursor = new OplogCursor(cursorRegistry.generateCursorId(), streamSupplier, initialOplogPosition);
         cursorRegistry.add(cursor);
         return cursor;
