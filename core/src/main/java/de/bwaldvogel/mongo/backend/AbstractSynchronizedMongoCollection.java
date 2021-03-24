@@ -20,6 +20,11 @@ public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMon
     }
 
     @Override
+    public synchronized void addDocuments(List<Document> documents) {
+        super.addDocuments(documents);
+    }
+
+    @Override
     public synchronized Document findAndModify(Document query) {
         return super.findAndModify(query);
     }

@@ -3,6 +3,7 @@ package de.bwaldvogel.mongo.oplog;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -44,9 +45,10 @@ public class CollectionBackedOplog implements Oplog {
         if (isOplogCollection(namespace)) {
             return;
         }
-        documents.stream()
+        final List<Document> oplogInsertDocuments = documents.stream()
             .map(document -> toOplogInsertDocument(namespace, document))
-            .forEach(collection::addDocument);
+            .collect(Collectors.toList());
+        collection.addDocuments(oplogInsertDocuments);
     }
 
     @Override
@@ -54,9 +56,10 @@ public class CollectionBackedOplog implements Oplog {
         if (isOplogCollection(namespace)) {
             return;
         }
-        modifiedIds.forEach(id ->
-            collection.addDocument(toOplogUpdateDocument(namespace, query, id))
-        );
+        final List<Document> oplogUpdateDocuments = modifiedIds.stream()
+            .map(id -> toOplogUpdateDocument(namespace, query, id))
+            .collect(Collectors.toList());
+        collection.addDocuments(oplogUpdateDocuments);
     }
 
     @Override
@@ -64,9 +67,10 @@ public class CollectionBackedOplog implements Oplog {
         if (isOplogCollection(namespace)) {
             return;
         }
-        deletedIds.forEach(id ->
-            collection.addDocument(toOplogDeleteDocument(namespace, id))
-        );
+        final List<Document> oplogDeleteDocuments = deletedIds.stream()
+            .map(id -> toOplogDeleteDocument(namespace, id))
+            .collect(Collectors.toList());
+        collection.addDocuments(oplogDeleteDocuments);
     }
 
     @Override
