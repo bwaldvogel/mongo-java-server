@@ -18,6 +18,7 @@ io.netty:netty-common:4.1.60.Final=default,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-handler:4.1.60.Final=default,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-resolver:4.1.60.Final=default,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-transport:4.1.60.Final=default,runtimeClasspath,testRuntimeClasspath
+io.reactivex.rxjava2:rxjava:2.2.21=default,testCompileClasspath,testRuntimeClasspath
 junit:junit:4.13.1=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy-agent:1.10.20=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy:1.10.20=testCompileClasspath,testRuntimeClasspath

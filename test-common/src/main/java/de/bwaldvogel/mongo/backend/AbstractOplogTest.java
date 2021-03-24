@@ -40,6 +40,7 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.Success;
 
 import de.bwaldvogel.mongo.oplog.OperationType;
+import io.reactivex.subscribers.TestSubscriber;
 
 public abstract class AbstractOplogTest extends AbstractTest {
 
@@ -240,31 +241,32 @@ public abstract class AbstractOplogTest extends AbstractTest {
             Document.parse("{'fullDocument.b': 1}")))
         );
 
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor =
-            collection.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP).cursor();
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor =
+                 collection.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP).cursor()) {
 
-        final long cursorId = cursor.getServerCursor().getId();
+            final long cursorId = cursor.getServerCursor().getId();
 
-        for (int i = 1; i < numberOfDocs + 1; i++) {
-            Document doc = json(String.format("a: %d, b: 1", i));
-            collection.insertOne(doc);
-            collection.updateOne(eq("a", i), set("c", i * 10));
+            for (int i = 1; i < numberOfDocs + 1; i++) {
+                Document doc = json(String.format("a: %d, b: 1", i));
+                collection.insertOne(doc);
+                collection.updateOne(eq("a", i), set("c", i * 10));
 
-            assertThat(cursor.hasNext()).isTrue();
-            ChangeStreamDocument<Document> insertDocument = cursor.next();
-            assertThat(cursor.getServerCursor().getId()).isEqualTo(cursorId);
+                assertThat(cursor.hasNext()).isTrue();
+                ChangeStreamDocument<Document> insertDocument = cursor.next();
+                assertThat(cursor.getServerCursor().getId()).isEqualTo(cursorId);
 
-            assertThat(cursor.hasNext()).isTrue();
-            ChangeStreamDocument<Document> updateDocument = cursor.next();
-            assertThat(cursor.getServerCursor().getId()).isEqualTo(cursorId);
+                assertThat(cursor.hasNext()).isTrue();
+                ChangeStreamDocument<Document> updateDocument = cursor.next();
+                assertThat(cursor.getServerCursor().getId()).isEqualTo(cursorId);
 
-            assertThat(insertDocument.getFullDocument().get("a")).isEqualTo(i);
-            insert.add(insertDocument.getFullDocument());
+                assertThat(insertDocument.getFullDocument().get("a")).isEqualTo(i);
+                insert.add(insertDocument.getFullDocument());
 
-            assertThat(updateDocument.getFullDocument().get("a")).isEqualTo(i);
-            update.add(updateDocument.getFullDocument());
+                assertThat(updateDocument.getFullDocument().get("a")).isEqualTo(i);
+                update.add(updateDocument.getFullDocument());
 
-            changeStreamsResult.addAll(Arrays.asList(insertDocument, updateDocument));
+                changeStreamsResult.addAll(Arrays.asList(insertDocument, updateDocument));
+            }
         }
 
         assertThat(insert.size()).isEqualTo(numberOfDocs);
@@ -275,94 +277,107 @@ public abstract class AbstractOplogTest extends AbstractTest {
     @Test
     public void testChangeStreamUpdateDefault() {
         collection.insertOne(json("a: 1, b: 2, c: 3"));
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor();
-        collection.updateOne(eq("a", 1), json("$set: {b: 0, c: 10}"));
-        ChangeStreamDocument<Document> updateDocument = cursor.next();
-        Document fullDoc = updateDocument.getFullDocument();
-        assertThat(fullDoc).isNotNull();
-        assertThat(fullDoc.get("b")).isEqualTo(0);
-        assertThat(fullDoc.get("c")).isEqualTo(10);
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
+            collection.updateOne(eq("a", 1), json("$set: {b: 0, c: 10}"));
+            ChangeStreamDocument<Document> updateDocument = cursor.next();
+            Document fullDoc = updateDocument.getFullDocument();
+            assertThat(fullDoc).isNotNull();
+            assertThat(fullDoc.get("b")).isEqualTo(0);
+            assertThat(fullDoc.get("c")).isEqualTo(10);
 
-        collection.updateOne(eq("a", 1), unset("b"));
-        updateDocument = cursor.next();
-        fullDoc = updateDocument.getFullDocument();
-        assertThat(fullDoc).isNotNull();
-        assertThat(fullDoc.get("b")).isEqualTo("");
+            collection.updateOne(eq("a", 1), unset("b"));
+            updateDocument = cursor.next();
+            fullDoc = updateDocument.getFullDocument();
+            assertThat(fullDoc).isNotNull();
+            assertThat(fullDoc.get("b")).isEqualTo("");
+        }
     }
 
     @Test
     public void testChangeStreamDelete() {
         collection.insertOne(json("_id: 1"));
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor();
-        collection.deleteOne(json("_id: 1"));
-        ChangeStreamDocument<Document> deleteDocument = cursor.next();
-        assertThat(deleteDocument.getDocumentKey().get("_id")).isEqualTo(new BsonInt32(1));
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
+            collection.deleteOne(json("_id: 1"));
+            ChangeStreamDocument<Document> deleteDocument = cursor.next();
+            assertThat(deleteDocument.getDocumentKey().get("_id")).isEqualTo(new BsonInt32(1));
+        }
     }
 
     @Test
     public void testChangeStreamStartAfter() {
         collection.insertOne(json("a: 1")); // This is needed to initialize the collection in the server.
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor();
-        collection.insertOne(json("a: 2"));
-        collection.insertOne(json("a: 3"));
-        ChangeStreamDocument<Document> document = cursor.next();
-        BsonDocument resumeToken = document.getResumeToken();
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
+            collection.insertOne(json("a: 2"));
+            collection.insertOne(json("a: 3"));
+            ChangeStreamDocument<Document> document = cursor.next();
+            BsonDocument resumeToken = document.getResumeToken();
 
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2 = collection.watch().startAfter(resumeToken).cursor();
-        ChangeStreamDocument<Document> document2 = cursor2.next();
-        assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+            try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2
+                     = collection.watch().startAfter(resumeToken).cursor()) {
+                ChangeStreamDocument<Document> document2 = cursor2.next();
+                assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+            }
+        }
     }
 
     @Test
     public void testChangeStreamResumeAfter() {
         collection.insertOne(json("a: 1"));
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor();
-        collection.insertOne(json("a: 2"));
-        collection.insertOne(json("a: 3"));
-        ChangeStreamDocument<Document> document = cursor.next();
-        BsonDocument resumeToken = document.getResumeToken();
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor();) {
+            collection.insertOne(json("a: 2"));
+            collection.insertOne(json("a: 3"));
+            ChangeStreamDocument<Document> document = cursor.next();
+            BsonDocument resumeToken = document.getResumeToken();
 
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2 = collection.watch().resumeAfter(resumeToken).cursor();
-        ChangeStreamDocument<Document> document2 = cursor2.next();
-        assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+            try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2
+                     = collection.watch().resumeAfter(resumeToken).cursor()) {
+                ChangeStreamDocument<Document> document2 = cursor2.next();
+                assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+            }
+        }
     }
 
     @Test
     public void testChangeStreamResumeAfterTerminalEvent() {
         MongoCollection<Document> col = db.getCollection("test-collection");
         ChangeStreamIterable<Document> watch = col.watch().fullDocument(FullDocument.UPDATE_LOOKUP).batchSize(1);
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = watch.cursor();
-        col.insertOne(json("a: 1"));
-        cursor.next();
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = watch.cursor()) {
+            col.insertOne(json("a: 1"));
+            cursor.next();
 
-        col.drop();
+            col.drop();
 
-        ChangeStreamDocument<Document> document = cursor.next();
-        BsonDocument resumeToken = document.getResumeToken();
-        cursor = watch.resumeAfter(resumeToken).cursor();
-        document = cursor.next();
+            ChangeStreamDocument<Document> document = cursor.next();
+            BsonDocument resumeToken = document.getResumeToken();
+            try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> resumeAfterCursor
+                     = watch.resumeAfter(resumeToken).cursor();) {
+                document = resumeAfterCursor.next();
 
-        assertThat(document).isNotNull();
-        assertThat(document.getOperationType()).isEqualTo(com.mongodb.client.model.changestream.OperationType.INVALIDATE);
+                assertThat(document).isNotNull();
+                assertThat(document.getOperationType())
+                    .isEqualTo(com.mongodb.client.model.changestream.OperationType.INVALIDATE);
 
-        assertThatExceptionOfType(NoSuchElementException.class)
-            .isThrownBy(cursor::next);
+                assertThatExceptionOfType(NoSuchElementException.class)
+                    .isThrownBy(resumeAfterCursor::next);
+            }
+        }
     }
 
     @Test
     public void testChangeStreamStartAtOperationTime() {
         collection.insertOne(json("a: 1"));
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor();
-        collection.insertOne(json("a: 2"));
-        collection.insertOne(json("a: 3"));
-        ChangeStreamDocument<Document> document = cursor.next();
-        BsonTimestamp startAtOperationTime = document.getClusterTime();
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
+            collection.insertOne(json("a: 2"));
+            collection.insertOne(json("a: 3"));
+            ChangeStreamDocument<Document> document = cursor.next();
+            BsonTimestamp startAtOperationTime = document.getClusterTime();
 
-        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2 = collection.watch().startAtOperationTime(startAtOperationTime).cursor();
-        ChangeStreamDocument<Document> document2 = cursor2.next();
-        assertThat(document2.getFullDocument().get("a")).isEqualTo(2);
-        document2 = cursor2.next();
-        assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+            MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2 = collection.watch().startAtOperationTime(startAtOperationTime).cursor();
+            ChangeStreamDocument<Document> document2 = cursor2.next();
+            assertThat(document2.getFullDocument().get("a")).isEqualTo(2);
+            document2 = cursor2.next();
+            assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+        }
     }
 
     @Test
@@ -380,9 +395,9 @@ public abstract class AbstractOplogTest extends AbstractTest {
         TestSubscriber<Document> findSubscriber = new TestSubscriber<>();
         asyncCollection.find(json("a:1")).subscribe(findSubscriber);
         findSubscriber.awaitTerminalEvent();
-        assertThat(findSubscriber.getSingleValue().get("a")).isEqualTo(1);
+        assertThat(findSubscriber.values().get(0).get("a")).isEqualTo(1);
 
-        streamSubscriber.awaitCount(1);
+        streamSubscriber.awaitCount(1).assertValueCount(1).cancel();
         assertThat(streamSubscriber.values().get(0).getOperationType().getValue()).isEqualTo("insert");
         assertThat(streamSubscriber.values().get(0).getFullDocument()).isEqualTo(findSubscriber.values().get(0));
     }
@@ -407,8 +422,8 @@ public abstract class AbstractOplogTest extends AbstractTest {
         insertSubscriber1.awaitTerminalEvent();
         insertSubscriber2.awaitTerminalEvent();
 
-        streamSubscriber.awaitCount(1);
-        assertThat(streamSubscriber.getSingleValue().getFullDocument().get("bu")).isEqualTo("abc");
+        streamSubscriber.awaitCount(1).assertValueCount(1).cancel();
+        assertThat(streamSubscriber.values().get(0).getFullDocument().get("bu")).isEqualTo("abc");
     }
 
     @Test

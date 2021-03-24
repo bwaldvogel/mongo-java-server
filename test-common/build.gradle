@@ -16,6 +16,8 @@ dependencies {
     api "org.mockito:mockito-core:latest.release"
     api "org.mockito:mockito-junit-jupiter:latest.release"
 
+    api group: 'io.reactivex.rxjava2', name: 'rxjava', version: 'latest.release'
+
     runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
 
     testImplementation "org.testcontainers:testcontainers:latest.release"
