@@ -644,7 +644,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         int batchSize = (int) cursorDocument.getOrDefault("batchSize", 0);
 
         String namespace = getFullCollectionNamespace(collectionName);
-        Cursor cursor = oplog.createCursor(changeStreamDocument, namespace, aggregation);
+        Cursor cursor = oplog.createChangeStreamCursor(changeStreamDocument, namespace, aggregation);
         return Utils.firstBatchCursorResponse(namespace, cursor.takeDocuments(batchSize), cursor);
     }
 

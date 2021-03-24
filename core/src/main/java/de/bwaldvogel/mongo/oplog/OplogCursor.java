@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.AbstractCursor;
 import de.bwaldvogel.mongo.backend.TailableCursor;
+import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 
 public class OplogCursor extends AbstractCursor implements TailableCursor {
@@ -16,7 +17,7 @@ public class OplogCursor extends AbstractCursor implements TailableCursor {
     private final Function<OplogPosition, Stream<Document>> oplogStream;
     private OplogPosition position;
 
-    public OplogCursor(long cursorId, Function<OplogPosition, Stream<Document>> oplogStream, OplogPosition position) {
+    OplogCursor(long cursorId, Function<OplogPosition, Stream<Document>> oplogStream, OplogPosition position) {
         super(cursorId);
         this.oplogStream = oplogStream;
         this.position = position;
@@ -63,9 +64,9 @@ public class OplogCursor extends AbstractCursor implements TailableCursor {
         }
     }
 
-    private static OplogPosition getOplogPosition(Document document) {
-        Document id = (Document) document.get(OplogDocumentFields.ID);
-        return OplogPosition.fromDocument(id);
+    private static OplogPosition getOplogPosition(Document oplogDocument) {
+        final BsonTimestamp oplogTimestamp = OplogUtils.getOplogTimestamp(oplogDocument);
+        return OplogPosition.fromTimestamp(oplogTimestamp);
     }
 
 }

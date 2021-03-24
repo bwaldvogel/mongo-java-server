@@ -2,8 +2,8 @@ package de.bwaldvogel.mongo.oplog;
 
 import java.util.List;
 
-import de.bwaldvogel.mongo.backend.Cursor;
 import de.bwaldvogel.mongo.backend.EmptyCursor;
+import de.bwaldvogel.mongo.backend.TailableCursor;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -35,7 +35,12 @@ public final class NoopOplog implements Oplog {
     }
 
     @Override
-    public Cursor createCursor(Document changeStreamDocument, String namespace, Aggregation aggregation) {
+    public TailableCursor createCursor(String namespace, OplogPosition initialOplogPosition) {
+        return EmptyCursor.get();
+    }
+
+    @Override
+    public TailableCursor createChangeStreamCursor(Document changeStreamDocument, String namespace, Aggregation aggregation) {
         return EmptyCursor.get();
     }
 }
