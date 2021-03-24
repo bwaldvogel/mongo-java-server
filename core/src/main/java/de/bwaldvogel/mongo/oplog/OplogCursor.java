@@ -8,9 +8,10 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.AbstractCursor;
+import de.bwaldvogel.mongo.backend.TailableCursor;
 import de.bwaldvogel.mongo.bson.Document;
 
-public class OplogCursor extends AbstractCursor {
+public class OplogCursor extends AbstractCursor implements TailableCursor {
 
     private final Function<OplogPosition, Stream<Document>> oplogStream;
     private OplogPosition position;
@@ -51,7 +52,8 @@ public class OplogCursor extends AbstractCursor {
         }
     }
 
-    OplogPosition getPosition() {
+    @Override
+    public OplogPosition getPosition() {
         return position;
     }
 

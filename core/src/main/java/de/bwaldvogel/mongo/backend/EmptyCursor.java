@@ -4,8 +4,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.oplog.OplogPosition;
 
-public class EmptyCursor extends AbstractCursor {
+public class EmptyCursor extends AbstractCursor implements TailableCursor {
 
     private static final long EMPTY_CURSOR_ID = 0L;
 
@@ -32,5 +33,10 @@ public class EmptyCursor extends AbstractCursor {
     @Override
     public String toString() {
         return getClass().getSimpleName() + "()";
+    }
+
+    @Override
+    public OplogPosition getPosition() {
+        return null;
     }
 }
