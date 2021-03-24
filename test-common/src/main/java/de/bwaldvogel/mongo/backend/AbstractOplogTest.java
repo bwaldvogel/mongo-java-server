@@ -464,7 +464,6 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    @Disabled
     public void testMultipleChangeStreams() throws InterruptedException {
         Flowable.fromPublisher(asyncCollection.insertOne(json("_id: 1")))
             .test().awaitDone(5, TimeUnit.SECONDS).assertComplete();

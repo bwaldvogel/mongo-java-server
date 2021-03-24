@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.oplog;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,6 +28,8 @@ public class OplogCursor extends AbstractCursor {
 
     @Override
     public List<Document> takeDocuments(int numberToReturn) {
+        emulateWaitingForAllShards();
+
         Stream<Document> stream = oplogStream.apply(position);
 
         if (numberToReturn > 0) {
@@ -36,6 +39,16 @@ public class OplogCursor extends AbstractCursor {
         List<Document> documents = stream.collect(Collectors.toList());
         updatePosition(documents);
         return documents;
+    }
+
+    private void emulateWaitingForAllShards() {
+        try {
+            // artificial delay to avoid 100% CPU usage when starting multiple ChangeStreams
+            // emulates real ChangeStream behaviour of waiting for all shards to provide data
+            TimeUnit.MILLISECONDS.sleep(100);
+        } catch (InterruptedException e) {
+            // ignore
+        }
     }
 
     OplogPosition getPosition() {
