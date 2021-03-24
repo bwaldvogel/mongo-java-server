@@ -94,11 +94,8 @@ public class CollectionBackedOplog implements Oplog {
         if (docNS.equals(namespace)) {
             return true;
         }
-        if (Utils.getDatabaseNameFromFullName(namespace).equals(Utils.getDatabaseNameFromFullName(docNS))
-        && Utils.getCollectionNameFromFullName(docNS).equals("$cmd")) {
-            return true;
-        }
-        throw new MongoServerException("Missing feature");
+        return Utils.getDatabaseNameFromFullName(namespace).equals(Utils.getDatabaseNameFromFullName(docNS))
+        && Utils.getCollectionNameFromFullName(docNS).equals("$cmd");
     }
 
     @Override
