@@ -244,13 +244,20 @@ public abstract class AbstractOplogTest extends AbstractTest {
         MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor =
             collection.watch(pipeline).fullDocument(FullDocument.UPDATE_LOOKUP).cursor();
 
+        final long cursorId = cursor.getServerCursor().getId();
+
         for (int i = 1; i < numberOfDocs + 1; i++) {
             Document doc = json(String.format("a: %d, b: 1", i));
             collection.insertOne(doc);
             collection.updateOne(eq("a", i), set("c", i * 10));
 
+            assertThat(cursor.hasNext()).isTrue();
             ChangeStreamDocument<Document> insertDocument = cursor.next();
+            assertThat(cursor.getServerCursor().getId()).isEqualTo(cursorId);
+
+            assertThat(cursor.hasNext()).isTrue();
             ChangeStreamDocument<Document> updateDocument = cursor.next();
+            assertThat(cursor.getServerCursor().getId()).isEqualTo(cursorId);
 
             assertThat(insertDocument.getFullDocument().get("a")).isEqualTo(i);
             insert.add(insertDocument.getFullDocument());
