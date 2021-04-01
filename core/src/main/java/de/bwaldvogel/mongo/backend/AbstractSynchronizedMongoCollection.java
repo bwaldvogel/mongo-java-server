@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
@@ -20,7 +21,7 @@ public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMon
     }
 
     @Override
-    public synchronized void addDocuments(List<Document> documents) {
+    public synchronized void addDocuments(Stream<Document> documents) {
         super.addDocuments(documents);
     }
 

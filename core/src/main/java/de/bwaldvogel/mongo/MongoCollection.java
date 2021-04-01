@@ -35,7 +35,7 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
 
     void addDocument(Document document);
 
-    default void addDocuments(List<Document> documents) {
+    default void addDocuments(Stream<Document> documents) {
         documents.forEach(this::addDocument);
     }
 

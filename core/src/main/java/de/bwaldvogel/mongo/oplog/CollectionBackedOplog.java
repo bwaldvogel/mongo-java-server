@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.oplog;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -45,10 +44,9 @@ public class CollectionBackedOplog implements Oplog {
         if (isOplogCollection(namespace)) {
             return;
         }
-        final List<Document> oplogInsertDocuments = documents.stream()
-            .map(document -> toOplogInsertDocument(namespace, document))
-            .collect(Collectors.toList());
-        collection.addDocuments(oplogInsertDocuments);
+        Stream<Document> oplogInsertDocuments = documents.stream()
+            .map(document -> toOplogInsertDocument(namespace, document));
+        addDocuments(oplogInsertDocuments);
     }
 
     @Override
@@ -56,10 +54,9 @@ public class CollectionBackedOplog implements Oplog {
         if (isOplogCollection(namespace)) {
             return;
         }
-        final List<Document> oplogUpdateDocuments = modifiedIds.stream()
-            .map(id -> toOplogUpdateDocument(namespace, query, id))
-            .collect(Collectors.toList());
-        collection.addDocuments(oplogUpdateDocuments);
+        Stream<Document> oplogUpdateDocuments = modifiedIds.stream()
+            .map(id -> toOplogUpdateDocument(namespace, query, id));
+        addDocuments(oplogUpdateDocuments);
     }
 
     @Override
@@ -67,10 +64,13 @@ public class CollectionBackedOplog implements Oplog {
         if (isOplogCollection(namespace)) {
             return;
         }
-        final List<Document> oplogDeleteDocuments = deletedIds.stream()
-            .map(id -> toOplogDeleteDocument(namespace, id))
-            .collect(Collectors.toList());
-        collection.addDocuments(oplogDeleteDocuments);
+        Stream<Document> oplogDeleteDocuments = deletedIds.stream()
+            .map(id -> toOplogDeleteDocument(namespace, id));
+        addDocuments(oplogDeleteDocuments);
+    }
+
+    private void addDocuments(Stream<Document> oplogDocuments) {
+        collection.addDocuments(oplogDocuments);
     }
 
     @Override
