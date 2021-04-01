@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import java.util.concurrent.TimeUnit;
+
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonTimestamp;
@@ -403,4 +405,29 @@ public abstract class AbstractOplogTest extends AbstractTest {
         assertThat(streamSubscriber.getSingleValue().getFullDocument().get("bu")).isEqualTo("abc");
     }
 
+    @Test
+    public void testOplogShouldFilterNamespaceOnChangeStreams() throws Exception {
+        TestSubscriber<Success> insertSubscriber = new TestSubscriber<>();
+        com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection1 =
+            asyncDb.getCollection(asyncCollection.getNamespace().getCollectionName() + "1");
+
+        asyncCollection.insertOne(json("_id: 1")).subscribe(insertSubscriber);
+        asyncCollection1.insertOne(json("_id: 1")).subscribe(insertSubscriber);
+
+        insertSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+
+        TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
+        Bson filter = match(Filters.eq("fullDocument.a", 1));
+        asyncCollection.watch(singletonList(filter)).subscribe(streamSubscriber);
+
+        // Necessary to give time for the change stream to start before the below insert operation is executed.
+        Thread.sleep(50);
+
+        insertSubscriber = new TestSubscriber<>();
+        asyncCollection1.insertOne(json("_id: 2, a: 1")).subscribe(insertSubscriber);
+        insertSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+
+        streamSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+        assertThat(streamSubscriber.values()).isEmpty();
+    }
 }

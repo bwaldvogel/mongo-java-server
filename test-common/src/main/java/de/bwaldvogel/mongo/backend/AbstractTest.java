@@ -40,6 +40,7 @@ public abstract class AbstractTest {
     protected static MongoCollection<Document> collection;
 
     static com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection;
+    static com.mongodb.reactivestreams.client.MongoDatabase asyncDb;
 
     private static MongoServer mongoServer;
     private static MongoClient asyncClient;
@@ -86,7 +87,7 @@ public abstract class AbstractTest {
         collection = db.getCollection("testcoll");
 
         MongoNamespace namespace = collection.getNamespace();
-        com.mongodb.reactivestreams.client.MongoDatabase asyncDb = asyncClient.getDatabase(namespace.getDatabaseName());
+        asyncDb = asyncClient.getDatabase(namespace.getDatabaseName());
         asyncCollection = asyncDb.getCollection(namespace.getCollectionName());
     }
 

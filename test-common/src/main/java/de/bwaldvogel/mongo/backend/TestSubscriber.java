@@ -51,7 +51,7 @@ class TestSubscriber<T> implements Subscriber<T> {
     }
 
     public void awaitTerminalEvent() throws InterruptedException {
-        completeLatch.await(10, TimeUnit.SECONDS);
+        awaitTerminalEvent(10, TimeUnit.SECONDS);
     }
 
     public void assertNoErrors() {
@@ -64,6 +64,12 @@ class TestSubscriber<T> implements Subscriber<T> {
             assertThat(values.size()).isLessThan(expectedCount);
             Thread.sleep(10);
         }
+    }
+
+    public void awaitTerminalEvent(int value, TimeUnit timeUnit) throws InterruptedException {
+        assertThat(value).isPositive();
+        assertThat(timeUnit).isNotNull();
+        completeLatch.await(value, timeUnit);
     }
 
     public T getSingleValue() {
