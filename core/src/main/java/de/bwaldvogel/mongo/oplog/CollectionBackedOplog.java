@@ -20,6 +20,11 @@ public class CollectionBackedOplog implements Oplog {
     private static final long ELECTION_TERM = 1L;
     private static final String START_AT_OPERATION_TIME = "startAtOperationTime";
     private static final String FULL_DOCUMENT = "fullDocument";
+    private static final String START_AFTER = "startAfter";
+    private static final String RESUME_AFTER = "resumeAfter";
+    private static final String OPERATION_TYPE = "operationType";
+    private static final String CLUSTER_TIME = "clusterTime";
+    private static final String DOCUMENT_KEY = "documentKey";
 
     private final OplogClock oplogClock;
     private final MongoCollection<Document> collection;
@@ -74,12 +79,14 @@ public class CollectionBackedOplog implements Oplog {
         collection.addDocument(toOplogDropCollection(databaseName, collectionName));
     }
 
-    private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position, Aggregation aggregation, String namespace) {
+    private Stream<Document> streamOplog(Document changeStreamDocument, OplogPosition position, Aggregation aggregation,
+                                         String namespace) {
         return aggregation.runStagesAsStream(collection.queryAllAsStream()
+            .filter(document -> filterNamespace(document, namespace))
             .filter(document -> {
                 BsonTimestamp timestamp = getOplogTimestamp(document);
                 OplogPosition documentOplogPosition = new OplogPosition(timestamp);
-                return filterNamespace(document, namespace) && documentOplogPosition.isAfter(position);
+                return documentOplogPosition.isAfter(position);
             })
             .sorted((o1, o2) -> {
                 BsonTimestamp timestamp1 = getOplogTimestamp(o1);
@@ -89,8 +96,8 @@ public class CollectionBackedOplog implements Oplog {
             .map(document -> toChangeStreamResponseDocument(document, changeStreamDocument)));
     }
 
-    private boolean filterNamespace(Document document, String namespace) {
-        String docNS = (String) document.get("ns");
+    private static boolean filterNamespace(Document document, String namespace) {
+        String docNS = (String) document.get(OplogDocumentFields.NAMESPACE);
         if (docNS.equals(namespace)) {
             return true;
         }
@@ -100,8 +107,8 @@ public class CollectionBackedOplog implements Oplog {
 
     @Override
     public Cursor createCursor(Document changeStreamDocument, String namespace, Aggregation aggregation) {
-        Document startAfter = (Document) changeStreamDocument.get("startAfter");
-        Document resumeAfter = (Document) changeStreamDocument.get("resumeAfter");
+        Document startAfter = (Document) changeStreamDocument.get(START_AFTER);
+        Document resumeAfter = (Document) changeStreamDocument.get(RESUME_AFTER);
         BsonTimestamp startAtOperationTime = (BsonTimestamp) changeStreamDocument.get(START_AT_OPERATION_TIME);
         final OplogPosition initialOplogPosition;
         if (startAfter != null) {
@@ -214,7 +221,7 @@ public class CollectionBackedOplog implements Oplog {
     }
 
     private Document toChangeStreamResponseDocument(Document oplogDocument, Document changeStreamDocument) {
-        OperationType operationType = OperationType.fromCode(oplogDocument.get("op").toString());
+        OperationType operationType = OperationType.fromCode(oplogDocument.get(OplogDocumentFields.OPERATION_TYPE).toString());
         Document documentKey = new Document();
         Document document = getUpdateDocument(oplogDocument);
         BsonTimestamp timestamp = getOplogTimestamp(oplogDocument);
@@ -235,10 +242,10 @@ public class CollectionBackedOplog implements Oplog {
 
         return new Document()
             .append(OplogDocumentFields.ID, new Document(OplogDocumentFields.ID_DATA_KEY, oplogPosition.toHexString()))
-            .append("operationType", operationType.getDescription())
+            .append(OPERATION_TYPE, operationType.getDescription())
             .append(FULL_DOCUMENT, getFullDocument(changeStreamDocument, oplogDocument, operationType))
-            .append("documentKey", documentKey)
-            .append("clusterTime", timestamp);
+            .append(DOCUMENT_KEY, documentKey)
+            .append(CLUSTER_TIME, timestamp);
     }
 
     private Document toChangeStreamCommandResponseDocument(Document oplogDocument, OplogPosition oplogPosition, BsonTimestamp timestamp) {
@@ -249,8 +256,8 @@ public class CollectionBackedOplog implements Oplog {
 
         return new Document()
             .append(OplogDocumentFields.ID, new Document(OplogDocumentFields.ID_DATA_KEY, oplogPosition.toHexString()))
-            .append("operationType", operationType)
-            .append("clusterTime", timestamp);
+            .append(OPERATION_TYPE, operationType)
+            .append(CLUSTER_TIME, timestamp);
     }
 
     private static BsonTimestamp getOplogTimestamp(Document document) {
