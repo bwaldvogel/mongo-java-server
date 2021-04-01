@@ -7,7 +7,7 @@ import static com.mongodb.client.model.Updates.unset;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static java.util.Collections.singletonList;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -17,7 +17,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-
 import java.util.concurrent.TimeUnit;
 
 import org.bson.BsonDocument;
@@ -330,24 +329,24 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     @Test
     public void testChangeStreamResumeAfterTerminalEvent() {
-        assertThrows(NoSuchElementException.class, () -> {
-            MongoCollection<Document> col = db.getCollection("test-collection");
-            ChangeStreamIterable<Document> watch = col.watch().fullDocument(FullDocument.UPDATE_LOOKUP).batchSize(1);
-            MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = watch.cursor();
-            col.insertOne(json("a: 1"));
-            cursor.next();
+        MongoCollection<Document> col = db.getCollection("test-collection");
+        ChangeStreamIterable<Document> watch = col.watch().fullDocument(FullDocument.UPDATE_LOOKUP).batchSize(1);
+        MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = watch.cursor();
+        col.insertOne(json("a: 1"));
+        cursor.next();
 
-            col.drop();
+        col.drop();
 
-            ChangeStreamDocument<Document> document = cursor.next();
-            BsonDocument resumeToken = document.getResumeToken();
-            cursor = watch.resumeAfter(resumeToken).cursor();
-            document = cursor.next();
+        ChangeStreamDocument<Document> document = cursor.next();
+        BsonDocument resumeToken = document.getResumeToken();
+        cursor = watch.resumeAfter(resumeToken).cursor();
+        document = cursor.next();
 
-            assertThat(document).isNotNull();
-            assertThat(document.getOperationType()).isEqualTo(com.mongodb.client.model.changestream.OperationType.INVALIDATE);
-            cursor.next();
-        });
+        assertThat(document).isNotNull();
+        assertThat(document.getOperationType()).isEqualTo(com.mongodb.client.model.changestream.OperationType.INVALIDATE);
+
+        assertThatExceptionOfType(NoSuchElementException.class)
+            .isThrownBy(cursor::next);
     }
 
     @Test
