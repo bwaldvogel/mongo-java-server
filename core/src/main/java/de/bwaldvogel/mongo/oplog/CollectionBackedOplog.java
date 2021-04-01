@@ -95,7 +95,7 @@ public class CollectionBackedOplog implements Oplog {
             return true;
         }
         return Utils.getDatabaseNameFromFullName(namespace).equals(Utils.getDatabaseNameFromFullName(docNS))
-        && Utils.getCollectionNameFromFullName(docNS).equals("$cmd");
+            && Utils.getCollectionNameFromFullName(docNS).equals("$cmd");
     }
 
     @Override
