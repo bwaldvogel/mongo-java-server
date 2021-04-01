@@ -395,11 +395,11 @@ public abstract class AbstractOplogTest extends AbstractTest {
         TestSubscriber<Document> findSubscriber = new TestSubscriber<>();
         asyncCollection.find(json("a:1")).subscribe(findSubscriber);
         findSubscriber.awaitTerminalEvent();
-        assertThat(findSubscriber.values().get(0).get("a")).isEqualTo(1);
+        assertThat(getSingleValue(findSubscriber).get("a")).isEqualTo(1);
 
         streamSubscriber.awaitCount(1).assertValueCount(1).cancel();
-        assertThat(streamSubscriber.values().get(0).getOperationType().getValue()).isEqualTo("insert");
-        assertThat(streamSubscriber.values().get(0).getFullDocument()).isEqualTo(findSubscriber.values().get(0));
+        assertThat(getSingleValue(streamSubscriber).getOperationType().getValue()).isEqualTo("insert");
+        assertThat(getSingleValue(streamSubscriber).getFullDocument()).isEqualTo(getSingleValue(findSubscriber));
     }
 
     @Test
@@ -423,7 +423,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
         insertSubscriber2.awaitTerminalEvent();
 
         streamSubscriber.awaitCount(1).assertValueCount(1).cancel();
-        assertThat(streamSubscriber.values().get(0).getFullDocument().get("bu")).isEqualTo("abc");
+        assertThat(getSingleValue(streamSubscriber).getFullDocument().get("bu")).isEqualTo("abc");
     }
 
     @Test
@@ -451,4 +451,9 @@ public abstract class AbstractOplogTest extends AbstractTest {
         streamSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
         assertThat(streamSubscriber.values()).isEmpty();
     }
+
+    private static <T> T getSingleValue(TestSubscriber<T> subscriber) {
+        return subscriber.values().get(0);
+    }
+
 }
