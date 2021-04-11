@@ -1053,7 +1053,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         // TODO resolve cast
         @SuppressWarnings("unchecked")
         MongoCollection<P> newCollection = (MongoCollection<P>) collection;
-        collections.put(newCollectionName, newCollection);
+        MongoCollection<P> oldCollection = collections.put(newCollectionName, newCollection);
+        Assert.isNull(oldCollection,
+            () -> "Failed to register renamed collection. Another collection still existed: " + oldCollection);
         List<Document> newDocuments = new ArrayList<>();
         newDocuments.add(new Document("name", collection.getFullName()));
 

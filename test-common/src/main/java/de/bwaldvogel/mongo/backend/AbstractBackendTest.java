@@ -4244,12 +4244,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
         MongoCollection<Document> otherCollection = db.getCollection("other-collection-name");
         otherCollection.insertOne(json("_id: 1"));
 
+        assertThat(collection.listIndexes()).extracting(index -> index.getString("name"))
+            .containsExactly("_id_");
+
         collection.renameCollection(new MongoNamespace(db.getName(), "other-collection-name"),
             new RenameCollectionOptions().dropTarget(true));
 
         assertThat(db.listCollectionNames()).containsExactly("other-collection-name");
 
-        assertThat(getCollection("other-collection-name").countDocuments()).isEqualTo(3);
+        MongoCollection<Document> renamedCollection = getCollection("other-collection-name");
+
+        assertThat(renamedCollection.listIndexes()).extracting(index -> index.getString("name"))
+            .containsExactly("_id_");
+
+        assertThat(renamedCollection.countDocuments()).isEqualTo(3);
     }
 
     @Test
