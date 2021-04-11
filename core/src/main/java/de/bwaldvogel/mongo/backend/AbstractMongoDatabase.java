@@ -443,9 +443,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private void dropIndexes(MongoCollection<P> collection, Document query) {
         Object index = query.get("index");
-        if (index == null) {
-            return;
-        }
+        Assert.notNull(index, () -> "Index name must not be null");
         MongoCollection<P> indexCollection = indexes.get();
         if (Objects.equals(index, "*")) {
             for (Document indexDocument : indexCollection.queryAll()) {
@@ -455,7 +453,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 }
             }
         } else if (index instanceof String) {
-            dropIndex(collection, index.toString());
+            dropIndex(collection, new Document("name", index));
         } else {
             Document indexKeys = (Document) index;
             Document indexQuery = new Document("key", indexKeys).append("ns", collection.getFullName());

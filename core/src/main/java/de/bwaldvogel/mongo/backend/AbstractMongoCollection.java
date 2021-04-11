@@ -28,6 +28,7 @@ import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
+import de.bwaldvogel.mongo.exception.IndexNotFoundException;
 import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -237,7 +238,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             .filter(index -> index.getName().equals(indexName))
             .collect(Collectors.toList());
         if (indexesToDrop.isEmpty()) {
-            return;
+            throw new IndexNotFoundException("index not found with name [" + indexName + "]");
         }
         Index<P> indexToDrop = CollectionUtils.getSingleElement(indexesToDrop);
         indexToDrop.drop();

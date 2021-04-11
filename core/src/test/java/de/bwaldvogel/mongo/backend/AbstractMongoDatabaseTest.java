@@ -98,25 +98,4 @@ class AbstractMongoDatabaseTest {
         assertThat(doc).isNotNull();
         assertThat(doc.get("_id")).isEqualTo(1);
     }
-
-    @Test
-    void testHandleCommandAsync_dropStringIndex() throws Exception {
-        Channel channel = Mockito.mock(Channel.class);
-        Document index = new Document();
-        index.put("dropIndexes", "mockCollection");
-        index.put("index", "string_not_document");
-        CompletionStage<Document> responseFuture = database.handleCommandAsync(channel, "dropIndexes", index, null);
-        Document response = responseFuture.toCompletableFuture().get();
-        assertThat(response).isNotNull();
-        assertThat(response.get("ok")).isEqualTo(1.0);
-    }
-
-    /**
-     * Verify that no exception is thrown if the index to be deleted is null.
-     */
-    @Test
-    void testHandleCommandAsync_nullDropIndex() {
-        Channel channel = Mockito.mock(Channel.class);
-        database.handleCommandAsync(channel, "dropIndexes", null, null);
-    }
 }

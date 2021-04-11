@@ -92,8 +92,8 @@ import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.DeleteManyModel;
 import com.mongodb.client.model.EstimatedDocumentCountOptions;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.FindOneAndReplaceOptions;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.RenameCollectionOptions;
@@ -660,6 +660,36 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.dropIndexes();
         collection.drop();
         collection.dropIndexes();
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/184
+    @Test
+    void testDropIndex_string() throws Exception {
+        collection.insertOne(json("_id: 1, c: 10"));
+
+        String indexName = collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
+
+        assertThat(collection.listIndexes()).hasSize(2);
+
+        collection.dropIndex(indexName);
+
+        assertThat(collection.listIndexes()).hasSize(1);
+
+        collection.insertOne(json("_id: 2, c: 10"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.dropIndex(indexName))
+            .withMessageContaining("Command failed with error 27 (IndexNotFound): 'index not found with name [c_1]'");
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/184
+    @Test
+    void testDropIndex_null() throws Exception {
+        collection.insertOne(json("_id: 1, c: 10"));
+
+        assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> collection.dropIndex((String) null))
+            .withMessage("indexName can not be null");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/171
