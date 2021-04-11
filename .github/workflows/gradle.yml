@@ -32,4 +32,8 @@ jobs:
       with:
         java-version: 8
     - name: Publish coverage
-      run: ./gradlew jacocoTestReport coveralls
+      run: ./gradlew jacocoRootReport
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        files: ./build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml

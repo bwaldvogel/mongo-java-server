@@ -1,6 +1,6 @@
 [![CI](https://github.com/bwaldvogel/mongo-java-server/workflows/CI/badge.svg)](https://github.com/bwaldvogel/mongo-java-server/actions)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/de.bwaldvogel/mongo-java-server/badge.svg)](http://maven-badges.herokuapp.com/maven-central/de.bwaldvogel/mongo-java-server)
-[![Coverage Status](https://coveralls.io/repos/github/bwaldvogel/mongo-java-server/badge.svg?branch=master)](https://coveralls.io/github/bwaldvogel/mongo-java-server?branch=master)
+[![codecov](https://codecov.io/gh/bwaldvogel/mongo-java-server/branch/master/graph/badge.svg?token=jZ7zBT4niu)](https://codecov.io/gh/bwaldvogel/mongo-java-server)
 [![BSD 3-Clause License](https://img.shields.io/github/license/bwaldvogel/mongo-java-server.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/BenediktWaldvogel)
 
