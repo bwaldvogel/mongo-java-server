@@ -17,7 +17,7 @@ Different backends are possible and can be extended.
 
 The in-memory backend is the default backend that is typically used to fake MongoDB for integration tests.
 It supports most CRUD operations, commands and the aggregation framework.
-Some features are not yet implemented, such as full-text search or map/reduce.
+Some features are not yet implemented, such as transactions, full-text search or map/reduce.
 
 Add the following Maven dependency to your project:
 
@@ -218,7 +218,17 @@ used to test the client for error resilience.
 Fuzzing the wire protocol could be used to check the robustness of client
 drivers.
 
+## Transactions ##
+
+Please note that transactions are currently not supported.
+Please see [the discussion in issue #143](https://github.com/bwaldvogel/mongo-java-server/issues/143).
+
+When using `mongo-java-server` for integration tests, you can use [Testcontainers][testcontainers] or [Embedded MongoDB][embedded-mongodb] instead to spin-up a real MongoDB that will have full transaction support.
+
 ## Related Work ##
+
+* [Testcontainers][testcontainers]
+  * Can be used to spin-up a real MongoDB instance in a Docker container
 
 * [Embedded MongoDB][embedded-mongodb]
   * Spins up a real MongoDB instance
@@ -232,6 +242,7 @@ drivers.
 [mongodb]: http://www.mongodb.org/
 [wire-protocol]: https://docs.mongodb.org/manual/reference/mongodb-wire-protocol/
 [netty]: http://netty.io/
+[testcontainers]: https://www.testcontainers.org/
 [embedded-mongodb]: https://github.com/flapdoodle-oss/de.flapdoodle.embed.mongo
 [fongo]: https://github.com/fakemongo/fongo
 [nosql-unit]: https://github.com/lordofthejars/nosql-unit
