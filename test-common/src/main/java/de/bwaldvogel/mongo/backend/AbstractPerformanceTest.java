@@ -4,6 +4,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 
 import org.bson.Document;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +16,7 @@ public abstract class AbstractPerformanceTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/84
     @Test
+    @EnabledIfSystemProperty(named = "run-mongo-java-server-performance-tests", matches = "true")
     public void testComplexUpsert() throws Exception {
         Document incUpdate = new Document();
         Document updateQuery = new Document("$inc", incUpdate);
