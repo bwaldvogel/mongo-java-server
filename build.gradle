@@ -32,8 +32,6 @@ allprojects {
         components.all { ComponentMetadataDetails details ->
             if (details.id.version =~ /(?i).+(-|\.)(CANDIDATE|RC|BETA|ALPHA|PR|M\d+).*/) {
                 details.status = 'milestone'
-            } else {
-                details.status = 'release'
             }
         }
     }
