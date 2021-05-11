@@ -8,8 +8,8 @@ buildscript {
 }
 
 plugins {
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
-    id 'org.sonarqube' version '3.0'
+    id 'com.github.johnrengelman.shadow' version 'latest.release'
+    id 'org.sonarqube' version 'latest.release'
 }
 
 allprojects {
