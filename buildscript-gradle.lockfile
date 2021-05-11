@@ -1,21 +1,23 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-com.github.jengelman.gradle.plugins:shadow:5.2.0=classpath
-com.github.johnrengelman.shadow:com.github.johnrengelman.shadow.gradle.plugin:5.2.0=classpath
-commons-io:commons-io:2.6=classpath
-org.apache.ant:ant-launcher:1.9.7=classpath
-org.apache.ant:ant:1.9.7=classpath
-org.apache.logging.log4j:log4j-api:2.11.0=classpath
-org.apache.logging.log4j:log4j-core:2.11.0=classpath
-org.codehaus.plexus:plexus-utils:3.0.24=classpath
+com.github.johnrengelman.shadow:com.github.johnrengelman.shadow.gradle.plugin:7.0.0=classpath
+com.gradle.publish:plugin-publish-plugin:0.14.0=classpath
+commons-io:commons-io:2.8.0=classpath
+gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.0.0=classpath
+org.apache.ant:ant-launcher:1.10.9=classpath
+org.apache.ant:ant:1.10.9=classpath
+org.apache.logging.log4j:log4j-api:2.14.1=classpath
+org.apache.logging.log4j:log4j-core:2.14.1=classpath
+org.apache.maven:maven-model:3.0.4=classpath
+org.codehaus.plexus:plexus-utils:3.3.0=classpath
 org.jdom:jdom2:2.0.6=classpath
-org.ow2.asm:asm-analysis:7.0-beta=classpath
-org.ow2.asm:asm-commons:7.0-beta=classpath
-org.ow2.asm:asm-tree:7.0-beta=classpath
-org.ow2.asm:asm:7.0-beta=classpath
-org.sonarqube:org.sonarqube.gradle.plugin:3.0=classpath
-org.sonarsource.scanner.api:sonar-scanner-api:2.15.0.2182=classpath
-org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.0=classpath
-org.vafer:jdependency:2.1.1=classpath
+org.ow2.asm:asm-analysis:9.1=classpath
+org.ow2.asm:asm-commons:9.1=classpath
+org.ow2.asm:asm-tree:9.1=classpath
+org.ow2.asm:asm:9.1=classpath
+org.sonarqube:org.sonarqube.gradle.plugin:3.2.0=classpath
+org.sonarsource.scanner.api:sonar-scanner-api:2.16.1.361=classpath
+org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:3.2.0=classpath
+org.vafer:jdependency:2.6.0=classpath
 empty=
