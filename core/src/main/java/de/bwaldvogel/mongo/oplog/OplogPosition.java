@@ -29,6 +29,10 @@ public final class OplogPosition {
         return new OplogPosition(Long.parseLong(hexString, 16));
     }
 
+    public static OplogPosition fromTimestamp(BsonTimestamp timestamp) {
+        return new OplogPosition(timestamp);
+    }
+
     public static OplogPosition fromDocument(Document document) {
         return fromHexString((String) document.get(OplogDocumentFields.ID_DATA_KEY));
     }

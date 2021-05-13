@@ -7,18 +7,23 @@ import static com.mongodb.client.model.Updates.unset;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.groups.Tuple.tuple;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
+import org.assertj.core.api.Assertions;
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonTimestamp;
@@ -40,6 +45,8 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.Success;
 
 import de.bwaldvogel.mongo.oplog.OperationType;
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
 import io.reactivex.subscribers.TestSubscriber;
 
 public abstract class AbstractOplogTest extends AbstractTest {
@@ -454,6 +461,68 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     private static <T> T getSingleValue(TestSubscriber<T> subscriber) {
         return subscriber.values().get(0);
+    }
+
+    @Test
+    public void testMultipleChangeStreams() throws InterruptedException {
+        Flowable.fromPublisher(asyncCollection.insertOne(json("_id: 1")))
+            .test().awaitDone(5, TimeUnit.SECONDS).assertComplete();
+
+        final int changeStreamCount = 32;
+
+        List<Bson> pipeline = singletonList(match(Filters.eq("fullDocument.bu", "abc")));
+
+        final TestSubscriber<Map<Integer, List<ChangeStreamDocument<Document>>>> streamSubscriber
+            = new TestSubscriber<>();
+
+        Flowable.range(1, changeStreamCount)
+            .flatMapSingle(index -> {
+                return Flowable.fromPublisher(asyncCollection.watch(pipeline))
+                    .take(2)
+                    .toList()
+                    .map(changeStreamDocuments -> {
+                        return new AbstractMap.SimpleEntry<>(index, changeStreamDocuments);
+                    })
+                    .subscribeOn(Schedulers.io()); // subscribe to change streams concurrently
+            })
+            .toMap(Map.Entry::getKey, Map.Entry::getValue)
+            .toFlowable()
+            .subscribe(streamSubscriber);
+
+        // give time for all ChangeStream Publishers to be subscribed to
+        // todo: expose API to get cursors from Backend and wait until 'changeStreamCount' cursors
+        TimeUnit.SECONDS.sleep(5);
+
+        Flowable.concat(
+            Flowable.fromPublisher(asyncCollection.insertOne(json("_id: 2, bu: 'abc'"))),
+            Flowable.fromPublisher(asyncCollection.insertOne(json("_id: 3, bu: 'xyz'"))),
+            Flowable.fromPublisher(asyncCollection.insertOne(json("_id: 4, bu: 'abc'")))
+        ).test().awaitDone(15, TimeUnit.SECONDS).assertComplete();
+
+        final Map<Integer, List<ChangeStreamDocument<Document>>> results = streamSubscriber
+            .awaitDone(30, TimeUnit.SECONDS)
+            .assertComplete()
+            .assertValueCount(1)
+            .values().get(0);
+
+        Assertions.assertThat(IntStream.rangeClosed(1, changeStreamCount))
+            .allSatisfy(index -> {
+                Assertions.assertThat(results).containsKey(index);
+
+                final List<ChangeStreamDocument<Document>> emits = results.get(index);
+                Assertions.assertThat(emits).isNotNull()
+                    .extracting(
+                        document -> {
+                            return document.getDocumentKey().getInt32("_id").getValue();
+                        },
+                        document -> {
+                            return document.getFullDocument() != null
+                                ? document.getFullDocument().getString("bu")
+                                : null;
+                        }
+                    )
+                    .containsExactly(tuple(2, "abc"), tuple(4, "abc"));
+            });
     }
 
 }

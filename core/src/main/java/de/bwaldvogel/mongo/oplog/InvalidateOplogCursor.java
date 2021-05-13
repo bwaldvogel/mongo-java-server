@@ -4,9 +4,10 @@ import java.util.Collections;
 import java.util.List;
 
 import de.bwaldvogel.mongo.backend.AbstractCursor;
+import de.bwaldvogel.mongo.backend.TailableCursor;
 import de.bwaldvogel.mongo.bson.Document;
 
-class InvalidateOplogCursor extends AbstractCursor {
+class InvalidateOplogCursor extends AbstractCursor implements TailableCursor {
     private final OplogPosition position;
 
     InvalidateOplogCursor(OplogPosition position) {
@@ -27,4 +28,8 @@ class InvalidateOplogCursor extends AbstractCursor {
         return Collections.singletonList(result);
     }
 
+    @Override
+    public OplogPosition getPosition() {
+        return null;
+    }
 }
