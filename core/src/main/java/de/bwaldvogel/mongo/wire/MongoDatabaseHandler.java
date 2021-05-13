@@ -2,8 +2,10 @@ package de.bwaldvogel.mongo.wire;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +35,7 @@ import io.netty.channel.group.ChannelGroup;
 
 public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequest> {
 
-    private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoDatabaseHandler.class);
 
     private final AtomicInteger idSequence = new AtomicInteger();
     private final MongoBackend mongoBackend;
@@ -93,63 +95,91 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
     // visible for testing
     CompletionStage<MongoMessage> handleMessageAsync(MongoMessage message) {
-        return mongoBackend.handleMessageAsync(message)
-            .handle((document, ex) -> createResponseMongoMessage(message, document, ex));
+        CompletionStage<Document> handleMessageAsyncResponse;
+        try {
+            handleMessageAsyncResponse = mongoBackend.handleMessageAsync(message);
+        } catch (Throwable t) {
+            handleMessageAsyncResponse = FutureUtils.failedFuture(t);
+        }
+        return handleMessageAsyncResponse.handle(handleMessageAsyncBiFunc(message));
     }
 
-    private MongoMessage createResponseMongoMessage(MongoMessage message, Document document, Throwable ex) {
-        if (ex != null) {
-            MongoServerException e;
-            if (ex instanceof MongoServerException) {
-                e = (MongoServerException) ex;
-                if (e.isLogError()) {
-                    log.error("failed to handle {}", message.getDocument(), e);
+    private BiFunction<Document, Throwable, MongoMessage> handleMessageAsyncBiFunc(MongoMessage message) {
+        return (document, t) -> {
+            if (t != null) {
+                if (t instanceof CompletionException) {
+                    t = t.getCause();
                 }
-            } else {
-                log.error("Unknown error!", ex);
-                e = new MongoServerException("Unknown error: " + ex.getMessage(), ex);
+
+                MongoServerException e;
+                if (t instanceof MongoServerException) {
+                    e = (MongoServerException) t;
+                    if (e.isLogError()) {
+                        log.error("failed to handle {}", message.getDocument(), e);
+                    }
+                } else {
+                    log.error("Unknown error!", t);
+                    e = new MongoServerException("Unknown error: " + t.getMessage(), t);
+                }
+
+                document = errorResponse(e, Collections.emptyMap());
             }
-            document = errorResponse(e, Collections.emptyMap());
-        }
-        return new MongoMessage(message.getChannel(), createResponseHeader(message), document);
+            return new MongoMessage(message.getChannel(), createResponseHeader(message), document);
+        };
     }
 
     // visible for testing
     CompletionStage<MongoReply> handleQueryAsync(MongoQuery query) {
         if (query.getCollectionName().startsWith("$cmd")) {
-            return handleCommandAsync(query)
-                .handle((document, ex) ->
-                    createResponseMongoReplyForCommand(query, document, ex));
+            CompletionStage<Document> handleCommandAsyncResponse;
+            try {
+                handleCommandAsyncResponse = handleCommandAsync(query);
+            } catch (Throwable t) {
+                handleCommandAsyncResponse = FutureUtils.failedFuture(t);
+            }
+            return handleCommandAsyncResponse.handle(handleCommandAsyncBiFunc(query));
         }
 
-        return mongoBackend.handleQueryAsync(query)
-            .handle((queryResult, ex) ->
-                createResponseMongoReplyForQuery(query, queryResult, ex));
+        CompletionStage<QueryResult> handleQueryResponseFut;
+        try {
+            handleQueryResponseFut = mongoBackend.handleQueryAsync(query);
+        } catch (Throwable t) {
+            handleQueryResponseFut = FutureUtils.failedFuture(t);
+        }
+        return handleQueryResponseFut.handle(handleQueryAsyncBiFunc(query));
     }
 
-    private MongoReply createResponseMongoReplyForCommand(MongoQuery query, Document document, Throwable t) {
-        MessageHeader header = createResponseHeader(query);
-        if (t != null) {
-            return createResponseMongoReplyForQueryFailure(header, query, t);
-        }
+    private BiFunction<Document, Throwable, MongoReply> handleCommandAsyncBiFunc(MongoQuery query) {
+        return (document, t) -> {
+            MessageHeader header = createResponseHeader(query);
+            if (t != null) {
+                return createResponseMongoReplyForQueryFailure(header, query, t);
+            }
 
-        return new MongoReply(header,
-            document != null ? Collections.singletonList(document) : Collections.emptyList(),
-            0);
+            return new MongoReply(header,
+                document != null ? Collections.singletonList(document) : Collections.emptyList(),
+                0);
+        };
     }
 
-    private MongoReply createResponseMongoReplyForQuery(MongoQuery query, QueryResult queryResult, Throwable t) {
-        MessageHeader header = createResponseHeader(query);
-        if (t != null) {
-            return createResponseMongoReplyForQueryFailure(header, query, t);
-        }
+    private BiFunction<QueryResult, Throwable, MongoReply> handleQueryAsyncBiFunc(MongoQuery query) {
+        return (queryResult, t) -> {
+            MessageHeader header = createResponseHeader(query);
+            if (t != null) {
+                return createResponseMongoReplyForQueryFailure(header, query, t);
+            }
 
-        return new MongoReply(header,
-            queryResult != null ? queryResult.collectDocuments() : Collections.emptyList(),
-            queryResult != null ? queryResult.getCursorId() : 0);
+            return new MongoReply(header,
+                queryResult != null ? queryResult.collectDocuments() : Collections.emptyList(),
+                queryResult != null ? queryResult.getCursorId() : 0);
+            };
     }
 
     private MongoReply createResponseMongoReplyForQueryFailure(MessageHeader header, MongoQuery query, Throwable t) {
+        if (t instanceof CompletionException) {
+            t = t.getCause();
+        }
+
         if (t instanceof NoSuchCommandException) {
             log.error("unknown command: {}", query, t);
             Map<String, ?> additionalInfo = Collections.singletonMap("bad cmd", query.getQuery());
@@ -171,23 +201,33 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
     // visible for testing
     CompletionStage<MongoReply> handleGetMoreAsync(MongoGetMore getMore) {
-        return mongoBackend.handleGetMoreAsync(getMore)
-            .handle((queryResult, ex) ->
-                createResponseMongoReplyForGetMore(getMore, queryResult, ex));
+        CompletionStage<QueryResult> handleGetMoreAsyncResponse;
+        try {
+            handleGetMoreAsyncResponse = mongoBackend.handleGetMoreAsync(getMore);
+        } catch (Throwable t) {
+            handleGetMoreAsyncResponse = FutureUtils.failedFuture(t);
+        }
+        return handleGetMoreAsyncResponse.handle(handleGetMoreAsyncBiFunc(getMore));
     }
 
-    private MongoReply createResponseMongoReplyForGetMore(MongoGetMore getMore, QueryResult queryResult, Throwable t) {
-        MessageHeader header = createResponseHeader(getMore);
-        if (t != null) {
-            return createResponseMongoReplyForGetMoreFailure(header, getMore, t);
-        }
+    private BiFunction<QueryResult, Throwable, MongoReply> handleGetMoreAsyncBiFunc(MongoGetMore getMore) {
+        return (queryResult, t) -> {
+            MessageHeader header = createResponseHeader(getMore);
+            if (t != null) {
+                return createResponseMongoReplyForGetMoreFailure(header, getMore, t);
+            }
 
-        return new MongoReply(header,
-            queryResult != null ? queryResult.collectDocuments() : Collections.emptyList(),
-            queryResult != null ? queryResult.getCursorId() : 0);
+            return new MongoReply(header,
+                queryResult != null ? queryResult.collectDocuments() : Collections.emptyList(),
+                queryResult != null ? queryResult.getCursorId() : 0);
+        };
     }
 
     private MongoReply createResponseMongoReplyForGetMoreFailure(MessageHeader header, MongoGetMore getMore, Throwable t) {
+        if (t instanceof CompletionException) {
+            t = t.getCause();
+        }
+
         if (t instanceof CursorNotFoundException) {
             return new MongoReply(header,
                 Collections.emptyList(),

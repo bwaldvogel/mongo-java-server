@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -32,7 +31,6 @@ import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import de.bwaldvogel.mongo.util.FutureUtils;
 import de.bwaldvogel.mongo.wire.message.MongoDelete;
 import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -41,9 +39,9 @@ import io.netty.channel.Channel;
 
 public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
-    private static final String NAMESPACES_COLLECTION_NAME = "system.namespaces";
+    protected static final String NAMESPACES_COLLECTION_NAME = "system.namespaces";
 
-    private static final String INDEXES_COLLECTION_NAME = "system.indexes";
+    protected static final String INDEXES_COLLECTION_NAME = "system.indexes";
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoDatabase.class);
 
@@ -96,7 +94,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    private Document commandError(Channel channel, String command, Document query) {
+    protected Document commandError(Channel channel, String command, Document query) {
         // getlasterror must not clear the last error
         if (command.equalsIgnoreCase("getlasterror")) {
             return commandGetLastError(channel, command, query);
@@ -106,8 +104,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return null;
     }
 
-    // handle command synchronously
-    private Document handleCommandSync(Channel channel, String command, Document query, Oplog oplog) {
+    protected Document handleSupportedCommand(Channel channel, String command, Document query, Oplog oplog) {
         if (command.equalsIgnoreCase("find")) {
             return commandFind(command, query);
         } else if (command.equalsIgnoreCase("insert")) {
@@ -181,23 +178,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         clearLastStatus(channel);
 
-        return handleCommandSync(channel, command, query, oplog);
-    }
-
-    @Override
-    public CompletionStage<Document> handleCommandAsync(Channel channel, String command, Document query, Oplog oplog) {
-        Document commandErrorDocument = commandError(channel, command, query);
-        if (commandErrorDocument != null) {
-            return FutureUtils.wrap(() -> commandErrorDocument);
-        }
-
-        clearLastStatus(channel);
-
-        if ("find".equalsIgnoreCase(command)) {
-            return commandFindAsync(command, query);
-        }
-
-        return FutureUtils.wrap(() -> handleCommandSync(channel, command, query, oplog));
+        return handleSupportedCommand(channel, command, query, oplog);
     }
 
     private Document listCollections() {
@@ -260,18 +241,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return toCursorResponse(collection, queryResult);
     }
 
-    private CompletionStage<Document> commandFindAsync(String command, Document query) {
-        String collectionName = (String) query.get(command);
-        MongoCollection<P> collection = resolveCollection(collectionName, false);
-        if (collection == null) {
-            return FutureUtils.wrap(() -> Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName),
-                Collections.emptyList()));
-        }
-        QueryParameters queryParameters = toQueryParameters(query);
-        return collection.handleQueryAsync(queryParameters)
-            .thenApply(queryResult -> toCursorResponse(collection, queryResult));
-    }
-
     private static QueryParameters toQueryParameters(Document query) {
         int numberToSkip = ((Number) query.getOrDefault("skip", 0)).intValue();
         int numberToReturn = ((Number) query.getOrDefault("limit", 0)).intValue();
@@ -285,7 +254,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return new QueryParameters(querySelector, numberToSkip, numberToReturn, batchSize, projection);
     }
 
-    private QueryParameters toQueryParameters(MongoQuery query, int numberToSkip, int batchSize) {
+    private static QueryParameters toQueryParameters(MongoQuery query, int numberToSkip, int batchSize) {
         return new QueryParameters(query.getQuery(), numberToSkip, 0, batchSize, query.getReturnFieldSelector());
     }
 
@@ -677,26 +646,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public CompletionStage<QueryResult> handleQueryAsync(MongoQuery query) {
-        clearLastStatus(query.getChannel());
-        String collectionName = query.getCollectionName();
-        MongoCollection<P> collection = resolveCollection(collectionName, false);
-        if (collection == null) {
-            return FutureUtils.wrap(QueryResult::new);
-        }
-        int numberToSkip = query.getNumberToSkip();
-        int batchSize = query.getNumberToReturn();
-
-        if (batchSize < -1) {
-            // actually: request to close cursor automatically
-            batchSize = -batchSize;
-        }
-
-        QueryParameters queryData = toQueryParameters(query, numberToSkip, batchSize);
-        return collection.handleQueryAsync(queryData);
-    }
-
-    @Override
     public void handleClose(Channel channel) {
         lastResults.remove(channel);
     }
@@ -941,12 +890,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return collection.updateDocuments(selector, update, arrayFilters, multi, upsert, oplog);
     }
 
-    private void putLastError(Channel channel, MongoServerException ex) {
+    protected void putLastError(Channel channel, MongoServerException ex) {
         Document error = toError(channel, ex);
         putLastResult(channel, error);
     }
 
-    private Document toWriteError(int index, MongoServerException e) {
+    protected Document toWriteError(int index, MongoServerException e) {
         Document error = new Document();
         error.put("index", index);
         error.put("errmsg", e.getMessageWithoutErrorCode());
@@ -1061,14 +1010,14 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             new Document("$set", new Document("ns", newCollection.getFullName())),
             ArrayFilters.empty(), true, false, NoopOplog.get());
 
-        namespaces.insertDocuments(newDocuments, true);
+        namespaces.insertDocuments(newDocuments);
     }
 
     protected String getFullCollectionNamespace(String collectionName) {
         return getDatabaseName() + "." + collectionName;
     }
 
-    static boolean isSystemCollection(String collectionName) {
+    protected static boolean isSystemCollection(String collectionName) {
         return collectionName.startsWith("system.");
     }
 

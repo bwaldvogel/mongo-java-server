@@ -82,6 +82,11 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
 
     List<Document> insertDocuments(List<Document> documents, boolean isOrdered);
 
+    @Override
+    default CompletionStage<List<Document>> insertDocumentsAsync(List<Document> documents, boolean isOrdered) {
+        return FutureUtils.wrap(() -> insertDocuments(documents, isOrdered));
+    }
+
     Document updateDocuments(Document selector, Document update, ArrayFilters arrayFilters,
                              boolean isMulti, boolean isUpsert, Oplog oplog);
 

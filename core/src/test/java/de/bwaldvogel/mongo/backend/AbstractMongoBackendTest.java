@@ -1,5 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.AbstractMongoBackend.ADMIN_DB_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,6 +14,7 @@ import java.util.concurrent.CompletionStage;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
@@ -16,18 +23,10 @@ import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import io.netty.channel.Channel;
-import org.mockito.Mockito;
-
-import static de.bwaldvogel.mongo.backend.AbstractMongoBackend.ADMIN_DB_NAME;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 class AbstractMongoBackendTest {
 
     private MongoBackend backend;
-    private MongoBackend backendWithError;
     private CursorRegistry cursorRegistry;
 
     @BeforeEach
@@ -49,19 +48,6 @@ class AbstractMongoBackendTest {
                 when(mockDatabase.handleCommand(any(), any(), any(), any())).thenReturn(fakeResponse);
 
                 return mockDatabase;
-            }
-        };
-
-        backendWithError = new AbstractMongoBackend() {
-
-            @Override
-            protected MongoDatabase openOrCreateDatabase(String databaseName) {
-                return null;
-            }
-
-            @Override
-            public void dropDatabase(String database) {
-                throw new RuntimeException("unexpected");
             }
         };
     }
@@ -103,11 +89,23 @@ class AbstractMongoBackendTest {
     }
 
     @Test
-    void testHandleCommand() {
+    void testHandleCommandSync() {
         Channel channel = Mockito.mock(Channel.class);
         when(channel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.1.254", 27017));
 
         Document response = backend.handleCommand(channel, null, "whatsmyuri", null);
+        assertThat(response).isNotNull();
+        assertThat(response.get("ok")).isEqualTo(1.0);
+        assertThat(response.get("you")).isEqualTo("127.0.1.254:27017");
+    }
+
+    @Test
+    void testHandleCommandAsync() throws Exception {
+        Channel channel = Mockito.mock(Channel.class);
+        when(channel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.1.254", 27017));
+
+        CompletionStage<Document> responseFuture = backend.handleCommandAsync(channel, null, "whatsmyuri", null);
+        Document response = responseFuture.toCompletableFuture().get();
         assertThat(response).isNotNull();
         assertThat(response.get("ok")).isEqualTo(1.0);
         assertThat(response.get("you")).isEqualTo("127.0.1.254:27017");
@@ -123,6 +121,16 @@ class AbstractMongoBackendTest {
     }
 
     @Test
+    void testHandleAdminCommandAsync() throws Exception {
+        Channel channel = Mockito.mock(Channel.class);
+
+        CompletionStage<Document> responseFuture = backend.handleCommandAsync(channel, ADMIN_DB_NAME, "ping", null);
+        Document response = responseFuture.toCompletableFuture().get();
+        assertThat(response).isNotNull();
+        assertThat(response.get("ok")).isEqualTo(1.0);
+    }
+
+    @Test
     void testMongoDatabaseHandleCommand() {
         Channel channel = Mockito.mock(Channel.class);
 
@@ -133,25 +141,13 @@ class AbstractMongoBackendTest {
     }
 
     @Test
-    void testHandleCommandAsyncDropDatabase() throws Exception {
+    void testMongoDatabaseHandleCommandAsync() throws Exception {
         Channel channel = Mockito.mock(Channel.class);
 
-        CompletionStage<Document> responseFuture = backend.handleCommandAsync(channel, "mockDatabase", "dropDatabase", null);
+        CompletionStage<Document> responseFuture = backend.handleCommandAsync(channel, "mockDatabase", "find", null);
         Document response = responseFuture.toCompletableFuture().get();
         assertThat(response).isNotNull();
         assertThat(response.get("ok")).isEqualTo(1.0);
-        assertThat(response.get("dropped")).isEqualTo("mockDatabase");
-    }
-
-    @Test
-    void testHandleCommandAsyncDropDatabaseError() throws Exception {
-        Channel channel = Mockito.mock(Channel.class);
-
-        CompletionStage<Document> responseFuture = backendWithError.handleCommandAsync(channel, "mockDatabase", "dropDatabase", null);
-        Document response = responseFuture.toCompletableFuture().get();
-        assertThat(response).isNotNull();
-        assertThat(response.get("ok")).isEqualTo(0.0);
-        assertThat(response.get("dropped")).isEqualTo("mockDatabase");
-        assertThat(response.get("errmsg")).isEqualTo("unexpected");
+        assertThat(response.get("message")).isEqualTo("fakeResponse");
     }
 }
