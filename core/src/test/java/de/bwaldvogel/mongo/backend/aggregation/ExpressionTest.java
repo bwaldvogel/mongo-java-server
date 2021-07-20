@@ -147,6 +147,15 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$arrayElemAt: ['$items', '$pos']"), json("items: ['a', 'b', 'c'], pos: -1"))).isEqualTo("c");
         assertThat(Expression.evaluate(json("$arrayElemAt: ['$items', '$pos']"), json(""))).isNull();
 
+        assertThat(Expression.evaluate(json("$arrayElemAt: ['$items.foo', -1]"), json("items: [{foo: 'bar'}, {foo: 'bas'}, {foo: 'bat'}]")))
+            .isEqualTo("bat");
+        assertThat(Expression.evaluate(json("$arrayElemAt: ['$items.foo', 0]"), json("items: [{foo: {ping: 'pong'}}, {foo: 'bas'}, {foo: 'bat'}]")))
+            .isEqualTo(json("ping: 'pong'"));
+        assertThat(Expression.evaluate(json("$arrayElemAt: ['$items.foo', 1]"), json("items: [1, {foo: 11}, 3]")))
+            .isEqualTo(11);
+        assertThat(Expression.evaluate(json("$arrayElemAt: ['$items.foo', 0]"), json("items: [1, {foo: 11}, 3]")))
+            .isNull();
+
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayElemAt: null"), json("")))
             .withMessage("[Error 16020] Expression $arrayElemAt takes exactly 2 arguments. 1 were passed in.");
@@ -1244,7 +1253,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$strLenBytes: '$a'"), json("a: 'value'"))).isEqualTo(5);
         assertThat(Expression.evaluate(json("$strLenBytes: 'cafétéria'"), json(""))).isEqualTo(11);
         assertThat(Expression.evaluate(json("$strLenBytes: '$a'"), json("a: '$€λA'"))).isEqualTo(7);
-        assertThat(Expression.evaluate(json("$strLenBytes: '寿司'"), json(""))).isEqualTo(6);
+        assertThat(Expression.evaluate(json("$strLenBytes: '\u5BFF\u53F8'"), json(""))).isEqualTo(6);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$strLenBytes: null"), json("")))
@@ -1265,7 +1274,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$strLenCP: '$a'"), json("a: 'value'"))).isEqualTo(5);
         assertThat(Expression.evaluate(json("$strLenCP: 'cafétéria'"), json(""))).isEqualTo(9);
         assertThat(Expression.evaluate(json("$strLenCP: '$a'"), json("a: '$€λA'"))).isEqualTo(4);
-        assertThat(Expression.evaluate(json("$strLenCP: '寿司'"), json(""))).isEqualTo(2);
+        assertThat(Expression.evaluate(json("$strLenCP: '\u5BFF\u53F8'"), json(""))).isEqualTo(2);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$strLenCP: null"), json("")))
