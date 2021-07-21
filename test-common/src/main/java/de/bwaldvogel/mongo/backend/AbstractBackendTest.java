@@ -3226,7 +3226,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoServerException.class)
             .isThrownBy(() -> collection.updateOne(json("_id: 1"), json("$inc: {'a.x': 'b'}")))
-            .withMessage("Cannot increment with non-numeric argument: {a.x: \"b\"}");
+            .withMessageContaining("Cannot increment with non-numeric argument: {a.x: \"b\"}");
     }
 
     @Test
@@ -5671,7 +5671,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             callable.call();
             fail("MongoWriteException expected");
         } catch (MongoWriteException e) {
-            assertThat(e).hasMessage(expectedMessage);
+            assertThat(e).hasMessageContaining(expectedMessage);
             assertThat(e.getError().getCode()).isEqualTo(expectedErrorCode);
 
             Document actual = db.runCommand(json("getlasterror: 1"));
@@ -6079,7 +6079,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoWriteException.class)
             .isThrownBy(() -> collection.insertOne(json("stock: {size: ['S', 'M'], quantity: [30, 40]}")))
-            .withMessage("cannot index parallel arrays [quantity] [size]");
+            .withMessageContaining("cannot index parallel arrays [quantity] [size]");
 
         assertMongoWriteException(() -> collection.insertOne(json("stock: {size: 'S', quantity: 10}")),
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: stock.size_1_stock.quantity_1 dup key: { stock.size: \"S\", stock.quantity: 10 }");

@@ -146,7 +146,7 @@ public abstract class MongoServerTest {
     void testEnableSslWithEmptyKeyCertChain() throws Exception {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> server.enableSsl(null, null))
-            .withMessage("keyCertChain must be non-empty");
+            .withMessage("Param 'keyCertChain' must not be empty");
     }
 
     @Test
