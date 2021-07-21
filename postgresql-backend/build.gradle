@@ -6,7 +6,7 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:latest.release"
 
     testRuntimeOnly "org.postgresql:postgresql:latest.release"
-    testImplementation "com.zaxxer:HikariCP:latest.release"
+    testImplementation "com.zaxxer:HikariCP:[4.0.0, 5.0.0)"
     testImplementation 'org.testcontainers:testcontainers:latest.release'
     testImplementation project(':mongo-java-server-test-common')
 }
