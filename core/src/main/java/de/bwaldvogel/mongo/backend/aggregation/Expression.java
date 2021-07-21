@@ -163,7 +163,9 @@ public enum Expression implements ExpressionTraits {
             if (index < 0 || index >= collection.size()) {
                 return null;
             } else {
-                return collection.get(index);
+                Object ret = collection.get(index);
+                if(Missing.isNullOrMissing(ret)) return null;
+                return  ret;
             }
         }
     },
@@ -1754,7 +1756,7 @@ public enum Expression implements ExpressionTraits {
                 String variable = value.substring(1);
                 throw new MongoServerError(17276, "Use of undefined variable: " + variable);
             }
-            return Utils.getSubdocumentValue(document, value);
+            return Utils.getSubdocumentValueCollectionAware(document, value);
         } else if (expression instanceof Document) {
             return evaluateDocumentExpression((Document) expression, document);
         } else {
