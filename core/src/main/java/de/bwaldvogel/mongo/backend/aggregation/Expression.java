@@ -161,11 +161,9 @@ public enum Expression implements ExpressionTraits {
                 index = collection.size() + index;
             }
             if (index < 0 || index >= collection.size()) {
-                return null;
+                return Missing.getInstance();
             } else {
-                Object ret = collection.get(index);
-                if(Missing.isNullOrMissing(ret)) return null;
-                return  ret;
+                return collection.get(index);
             }
         }
     },

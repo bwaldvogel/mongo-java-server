@@ -23,11 +23,10 @@ public class ProjectStageTest {
         assertThat(project(json("_id: 1, a: 10, b: 20, c: -30"), json("x: {$abs: '$c'}"))).isEqualTo(json("_id: 1, x: 30"));
         assertThat(project(json("_id: 1, c: -30"), json("x: {y: {$abs: '$c'}}"))).isEqualTo(json("_id: 1, x: {y: 30}"));
         assertThat(project(json("_id: 1, b: 2 c: -30"), json("x: {y: {$multiply: ['$b', {$abs: '$c'}]}}"))).isEqualTo(json("_id: 1, x: {y: 60}"));
-        assertThat(project(json("a: [1,2,3]"), json("b: {$arrayElemAt: ['$a', 1]}"))).isEqualTo(json("b: 2"));
+        assertThat(project(json("a: [1, 2, 3]"), json("b: {$arrayElemAt: ['$a', 1]}"))).isEqualTo(json("b: 2"));
         assertThat(project(json("a: [{foo: 'bar'}, {foo: 'bas'}, {foo: 'bat'}]"), json("b: {$arrayElemAt: ['$a.foo', 1]}")))
             .isEqualTo(json("b: 'bas'"));
     }
-
 
     @Test
     void testProject_withNestedExclusion() throws Exception {

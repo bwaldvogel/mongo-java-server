@@ -649,6 +649,43 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/pull/189
+    @Test
+    void testAggregateWithProjection_arrayElemAt() throws Exception {
+        collection.insertOne(json("_id: 1, items: [{foo: 'bar'}, {foo: 'bas'}, {foo: 'bat'}]"));
+        collection.insertOne(json("_id: 2, items: [{}]"));
+        collection.insertOne(json("_id: 3, items: [{foo: null}]"));
+        collection.insertOne(json("_id: 4, items: []"));
+        collection.insertOne(json("_id: 5"));
+
+        assertThat(collection.aggregate(jsonList("$project: {value: {$arrayElemAt: ['$items.foo', 0]}}")))
+            .containsExactly(
+                json("_id: 1, value: 'bar'"),
+                json("_id: 2"),
+                json("_id: 3, value: null"),
+                json("_id: 4"),
+                json("_id: 5, value: null")
+            );
+
+        assertThat(collection.aggregate(jsonList("$project: {value: {$arrayElemAt: ['$items.foo', -1]}}")))
+            .containsExactly(
+                json("_id: 1, value: 'bat'"),
+                json("_id: 2"),
+                json("_id: 3, value: null"),
+                json("_id: 4"),
+                json("_id: 5, value: null")
+            );
+
+        assertThat(collection.aggregate(jsonList("$project: {value: {$arrayElemAt: ['$items.foo', 10]}}")))
+            .containsExactly(
+                json("_id: 1"),
+                json("_id: 2"),
+                json("_id: 3"),
+                json("_id: 4"),
+                json("_id: 5, value: null")
+            );
+    }
+
     @Test
     void testAggregateWithExpressionProjection() throws Exception {
         List<Document> pipeline = jsonList("$project: {_id: 0, idHex: {$toString: '$_id'}}");

@@ -142,7 +142,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], 0]"), json(""))).isEqualTo(1);
         assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], 1.0]"), json(""))).isEqualTo(2);
         assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], -2]"), json(""))).isEqualTo(2);
-        assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], 15]"), json(""))).isNull();
+        assertThat(Expression.evaluate(json("$arrayElemAt: [[1, 2, 3], 15]"), json(""))).isInstanceOf(Missing.class);
         assertThat(Expression.evaluate(json("$arrayElemAt: ['$items', 1]"), json("items: ['a', 'b', 'c']"))).isEqualTo("b");
         assertThat(Expression.evaluate(json("$arrayElemAt: ['$items', '$pos']"), json("items: ['a', 'b', 'c'], pos: -1"))).isEqualTo("c");
         assertThat(Expression.evaluate(json("$arrayElemAt: ['$items', '$pos']"), json(""))).isNull();
@@ -154,7 +154,7 @@ public class ExpressionTest {
         assertThat(Expression.evaluate(json("$arrayElemAt: ['$items.foo', 1]"), json("items: [1, {foo: 11}, 3]")))
             .isEqualTo(11);
         assertThat(Expression.evaluate(json("$arrayElemAt: ['$items.foo', 0]"), json("items: [1, {foo: 11}, 3]")))
-            .isNull();
+            .isInstanceOf(Missing.class);
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$arrayElemAt: null"), json("")))
