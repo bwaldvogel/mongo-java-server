@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mongodb.MongoDbFactory;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
@@ -129,9 +129,9 @@ public abstract class AbstractBackendSpringDataTest {
         personRepository.save(new Person("Billy", 1));
         personRepository.save(new Person("Alice", 2));
 
-        assertThatExceptionOfType(DuplicateKeyException.class)
+        assertThatExceptionOfType(DataIntegrityViolationException.class)
             .isThrownBy(() -> personRepository.save(new Person("Joe", 1)))
-            .withMessageContaining("duplicate key error");
+            .withMessageContaining("E11000 duplicate key error");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/39
