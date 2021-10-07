@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo;
 
-import org.junit.Assume;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 import org.junit.jupiter.api.extension.RegisterExtension;
 
 import de.bwaldvogel.mongo.backend.AbstractAggregationTest;
@@ -22,7 +23,7 @@ public class RealMongoAggregationTest extends AbstractAggregationTest {
 
     @Override
     public void testAggregateWithGeoNear() throws Exception {
-        Assume.assumeTrue(false);
+        assumeTrue(false);
         super.testAggregateWithGeoNear();
     }
 }
