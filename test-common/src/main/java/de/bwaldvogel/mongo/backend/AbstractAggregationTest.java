@@ -2053,6 +2053,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsOnly(json("_id: 1"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/191
+    @Test
+    void testProjectWithCondition() throws Exception {
+        List<Document> pipeline = jsonList("$project: {numItems: {$cond : [{$isArray : '$item'}, {$size: '$item'}, 0]}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2, item: 'abc'"));
+        collection.insertOne(json("_id: 3, item: [1, 2, 3]"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsOnly(
+                json("_id: 1, numItems: 0"),
+                json("_id: 2, numItems: 0"),
+                json("_id: 3, numItems: 3")
+            );
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/138
     @Test
     public void testAggregateWithGeoNear() throws Exception {

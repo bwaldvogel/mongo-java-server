@@ -281,8 +281,19 @@ public enum Expression implements ExpressionTraits {
 
     $cond {
         @Override
-        Object apply(List<?> expressionValue, Document document) {
+        Object apply(Object expressionValue, Document document) {
+            // document values need to be evaluated lazily
+            List<Object> values = new ArrayList<>();
+            if (!(expressionValue instanceof Collection)) {
+                values.add(expressionValue);
+            } else {
+                values.addAll(((Collection<?>) expressionValue));
+            }
+            return apply(values, document);
+        }
 
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
             final Object ifExpression;
             final Object thenExpression;
             final Object elseExpression;
