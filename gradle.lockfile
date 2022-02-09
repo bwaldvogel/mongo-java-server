@@ -1,13 +1,13 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-io.netty:netty-buffer:4.1.73.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-codec:4.1.73.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-common:4.1.73.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-handler:4.1.73.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-resolver:4.1.73.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-tcnative-classes:2.0.46.Final=default,runtimeClasspath,testRuntimeClasspath
-io.netty:netty-transport:4.1.73.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-buffer:4.1.74.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-codec:4.1.74.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-common:4.1.74.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-handler:4.1.74.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-resolver:4.1.74.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-tcnative-classes:2.0.48.Final=default,runtimeClasspath,testRuntimeClasspath
+io.netty:netty-transport:4.1.74.Final=default,runtimeClasspath,testRuntimeClasspath
 org.jacoco:org.jacoco.agent:0.8.7=jacocoAgent,jacocoAnt
 org.jacoco:org.jacoco.ant:0.8.7=jacocoAnt
 org.jacoco:org.jacoco.core:0.8.7=jacocoAnt
@@ -16,5 +16,5 @@ org.ow2.asm:asm-analysis:9.1=jacocoAnt
 org.ow2.asm:asm-commons:9.1=jacocoAnt
 org.ow2.asm:asm-tree:9.1=jacocoAnt
 org.ow2.asm:asm:9.1=jacocoAnt
-org.slf4j:slf4j-api:1.7.35=default,runtimeClasspath,testRuntimeClasspath
+org.slf4j:slf4j-api:1.7.36=default,runtimeClasspath,testRuntimeClasspath
 empty=annotationProcessor,archives,compile,compileClasspath,compileOnly,runtime,shadow,signatures,testAnnotationProcessor,testCompile,testCompileClasspath,testCompileOnly,testRuntime
