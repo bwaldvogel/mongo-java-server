@@ -32,8 +32,8 @@ jobs:
       with:
         java-version: 8
     - name: Publish coverage
-      run: ./gradlew jacocoMergedReport
+      run: ./gradlew build
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
-        files: ./build/reports/jacoco/jacocoMergedReport/jacocoMergedReport.xml
+        files: ./build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml

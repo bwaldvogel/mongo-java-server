@@ -10,6 +10,7 @@ buildscript {
 plugins {
     id 'com.github.johnrengelman.shadow' version 'latest.release'
     id 'org.sonarqube' version 'latest.release'
+    id 'jacoco-report-aggregation'
 }
 
 allprojects {
@@ -173,21 +174,6 @@ wrapper {
     distributionType = Wrapper.DistributionType.ALL
 }
 
-task jacocoMergedReport(type: JacocoReport) {
-    description = 'Generates an aggregate report from all subprojects'
-    dependsOn subprojects.test
-
-    additionalSourceDirs.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-    sourceDirectories.from = files(subprojects.sourceSets.main.allSource.srcDirs)
-    classDirectories.from = files(subprojects.sourceSets.main.output)
-    executionData.from = files(subprojects.jacocoTestReport.executionData)
-
-    reports {
-        html.required = true // human readable
-        xml.required = true // required by codecov.io
-    }
-}
-
 javadoc {
     options.addBooleanOption('html5', true)
 }
@@ -195,4 +181,11 @@ javadoc {
 dependencies {
     api project(':mongo-java-server-core')
     api project(':mongo-java-server-memory-backend')
+
+    jacocoAggregation subprojects
 }
+
+tasks.named('check') {
+    dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
+}
+
