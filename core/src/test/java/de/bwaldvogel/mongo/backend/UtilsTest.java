@@ -51,6 +51,16 @@ public class UtilsTest {
     }
 
     @Test
+    void testNormalizeLongValue() {
+        assertThat(Utils.normalizeValue(Long.MAX_VALUE)).isEqualTo(Long.MAX_VALUE);
+        assertThat(Utils.normalizeValue(0x7fffffffffffffL)).isEqualTo(36028797018963967.0);
+        assertThat(Utils.normalizeValue(0x7ffffffffffffffL)).isEqualTo(576460752303423487L);
+        assertThat(Utils.normalizeValue(199999999999999999L)).isEqualTo(199999999999999999L);
+        assertThat(Utils.normalizeValue(99999999999999998L)).isEqualTo(99999999999999998.);
+        assertThat(Utils.normalizeValue(-99999999999999998L)).isEqualTo(-99999999999999998.);
+    }
+
+    @Test
     void testNormalizeNumber() throws Exception {
         assertThat(Utils.normalizeNumber(null)).isNull();
         assertThat(Utils.normalizeNumber(0)).isEqualTo(0);

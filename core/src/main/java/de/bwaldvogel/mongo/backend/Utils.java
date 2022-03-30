@@ -114,6 +114,11 @@ public class Utils {
             if (doubleValue == -0.0) {
                 doubleValue = 0.0;
             }
+            // long type has 2 digits more than double, so comparison of double might
+            // return true when the longs are not equal
+            if (value instanceof Long && Math.abs((Long) value) > 99999999999999999L) {
+                return value;
+            }
             return Double.valueOf(doubleValue);
         } else if (value instanceof Map) {
             @SuppressWarnings("unchecked")
