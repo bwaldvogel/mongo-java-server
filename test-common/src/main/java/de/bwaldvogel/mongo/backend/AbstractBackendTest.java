@@ -6326,10 +6326,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testQueryWithLargeLongValue() throws Exception {
         collection.insertOne(new Document("_id", 223372036854775806L).append("name", "item 1"));
         collection.insertOne(new Document("_id", 223372036854775807L).append("name", "item 2"));
-        collection.insertOne(new Document("_id", 223372036854775808L).append("name", "item 2"));
+        collection.insertOne(new Document("_id", 223372036854775808L).append("name", "item 3"));
+        collection.insertOne(new Document("_id", 10.5).append("name", "item 4"));
 
         assertThat(toArray(collection.find(Filters.lt("_id", 223372036854775807L))))
-            .containsExactly(json("_id: 223372036854775806, name: 'item 1'"));
+            .containsExactlyInAnyOrder(
+                json("_id: 223372036854775806, name: 'item 1'"),
+                json("_id: 10.5, name: 'item 4'")
+            );
+
+        assertThat(toArray(collection.find(Filters.lte("_id", 223372036854775807L))))
+            .containsExactlyInAnyOrder(
+                json("_id: 223372036854775806, name: 'item 1'"),
+                json("_id: 223372036854775807, name: 'item 2'"),
+                json("_id: 10.5, name: 'item 4'")
+            );
+
+        assertThat(toArray(collection.find(Filters.gt("_id", 223372036854775807L))))
+            .containsExactly(json("_id: 223372036854775808, name: 'item 3'"));
+
+        assertThat(toArray(collection.find(Filters.gte("_id", 223372036854775807L))))
+            .containsExactlyInAnyOrder(
+                json("_id: 223372036854775807, name: 'item 2'"),
+                json("_id: 223372036854775808, name: 'item 3'")
+            );
     }
 
 }
