@@ -128,9 +128,9 @@ public class ValueComparator implements Comparator<Object> {
             return 0;
         }
 
-        int typeComparision = compareTypes(value1, value2);
-        if (typeComparision != 0) {
-            return typeComparision;
+        int typeComparison = compareTypes(value1, value2);
+        if (typeComparison != 0) {
+            return typeComparison;
         }
 
         Class<?> clazz = value1.getClass();
