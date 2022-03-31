@@ -17,6 +17,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.date;
 import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 
@@ -6319,6 +6320,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find(Filters.eq(id1)).first()).isNotNull();
         // AND the collection DOES NOT have an item with id #2
         assertThat(collection.find(Filters.eq(id2)).first()).isNull();
+    }
+
+    @Test
+    void testQueryWithLargeLongValue() throws Exception {
+        collection.insertOne(new Document("_id", 223372036854775806L).append("name", "item 1"));
+        collection.insertOne(new Document("_id", 223372036854775807L).append("name", "item 2"));
+        collection.insertOne(new Document("_id", 223372036854775808L).append("name", "item 2"));
+
+        assertThat(toArray(collection.find(Filters.lt("_id", 223372036854775807L))))
+            .containsExactly(json("_id: 223372036854775806, name: 'item 1'"));
     }
 
 }
