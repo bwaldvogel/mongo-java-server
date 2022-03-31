@@ -554,6 +554,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return false;
         }
 
+        if (value instanceof Number && expressionValue instanceof Number) {
+            return true;
+        }
+
         return value.getClass().equals(expressionValue.getClass());
     }
 

@@ -51,6 +51,19 @@ public class UtilsTest {
     }
 
     @Test
+    void testNormalizeLongValue() {
+        assertThat(((Double) Utils.normalizeValue(Long.MAX_VALUE)).longValue()).isEqualTo(Long.MAX_VALUE);
+        assertThat(((Double) Utils.normalizeValue(Long.MIN_VALUE)).longValue()).isEqualTo(Long.MIN_VALUE);
+        assertThat(Utils.normalizeValue(0x7fffffffffffffL)).isEqualTo(36028797018963967L);
+        assertThat(Utils.normalizeValue(0x7ffffffffffffffL)).isEqualTo(576460752303423487L);
+        assertThat(Utils.normalizeValue(199999999999999999L)).isEqualTo(199999999999999999L);
+        assertThat(Utils.normalizeValue(99999999999999998L)).isEqualTo(99999999999999998L);
+        assertThat(Utils.normalizeValue(-99999999999999998L)).isEqualTo(-99999999999999998L);
+        assertThat(Utils.normalizeValue(9999999999999999L)).isEqualTo(9999999999999999L);
+        assertThat(Utils.normalizeValue(999999999999999L)).isEqualTo(999999999999999.0);
+    }
+
+    @Test
     void testNormalizeNumber() throws Exception {
         assertThat(Utils.normalizeNumber(null)).isNull();
         assertThat(Utils.normalizeNumber(0)).isEqualTo(0);

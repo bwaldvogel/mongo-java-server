@@ -210,6 +210,15 @@ public class ValueComparatorTest {
         assertFirstValueBeforeSecondValue(Decimal128.ONE, Decimal128.TWO);
     }
 
+    @Test
+    void testCompareNumbers() throws Exception {
+        assertFirstValueBeforeSecondValue(223372036854775806L, 223372036854775807L);
+        assertFirstValueBeforeSecondValue(223372036854775807L, 223372036854775808L);
+        assertFirstValueBeforeSecondValue(10.0, 223372036854775807L);
+        assertFirstValueBeforeSecondValue(10, 10.00001);
+        assertFirstValueBeforeSecondValue(10L, 10.00001);
+    }
+
     private void assertDocumentComparison(String document1, String document2) {
         assertFirstValueBeforeSecondValue(json(document1), json(document2));
     }

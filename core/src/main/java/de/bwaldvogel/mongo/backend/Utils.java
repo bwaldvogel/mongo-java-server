@@ -109,7 +109,9 @@ public class Utils {
         if (Missing.isNullOrMissing(value)) {
             return null;
         }
-        if (value instanceof Number) {
+        if (value instanceof Long && cannotBeRepresentedAsDouble((Long) value)) {
+            return value;
+        } else if (value instanceof Number) {
             double doubleValue = ((Number) value).doubleValue();
             if (doubleValue == -0.0) {
                 doubleValue = 0.0;
@@ -131,6 +133,10 @@ public class Utils {
         } else {
             return value;
         }
+    }
+
+    private static boolean cannotBeRepresentedAsDouble(Long value) {
+        return value.longValue() != (long) value.doubleValue();
     }
 
     public static Number normalizeNumber(Number value) {

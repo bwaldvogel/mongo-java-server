@@ -17,6 +17,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.date;
 import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 
@@ -6301,6 +6302,54 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 Arrays.asList(new Document("id", UUID.randomUUID()))));
             assertThat(result.get("ok")).isEqualTo(1.0);
         }
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/192
+    @Test
+    public void testLongIndex() {
+        long id1 = 223372036854775806L;
+        long id2 = 223372036854775800L;
+        // GIVEN there are no items in the collection having the given ids
+        assertThat(collection.find(Filters.eq(id1)).first()).isNull();
+        assertThat(collection.find(Filters.eq(id2)).first()).isNull();
+
+        // WHEN we insert an item with id #1
+        collection.insertOne(new Document("_id", id1).append("name", "item 1"));
+
+        // THEN the collections has the item
+        assertThat(collection.find(Filters.eq(id1)).first()).isNotNull();
+        // AND the collection DOES NOT have an item with id #2
+        assertThat(collection.find(Filters.eq(id2)).first()).isNull();
+    }
+
+    @Test
+    void testQueryWithLargeLongValue() throws Exception {
+        collection.insertOne(new Document("_id", 223372036854775806L).append("name", "item 1"));
+        collection.insertOne(new Document("_id", 223372036854775807L).append("name", "item 2"));
+        collection.insertOne(new Document("_id", 223372036854775808L).append("name", "item 3"));
+        collection.insertOne(new Document("_id", 10.5).append("name", "item 4"));
+
+        assertThat(toArray(collection.find(Filters.lt("_id", 223372036854775807L))))
+            .containsExactlyInAnyOrder(
+                json("_id: 223372036854775806, name: 'item 1'"),
+                json("_id: 10.5, name: 'item 4'")
+            );
+
+        assertThat(toArray(collection.find(Filters.lte("_id", 223372036854775807L))))
+            .containsExactlyInAnyOrder(
+                json("_id: 223372036854775806, name: 'item 1'"),
+                json("_id: 223372036854775807, name: 'item 2'"),
+                json("_id: 10.5, name: 'item 4'")
+            );
+
+        assertThat(toArray(collection.find(Filters.gt("_id", 223372036854775807L))))
+            .containsExactly(json("_id: 223372036854775808, name: 'item 3'"));
+
+        assertThat(toArray(collection.find(Filters.gte("_id", 223372036854775807L))))
+            .containsExactlyInAnyOrder(
+                json("_id: 223372036854775807, name: 'item 2'"),
+                json("_id: 223372036854775808, name: 'item 3'")
+            );
     }
 
 }

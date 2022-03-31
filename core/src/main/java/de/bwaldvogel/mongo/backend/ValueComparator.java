@@ -128,9 +128,9 @@ public class ValueComparator implements Comparator<Object> {
             return 0;
         }
 
-        int typeComparision = compareTypes(value1, value2);
-        if (typeComparision != 0) {
-            return typeComparision;
+        int typeComparison = compareTypes(value1, value2);
+        if (typeComparison != 0) {
+            return typeComparison;
         }
 
         Class<?> clazz = value1.getClass();
@@ -148,6 +148,9 @@ public class ValueComparator implements Comparator<Object> {
         if (Number.class.isAssignableFrom(clazz)) {
             Number number1 = Utils.normalizeNumber((Number) value1);
             Number number2 = Utils.normalizeNumber((Number) value2);
+            if (number1 instanceof Long || number2 instanceof Long) {
+                return Long.compare(number1.longValue(), number2.longValue());
+            }
             return Double.compare(number1.doubleValue(), number2.doubleValue());
         }
 
