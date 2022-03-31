@@ -6303,4 +6303,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/192
+    @Test
+    public void testLongIndex() {
+        long id1 = 223372036854775806L;
+        long id2 = 223372036854775800L;
+        // GIVEN there are no items in the collection having the given ids
+        assertThat(collection.find(Filters.eq(id1)).first()).isNull();
+        assertThat(collection.find(Filters.eq(id2)).first()).isNull();
+
+        // WHEN we insert an item with id #1
+        collection.insertOne(new Document("_id", id1).append("name", "item 1"));
+
+        // THEN the collections has the item
+        assertThat(collection.find(Filters.eq(id1)).first()).isNotNull();
+        // AND the collection DOES NOT have an item with id #2
+        assertThat(collection.find(Filters.eq(id2)).first()).isNull();
+    }
+
 }
