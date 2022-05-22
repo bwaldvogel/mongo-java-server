@@ -43,18 +43,6 @@ allprojects {
     dependencyLocking {
         lockAllConfigurations()
     }
-
-    task resolveAndLockAll {
-        doFirst {
-            assert gradle.startParameter.writeDependencyLocks
-        }
-        doLast {
-            configurations.findAll {
-                // Add any custom filtering on the configurations to be resolved
-                it.canBeResolved
-            }.each { it.resolve() }
-        }
-    }
 }
 
 subprojects {
