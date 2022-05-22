@@ -21,6 +21,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,8 +38,12 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -60,12 +65,14 @@ import org.bson.types.MaxKey;
 import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 import com.mongodb.DBRef;
 import com.mongodb.DuplicateKeyException;
@@ -116,6 +123,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     protected static final String OTHER_TEST_DATABASE_NAME = "bar";
     private static final String ADMIN_DB_NAME = "admin";
+    private static final Duration DEFAULT_TEST_TIMEOUT = Duration.ofSeconds(30);
 
     protected Document runCommand(String commandName) {
         return runCommand(new Document(commandName, 1));
@@ -6350,6 +6358,49 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 223372036854775807, name: 'item 2'"),
                 json("_id: 223372036854775808, name: 'item 3'")
             );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/195
+    @Test
+    void testCreateIndicesAndInsertDocumentsConcurrently(TestInfo testInfo) throws Exception {
+        int numberOfThreads = 4;
+        int numberOfDocumentsPerThread = 10;
+        ThreadFactory threadFactory = new CustomizableThreadFactory(testInfo.getDisplayName());
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads, threadFactory);
+        try {
+            for (int repetition = 0; repetition < 50; repetition++) {
+                List<Future<?>> futures = new ArrayList<>();
+                for (int i = 0; i < numberOfThreads; i++) {
+                    int baseIndex = (i + 1) * 100;
+                    futures.add(executorService.submit(() -> {
+                        collection.createIndex(json("data: 1"));
+                        for (int j = 0; j < numberOfDocumentsPerThread; j++) {
+                            Document document = new Document("_id", baseIndex + j).append("data", "abc");
+                            collection.insertOne(document);
+                        }
+                        return null;
+                    }));
+                }
+
+                for (Future<?> future : futures) {
+                    future.get(DEFAULT_TEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                }
+
+                assertThat(toArray(collection.listIndexes()))
+                    .containsExactlyInAnyOrder(
+                        json("key: {_id: 1}, name: '_id_', ns: 'testdb.testcoll', v: 2"),
+                        json("key: {data: 1}, name: 'data_1', ns: 'testdb.testcoll', v: 2")
+                    );
+
+                assertThat(collection.countDocuments()).isEqualTo(numberOfThreads * numberOfDocumentsPerThread);
+
+                db.drop();
+            }
+        } finally {
+            executorService.shutdown();
+            boolean success = executorService.awaitTermination(DEFAULT_TEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            assertThat(success).isTrue();
+        }
     }
 
 }

@@ -26,6 +26,11 @@ public abstract class AbstractSynchronizedMongoDatabase<P> extends AbstractMongo
     }
 
     @Override
+    protected synchronized void addIndex(Document indexDescription) {
+        super.addIndex(indexDescription);
+    }
+
+    @Override
     protected MongoCollection<P> getOrCreateIndexesCollection() {
         synchronized (indexes) {
             return super.getOrCreateIndexesCollection();

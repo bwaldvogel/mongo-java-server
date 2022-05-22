@@ -796,7 +796,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         }
     }
 
-    private void addIndex(Document indexDescription) {
+    protected void addIndex(Document indexDescription) {
         if (!indexDescription.containsKey("v")) {
             indexDescription.put("v", 2);
         }
