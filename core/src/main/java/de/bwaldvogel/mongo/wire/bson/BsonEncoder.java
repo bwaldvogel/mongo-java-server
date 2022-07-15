@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import de.bwaldvogel.mongo.backend.Missing;
+import de.bwaldvogel.mongo.bson.BinData;
 import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
@@ -84,8 +85,8 @@ public class BsonEncoder {
                 encodeDocument(document, buffer);
                 break;
             case BsonConstants.TYPE_DATA:
-                if (value instanceof byte[]) {
-                    byte[] data = (byte[]) value;
+                if (value instanceof BinData) {
+                    byte[] data = ((BinData) value).getData();
                     buffer.writeIntLE(data.length);
                     buffer.writeByte(BsonConstants.BINARY_SUBTYPE_GENERIC);
                     buffer.writeBytes(data);
@@ -182,7 +183,7 @@ public class BsonEncoder {
             return BsonConstants.TYPE_UTF8_STRING;
         } else if (value instanceof Boolean) {
             return BsonConstants.TYPE_BOOLEAN;
-        } else if (value instanceof byte[] || value instanceof UUID || value instanceof LegacyUUID) {
+        } else if (value instanceof BinData || value instanceof UUID || value instanceof LegacyUUID) {
             return BsonConstants.TYPE_DATA;
         } else if (value instanceof Collection<?> || value instanceof String[]) {
             return BsonConstants.TYPE_ARRAY;

@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.Missing;
 
-public class JsonTest {
+class JsonTest {
 
     @Test
     void testToJsonValue() throws Exception {
@@ -42,6 +42,10 @@ public class JsonTest {
         assertThat(Json.toJsonValue(Decimal128.NEGATIVE_ZERO)).isEqualTo("-0");
         assertThat(Json.toJsonValue(Decimal128.POSITIVE_INFINITY)).isEqualTo("Infinity");
         assertThat(Json.toJsonValue(Decimal128.NEGATIVE_INFINITY)).isEqualTo("-Infinity");
+        assertThat(Json.toJsonValue(new BinData(new byte[0]))).isEqualTo("BinData(0, )");
+        assertThat(Json.toJsonValue(new BinData(new byte[] { 0x20 }))).isEqualTo("BinData(0, 20)");
+        assertThat(Json.toJsonValue(new BinData(new byte[] { 0x20, 0x21 }))).isEqualTo("BinData(0, 2021)");
+        assertThat(Json.toJsonValue(new BinData(new byte[] { 0x20, 0x21, 0x22 }))).isEqualTo("BinData(0, 202122)");
     }
 
     @Test

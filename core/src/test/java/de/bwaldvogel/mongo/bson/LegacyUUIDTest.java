@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class LegacyUUIDTest {
+class LegacyUUIDTest {
 
     @Test
     void testEqualsAndHashCode() throws Exception {

@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import de.bwaldvogel.mongo.bson.BinData;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.LegacyUUID;
@@ -21,9 +22,19 @@ import de.bwaldvogel.mongo.bson.ObjectId;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class ValueComparatorTest {
+class ValueComparatorTest {
 
     private final Comparator<Object> comparator = ValueComparator.asc();
+
+    private static BinData highBytes() {
+        byte[] highBytes = new byte[16];
+        Arrays.fill(highBytes, (byte) 0xFF);
+        return new BinData(highBytes);
+    }
+
+    private static BinData emptyBinData() {
+        return new BinData(new byte[0]);
+    }
 
     @Test
     void testReverse() throws Exception {
@@ -140,10 +151,10 @@ public class ValueComparatorTest {
 
     @Test
     void testCompareByteArrayValues() {
-        assertComparesTheSame(new byte[] { 1 }, new byte[] { 1 });
-        assertFirstValueBeforeSecondValue(new byte[] { 1 }, new byte[] { 1, 2 });
-        assertFirstValueBeforeSecondValue(new byte[] { 0x00 }, new byte[] { (byte) 0xFF });
-        assertFirstValueBeforeSecondValue(null, new byte[] { 1 });
+        assertComparesTheSame(new BinData(new byte[] { 1 }), new BinData(new byte[] { 1 }));
+        assertFirstValueBeforeSecondValue(new BinData(new byte[] { 1 }), new BinData(new byte[] { 1, 2 }));
+        assertFirstValueBeforeSecondValue(new BinData(new byte[] { 0x00 }), new BinData(new byte[] { (byte) 0xFF }));
+        assertFirstValueBeforeSecondValue(null, new BinData(new byte[] { 1 }));
     }
 
     @Test
@@ -169,14 +180,11 @@ public class ValueComparatorTest {
         assertComparesTheSame(new UUID(1, 1), new UUID(1, 1));
         assertFirstValueBeforeSecondValue(null, new UUID(1, 2));
         assertFirstValueBeforeSecondValue(new UUID(0, 1), new UUID(1, 1));
-        assertFirstValueBeforeSecondValue(new byte[0], new UUID(0, 1));
+        assertFirstValueBeforeSecondValue(emptyBinData(), new UUID(0, 1));
         assertFirstValueBeforeSecondValue(UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"), UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
 
-        byte[] highBytes = new byte[16];
-        Arrays.fill(highBytes, (byte) 0xFF);
-
-        assertFirstValueBeforeSecondValue(new byte[0], highBytes);
-        assertFirstValueBeforeSecondValue(highBytes, new UUID(0, 1));
+        assertFirstValueBeforeSecondValue(emptyBinData(), highBytes());
+        assertFirstValueBeforeSecondValue(highBytes(), new UUID(0, 1));
     }
 
     @Test
@@ -185,13 +193,10 @@ public class ValueComparatorTest {
         assertFirstValueBeforeSecondValue(null, new LegacyUUID(1, 2));
         assertFirstValueBeforeSecondValue(new LegacyUUID(0, 1), new LegacyUUID(1, 1));
         assertFirstValueBeforeSecondValue(LegacyUUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"), LegacyUUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
-        assertFirstValueBeforeSecondValue(new byte[0], new LegacyUUID(0, 1));
+        assertFirstValueBeforeSecondValue(emptyBinData(), new LegacyUUID(0, 1));
 
-        byte[] highBytes = new byte[16];
-        Arrays.fill(highBytes, (byte) 0xFF);
-
-        assertFirstValueBeforeSecondValue(new byte[0], highBytes);
-        assertFirstValueBeforeSecondValue(highBytes, new UUID(0, 1));
+        assertFirstValueBeforeSecondValue(emptyBinData(), highBytes());
+        assertFirstValueBeforeSecondValue(highBytes(), new UUID(0, 1));
     }
 
     @Test

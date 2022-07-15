@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import de.bwaldvogel.mongo.bson.BinData;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
@@ -23,7 +24,7 @@ public enum BsonType {
     STRING(2, "string", String.class),
     OBJECT(3, "object", Document.class),
     ARRAY(4, "array", Collection.class),
-    BIN_DATA(5, "binData", byte[].class, LegacyUUID.class, UUID.class),
+    BIN_DATA(5, "binData", BinData.class, LegacyUUID.class, UUID.class),
     OBJECT_ID(7, "objectId", ObjectId.class),
     BOOL(8, "bool", Boolean.class),
     DATE(9, "date", Instant.class),

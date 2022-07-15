@@ -51,6 +51,10 @@ public final class Json {
             ObjectId objectId = (ObjectId) value;
             return objectId.getHexData();
         }
+        if (value instanceof BinData) {
+            BinData binData = (BinData) value;
+            return "BinData(0, " + toHex(binData.getData()) + ")";
+        }
         if (value instanceof LegacyUUID) {
             UUID uuid = ((LegacyUUID) value).getUuid();
             return "BinData(3, " + toHex(uuid) + ")";
@@ -75,10 +79,18 @@ public final class Json {
     }
 
     private static StringBuilder toHex(UUID uuid) {
-        StringBuilder hex = new StringBuilder();
         byte[] bytes = toBytes(uuid);
+        StringBuilder hex = new StringBuilder();
         for (int i = bytes.length; i > 0; i--) {
             hex.append(String.format("%02X", bytes[i - 1]));
+        }
+        return hex;
+    }
+
+    private static StringBuilder toHex(byte[] bytes) {
+        StringBuilder hex = new StringBuilder();
+        for (byte aByte : bytes) {
+            hex.append(String.format("%02X", aByte));
         }
         return hex;
     }

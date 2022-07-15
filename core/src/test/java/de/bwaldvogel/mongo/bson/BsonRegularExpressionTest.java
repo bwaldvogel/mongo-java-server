@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
-public class BsonRegularExpressionTest {
+class BsonRegularExpressionTest {
 
     @Test
     void testToString() throws Exception {

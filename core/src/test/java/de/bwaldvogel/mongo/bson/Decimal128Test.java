@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class Decimal128Test {
+class Decimal128Test {
 
     @Test
     void testEqualsAndHashCodeContract() throws Exception {

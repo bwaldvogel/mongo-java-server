@@ -163,10 +163,6 @@ public class Utils {
             return true;
         } else if (Missing.isNullOrMissing(a) || Missing.isNullOrMissing(b)) {
             return false;
-        } else if (a instanceof byte[] && b instanceof byte[]) {
-            byte[] bytesA = (byte[]) a;
-            byte[] bytesB = (byte[]) b;
-            return Arrays.equals(bytesA, bytesB);
         } else {
             Object normalizedA = normalizeValue(a);
             Object normalizedB = normalizeValue(b);

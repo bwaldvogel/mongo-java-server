@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
 
+import de.bwaldvogel.mongo.bson.BinData;
 import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
@@ -921,7 +922,7 @@ class DefaultQueryMatcherTest {
         assertThat(DefaultQueryMatcher.matchTypes(new Document(), 3)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(Arrays.asList(1, 2, 3), 4)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(UUID.randomUUID(), 5)).isTrue();
-        assertThat(DefaultQueryMatcher.matchTypes(new byte[] { 1, 2, 3 }, 5)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(new BinData( new byte[] { 1, 2, 3 }), 5)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(new ObjectId(), 7)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(true, 8)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(Boolean.FALSE, 8)).isTrue();

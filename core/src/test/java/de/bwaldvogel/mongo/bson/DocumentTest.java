@@ -16,7 +16,7 @@ import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import nl.jqno.equalsverifier.EqualsVerifier;
 
-public class DocumentTest {
+class DocumentTest {
 
     @Test
     void testEqualsAndHashCodeContract() throws Exception {

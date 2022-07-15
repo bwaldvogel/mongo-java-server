@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import de.bwaldvogel.mongo.bson.BinData;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Decimal128;
@@ -49,7 +50,7 @@ public class ValueComparator implements Comparator<Object> {
         SORT_PRIORITY.add(String.class);
         SORT_PRIORITY.add(Document.class);
         SORT_PRIORITY.add(List.class);
-        SORT_PRIORITY.add(byte[].class);
+        SORT_PRIORITY.add(BinData.class);
         SORT_PRIORITY.add(LegacyUUID.class);
         SORT_PRIORITY.add(UUID.class);
         SORT_PRIORITY.add(ObjectId.class);
@@ -180,22 +181,10 @@ public class ValueComparator implements Comparator<Object> {
             return compareListsForEquality((Collection<?>) value1, (Collection<?>) value2);
         }
 
-        // lexicographic byte comparison 0x00 < 0xFF
-        if (clazz.isArray()) {
-            Class<?> componentType = clazz.getComponentType();
-            if (byte.class.isAssignableFrom(componentType)) {
-                byte[] bytes1 = (byte[]) value1;
-                byte[] bytes2 = (byte[]) value2;
-                if (bytes1.length != bytes2.length) {
-                    return Integer.compare(bytes1.length, bytes2.length);
-                } else {
-                    for (int i = 0; i < bytes1.length; i++) {
-                        int compare = compareUnsigned(bytes1[i], bytes2[i]);
-                        if (compare != 0) return compare;
-                    }
-                    return 0;
-                }
-            }
+        if (BinData.class.isAssignableFrom(clazz)) {
+            BinData binData1 = (BinData) value1;
+            BinData binData2 = (BinData) value2;
+            return binData1.compareTo(binData2);
         }
 
         if (Document.class.isAssignableFrom(clazz)) {
@@ -304,12 +293,6 @@ public class ValueComparator implements Comparator<Object> {
         }
 
         return 0;
-    }
-
-    private static int compareUnsigned(byte b1, byte b2) {
-        int v1 = (int) b1 & 0xFF;
-        int v2 = (int) b2 & 0xFF;
-        return Integer.compare(v1, v2);
     }
 
     private static int getTypeOrder(Object obj) {

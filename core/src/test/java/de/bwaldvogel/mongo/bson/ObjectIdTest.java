@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import de.bwaldvogel.mongo.wire.BsonConstants;
 
-public class ObjectIdTest {
+class ObjectIdTest {
 
     @Test
     void testHashCodeEquals() throws Exception {

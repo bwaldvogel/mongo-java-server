@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 import de.bwaldvogel.mongo.backend.Assert;
+import de.bwaldvogel.mongo.bson.BinData;
 import de.bwaldvogel.mongo.bson.BsonJavaScript;
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
 import de.bwaldvogel.mongo.bson.BsonTimestamp;
@@ -145,7 +146,7 @@ public final class BsonDecoder {
             case BsonConstants.BINARY_SUBTYPE_USER_DEFINED: {
                 byte[] data = new byte[length];
                 buffer.readBytes(data);
-                return data;
+                return new BinData(data);
             }
             case BsonConstants.BINARY_SUBTYPE_OLD_UUID: {
                 if (length != BsonConstants.LENGTH_UUID) {

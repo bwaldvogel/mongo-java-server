@@ -6403,4 +6403,27 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/197
+    @Test
+    void testFindDocumentByNestedByArray() throws Exception {
+        Document document1 = new Document("_id", new Binary(new byte[] { 0x20, 0x21, 0x22 }));
+        Document document2 = new Document("_id", new Binary(new byte[] { 0x21, 0x22, 0x23 }));
+
+        collection.insertOne(document1);
+        collection.insertOne(document2);
+
+        assertThat(toArray(collection.find(document1))).containsExactly(document1);
+        assertThat(toArray(collection.find(document2))).containsExactly(document2);
+    }
+
+    @Test
+    void testInsertDuplicate_byteArray() throws Exception {
+        Document document = new Document("_id", new Binary(new byte[] { 0x20, 0x21, 0x22 }));
+
+        collection.insertOne(document);
+
+        assertMongoWriteException(() -> collection.insertOne(document), 11000, "DuplicateKey",
+            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(0, 202122) }");
+    }
+
 }

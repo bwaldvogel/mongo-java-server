@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public class UtilsTest {
+class UtilsTest {
 
     @Test
     void testMarkOkay() throws Exception {
@@ -85,12 +85,6 @@ public class UtilsTest {
         assertThat(Utils.nullAwareEquals(4, 4)).isTrue();
         assertThat(Utils.nullAwareEquals(4, 4.0)).isTrue();
         assertThat(Utils.nullAwareEquals(Float.valueOf(3.0f), Double.valueOf(3.0))).isTrue();
-        assertThat(Utils.nullAwareEquals(new byte[] {}, new byte[] {})).isTrue();
-        assertThat(Utils.nullAwareEquals(new byte[] {}, new byte[] { 0x01 })).isFalse();
-        assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new byte[] { 0x01 })).isTrue();
-        assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new byte[] { 0x01, 0x02 })).isFalse();
-        assertThat(Utils.nullAwareEquals(new byte[] { 0x01, 0x02, 0x03 }, new byte[] { 0x01, 0x02 })).isFalse();
-        assertThat(Utils.nullAwareEquals(new byte[] { 0x01 }, new int[] { 0x01 })).isFalse();
         assertThat(Utils.nullAwareEquals(json("a: 1"), json("a: 1"))).isTrue();
         assertThat(Utils.nullAwareEquals(json("a: 1"), json("a: 1.0"))).isTrue();
         assertThat(Utils.nullAwareEquals(json("a: 0"), json("a: -0.0"))).isTrue();
