@@ -170,7 +170,7 @@ public class Utils {
         }
     }
 
-    static int calculateSize(Document document) {
+    public static int calculateSize(Document document) {
         ByteBuf buffer = Unpooled.buffer();
         try {
             BsonEncoder.encodeDocument(document, buffer);
@@ -517,7 +517,7 @@ public class Utils {
         return firstBatchCursorResponse(ns, firstBatch);
     }
 
-    static Document firstBatchCursorResponse(String ns, List<Document> firstBatch) {
+    public static Document firstBatchCursorResponse(String ns, List<Document> firstBatch) {
         return firstBatchCursorResponse(ns, firstBatch, EmptyCursor.get());
     }
 
