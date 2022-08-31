@@ -16,8 +16,6 @@ plugins {
 allprojects {
     apply plugin: 'java-library'
     apply plugin: 'jacoco'
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
 
     version = '1.42.0-SNAPSHOT'
 
@@ -86,6 +84,11 @@ allprojects {
         archiveClassifier = "javadoc"
         from javadoc.destinationDir
     }
+}
+
+configure(allprojects.findAll {it.name != 'mongo-java-server-examples'}) {
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
 
     publishing {
         publications {

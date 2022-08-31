@@ -1,10 +1,10 @@
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.InetSocketAddress;
 
 import org.bson.Document;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.mongodb.MongoClient;
@@ -14,14 +14,14 @@ import com.mongodb.client.MongoCollection;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 
-public class SimpleTest {
+class SimpleJunit5Test {
 
     private MongoCollection<Document> collection;
     private MongoClient client;
     private MongoServer server;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         server = new MongoServer(new MemoryBackend());
 
         // bind on a random local port
@@ -31,22 +31,22 @@ public class SimpleTest {
         collection = client.getDatabase("testdb").getCollection("testcollection");
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         client.close();
         server.shutdown();
     }
 
     @Test
     public void testSimpleInsertQuery() throws Exception {
-        assertEquals(0, collection.count());
+        assertThat(collection.countDocuments()).isZero();
 
         // creates the database and collection in memory and insert the object
         Document obj = new Document("_id", 1).append("key", "value");
         collection.insertOne(obj);
 
-        assertEquals(1, collection.count());
-        assertEquals(obj, collection.find().first());
+        assertThat(collection.countDocuments()).isEqualTo(1L);
+        assertThat(collection.find().first()).isEqualTo(obj);
     }
 
 }
