@@ -1,8 +1,8 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ch.qos.logback:logback-classic:1.4.0=testRuntimeClasspath
-ch.qos.logback:logback-core:1.4.0=testRuntimeClasspath
+ch.qos.logback:logback-classic:1.3.0=testRuntimeClasspath
+ch.qos.logback:logback-core:1.3.0=testRuntimeClasspath
 io.netty:netty-buffer:4.1.74.Final=default
 io.netty:netty-buffer:4.1.80.Final=runtimeClasspath,testRuntimeClasspath
 io.netty:netty-codec:4.1.74.Final=default

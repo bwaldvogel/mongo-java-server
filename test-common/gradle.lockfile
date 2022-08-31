@@ -2,9 +2,9 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 ch.qos.logback:logback-classic:1.2.10=default
-ch.qos.logback:logback-classic:1.4.0=runtimeClasspath,testRuntimeClasspath
+ch.qos.logback:logback-classic:1.3.0=runtimeClasspath,testRuntimeClasspath
 ch.qos.logback:logback-core:1.2.10=default
-ch.qos.logback:logback-core:1.4.0=runtimeClasspath,testRuntimeClasspath
+ch.qos.logback:logback-core:1.3.0=runtimeClasspath,testRuntimeClasspath
 com.fasterxml.jackson.core:jackson-annotations:2.10.3=testCompileClasspath,testRuntimeClasspath
 com.github.docker-java:docker-java-api:3.2.13=testCompileClasspath,testRuntimeClasspath
 com.github.docker-java:docker-java-transport-zerodep:3.2.13=testCompileClasspath,testRuntimeClasspath
