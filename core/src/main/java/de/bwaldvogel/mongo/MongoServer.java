@@ -111,7 +111,9 @@ public class MongoServer {
     }
 
     /**
-     * starts and binds the server on a local random port
+     * Starts and binds the server on a local random port
+     * <p>
+     * Note: For modern clients you probably want to use {@link #bindAndGetConnectionString()} instead!
      *
      * @return the random local address the server was bound to
      */
@@ -121,14 +123,38 @@ public class MongoServer {
     }
 
     /**
-     * @return the local address the server was bound or null if the server is
-     *         not listening
+     * starts and binds the server on a local random port
+     *
+     * @return the MongoDB connection string to connect to this server. Example: mongodb://localhost:12345
+     */
+    public String bindAndGetConnectionString() {
+        bind();
+        return getConnectionString();
+    }
+
+    /**
+     * @return the local address the server was bound or null if the server is not listening
      */
     public InetSocketAddress getLocalAddress() {
         if (channel == null) {
             return null;
         }
         return (InetSocketAddress) channel.localAddress();
+    }
+
+    /**
+     * @return the MongoDB connection string to connect to this server. Example: mongodb://localhost:12345
+     */
+    public String getConnectionString() {
+        final String options;
+        if (sslContext != null) {
+            options = "/?tls=true";
+        } else {
+            options = "";
+        }
+
+        InetSocketAddress socketAddress = getLocalAddress();
+        return "mongodb://" + socketAddress.getHostString() + ":" + socketAddress.getPort() + options;
     }
 
     /**

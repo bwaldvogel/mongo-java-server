@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
+import static de.bwaldvogel.mongo.backend.TestUtils.toInetSocketAddress;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -20,10 +22,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
 import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+
+import de.bwaldvogel.mongo.backend.CollectionUtils;
 
 public abstract class MongoServerTest {
 
@@ -51,10 +57,31 @@ public abstract class MongoServerTest {
     }
 
     @Test
+    void testBindAndConnect() throws Exception {
+        InetSocketAddress inetSocketAddress = server.bind();
+        try (com.mongodb.MongoClient mongoClient = new com.mongodb.MongoClient(new ServerAddress(inetSocketAddress))) {
+            mongoClient.getDatabase("abc").createCollection("def");
+            assertThat(toArray(mongoClient.listDatabaseNames()))
+                .containsExactly("abc");
+        }
+    }
+
+    @Test
+    void testBindAndGetConnectionStringThenConnect() throws Exception {
+        String connectionString = server.bindAndGetConnectionString();
+        try (MongoClient mongoClient = MongoClients.create(connectionString)) {
+            mongoClient.getDatabase("abc").createCollection("def");
+            assertThat(toArray(mongoClient.listDatabaseNames()))
+                .containsExactly("abc");
+        }
+    }
+
+    @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    public void testStopListening() throws Exception {
-        InetSocketAddress serverAddress = server.bind();
-        try (MongoClient client = new MongoClient(new ServerAddress(serverAddress))) {
+    void testStopListening() throws Exception {
+        String connectionString = server.bindAndGetConnectionString();
+
+        try (MongoClient client = MongoClients.create(connectionString)) {
             // request something
             pingServer(client);
 
@@ -67,7 +94,8 @@ public abstract class MongoServerTest {
             assertThatExceptionOfType(IOException.class)
                 .isThrownBy(() -> {
                     try (Socket socket = new Socket()) {
-                        socket.connect(serverAddress);
+                        String host = CollectionUtils.getSingleElement(new ConnectionString(connectionString).getHosts());
+                        socket.connect(new InetSocketAddress(host, 1234));
                     }
                 });
         }
@@ -75,9 +103,9 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    public void testShutdownNow() throws Exception {
-        InetSocketAddress serverAddress = server.bind();
-        MongoClient client = new MongoClient(new ServerAddress(serverAddress));
+    void testShutdownNow() throws Exception {
+        String connectionString = server.bindAndGetConnectionString();
+        MongoClient client = MongoClients.create(connectionString);
 
         // request something to open a connection
         pingServer(client);
@@ -87,7 +115,7 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    public void testGetLocalAddress() throws Exception {
+    void testGetLocalAddress() throws Exception {
         assertThat(server.getLocalAddress()).isNull();
         InetSocketAddress serverAddress = server.bind();
         InetSocketAddress localAddress = server.getLocalAddress();
@@ -98,9 +126,11 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    public void testShutdownAndRestart() throws Exception {
-        InetSocketAddress serverAddress = server.bind();
-        try (MongoClient client = new MongoClient(new ServerAddress(serverAddress))) {
+    void testShutdownAndRestart() throws Exception {
+        String connectionString = server.bindAndGetConnectionString();
+        InetSocketAddress serverAddress = server.getLocalAddress();
+
+        try (MongoClient client = MongoClients.create(connectionString)) {
             // request something to open a connection
             pingServer(client);
 
@@ -118,24 +148,32 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    public void testSsl() throws Exception {
+    void testSsl() throws Exception {
         server.enableSsl(getPrivateKey(), null, getCertificate());
-        InetSocketAddress serverAddress = server.bind();
-        assertThat(server).hasToString("MongoServer(port: " + serverAddress.getPort() + ", ssl: true)");
+        String connectionString = server.bindAndGetConnectionString();
+        assertThat(connectionString).endsWith("?tls=true");
+        InetSocketAddress inetSocketAddress = toInetSocketAddress(connectionString);
+        int port = inetSocketAddress.getPort();
+        assertThat(server).hasToString("MongoServer(port: " + port + ", ssl: true)");
 
-        MongoClientOptions clientOptions = MongoClientOptions.builder()
-            .sslEnabled(true)
-            .sslContext(createSslContext(loadTestKeyStore()))
+        SSLContext sslContext = createSslContext(loadTestKeyStore());
+
+        MongoClientSettings clientSettings = MongoClientSettings.builder()
+            .applyConnectionString(new ConnectionString(connectionString))
+            .applyToSslSettings(builder -> {
+                builder.enabled(true);
+                builder.context(sslContext);
+            })
             .build();
 
-        try (MongoClient client = new MongoClient(new ServerAddress("localhost", serverAddress.getPort()), clientOptions)) {
+        try (MongoClient client = MongoClients.create(clientSettings)) {
             pingServer(client);
         }
     }
 
     @Test
     void testEnableSslAfterAlreadyStarted() throws Exception {
-        server.bind();
+        server.bindAndGetConnectionString();
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> server.enableSsl(getPrivateKey(), null, getCertificate()))

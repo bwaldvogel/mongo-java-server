@@ -32,14 +32,14 @@ Add the following Maven dependency to your project:
 ### Example ###
 
 ```java
-public class SimpleTest {
+class SimpleTest {
 
     private MongoCollection<Document> collection;
     private MongoClient client;
     private MongoServer server;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         server = new MongoServer(new MemoryBackend());
 
         // optionally:
@@ -47,28 +47,28 @@ public class SimpleTest {
         // server.enableOplog();
 
         // bind on a random local port
-        InetSocketAddress serverAddress = server.bind();
+        String connectionString = server.bindAndGetConnectionString();
 
-        client = new MongoClient(new ServerAddress(serverAddress));
+        client = MongoClients.create(connectionString);
         collection = client.getDatabase("testdb").getCollection("testcollection");
     }
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         client.close();
         server.shutdown();
     }
 
     @Test
-    public void testSimpleInsertQuery() throws Exception {
-        assertEquals(0, collection.count());
+    void testSimpleInsertQuery() throws Exception {
+        assertThat(collection.countDocuments()).isZero();
 
         // creates the database and collection in memory and insert the object
         Document obj = new Document("_id", 1).append("key", "value");
         collection.insertOne(obj);
 
-        assertEquals(1, collection.count());
-        assertEquals(obj, collection.find().first());
+        assertThat(collection.countDocuments()).isEqualTo(1L);
+        assertThat(collection.find().first()).isEqualTo(obj);
     }
 
 }
@@ -120,8 +120,8 @@ public class MongoTestServerConfiguration {
 
 	@Bean
 	public MongoDbFactory mongoDbFactory(MongoServer mongoServer) {
-		InetSocketAddress serverAddress = mongoServer.getLocalAddress();
-		return new SimpleMongoClientDbFactory("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort() + "/test");
+		String connectionString = mongoServer.getConnectionString();
+		return new SimpleMongoClientDbFactory(connectionString + "/test");
 	}
 
 	@Bean(destroyMethod = "shutdown")

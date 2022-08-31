@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
 import com.mongodb.DuplicateKeyException;
-import com.mongodb.MongoClient;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexOptions;
 import com.zaxxer.hikari.HikariConfig;
@@ -254,7 +254,8 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
     public void testNewUuidDuplicate() throws Exception {
         Document document1 = new Document("_id", UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
         try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
-            MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName()).getCollection(AbstractTest.collection.getNamespace().getCollectionName());
+            MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName())
+                .getCollection(AbstractTest.collection.getNamespace().getCollectionName());
 
             collectionStandardUuid.insertOne(document1);
 

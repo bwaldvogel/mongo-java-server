@@ -77,8 +77,7 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import com.mongodb.DBRef;
 import com.mongodb.DuplicateKeyException;
 import com.mongodb.MongoBulkWriteException;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientOptions;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCommandException;
 import com.mongodb.MongoCursorNotFoundException;
 import com.mongodb.MongoNamespace;
@@ -86,11 +85,12 @@ import com.mongodb.MongoQueryException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoWriteException;
 import com.mongodb.ReadPreference;
-import com.mongodb.ServerAddress;
 import com.mongodb.ServerCursor;
 import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.bulk.BulkWriteUpsert;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
@@ -147,10 +147,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     protected static MongoClient getClientWithStandardUuid() {
         CodecRegistry standardUuidCodec = CodecRegistries.fromCodecs(new UuidCodec(UuidRepresentation.STANDARD));
-        MongoClientOptions options = MongoClientOptions.builder()
-            .codecRegistry(CodecRegistries.fromRegistries(standardUuidCodec, MongoClient.getDefaultCodecRegistry()))
+
+        MongoClientSettings clientSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
+            .codecRegistry(CodecRegistries.fromRegistries(standardUuidCodec, MongoClientSettings.getDefaultCodecRegistry()))
             .build();
-        return new MongoClient(new ServerAddress(serverAddress), options);
+
+        return MongoClients.create(clientSettings);
     }
 
     @Test
@@ -908,7 +911,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testDistinctUuids() throws Exception {
         try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
-            MongoCollection<Document> standardUuidCollection = standardUuidClient.getDatabase(collection.getNamespace().getDatabaseName()).getCollection(collection.getNamespace().getCollectionName());
+            MongoCollection<Document> standardUuidCollection = standardUuidClient.getDatabase(collection.getNamespace().getDatabaseName())
+                .getCollection(collection.getNamespace().getCollectionName());
             standardUuidCollection.insertOne(json("_id: 1, n: null"));
             standardUuidCollection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
             standardUuidCollection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
@@ -1128,7 +1132,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         MongoCollection<Document> collection2 = getCollection("testcoll2");
         collection2.insertOne(json("_id: 1"));
 
-        syncClient.dropDatabase(db.getName());
+        db.drop();
         assertThat(listDatabaseNames()).doesNotContain(db.getName());
         assertThat(collection.countDocuments()).isZero();
         assertThat(db.listCollectionNames()).doesNotContain(getCollectionName(),
@@ -1154,7 +1158,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         for (int i = 0; i < 3; i++) {
             collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
         }
-        syncClient.dropDatabase(db.getName());
+        db.drop();
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/107
@@ -5694,11 +5698,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
         DocumentCodec documentCodec = Mockito.spy(new DocumentCodec());
         Mockito.doAnswer(AdditionalAnswers.returnsFirstArg()).when(documentCodec).generateIdIfAbsentFromDocument(Mockito.any());
 
-        MongoClientOptions mongoClientOptions = MongoClientOptions.builder()
+        MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
             .codecRegistry(CodecRegistries.fromCodecs(documentCodec))
             .build();
 
-        try (MongoClient mongoClient = new MongoClient(new ServerAddress(serverAddress), mongoClientOptions)) {
+        try (MongoClient mongoClient = MongoClients.create(mongoClientSettings)) {
             MongoDatabase database = mongoClient.getDatabase(db.getName());
             MongoCollection<Document> collection = database.getCollection(getCollectionName());
             collection.insertOne(json("x: 1"));

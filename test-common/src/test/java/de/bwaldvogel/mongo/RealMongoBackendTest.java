@@ -24,7 +24,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
 
     @Override
     protected void setUpBackend() throws Exception {
-        serverAddress = realMongoContainer.getServerAddress();
+        connectionString = realMongoContainer.getConnectionString();
     }
 
     @Override

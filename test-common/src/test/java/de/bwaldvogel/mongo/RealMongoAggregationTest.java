@@ -13,7 +13,7 @@ public class RealMongoAggregationTest extends AbstractAggregationTest {
 
     @Override
     protected void setUpBackend() throws Exception {
-        serverAddress = realMongoContainer.getServerAddress();
+        connectionString = realMongoContainer.getConnectionString();
     }
 
     @Override

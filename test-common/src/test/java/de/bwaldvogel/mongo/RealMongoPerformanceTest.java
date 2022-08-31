@@ -1,7 +1,5 @@
 package de.bwaldvogel.mongo;
 
-import java.net.InetSocketAddress;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.containers.GenericContainer;
@@ -19,7 +17,7 @@ public class RealMongoPerformanceTest extends AbstractPerformanceTest {
 
     @Override
     protected void setUpBackend() throws Exception {
-        serverAddress = new InetSocketAddress(mongoContainer.getFirstMappedPort());
+        connectionString = RealMongoContainer.getConnectionString(mongoContainer);
     }
 
     @AfterAll

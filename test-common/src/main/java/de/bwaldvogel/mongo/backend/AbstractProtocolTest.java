@@ -1,10 +1,12 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.toInetSocketAddress;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BooleanSupplier;
@@ -24,7 +26,8 @@ public abstract class AbstractProtocolTest extends AbstractTest {
     void testInsertOperation() throws Exception {
         assertThat(collection.countDocuments()).isZero();
 
-        try (Socket socket = new Socket(serverAddress.getAddress(), serverAddress.getPort())) {
+        InetSocketAddress inetSocketAddress = toInetSocketAddress(connectionString);
+        try (Socket socket = new Socket(inetSocketAddress.getAddress(), inetSocketAddress.getPort())) {
             OutputStream outputStream = socket.getOutputStream();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -57,7 +60,8 @@ public abstract class AbstractProtocolTest extends AbstractTest {
 
         assertThat(collection.countDocuments()).isEqualTo(3);
 
-        try (Socket socket = new Socket(serverAddress.getAddress(), serverAddress.getPort())) {
+        InetSocketAddress inetSocketAddress = toInetSocketAddress(connectionString);
+        try (Socket socket = new Socket(inetSocketAddress.getAddress(), inetSocketAddress.getPort())) {
             OutputStream outputStream = socket.getOutputStream();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -91,7 +95,8 @@ public abstract class AbstractProtocolTest extends AbstractTest {
 
         assertThat(collection.countDocuments()).isEqualTo(3);
 
-        try (Socket socket = new Socket(serverAddress.getAddress(), serverAddress.getPort())) {
+        InetSocketAddress inetSocketAddress = toInetSocketAddress(connectionString);
+        try (Socket socket = new Socket(inetSocketAddress.getHostName(), inetSocketAddress.getPort())) {
             OutputStream outputStream = socket.getOutputStream();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -128,7 +133,8 @@ public abstract class AbstractProtocolTest extends AbstractTest {
 
         assertThat(collection.countDocuments()).isEqualTo(3);
 
-        try (Socket socket = new Socket(serverAddress.getAddress(), serverAddress.getPort())) {
+        InetSocketAddress inetSocketAddress = toInetSocketAddress(connectionString);
+        try (Socket socket = new Socket(inetSocketAddress.getAddress(), inetSocketAddress.getPort())) {
             OutputStream outputStream = socket.getOutputStream();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 

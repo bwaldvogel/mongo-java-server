@@ -1,13 +1,13 @@
 package de.bwaldvogel.mongo;
 
-import java.net.InetSocketAddress;
-
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+
+import com.mongodb.ConnectionString;
 
 import de.bwaldvogel.mongo.backend.Assert;
 
@@ -57,17 +57,17 @@ public class RealMongoContainer implements BeforeAllCallback, AfterAllCallback {
         return mongoContainer;
     }
 
-    public InetSocketAddress getServerAddress() {
-        return getServerAddress(mongoContainer);
+    public ConnectionString getConnectionString() {
+        return getConnectionString(mongoContainer);
     }
 
-    static InetSocketAddress getServerAddress(GenericContainer<?> mongoContainer) {
+    static ConnectionString getConnectionString(GenericContainer<?> mongoContainer) {
         if (mongoContainer != null) {
-            return new InetSocketAddress("127.0.0.1", mongoContainer.getFirstMappedPort());
+            return new ConnectionString("mongodb://127.0.0.1:" + mongoContainer.getFirstMappedPort());
         } else {
             Assert.isTrue(shouldUseExistingContainer(),
                 () -> "Unexpected: Got no container although we should not use an existing container");
-            return new InetSocketAddress("127.0.0.1", 27018);
+            return new ConnectionString("mongodb://127.0.0.1:27018");
         }
     }
 }

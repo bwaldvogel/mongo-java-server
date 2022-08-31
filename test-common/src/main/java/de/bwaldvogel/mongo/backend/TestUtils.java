@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -9,6 +10,7 @@ import java.util.stream.Stream;
 
 import org.bson.Document;
 
+import com.mongodb.ConnectionString;
 import com.mongodb.client.MongoDatabase;
 
 public class TestUtils {
@@ -50,4 +52,17 @@ public class TestUtils {
     static Date date(String value) {
         return Date.from(instant(value));
     }
+
+    public static InetSocketAddress toInetSocketAddress(String connectionString) {
+        return toInetSocketAddress(new ConnectionString(connectionString));
+    }
+
+    public static InetSocketAddress toInetSocketAddress(ConnectionString connectionString) {
+        String hostAndPort = CollectionUtils.getSingleElement(connectionString.getHosts());
+        String[] hostAndPortArray = hostAndPort.split(":");
+        String hostname = hostAndPortArray[0];
+        int port = Integer.parseInt(hostAndPortArray[1]);
+        return new InetSocketAddress(hostname, port);
+    }
+
 }

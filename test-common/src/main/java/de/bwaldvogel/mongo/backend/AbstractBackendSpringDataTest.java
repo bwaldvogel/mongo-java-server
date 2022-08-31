@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
-import java.net.InetSocketAddress;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -52,8 +51,8 @@ public abstract class AbstractBackendSpringDataTest {
 
         @Bean(destroyMethod = "close")
         public MongoClient mongoClient(MongoServer mongoServer) {
-            InetSocketAddress serverAddress = mongoServer.bind();
-            return MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
+            String connectionString = mongoServer.bindAndGetConnectionString();
+            return MongoClients.create(connectionString);
         }
 
         @Bean

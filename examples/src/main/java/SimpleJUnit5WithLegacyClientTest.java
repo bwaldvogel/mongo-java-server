@@ -14,7 +14,7 @@ import com.mongodb.client.MongoCollection;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 
-class SimpleJunit5Test {
+class SimpleJUnit5WithLegacyClientTest {
 
     private MongoCollection<Document> collection;
     private MongoClient client;
@@ -38,7 +38,7 @@ class SimpleJunit5Test {
     }
 
     @Test
-    public void testSimpleInsertQuery() throws Exception {
+    void testSimpleInsertQuery() throws Exception {
         assertThat(collection.countDocuments()).isZero();
 
         // creates the database and collection in memory and insert the object

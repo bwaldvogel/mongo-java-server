@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,11 +17,12 @@ import org.bson.Document;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 
+import com.mongodb.ConnectionString;
 import com.mongodb.MongoNamespace;
-import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.reactivestreams.client.MongoClient;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoServer;
@@ -34,7 +34,7 @@ public abstract class AbstractTest {
 
     protected static final TestClock clock = TestClock.defaultClock();
 
-    protected static com.mongodb.MongoClient syncClient;
+    protected static MongoClient syncClient;
     protected static MongoDatabase db;
 
     protected static MongoCollection<Document> collection;
@@ -43,8 +43,8 @@ public abstract class AbstractTest {
     static com.mongodb.reactivestreams.client.MongoDatabase asyncDb;
 
     private static MongoServer mongoServer;
-    private static MongoClient asyncClient;
-    protected static InetSocketAddress serverAddress;
+    private static com.mongodb.reactivestreams.client.MongoClient asyncClient;
+    protected static ConnectionString connectionString;
     protected static MongoBackend backend;
 
     protected abstract MongoBackend createBackend() throws Exception;
@@ -52,7 +52,7 @@ public abstract class AbstractTest {
     @BeforeEach
     public void setUp() throws Exception {
         clock.reset();
-        if (serverAddress == null) {
+        if (connectionString == null) {
             setUpBackend();
             setUpClients();
         } else {
@@ -65,7 +65,7 @@ public abstract class AbstractTest {
             if (databaseName.equals("admin") || databaseName.equals("local")) {
                 continue;
             }
-            syncClient.dropDatabase(databaseName);
+            syncClient.getDatabase(databaseName).drop();
         }
     }
 
@@ -81,8 +81,8 @@ public abstract class AbstractTest {
     }
 
     private static void setUpClients() throws Exception {
-        syncClient = new com.mongodb.MongoClient(new ServerAddress(serverAddress));
-        asyncClient = com.mongodb.reactivestreams.client.MongoClients.create("mongodb://" + serverAddress.getHostName() + ":" + serverAddress.getPort());
+        syncClient = MongoClients.create(connectionString);
+        asyncClient = com.mongodb.reactivestreams.client.MongoClients.create(connectionString);
         db = syncClient.getDatabase(TEST_DATABASE_NAME);
         collection = db.getCollection("testcoll");
 
@@ -94,7 +94,7 @@ public abstract class AbstractTest {
     protected void setUpBackend() throws Exception {
         backend = createBackend();
         mongoServer = new MongoServer(backend);
-        serverAddress = mongoServer.bind();
+        connectionString = new ConnectionString(mongoServer.bindAndGetConnectionString());
     }
 
     private static void closeClients() {
@@ -111,7 +111,7 @@ public abstract class AbstractTest {
             mongoServer.shutdownNow();
             mongoServer = null;
         }
-        serverAddress = null;
+        connectionString = null;
     }
 
     protected void restart() throws Exception {
