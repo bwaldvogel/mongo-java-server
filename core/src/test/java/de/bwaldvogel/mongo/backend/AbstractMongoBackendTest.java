@@ -80,7 +80,7 @@ class AbstractMongoBackendTest {
 
         assertThatExceptionOfType(CursorNotFoundException.class)
             .isThrownBy(() -> cursorRegistry.getCursor(cursor.getId()))
-            .withMessage("[Error 43] Cursor id 1 does not exists");
+            .withMessage("[Error 43] Cursor id 1 does not exist");
     }
 
     @Test
@@ -97,7 +97,7 @@ class AbstractMongoBackendTest {
 
         assertThatExceptionOfType(CursorNotFoundException.class)
             .isThrownBy(() -> cursorRegistry.getCursor(cursor1.getId()))
-            .withMessage("[Error 43] Cursor id 1 does not exists");
+            .withMessage("[Error 43] Cursor id 1 does not exist");
 
         assertThat(cursorRegistry.getCursor(cursor2.getId())).isNotNull();
     }
