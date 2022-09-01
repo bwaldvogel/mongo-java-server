@@ -1,5 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.AbstractMongoBackend.ADMIN_DB_NAME;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,6 +14,7 @@ import java.util.concurrent.CompletionStage;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
@@ -16,13 +23,6 @@ import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.wire.message.MongoGetMore;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import io.netty.channel.Channel;
-import org.mockito.Mockito;
-
-import static de.bwaldvogel.mongo.backend.AbstractMongoBackend.ADMIN_DB_NAME;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 class AbstractMongoBackendTest {
 

@@ -15,6 +15,7 @@ import org.assertj.core.api.MapAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.bson.Document;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import com.mongodb.ConnectionString;
@@ -30,6 +31,7 @@ import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractTest {
 
+    protected static final String ADMIN_DB_NAME = "admin";
     protected static final String TEST_DATABASE_NAME = "testdb";
 
     protected static final TestClock clock = TestClock.defaultClock();
@@ -60,6 +62,18 @@ public abstract class AbstractTest {
         }
     }
 
+    @AfterEach
+    void assertNoOpenCursors() throws Exception {
+        Document serverStatus = runCommand("serverStatus");
+        assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
+        Document openCursors = serverStatus.get("metrics", Document.class)
+            .get("cursor", Document.class)
+            .get("open", Document.class);
+
+        Long totalOpenCursors = openCursors.getLong("total");
+        assertThat(totalOpenCursors).isZero();
+    }
+
     protected void dropAllDatabases() {
         for (String databaseName : syncClient.listDatabaseNames()) {
             if (databaseName.equals("admin") || databaseName.equals("local")) {
@@ -80,7 +94,7 @@ public abstract class AbstractTest {
         tearDownBackend();
     }
 
-    private static void setUpClients() throws Exception {
+    protected static void setUpClients() throws Exception {
         syncClient = MongoClients.create(connectionString);
         asyncClient = com.mongodb.reactivestreams.client.MongoClients.create(connectionString);
         db = syncClient.getDatabase(TEST_DATABASE_NAME);
@@ -97,7 +111,7 @@ public abstract class AbstractTest {
         connectionString = new ConnectionString(mongoServer.bindAndGetConnectionString());
     }
 
-    private static void closeClients() {
+    protected static void closeClients() {
         if (syncClient != null) {
             syncClient.close();
         }
@@ -165,4 +179,15 @@ public abstract class AbstractTest {
         return databaseNames;
     }
 
+    protected Document runCommand(String commandName) {
+        return runCommand(new Document(commandName, 1));
+    }
+
+    protected Document runCommand(Document command) {
+        return getAdminDb().runCommand(command);
+    }
+
+    protected MongoDatabase getAdminDb() {
+        return syncClient.getDatabase(ADMIN_DB_NAME);
+    }
 }

@@ -122,23 +122,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
     private static final Logger log = LoggerFactory.getLogger(AbstractBackendTest.class);
 
     protected static final String OTHER_TEST_DATABASE_NAME = "bar";
-    private static final String ADMIN_DB_NAME = "admin";
     private static final Duration DEFAULT_TEST_TIMEOUT = Duration.ofSeconds(30);
-
-    protected Document runCommand(String commandName) {
-        return runCommand(new Document(commandName, 1));
-    }
-
-    private Document runCommand(Document command) {
-        return getAdminDb().runCommand(command);
-    }
 
     protected MongoCollection<Document> getCollection(String collectionName) {
         return db.getCollection(collectionName);
-    }
-
-    protected MongoDatabase getAdminDb() {
-        return syncClient.getDatabase(ADMIN_DB_NAME);
     }
 
     private String getCollectionName() {
@@ -424,7 +411,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testGetLogStartupWarnings() throws Exception {
-        Document startupWarnings = getAdminDb().runCommand(json("getLog: 'startupWarnings'"));
+        Document startupWarnings = runCommand(json("getLog: 'startupWarnings'"));
         assertThat(startupWarnings.getDouble("ok")).isEqualTo(1.0);
         assertThat(startupWarnings.get("totalLinesWritten")).isInstanceOf(Number.class);
         assertThat(startupWarnings.get("log")).isEqualTo(Collections.emptyList());
@@ -433,7 +420,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testGetLogWhichDoesNotExist() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> getAdminDb().runCommand(json("getLog: 'illegal'")))
+            .isThrownBy(() -> runCommand(json("getLog: 'illegal'")))
             .withMessageContaining("Command failed with error -1: 'no RamLog named: illegal'");
     }
 

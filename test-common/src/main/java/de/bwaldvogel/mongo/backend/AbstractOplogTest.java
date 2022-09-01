@@ -53,6 +53,18 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Override
+    void assertNoOpenCursors() throws Exception {
+        // workaround to close all change stream publishers
+        closeAndReopenAsyncClient();
+        super.assertNoOpenCursors();
+    }
+
+    private void closeAndReopenAsyncClient() throws Exception {
+        closeClients();
+        setUpClients();
+    }
+
+    @Override
     protected void dropAllDatabases() {
         super.dropAllDatabases();
         clearOplog();
