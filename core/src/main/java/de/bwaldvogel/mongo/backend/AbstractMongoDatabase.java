@@ -33,10 +33,7 @@ import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.util.FutureUtils;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
 
 public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
@@ -706,25 +703,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         results.add(null);
     }
 
-    @Override
-    public void handleInsert(MongoInsert insert, Oplog oplog) {
-        Channel channel = insert.getChannel();
-        String collectionName = insert.getCollectionName();
-        List<Document> documents = insert.getDocuments();
-
-        if (collectionName.equals(INDEXES_COLLECTION_NAME)) {
-            for (Document indexDescription : documents) {
-                addIndex(indexDescription);
-            }
-        } else {
-            try {
-                insertDocuments(channel, collectionName, documents, oplog, true);
-            } catch (MongoServerException e) {
-                log.error("failed to insert {}", insert, e);
-            }
-        }
-    }
-
     private MongoCollection<P> resolveCollection(String command, Document query) {
         String collectionName = query.get(command).toString();
         return resolveCollection(collectionName, false);
@@ -759,40 +737,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         collections.put(collection.getCollectionName(), collection);
         if (!isSystemCollection(collection.getCollectionName())) {
             namespaces.addDocument(new Document("name", collection.getFullName()));
-        }
-    }
-
-    @Override
-    public void handleDelete(MongoDelete delete, Oplog oplog) {
-        Channel channel = delete.getChannel();
-        String collectionName = delete.getCollectionName();
-        Document selector = delete.getSelector();
-        int limit = delete.isSingleRemove() ? 1 : Integer.MAX_VALUE;
-
-        try {
-            deleteDocuments(channel, collectionName, selector, limit, oplog);
-        } catch (MongoServerException e) {
-            log.error("failed to delete {}", delete, e);
-        }
-    }
-
-    @Override
-    public void handleUpdate(MongoUpdate updateCommand, Oplog oplog) {
-        Channel channel = updateCommand.getChannel();
-        String collectionName = updateCommand.getCollectionName();
-        Document selector = updateCommand.getSelector();
-        Document update = updateCommand.getUpdate();
-        boolean multi = updateCommand.isMulti();
-        boolean upsert = updateCommand.isUpsert();
-        ArrayFilters arrayFilters = ArrayFilters.empty();
-
-        clearLastStatus(channel);
-        try {
-            Document result = updateDocuments(collectionName, selector, update, arrayFilters, multi, upsert, oplog);
-            putLastResult(channel, result);
-        } catch (MongoServerException e) {
-            putLastError(channel, e);
-            log.error("failed to update {}", updateCommand, e);
         }
     }
 

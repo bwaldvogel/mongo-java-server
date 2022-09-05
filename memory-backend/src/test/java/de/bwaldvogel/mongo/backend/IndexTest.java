@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.backend.memory.index.MemoryUniqueIndex;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 
-public class IndexTest {
+class IndexTest {
 
     @Test
     void testGetKeyValues_simple() throws Exception {

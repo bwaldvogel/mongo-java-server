@@ -19,7 +19,7 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 import de.bwaldvogel.mongo.backend.h2.H2Backend;
 
-public class H2OnDiskBackendTest extends AbstractBackendTest {
+class H2OnDiskBackendTest extends AbstractBackendTest {
 
     private static final Logger log = LoggerFactory.getLogger(H2OnDiskBackendTest.class);
 

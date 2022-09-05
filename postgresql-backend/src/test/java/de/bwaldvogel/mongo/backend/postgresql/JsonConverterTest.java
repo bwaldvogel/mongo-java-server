@@ -9,7 +9,7 @@ import de.bwaldvogel.mongo.bson.LegacyUUID;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
 
-public class JsonConverterTest {
+class JsonConverterTest {
 
     @Test
     void testSerializeAndDeserialize_MinKey() throws Exception {

@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.backend.AbstractBackendSpringDataTest;
 import de.bwaldvogel.mongo.backend.h2.H2Backend;
 
 @ContextConfiguration(classes = H2OnDiskBackendSpringDataTest.TestConfig.class)
-public class H2OnDiskBackendSpringDataTest extends AbstractBackendSpringDataTest {
+class H2OnDiskBackendSpringDataTest extends AbstractBackendSpringDataTest {
 
     static class TemporaryFileH2Backend extends H2Backend {
 

@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.Test;
 
-public class DocumentIterableTest {
+class DocumentIterableTest {
 
     @Test
     void testIterateEmptyList() {

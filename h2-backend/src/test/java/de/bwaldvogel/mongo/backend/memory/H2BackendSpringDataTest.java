@@ -8,7 +8,7 @@ import de.bwaldvogel.mongo.backend.AbstractBackendSpringDataTest;
 import de.bwaldvogel.mongo.backend.h2.H2Backend;
 
 @ContextConfiguration(classes = H2BackendSpringDataTest.TestConfig.class)
-public class H2BackendSpringDataTest extends AbstractBackendSpringDataTest {
+class H2BackendSpringDataTest extends AbstractBackendSpringDataTest {
 
     static class TestConfig {
 
@@ -18,6 +18,5 @@ public class H2BackendSpringDataTest extends AbstractBackendSpringDataTest {
         }
 
     }
-
 
 }

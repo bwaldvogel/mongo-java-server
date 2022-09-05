@@ -42,4 +42,8 @@ public class OutStage implements AggregationStage {
         return Stream.empty();
     }
 
+    @Override
+    public boolean isModifying() {
+        return true;
+    }
 }

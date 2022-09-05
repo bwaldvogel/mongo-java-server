@@ -14,6 +14,7 @@ import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.MapAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.bson.Document;
+import org.bson.UuidRepresentation;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoNamespace;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -29,7 +31,6 @@ import com.mongodb.client.MongoDatabase;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoServer;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractTest {
 
@@ -89,8 +90,7 @@ public abstract class AbstractTest {
     }
 
     protected void killCursors(List<Long> cursorIds) {
-        MongoKillCursors killCursors = new MongoKillCursors(cursorIds);
-        mongoServer.closeCursors(killCursors);
+        mongoServer.closeCursors(cursorIds);
     }
 
     @AfterAll
@@ -99,8 +99,12 @@ public abstract class AbstractTest {
         tearDownBackend();
     }
 
-    protected static void setUpClients() throws Exception {
-        syncClient = MongoClients.create(connectionString);
+    private static void setUpClients() throws Exception {
+        MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
+            .uuidRepresentation(UuidRepresentation.STANDARD)
+            .build();
+        syncClient = MongoClients.create(mongoClientSettings);
         asyncClient = com.mongodb.reactivestreams.client.MongoClients.create(connectionString);
         db = syncClient.getDatabase(TEST_DATABASE_NAME);
         collection = db.getCollection("testcoll");
@@ -116,7 +120,7 @@ public abstract class AbstractTest {
         connectionString = new ConnectionString(mongoServer.bindAndGetConnectionString());
     }
 
-    protected static void closeClients() {
+    private static void closeClients() {
         if (syncClient != null) {
             syncClient.close();
         }

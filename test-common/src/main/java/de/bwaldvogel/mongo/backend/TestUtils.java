@@ -34,7 +34,7 @@ public class TestUtils {
         return Document.parse(string);
     }
 
-    static List<Document> jsonList(String... json) {
+    public static List<Document> jsonList(String... json) {
         return Stream.of(json)
             .map(TestUtils::json)
             .collect(Collectors.toList());

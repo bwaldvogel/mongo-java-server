@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 
-public class PostgresqlUtilsTest {
+class PostgresqlUtilsTest {
 
     @Test
     void testToDataKey() throws Exception {

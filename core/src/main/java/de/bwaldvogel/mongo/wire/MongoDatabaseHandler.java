@@ -12,21 +12,15 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.CursorNotFoundException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.util.FutureUtils;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import de.bwaldvogel.mongo.wire.message.MongoReply;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -72,17 +66,6 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         if (object instanceof MongoQuery) {
             handleQueryAsync((MongoQuery) object).thenAccept(response ->
                 ctx.channel().writeAndFlush(response));
-        } else if (object instanceof MongoInsert) {
-            mongoBackend.handleInsertAsync((MongoInsert) object);
-        } else if (object instanceof MongoDelete) {
-            mongoBackend.handleDeleteAsync((MongoDelete) object);
-        } else if (object instanceof MongoUpdate) {
-            mongoBackend.handleUpdateAsync((MongoUpdate) object);
-        } else if (object instanceof MongoGetMore) {
-            handleGetMoreAsync((MongoGetMore) object).thenAccept(response ->
-                ctx.channel().writeAndFlush(response));
-        } else if (object instanceof MongoKillCursors) {
-            mongoBackend.handleKillCursorsAsync((MongoKillCursors) object);
         } else if (object instanceof MongoMessage) {
             handleMessageAsync((MongoMessage) object).thenAccept(response ->
                 ctx.channel().writeAndFlush(response));
@@ -161,38 +144,6 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             }
 
             return queryFailure(header, (MongoServerException) t, Collections.emptyMap());
-        }
-
-        log.error("Unknown error!", t);
-        return queryFailure(header,
-            new MongoServerException("Unknown error: " + t.getMessage(), t),
-            Collections.emptyMap());
-    }
-
-    // visible for testing
-    CompletionStage<MongoReply> handleGetMoreAsync(MongoGetMore getMore) {
-        return mongoBackend.handleGetMoreAsync(getMore)
-            .handle((queryResult, ex) ->
-                createResponseMongoReplyForGetMore(getMore, queryResult, ex));
-    }
-
-    private MongoReply createResponseMongoReplyForGetMore(MongoGetMore getMore, QueryResult queryResult, Throwable t) {
-        MessageHeader header = createResponseHeader(getMore);
-        if (t != null) {
-            return createResponseMongoReplyForGetMoreFailure(header, getMore, t);
-        }
-
-        return new MongoReply(header,
-            queryResult != null ? queryResult.collectDocuments() : Collections.emptyList(),
-            queryResult != null ? queryResult.getCursorId() : 0);
-    }
-
-    private MongoReply createResponseMongoReplyForGetMoreFailure(MessageHeader header, MongoGetMore getMore, Throwable t) {
-        if (t instanceof CursorNotFoundException) {
-            return new MongoReply(header,
-                Collections.emptyList(),
-                getMore != null ? getMore.getCursorId() : 0,
-                ReplyFlag.CURSOR_NOT_FOUND);
         }
 
         log.error("Unknown error!", t);

@@ -19,6 +19,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.MaxKey;
 import de.bwaldvogel.mongo.bson.MinKey;
 import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -536,7 +537,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
             return false;
         } else {
-            throw new MongoServerError(14, "type must be represented as a number or a string");
+            throw new MongoServerError(ErrorCode.TypeMismatch, "type must be represented as a number or a string");
         }
     }
 

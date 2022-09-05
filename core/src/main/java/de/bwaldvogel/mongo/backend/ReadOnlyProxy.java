@@ -1,40 +1,38 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.ServerVersion;
+import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
 
 public class ReadOnlyProxy implements MongoBackend {
 
-    private static final Set<String> allowedCommands = new HashSet<>();
-
-    static {
-        allowedCommands.add("ismaster");
-        allowedCommands.add("listdatabases");
-        allowedCommands.add("count");
-        allowedCommands.add("dbstats");
-        allowedCommands.add("distinct");
-        allowedCommands.add("collstats");
-        allowedCommands.add("serverstatus");
-        allowedCommands.add("buildinfo");
-        allowedCommands.add("getlasterror");
-    }
+    private static final Set<String> allowedCommands = new HashSet<>(Arrays.asList(
+        "ismaster",
+        "find",
+        "listdatabases",
+        "count",
+        "dbstats",
+        "distinct",
+        "collstats",
+        "serverstatus",
+        "buildinfo",
+        "getlasterror",
+        "getmore"
+    ));
 
     private final MongoBackend backend;
 
@@ -59,15 +57,37 @@ public class ReadOnlyProxy implements MongoBackend {
 
     @Override
     public Document handleCommand(Channel channel, String database, String command, Document query) {
-        if (allowedCommands.contains(command.toLowerCase())) {
+        if (isAllowed(command, query)) {
             return backend.handleCommand(channel, database, command, query);
         }
         throw new NoSuchCommandException(command);
     }
 
+    private static boolean isAllowed(String command, Document query) {
+        if (allowedCommands.contains(command.toLowerCase())) {
+            return true;
+        }
+
+        if (command.equalsIgnoreCase("aggregate")) {
+            List<Document> pipeline = Aggregation.parse(query.get("pipeline"));
+            Aggregation aggregation = Aggregation.fromPipeline(pipeline, null, null, null);
+            if (aggregation.isModifying()) {
+                throw new MongoServerException("Aggregation contains a modifying stage and is therefore not allowed in read-only mode");
+            }
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public Document handleMessage(MongoMessage message) {
-        throw new UnsupportedOperationException();
+        Document document = message.getDocument();
+        String command = document.keySet().iterator().next().toLowerCase();
+        if (isAllowed(command, document)) {
+            return backend.handleMessage(message);
+        }
+        throw new NoSuchCommandException(command);
     }
 
     @Override
@@ -78,31 +98,6 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public QueryResult handleQuery(MongoQuery query) {
         return backend.handleQuery(query);
-    }
-
-    @Override
-    public QueryResult handleGetMore(long cursorId, int numberToReturn) {
-        return backend.handleGetMore(cursorId, numberToReturn);
-    }
-
-    @Override
-    public QueryResult handleGetMore(MongoGetMore getMore) {
-        return handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
-    }
-
-    @Override
-    public void handleInsert(MongoInsert insert) {
-        throw new ReadOnlyException("insert not allowed");
-    }
-
-    @Override
-    public void handleDelete(MongoDelete delete) {
-        throw new ReadOnlyException("delete not allowed");
-    }
-
-    @Override
-    public void handleUpdate(MongoUpdate update) {
-        throw new ReadOnlyException("update not allowed");
     }
 
     @Override
@@ -144,8 +139,7 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public void handleKillCursors(MongoKillCursors mongoKillCursors) {
-        backend.handleKillCursors(mongoKillCursors);
+    public void closeCursors(List<Long> cursorIds) {
+        backend.closeCursors(cursorIds);
     }
-
 }

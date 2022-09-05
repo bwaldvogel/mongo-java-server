@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.backend.IndexKey;
 
-public class PostgresUniqueIndexTest {
+class PostgresUniqueIndexTest {
 
     @Test
     void testCreateSelectStatement() throws Exception {

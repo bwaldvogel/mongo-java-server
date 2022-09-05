@@ -7,7 +7,6 @@ import java.util.List;
 import de.bwaldvogel.mongo.backend.Utils;
 
 public enum ServerVersion {
-    MONGO_3_0(Arrays.asList(3, 0, 0), 2),
     MONGO_3_6(Arrays.asList(3, 6, 0), 6);
 
     private final List<Integer> versionArray;

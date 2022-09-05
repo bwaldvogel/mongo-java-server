@@ -23,7 +23,6 @@ import org.bson.BsonInt32;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -36,8 +35,8 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import com.mongodb.client.model.changestream.FullDocument;
+import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
-import com.mongodb.reactivestreams.client.Success;
 
 import de.bwaldvogel.mongo.oplog.OperationType;
 
@@ -47,21 +46,8 @@ public abstract class AbstractOplogTest extends AbstractTest {
     protected static final String OPLOG_COLLECTION_NAME = "oplog.rs";
 
     @BeforeEach
-    public void beforeEach() {
+    void beforeEach() {
         backend.enableOplog();
-    }
-
-    @AfterEach
-    @Override
-    void assertNoOpenCursors() throws Exception {
-        // workaround to close all change stream publishers
-        closeAndReopenAsyncClient();
-        super.assertNoOpenCursors();
-    }
-
-    private void closeAndReopenAsyncClient() throws Exception {
-        closeClients();
-        setUpClients();
     }
 
     @Override
@@ -80,7 +66,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testListDatabaseNames() throws Exception {
+    void testListDatabaseNames() throws Exception {
         assertThat(listDatabaseNames()).contains(LOCAL_DATABASE);
         collection.insertOne(json(""));
         assertThat(listDatabaseNames()).containsExactlyInAnyOrder(db.getName(), LOCAL_DATABASE);
@@ -89,7 +75,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testOplogInsertUpdateAndDelete() {
+    void testOplogInsertUpdateAndDelete() {
         Document document = json("_id: 1, name: 'testUser1'");
 
         collection.insertOne(document);
@@ -140,14 +126,14 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testQueryOplogWhenOplogIsDisabled() throws Exception {
+    void testQueryOplogWhenOplogIsDisabled() throws Exception {
         backend.disableOplog();
         collection.insertOne(json("_id: 1"));
         assertThat(getOplogCollection().find()).isEmpty();
     }
 
     @Test
-    public void testSetOplogReplaceOneById() {
+    void testSetOplogReplaceOneById() {
         collection.insertOne(json("_id: 1, b: 6"));
         collection.replaceOne(json("_id: 1"), json("a: 5, b: 7"));
         List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
@@ -159,7 +145,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testSetOplogUpdateOneById() {
+    void testSetOplogUpdateOneById() {
         collection.insertOne(json("_id: 34, b: 6"));
         collection.updateOne(eq("_id", 34), set("a", 6));
         List<Document> oplogDocuments = toArray(getOplogCollection().find(json("op: 'u'")).sort(json("ts: 1")));
@@ -179,7 +165,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     @Test
     @Disabled("This test represents a missing feature")
-    public void testSetOplogUpdateOneByIdMultipleFields() {
+    void testSetOplogUpdateOneByIdMultipleFields() {
         collection.insertOne(json("_id: 1, b: 6"));
         collection.updateOne(eq("_id", 1), Arrays.asList(set("a", 7), set("b", 7)));
         List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
@@ -198,7 +184,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testSetOplogUpdateMany() {
+    void testSetOplogUpdateMany() {
         collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
         collection.updateMany(eq("b", 6), set("a", 7));
 
@@ -221,7 +207,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testSetOplogDeleteMany() {
+    void testSetOplogDeleteMany() {
         collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
         collection.deleteMany(eq("b", 6));
 
@@ -243,7 +229,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamInsertAndUpdateFullDocumentLookup() {
+    void testChangeStreamInsertAndUpdateFullDocumentLookup() {
         collection.insertOne(json("b: 1"));
         int numberOfDocs = 10;
         List<Document> insert = new ArrayList<>();
@@ -287,7 +273,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamUpdateDefault() {
+    void testChangeStreamUpdateDefault() {
         collection.insertOne(json("a: 1, b: 2, c: 3"));
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
             collection.updateOne(eq("a", 1), json("$set: {b: 0, c: 10}"));
@@ -306,7 +292,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamDelete() {
+    void testChangeStreamDelete() {
         collection.insertOne(json("_id: 1"));
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
             collection.deleteOne(json("_id: 1"));
@@ -316,7 +302,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamStartAfter() {
+    void testChangeStreamStartAfter() {
         collection.insertOne(json("a: 1")); // This is needed to initialize the collection in the server.
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
             collection.insertOne(json("a: 2"));
@@ -333,7 +319,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamResumeAfter() throws Exception {
+    void testChangeStreamResumeAfter() throws Exception {
         collection.insertOne(json("a: 1"));
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
             awaitNumberOfOpenCursors(1);
@@ -352,7 +338,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamResumeAfterTerminalEvent() {
+    void testChangeStreamResumeAfterTerminalEvent() {
         MongoCollection<Document> col = db.getCollection("test-collection");
         ChangeStreamIterable<Document> watch = col.watch().fullDocument(FullDocument.UPDATE_LOOKUP).batchSize(1);
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = watch.cursor()) {
@@ -378,7 +364,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamStartAtOperationTime() {
+    void testChangeStreamStartAtOperationTime() {
         collection.insertOne(json("a: 1"));
         try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
             collection.insertOne(json("a: 2"));
@@ -396,7 +382,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    void testChangeStreamAndReplaceOneWithUpsertTrue() throws Throwable {
+    void testChangeStreamAndReplaceOneWithUpsertTrue() throws Exception {
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).subscribe(streamSubscriber);
         awaitNumberOfOpenCursors(1);
@@ -469,7 +455,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     private static void insertOne(com.mongodb.reactivestreams.client.MongoCollection<Document> collection, Document document) throws Exception {
-        TestSubscriber<Success> insertSubscriber = new TestSubscriber<>();
+        TestSubscriber<InsertOneResult> insertSubscriber = new TestSubscriber<>();
         collection.insertOne(document).subscribe(insertSubscriber);
         insertSubscriber.awaitSingleValue();
     }

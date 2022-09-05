@@ -20,6 +20,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -55,9 +56,7 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.bson.codecs.DocumentCodec;
-import org.bson.codecs.UuidCodec;
 import org.bson.codecs.configuration.CodecRegistries;
-import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.conversions.Bson;
 import org.bson.types.Binary;
 import org.bson.types.Code;
@@ -66,6 +65,9 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
 import org.reactivestreams.Subscriber;
@@ -114,8 +116,8 @@ import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.model.WriteModel;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.InsertOneResult;
 import com.mongodb.client.result.UpdateResult;
-import com.mongodb.reactivestreams.client.Success;
 
 public abstract class AbstractBackendTest extends AbstractTest {
 
@@ -130,17 +132,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     private String getCollectionName() {
         return collection.getNamespace().getCollectionName();
-    }
-
-    protected static MongoClient getClientWithStandardUuid() {
-        CodecRegistry standardUuidCodec = CodecRegistries.fromCodecs(new UuidCodec(UuidRepresentation.STANDARD));
-
-        MongoClientSettings clientSettings = MongoClientSettings.builder()
-            .applyConnectionString(connectionString)
-            .codecRegistry(CodecRegistries.fromRegistries(standardUuidCodec, MongoClientSettings.getDefaultCodecRegistry()))
-            .build();
-
-        return MongoClients.create(clientSettings);
     }
 
     @Test
@@ -496,7 +487,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("n:1"));
         collection.insertOne(json("n:2"));
         collection.insertOne(json("n:2"));
-        assertThat(collection.count(json("n:2"))).isEqualTo(2);
+        assertThat(collection.countDocuments(json("n:2"))).isEqualTo(2);
     }
 
     @Test
@@ -509,10 +500,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("x: 2"));
         collection.insertOne(json("x: 1"));
 
-        assertThat(collection.count(json("x: 1"), new CountOptions().skip(4).limit(2))).isEqualTo(0);
-        assertThat(collection.count(json("x: 1"), new CountOptions().limit(3))).isEqualTo(3);
-        assertThat(collection.count(json("x: 1"), new CountOptions().limit(10))).isEqualTo(4);
-        assertThat(collection.count(json("x: 1"), new CountOptions().skip(1))).isEqualTo(3);
+        assertThat(collection.countDocuments(json("x: 1"), new CountOptions().skip(4).limit(2))).isEqualTo(0);
+        assertThat(collection.countDocuments(json("x: 1"), new CountOptions().limit(3))).isEqualTo(3);
+        assertThat(collection.countDocuments(json("x: 1"), new CountOptions().limit(10))).isEqualTo(4);
+        assertThat(collection.countDocuments(json("x: 1"), new CountOptions().skip(1))).isEqualTo(3);
     }
 
     @Test
@@ -878,6 +869,33 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/44
     @Test
     public void testDistinctUuids_legacy() throws Exception {
+        MongoClientSettings legacyUuidSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
+            .uuidRepresentation(UuidRepresentation.JAVA_LEGACY)
+            .build();
+        try (MongoClient clientWithLegacyUuid = MongoClients.create(legacyUuidSettings)) {
+            MongoCollection<Document> collectionWithLegacyUuid = clientWithLegacyUuid.getDatabase(collection.getNamespace().getDatabaseName()).getCollection(collection.getNamespace().getCollectionName());
+
+            collectionWithLegacyUuid.insertOne(json("_id: 1, n: null"));
+            collectionWithLegacyUuid.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
+            collectionWithLegacyUuid.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
+            collectionWithLegacyUuid.insertOne(json("_id: 4").append("n", new UUID(0, 2)));
+            collectionWithLegacyUuid.insertOne(json("_id: 5").append("n", new UUID(1, 1)));
+            collectionWithLegacyUuid.insertOne(json("_id: 6").append("n", new UUID(1, 0)));
+
+            assertThat(collectionWithLegacyUuid.distinct("n", UUID.class))
+                .containsExactly(
+                    null,
+                    new UUID(0, 1),
+                    new UUID(0, 2),
+                    new UUID(1, 0),
+                    new UUID(1, 1)
+                );
+        }
+    }
+
+    @Test
+    public void testDistinctUuids() throws Exception {
         collection.insertOne(json("_id: 1, n: null"));
         collection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
         collection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
@@ -893,29 +911,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 new UUID(1, 0),
                 new UUID(1, 1)
             );
-    }
-
-    @Test
-    public void testDistinctUuids() throws Exception {
-        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
-            MongoCollection<Document> standardUuidCollection = standardUuidClient.getDatabase(collection.getNamespace().getDatabaseName())
-                .getCollection(collection.getNamespace().getCollectionName());
-            standardUuidCollection.insertOne(json("_id: 1, n: null"));
-            standardUuidCollection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
-            standardUuidCollection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
-            standardUuidCollection.insertOne(json("_id: 4").append("n", new UUID(0, 2)));
-            standardUuidCollection.insertOne(json("_id: 5").append("n", new UUID(1, 1)));
-            standardUuidCollection.insertOne(json("_id: 6").append("n", new UUID(1, 0)));
-
-            assertThat(standardUuidCollection.distinct("n", UUID.class))
-                .containsExactly(
-                    null,
-                    new UUID(0, 1),
-                    new UUID(0, 2),
-                    new UUID(1, 0),
-                    new UUID(1, 1)
-                );
-        }
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/70
@@ -1001,11 +996,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.insertOne(new Document("_id", new UUID(0, 1))),
             11000, "DuplicateKey",
-            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(3, 00000000000000000100000000000000) }");
+            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: UUID(\"00000000-0000-0000-0000-000000000001\") }");
 
         assertMongoWriteException(() -> collection.insertOne(new Document("_id", new UUID(999999, 128))),
             11000, "DuplicateKey",
-            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(3, 3F420F00000000008000000000000000) }");
+            "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: UUID(\"00000000-000f-423f-0000-000000000080\") }");
 
         collection.deleteOne(new Document("_id", new UUID(0, 2)));
 
@@ -1040,25 +1035,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: []}")).first())
-            .withMessageContaining("Query failed with error code 9 and error message 'n must match at least one type'");
+            .withMessageContaining("Query failed with error code 9 with name 'FailedToParse' and error message 'n must match at least one type'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("'a.b.c': {$type: []}")).first())
-            .withMessageContaining("Query failed with error code 9 and error message 'a.b.c must match at least one type'");
+            .withMessageContaining("Query failed with error code 9 with name 'FailedToParse' and error message 'a.b.c must match at least one type'");
 
         assertThat(collection.find(json("a: {b: {$type: []}}"))).isEmpty();
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: 'abc'}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message 'Unknown type name alias: abc'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'Unknown type name alias: abc'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: null}")).first())
-            .withMessageContaining("Query failed with error code 14 and error message 'type must be represented as a number or a string'");
+            .withMessageContaining("Query failed with error code 14 with name 'TypeMismatch' and error message 'type must be represented as a number or a string'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: {$type: 16.3}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message 'Invalid numerical type code: 16.3'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'Invalid numerical type code: 16.3'");
     }
 
     @Test
@@ -2185,7 +2180,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {x: 1, y: 1}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '>1 field in obj: { x: 1, y: 1 }'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '>1 field in obj: { x: 1, y: 1 }'");
     }
 
     @Test
@@ -2536,13 +2531,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessage("Invalid BSON field name a.b.c");
     }
 
-    @Test
-    public void testInsertWithIllegalFieldNames() throws Exception {
-        for (String illegalFieldName : Arrays.asList("a.", "a.b.", "a.....111", "a.b")) {
-            assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> collection.insertOne(new Document(illegalFieldName, 1)))
-                .withMessage("Invalid BSON field name " + illegalFieldName);
-        }
+    @ParameterizedTest
+    @ValueSource(strings = { "a.", "a..", "a.b", "a.b.", "a.....111" })
+    void testInsertWithSpecialFieldNames(String specialFieldName) throws Exception {
+        Document document = json("_id: 1").append(specialFieldName, 1);
+
+        collection.insertOne(document);
+
+        assertThat(collection.find().first()).isEqualTo(document);
     }
 
     @Test
@@ -4375,7 +4371,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first())
-            .withMessageContaining("Query failed with error code 2 and error message " +
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message " +
                 "'Projection cannot have a mix of inclusion and exclusion.'");
     }
 
@@ -4482,7 +4478,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("ref: {$ref: 'coll'}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message 'unknown operator: $ref'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'unknown operator: $ref'");
     }
 
     @Test
@@ -4491,15 +4487,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(and()).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor must be a nonempty array'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(nor()).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor must be a nonempty array'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(or()).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$and/$or/$nor must be a nonempty array'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$and/$or/$nor must be a nonempty array'");
     }
 
     @Test
@@ -4522,14 +4518,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 document.append("key-" + i + "-" + j, "value-" + i + "-" + j);
             }
             concurrentOperationsOnTheFly.acquire();
-            asyncCollection.insertOne(document).subscribe(new Subscriber<Success>() {
+            asyncCollection.insertOne(document).subscribe(new Subscriber<InsertOneResult>() {
                 @Override
                 public void onSubscribe(Subscription s) {
                     s.request(Integer.MAX_VALUE);
                 }
 
                 @Override
-                public void onNext(Success success) {
+                public void onNext(InsertOneResult result) {
                     log.info("inserted {}", document);
                     Document query = new Document("_id", document.getInteger("_id"));
                     asyncCollection.updateOne(query, Updates.set("updated", true)).subscribe(new Subscriber<UpdateResult>() {
@@ -4845,23 +4841,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['$_id', '$_id']}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$slice limit must be positive'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice limit must be positive'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 0]}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$slice limit must be positive'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice limit must be positive'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 'xyz']}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$slice limit must be positive'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice limit must be positive'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 2, 3]}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$slice array wrong size'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice array wrong size'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: 'abc'}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$slice only supports numbers and [skip, limit] arrays'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice only supports numbers and [skip, limit] arrays'");
     }
 
     @Test
@@ -4883,11 +4879,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: [ 85 ]}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$elemMatch needs an Object'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$elemMatch needs an Object'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: 1}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message '$elemMatch needs an Object'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$elemMatch needs an Object'");
     }
 
     @Test
@@ -4898,7 +4894,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("x: {$lt: 10, y: 23}")).first())
-            .withMessageContaining("Query failed with error code 2 and error message 'unknown operator: y'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'unknown operator: y'");
 
         assertThat(collection.find(json("x: {y: 23, $lt: 10}"))).isEmpty();
         assertThat(collection.find(json("x: {y: {$lt: 100, z: 23}}"))).isEmpty();
@@ -4976,7 +4972,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(query).first())
-            .withMessageContaining("Query failed with error code 2 and error message 'unknown top level operator: $illegalOperator'");
+            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'unknown top level operator: $illegalOperator'");
     }
 
     @Test
@@ -5011,15 +5007,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a.', 10]}")).first())
-            .withMessageContaining("Query failed with error code 40353 and error message 'FieldPath must not end with a '.'.'");
+            .withMessageContaining("Query failed with error code 40353 with name 'Location40353' and error message 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$.a', 10]}")).first())
-            .withMessageContaining("Query failed with error code 15998 and error message 'FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Query failed with error code 15998 with name 'Location15998' and error message 'FieldPath field names may not be empty strings.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a..1', 10]}")).first())
-            .withMessageContaining("Query failed with error code 15998 and error message 'FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Query failed with error code 15998 with name 'Location15998' and error message 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
@@ -6245,24 +6241,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testOldAndNewUuidTypes() throws Exception {
         Document document1 = new Document("_id", UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
-        collection.insertOne(document1);
 
-        assertMongoWriteException(() -> collection.insertOne(document1),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(3, A2963378B9CB425580BCE16A3BF156B4) }");
-        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
-            MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName()).getCollection(AbstractTest.collection.getNamespace().getCollectionName());
+        MongoClientSettings legacyUuidSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
+            .uuidRepresentation(UuidRepresentation.JAVA_LEGACY)
+            .build();
 
-            collectionStandardUuid.insertOne(document1);
+        try (MongoClient clientWithLegacyUuid = MongoClients.create(legacyUuidSettings)) {
+            MongoCollection<Document> collectionWithLegacyUuid = clientWithLegacyUuid.getDatabase(collection.getNamespace().getDatabaseName()).getCollection(collection.getNamespace().getCollectionName());
+            collectionWithLegacyUuid.insertOne(document1);
 
-            assertMongoWriteException(() -> collectionStandardUuid.insertOne(document1),
+            assertMongoWriteException(() -> collectionWithLegacyUuid.insertOne(document1),
+                11000, null, "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: BinData(3, A2963378B9CB425580BCE16A3BF156B4) }");
+
+            collection.insertOne(document1);
+
+            assertMongoWriteException(() -> collection.insertOne(document1),
                 11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: UUID(\"5542cbb9-7833-96a2-b456-f13b6ae1bc80\") }");
 
             Document document2 = new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"));
-            collectionStandardUuid.insertOne(document2);
+            collection.insertOne(document2);
 
-            collection.deleteOne(document1);
+            collectionWithLegacyUuid.deleteOne(document1);
 
-            assertThat(collectionStandardUuid.find().sort(json("_id: 1")))
+            assertThat(collection.find().sort(json("_id: 1")))
                 .containsExactly(
                     document1,
                     document2
@@ -6270,14 +6272,22 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
     }
 
-    @Test
-    public void testNewUuidType() throws Exception {
-        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
-            MongoCollection<Document> collectionStandardUuid = standardUuidClient.getDatabase(AbstractTest.collection.getNamespace().getDatabaseName()).getCollection(AbstractTest.collection.getNamespace().getCollectionName());
+    @ParameterizedTest
+    @EnumSource(UuidRepresentation.class)
+    void testUuidRepresentations(UuidRepresentation uuidRepresentation) throws Exception {
+        assumeTrue(uuidRepresentation != UuidRepresentation.UNSPECIFIED);
+        MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
+            .uuidRepresentation(uuidRepresentation)
+            .build();
+        try (MongoClient mongoClient = MongoClients.create(mongoClientSettings)) {
+            MongoDatabase database = mongoClient.getDatabase("testdb");
+            database.drop();
+            MongoCollection<Document> collection = database.getCollection("testcollection");
+            collection.insertOne(json("_id: 1").append("key", UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80")));
 
-            collectionStandardUuid.insertOne(new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-000000000001")));
-            collectionStandardUuid.insertOne(new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-000000000002")));
-            collectionStandardUuid.insertOne(new Document("_id", UUID.fromString("aaaaaaaa-bbbb-cccc-dddd-000000000003")));
+            assertThat(collection.find().first())
+                .hasToString("Document{{_id=1, key=5542cbb9-7833-96a2-b456-f13b6ae1bc80}}");
         }
     }
 
@@ -6318,12 +6328,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testEndSessions() {
-        try (MongoClient standardUuidClient = getClientWithStandardUuid()) {
-            MongoDatabase adminDb = standardUuidClient.getDatabase(ADMIN_DB_NAME);
-            Document result = adminDb.runCommand(new Document("endSessions",
-                Arrays.asList(new Document("id", UUID.randomUUID()))));
-            assertThat(result.get("ok")).isEqualTo(1.0);
-        }
+        Document result = getAdminDb().runCommand(new Document("endSessions",
+            Arrays.asList(new Document("id", UUID.randomUUID()))));
+        assertThat(result.get("ok")).isEqualTo(1.0);
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/192

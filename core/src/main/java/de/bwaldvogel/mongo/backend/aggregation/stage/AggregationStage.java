@@ -8,4 +8,7 @@ public interface AggregationStage {
 
     Stream<Document> apply(Stream<Document> stream);
 
+    default boolean isModifying() {
+        return false;
+    }
 }

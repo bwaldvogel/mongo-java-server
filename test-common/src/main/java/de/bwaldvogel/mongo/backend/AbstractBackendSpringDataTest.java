@@ -1,20 +1,22 @@
 package de.bwaldvogel.mongo.backend;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.mongodb.MongoDbFactory;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.SimpleMongoClientDbFactory;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
@@ -41,30 +43,34 @@ public abstract class AbstractBackendSpringDataTest {
 
     private static final String DATABASE_NAME = "testdb";
 
+    @Configuration
     @EnableMongoRepositories("de.bwaldvogel.mongo.repository")
-    static class TestConfig {
+    static class TestConfig extends AbstractMongoClientConfiguration {
+
+        @Autowired
+        private MongoBackend backend;
 
         @Bean(destroyMethod = "shutdown")
-        public MongoServer mongoServer(MongoBackend backend) {
+        MongoServer mongoServer() {
             return new MongoServer(backend);
         }
 
-        @Bean(destroyMethod = "close")
-        public MongoClient mongoClient(MongoServer mongoServer) {
-            String connectionString = mongoServer.bindAndGetConnectionString();
+        @Bean
+        @Override
+        public MongoClient mongoClient() {
+            String connectionString = mongoServer().bindAndGetConnectionString();
             return MongoClients.create(connectionString);
         }
 
-        @Bean
-        public MongoDbFactory mongoDbFactory(MongoClient client) throws Exception {
-            return new SimpleMongoClientDbFactory(client, DATABASE_NAME);
+        @Override
+        public boolean autoIndexCreation() {
+            return true;
         }
 
-        @Bean
-        public MongoTemplate mongoTemplate(MongoDbFactory factory) throws Exception {
-            return new MongoTemplate(factory);
+        @Override
+        protected String getDatabaseName() {
+            return DATABASE_NAME;
         }
-
     }
 
     @Autowired
@@ -93,6 +99,8 @@ public abstract class AbstractBackendSpringDataTest {
     public void testSaveFindModifyAndUpdate() throws Exception {
         Person billy = personRepository.save(new Person("Billy", 123));
         personRepository.save(new Person("Joe", 456));
+
+        testRepository.save(new TestEntity("abc", "some data"));
 
         Person savedBilly = personRepository.findOneByName(billy.getName());
         assertThat(savedBilly.getId()).isNotNull();
@@ -127,6 +135,12 @@ public abstract class AbstractBackendSpringDataTest {
     public void testInsertDuplicateThrows() throws Exception {
         personRepository.save(new Person("Billy", 1));
         personRepository.save(new Person("Alice", 2));
+
+        MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
+        List<Document> indexes = toArray(database.getCollection("person").listIndexes());
+        assertThat(indexes)
+            .extracting(index -> index.get("name"))
+            .containsExactlyInAnyOrder("_id_", "unique_ssn");
 
         assertThatExceptionOfType(DataIntegrityViolationException.class)
             .isThrownBy(() -> personRepository.save(new Person("Joe", 1)))

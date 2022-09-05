@@ -114,14 +114,14 @@ public @interface EnableMongoTestServer {
 
 public class MongoTestServerConfiguration {
 	@Bean
-	public MongoTemplate mongoTemplate(MongoDbFactory mongoDbFactory) {
+	public MongoTemplate mongoTemplate(MongoDatabaseFactory mongoDbFactory) {
 		return new MongoTemplate(mongoDbFactory);
 	}
 
 	@Bean
-	public MongoDbFactory mongoDbFactory(MongoServer mongoServer) {
+	public MongoDatabaseFactory mongoDbFactory(MongoServer mongoServer) {
 		String connectionString = mongoServer.getConnectionString();
-		return new SimpleMongoClientDbFactory(connectionString + "/test");
+		return new SimpleMongoClientDatabaseFactory(connectionString + "/test");
 	}
 
 	@Bean(destroyMethod = "shutdown")

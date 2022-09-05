@@ -37,13 +37,8 @@ import de.bwaldvogel.mongo.util.FutureUtils;
 import de.bwaldvogel.mongo.wire.BsonConstants;
 import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.channel.Channel;
 
 public abstract class AbstractMongoBackend implements MongoBackend {
@@ -56,7 +51,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
-    private ServerVersion version = ServerVersion.MONGO_3_0;
+    private ServerVersion version = ServerVersion.MONGO_3_6;
 
     private final Clock clock;
     private final Instant started;
@@ -292,9 +287,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         return response;
     }
 
-    private MongoCollection<?> resolveCollection(final String namespace) {
-        final String databaseName = Utils.getDatabaseNameFromFullName(namespace);
-        final String collectionName = Utils.getCollectionNameFromFullName(namespace);
+    private MongoCollection<?> resolveCollection(String namespace) {
+        String databaseName = Utils.getDatabaseNameFromFullName(namespace);
+        String collectionName = Utils.getCollectionNameFromFullName(namespace);
 
         MongoDatabase database = databases.get(databaseName);
         if (database == null) {
@@ -401,54 +396,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public QueryResult handleGetMore(long cursorId, int numberToReturn) {
-        Cursor cursor = cursorRegistry.getCursor(cursorId);
-        List<Document> documents = cursor.takeDocuments(numberToReturn);
-        if (cursor.isEmpty()) {
-            log.debug("Removing empty {}", cursor);
-            cursorRegistry.remove(cursor);
-        }
-        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getId() : cursorId);
-    }
-
-    @Override
-    public QueryResult handleGetMore(MongoGetMore getMore) {
-        return handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
-    }
-
-    @Override
-    public void handleInsert(MongoInsert insert) {
-        resolveDatabase(insert).handleInsert(insert, oplog);
-    }
-
-    @Override
-    public CompletionStage<Void> handleInsertAsync(MongoInsert insert) {
-        return resolveDatabase(insert).handleInsertAsync(insert, oplog);
-    }
-
-    @Override
-    public void handleDelete(MongoDelete delete) {
-        resolveDatabase(delete).handleDelete(delete, oplog);
-    }
-
-    @Override
-    public CompletionStage<Void> handleDeleteAsync(MongoDelete delete) {
-        return resolveDatabase(delete).handleDeleteAsync(delete, oplog);
-    }
-
-    @Override
-    public void handleUpdate(MongoUpdate update) {
-        resolveDatabase(update).handleUpdate(update, oplog);
-    }
-
-    @Override
-    public CompletionStage<Void> handleUpdateAsync(MongoUpdate update) {
-        return resolveDatabase(update).handleUpdateAsync(update, oplog);
-    }
-
-    @Override
-    public void handleKillCursors(MongoKillCursors killCursors) {
-        killCursors.getCursorIds().forEach(cursorRegistry::remove);
+    public void closeCursors(List<Long> cursorIds) {
+        cursorIds.forEach(cursorRegistry::remove);
     }
 
     protected Document handleKillCursors(Document query) {
@@ -474,12 +423,22 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     protected Document handleGetMore(String databaseName, String command, Document query) {
         MongoDatabase mongoDatabase = resolveDatabase(databaseName);
         String collectionName = (String) query.get("collection");
-        MongoCollection<?> collection = mongoDatabase.resolveCollection(collectionName, true);
         long cursorId = ((Number) query.get(command)).longValue();
-        int batchSize = ((Number) query.get("batchSize")).intValue();
+        int batchSize = ((Number) query.getOrDefault("batchSize", 0)).intValue();
         QueryResult queryResult = handleGetMore(cursorId, batchSize);
         List<Document> nextBatch = queryResult.collectDocuments();
-        return Utils.nextBatchCursorResponse(collection.getFullName(), nextBatch, queryResult.getCursorId());
+        String fullCollectionName = databaseName + "." + collectionName;
+        return Utils.nextBatchCursorResponse(fullCollectionName, nextBatch, queryResult.getCursorId());
+    }
+
+    private QueryResult handleGetMore(long cursorId, int numberToReturn) {
+        Cursor cursor = cursorRegistry.getCursor(cursorId);
+        List<Document> documents = cursor.takeDocuments(numberToReturn);
+        if (cursor.isEmpty()) {
+            log.debug("Removing empty {}", cursor);
+            cursorRegistry.remove(cursor);
+        }
+        return new QueryResult(documents, cursor.isEmpty() ? EmptyCursor.get().getId() : cursorId);
     }
 
     protected Document handleDropDatabase(String databaseName) {

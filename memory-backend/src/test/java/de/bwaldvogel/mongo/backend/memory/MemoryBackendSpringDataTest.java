@@ -7,7 +7,7 @@ import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.backend.AbstractBackendSpringDataTest;
 
 @ContextConfiguration(classes = MemoryBackendSpringDataTest.TestConfig.class)
-public class MemoryBackendSpringDataTest extends AbstractBackendSpringDataTest {
+class MemoryBackendSpringDataTest extends AbstractBackendSpringDataTest {
 
     static class TestConfig {
 

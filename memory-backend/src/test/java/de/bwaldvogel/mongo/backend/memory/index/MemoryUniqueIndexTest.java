@@ -15,7 +15,7 @@ import de.bwaldvogel.mongo.backend.KeyValue;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 
-public class MemoryUniqueIndexTest {
+class MemoryUniqueIndexTest {
 
     @Test
     void testGetKeyValues_multiKey_simpleCase() throws Exception {

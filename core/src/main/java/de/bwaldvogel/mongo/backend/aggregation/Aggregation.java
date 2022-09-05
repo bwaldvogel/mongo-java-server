@@ -252,4 +252,7 @@ public class Aggregation {
         return stages.indexOf(aggregationStage) == stages.size() - 1;
     }
 
+    public boolean isModifying() {
+        return stages.stream().anyMatch(AggregationStage::isModifying);
+    }
 }

@@ -483,7 +483,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     public Document handleDistinct(Document query) {
         String key = (String) query.get("key");
         Document filter = (Document) query.getOrDefault("query", new Document());
-        Set<Object> values = new TreeSet<>(ValueComparator.ascWithoutListHandling().withDefaultComparatorForUuids());
+        Set<Object> values = new TreeSet<>(ValueComparator.ascWithoutListHandling());
 
         for (Document document : queryDocuments(filter, null, 0, 0, 0, null)) {
             Object value = Utils.getSubdocumentValueCollectionAware(document, key);

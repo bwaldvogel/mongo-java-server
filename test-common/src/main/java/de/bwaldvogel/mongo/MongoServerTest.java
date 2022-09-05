@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Timeout;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
-import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 
@@ -59,7 +58,7 @@ public abstract class MongoServerTest {
     @Test
     void testBindAndConnect() throws Exception {
         InetSocketAddress inetSocketAddress = server.bind();
-        try (com.mongodb.MongoClient mongoClient = new com.mongodb.MongoClient(new ServerAddress(inetSocketAddress))) {
+        try (MongoClient mongoClient = MongoClients.create("mongodb://" + inetSocketAddress.getHostString() + ":" + inetSocketAddress.getPort())) {
             mongoClient.getDatabase("abc").createCollection("def");
             assertThat(toArray(mongoClient.listDatabaseNames()))
                 .containsExactly("abc");

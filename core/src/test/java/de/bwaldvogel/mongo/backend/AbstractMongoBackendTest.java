@@ -2,14 +2,10 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.AbstractMongoBackend.ADMIN_DB_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -19,24 +15,16 @@ import org.mockito.Mockito;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.CursorNotFoundException;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import io.netty.channel.Channel;
 
 class AbstractMongoBackendTest {
 
     private MongoBackend backend;
     private MongoBackend backendWithError;
-    private CursorRegistry cursorRegistry;
 
     @BeforeEach
     public void setup() {
         backend = new AbstractMongoBackend() {
-
-            {
-                AbstractMongoBackendTest.this.cursorRegistry = getCursorRegistry();
-            }
 
             @Override
             protected MongoDatabase openOrCreateDatabase(String databaseName) {
@@ -64,42 +52,6 @@ class AbstractMongoBackendTest {
                 throw new RuntimeException("unexpected");
             }
         };
-    }
-
-    @Test
-    void testGetMore_shouldDeleteCursorIfEmpty() {
-        List<Document> documents = Arrays.asList(
-            new Document("name", "Joe"),
-            new Document("name", "Mary"),
-            new Document("name", "Steve"));
-        Cursor cursor = new InMemoryCursor(cursorRegistry.generateCursorId(), documents);
-        cursorRegistry.add(cursor);
-        MongoGetMore getMore = new MongoGetMore(null, null, "testcoll", 3,
-            cursor.getId());
-        backend.handleGetMore(getMore.getCursorId(), getMore.getNumberToReturn());
-
-        assertThatExceptionOfType(CursorNotFoundException.class)
-            .isThrownBy(() -> cursorRegistry.getCursor(cursor.getId()))
-            .withMessage("[Error 43] Cursor id 1 does not exist");
-    }
-
-    @Test
-    void testHandleKillCursor() {
-        InMemoryCursor cursor1 = new InMemoryCursor(cursorRegistry.generateCursorId(), Collections.singletonList(new Document()));
-        InMemoryCursor cursor2 = new InMemoryCursor(cursorRegistry.generateCursorId(), Collections.singletonList(new Document()));
-        cursorRegistry.add(cursor1);
-        cursorRegistry.add(cursor2);
-        assertThat(cursorRegistry.getCursor(cursor1.getId())).isNotNull();
-        assertThat(cursorRegistry.getCursor(cursor2.getId())).isNotNull();
-
-        MongoKillCursors killCursors = new MongoKillCursors(null, null, Collections.singletonList(cursor1.getId()));
-        backend.handleKillCursors(killCursors);
-
-        assertThatExceptionOfType(CursorNotFoundException.class)
-            .isThrownBy(() -> cursorRegistry.getCursor(cursor1.getId()))
-            .withMessage("[Error 43] Cursor id 1 does not exist");
-
-        assertThat(cursorRegistry.getCursor(cursor2.getId())).isNotNull();
     }
 
     @Test

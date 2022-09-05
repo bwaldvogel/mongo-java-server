@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import de.bwaldvogel.mongo.backend.TestUtils;
 import de.bwaldvogel.mongo.bson.Document;
 
-public class PostgresqlCollectionTest {
+class PostgresqlCollectionTest {
 
     @Test
     void testConvertOrderByToSql() throws Exception {

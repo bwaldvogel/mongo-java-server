@@ -15,13 +15,8 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.bson.BsonDecoder;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
-import de.bwaldvogel.mongo.wire.message.MongoDelete;
-import de.bwaldvogel.mongo.wire.message.MongoGetMore;
-import de.bwaldvogel.mongo.wire.message.MongoInsert;
-import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import de.bwaldvogel.mongo.wire.message.MongoUpdate;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -77,7 +72,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         final MessageHeader header = new MessageHeader(totalLength, requestID, responseTo);
 
         int opCodeId = in.readIntLE();
-        final OpCode opCode = OpCode.getById(opCodeId);
+        OpCode opCode = OpCode.getById(opCodeId);
         if (opCode == null) {
             throw new IOException("opCode " + opCodeId + " not supported");
         }
@@ -89,23 +84,8 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             case OP_QUERY:
                 request = handleQuery(channel, header, in);
                 break;
-            case OP_INSERT:
-                request = handleInsert(channel, header, in);
-                break;
-            case OP_DELETE:
-                request = handleDelete(channel, header, in);
-                break;
-            case OP_UPDATE:
-                request = handleUpdate(channel, header, in);
-                break;
             case OP_MSG:
                 request = handleMessage(channel, header, in);
-                break;
-            case OP_GET_MORE:
-                request = handleGetMore(channel, header, in);
-                break;
-            case OP_KILL_CURSORS:
-                request = handleKillCursors(channel, header, in);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported opcode: " + opCode);
@@ -118,58 +98,6 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         log.debug("{}", request);
 
         return request;
-    }
-
-    private ClientRequest handleDelete(Channel channel, MessageHeader header, ByteBuf buffer) {
-        buffer.skipBytes(4); // reserved
-
-        final String fullCollectionName = BsonDecoder.decodeCString(buffer);
-
-        final int flags = buffer.readIntLE();
-        boolean singleRemove = false;
-        if (flags == 0) {
-            // ignore
-        } else if (flags == 1) {
-            singleRemove = true;
-        } else {
-            throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
-        }
-
-        Document selector = BsonDecoder.decodeBson(buffer);
-        log.debug("delete {} from {}", selector, fullCollectionName);
-        return new MongoDelete(channel, header, fullCollectionName, selector, singleRemove);
-    }
-
-    private ClientRequest handleUpdate(Channel channel, MessageHeader header, ByteBuf buffer) {
-        buffer.skipBytes(4); // reserved
-
-        final String fullCollectionName = BsonDecoder.decodeCString(buffer);
-
-        final int flags = buffer.readIntLE();
-        boolean upsert = UpdateFlag.UPSERT.isSet(flags);
-        boolean multi = UpdateFlag.MULTI_UPDATE.isSet(flags);
-
-        Document selector = BsonDecoder.decodeBson(buffer);
-        Document update = BsonDecoder.decodeBson(buffer);
-        log.debug("update {} in {}", selector, fullCollectionName);
-        return new MongoUpdate(channel, header, fullCollectionName, selector, update, upsert, multi);
-    }
-
-    private ClientRequest handleInsert(Channel channel, MessageHeader header, ByteBuf buffer) {
-        final int flags = buffer.readIntLE();
-        if (flags != 0) {
-            throw new UnsupportedOperationException("flags=" + flags + " not yet supported");
-        }
-
-        final String fullCollectionName = BsonDecoder.decodeCString(buffer);
-
-        List<Document> documents = new ArrayList<>();
-        while (buffer.isReadable()) {
-            Document document = BsonDecoder.decodeBson(buffer);
-            documents.add(document);
-        }
-        log.debug("insert {} in {}", documents, fullCollectionName);
-        return new MongoInsert(channel, header, fullCollectionName, documents);
     }
 
     private ClientRequest handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) {
@@ -203,25 +131,6 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         log.debug("query {} from {}", query, fullCollectionName);
 
         return mongoQuery;
-    }
-
-    private ClientRequest handleGetMore(Channel channel, MessageHeader header, ByteBuf buffer) {
-        buffer.skipBytes(4);
-        final String fullCollectionName = BsonDecoder.decodeCString(buffer);
-        int numberToReturn = buffer.readIntLE();
-        long cursorId = buffer.readLongLE();
-        return new MongoGetMore(channel, header, fullCollectionName, numberToReturn, cursorId);
-    }
-
-    private ClientRequest handleKillCursors(Channel channel, MessageHeader header, ByteBuf buffer) {
-        buffer.skipBytes(4);
-        int numberOfCursors = buffer.readIntLE();
-        List<Long> cursorIds = new ArrayList<>();
-        while (numberOfCursors > 0) {
-            cursorIds.add(buffer.readLongLE());
-            numberOfCursors--;
-        }
-        return new MongoKillCursors(channel, header, cursorIds);
     }
 
     private ClientRequest handleMessage(Channel channel, MessageHeader header, ByteBuf buffer) {

@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
-import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -1556,8 +1555,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(collection.aggregate(pipeline).map(withSortedDocuments("hierarchy")).map(Document::toJson))
             .containsExactly(
-                "{\"_id\": 3, \"name\": \"File A11\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": {\"$numberLong\": \"1\"}}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": {\"$numberLong\": \"0\"}}]}",
-                "{\"_id\": 4, \"name\": \"File A12\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": {\"$numberLong\": \"1\"}}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": {\"$numberLong\": \"0\"}}]}"
+                "{\"_id\": 3, \"name\": \"File A11\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": 1}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": 0}]}",
+                "{\"_id\": 4, \"name\": \"File A12\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": 1}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": 0}]}"
             );
     }
 
@@ -2023,9 +2022,9 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     void testAggregateWithOut_illegal() {
         collection.insertOne(json("_id: 8751, title: 'The Banquet', author: 'Dante', copies: 2"));
 
-        assertThatExceptionOfType(BsonInvalidOperationException.class)
+        assertThatExceptionOfType(IllegalStateException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 123")).first())
-            .withMessage("Value expected to be of type STRING is of unexpected type INT32");
+            .withMessage("Cannot return a cursor when the value for $out stage is not a string or namespace document");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : ''")).first())

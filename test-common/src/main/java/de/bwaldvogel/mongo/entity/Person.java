@@ -20,7 +20,7 @@ public class Person {
 
     private String name;
 
-    @Indexed(unique = true)
+    @Indexed(name = "unique_ssn", unique = true)
     @Field("ssn")
     private int socialSecurityNumber;
 

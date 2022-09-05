@@ -37,4 +37,8 @@ public class FacetStage implements AggregationStage {
         return Stream.of(result);
     }
 
+    @Override
+    public boolean isModifying() {
+        return facets.values().stream().anyMatch(Aggregation::isModifying);
+    }
 }
