@@ -24,4 +24,13 @@ public class MongoKillCursors extends ClientRequest {
     public List<Long> getCursorIds() {
         return cursorIds;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getSimpleName()).append("(");
+        sb.append("cursorIds: ").append(getCursorIds());
+        sb.append(")");
+        return sb.toString();
+    }
 }
