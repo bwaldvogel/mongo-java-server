@@ -69,157 +69,182 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         return backend;
     }
 
+    @Test
     @Override
     public void testCompoundSparseUniqueIndex() throws Exception {
         assumeStrictTests();
         super.testCompoundSparseUniqueIndex();
     }
 
+    @Test
     @Override
     public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() throws Exception {
         assumeStrictTests();
         super.testCompoundSparseUniqueIndexOnEmbeddedDocuments();
     }
 
+    @Test
     @Override
     public void testSparseUniqueIndexOnEmbeddedDocument() throws Exception {
         assumeStrictTests();
         super.testSparseUniqueIndexOnEmbeddedDocument();
     }
 
+    @Test
     @Override
     public void testSecondarySparseUniqueIndex() throws Exception {
         assumeStrictTests();
         super.testSecondarySparseUniqueIndex();
     }
 
+    @Test
     @Override
     public void testUniqueIndexWithDeepDocuments() throws Exception {
         assumeStrictTests();
         super.testUniqueIndexWithDeepDocuments();
     }
 
+    @Test
     @Override
     public void testOrderByEmbeddedDocument() throws Exception {
         assumeStrictTests();
         super.testOrderByEmbeddedDocument();
     }
 
+    @Test
     @Override
     public void testOrderByMissingAndNull() throws Exception {
         assumeStrictTests();
         super.testOrderByMissingAndNull();
     }
 
+    @Test
     @Override
     public void testSortDocuments() throws Exception {
         assumeStrictTests();
         super.testSortDocuments();
     }
 
+    @Test
     @Override
     public void testFindAndOrderByWithListValues() throws Exception {
         assumeStrictTests();
         super.testFindAndOrderByWithListValues();
     }
 
+    @Test
     @Override
     public void testSort() {
         assumeStrictTests();
         super.testSort();
     }
 
+    @Test
     @Override
     public void testInsertQueryAndSortBinaryTypes() throws Exception {
         assumeStrictTests();
         super.testInsertQueryAndSortBinaryTypes();
     }
 
+    @Test
     @Override
     public void testUuidAsId() throws Exception {
         assumeStrictTests();
         super.testUuidAsId();
     }
 
+    @Test
     @Override
     public void testTypeMatching() throws Exception {
         assumeStrictTests();
         super.testTypeMatching();
     }
 
+    @Test
     @Override
     public void testDecimal128() throws Exception {
         assumeStrictTests();
         super.testDecimal128();
     }
 
+    @Test
     @Override
     public void testDecimal128_Inc() throws Exception {
         assumeStrictTests();
         super.testDecimal128_Inc();
     }
 
+    @Test
     @Override
     public void testArrayNe() throws Exception {
         assumeStrictTests();
         super.testArrayNe();
     }
 
-    @Override
     @Test
+    @Override
     public void testRegExQuery() throws Exception {
         assumeStrictTests();
         super.testRegExQuery();
     }
 
+    @Test
     @Override
     public void testInsertAndFindJavaScriptContent() throws Exception {
         assumeStrictTests();
         super.testInsertAndFindJavaScriptContent();
     }
 
+    @Test
     @Override
     public void testMultikeyIndex_simpleArrayValues() throws Exception {
         assumeStrictTests();
         super.testMultikeyIndex_simpleArrayValues();
     }
 
+    @Test
     @Override
     public void testCompoundMultikeyIndex_simpleArrayValues() throws Exception {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_simpleArrayValues();
     }
 
+    @Test
     @Override
     public void testCompoundMultikeyIndex_documents() throws Exception {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_documents();
     }
 
+    @Test
     @Override
     public void testCompoundMultikeyIndex_multiple_document_keys() throws Exception {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_multiple_document_keys();
     }
 
+    @Test
     @Override
     public void testCompoundMultikeyIndex_deepDocuments() throws Exception {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_deepDocuments();
     }
 
+    @Test
     @Override
     public void testCompoundMultikeyIndex_threeKeys() throws Exception {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_threeKeys();
     }
 
+    @Test
     @Override
     public void testEmbeddedSort_arrayOfDocuments() {
         assumeStrictTests();
         super.testEmbeddedSort_arrayOfDocuments();
     }
 
+    @Test
     @Override
     public void testAddUniqueIndexOnExistingDocuments_violatingUniqueness() throws Exception {
         collection.insertOne(json("_id: 1, value: 'a'"));
@@ -239,12 +264,14 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         collection.insertOne(json("_id: 5, value: 'a'"));
     }
 
+    @Test
     @Override
     public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
         assumeStrictTests();
         super.testGetKeyValues_multiKey_document_nested_objects();
     }
 
+    @Test
     @Override
     public void testOldAndNewUuidTypes() throws Exception {
         assumeStrictTests();
@@ -274,18 +301,21 @@ public class PostgresqlBackendTest extends AbstractBackendTest {
         }
     }
 
+    @Test
     @Override
     public void testUpdatePushSlice() throws Exception {
         assumeStrictTests();
         super.testUpdatePushSlice();
     }
 
+    @Test
     @Override
     public void testUpdatePushSortAndSlice() throws Exception {
         assumeStrictTests();
         super.testUpdatePushSortAndSlice();
     }
 
+    @Test
     @Override
     public void testMinMaxKeyRangeQuery() throws Exception {
         assumeStrictTests();
