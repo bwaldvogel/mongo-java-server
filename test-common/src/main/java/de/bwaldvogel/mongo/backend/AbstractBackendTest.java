@@ -2357,6 +2357,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    void testServerStatusWithOpenCursors() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            collection.insertOne(new Document("_id", i + 1));
+        }
+
+        try (MongoCursor<Document> cursor1 = collection.find().batchSize(10).cursor();
+             MongoCursor<Document> cursor2 = collection.find().batchSize(10).cursor()) {
+            log.debug("Opened {} and {}", cursor1.getServerCursor(), cursor2.getServerCursor());
+            Document serverStatus = runCommand("serverStatus");
+            assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
+
+            Document metrics = serverStatus.get("metrics", Document.class);
+            Document cursorMetrics = metrics.get("cursor", Document.class);
+            assertThat(cursorMetrics.getLong("timedOut")).isZero();
+            Document openCursors = cursorMetrics.get("open", Document.class);
+            assertThat(openCursors.getLong("noTimeout")).isZero();
+            assertThat(openCursors.getLong("pinned")).isZero();
+            assertThat(openCursors.getLong("total")).isEqualTo(2);
+        }
+    }
+
+    @Test
     public void testPing() throws Exception {
         assertThat(runCommand("ping").getDouble("ok")).isEqualTo(1.0);
         assertThat(runCommand(json("ping: true")).getDouble("ok")).isEqualTo(1.0);

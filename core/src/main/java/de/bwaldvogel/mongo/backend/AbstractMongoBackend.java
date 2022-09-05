@@ -113,10 +113,18 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
         serverStatus.put("connections", connections);
 
-        Document cursors = new Document();
-        cursors.put("totalOpen", cursorRegistry.size());
+        Document metrics = new Document();
+        Document cursorMetrics = new Document();
+        cursorMetrics.put("timedOut", 0L);
 
-        serverStatus.put("cursors", cursors);
+        Document openCursors = new Document();
+        openCursors.put("noTimeout", 0L);
+        openCursors.put("pinned", 0L);
+        openCursors.put("total", (long) cursorRegistry.size());
+        cursorMetrics.put("open", openCursors);
+
+        metrics.put("cursor", cursorMetrics);
+        serverStatus.put("metrics", metrics);
 
         Utils.markOkay(serverStatus);
 
