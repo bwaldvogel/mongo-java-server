@@ -23,7 +23,6 @@ io.netty:netty-tcnative-classes:2.0.48.Final=default
 io.netty:netty-transport-native-unix-common:4.1.80.Final=allCodeCoverageReportClassDirectories,runtimeClasspath,testRuntimeClasspath
 io.netty:netty-transport:4.1.74.Final=default
 io.netty:netty-transport:4.1.80.Final=allCodeCoverageReportClassDirectories,runtimeClasspath,testRuntimeClasspath
-io.reactivex.rxjava2:rxjava:2.2.21=allCodeCoverageReportClassDirectories
 net.bytebuddy:byte-buddy-agent:1.12.13=allCodeCoverageReportClassDirectories
 net.bytebuddy:byte-buddy:1.12.13=allCodeCoverageReportClassDirectories
 org.assertj:assertj-core:3.23.1=allCodeCoverageReportClassDirectories

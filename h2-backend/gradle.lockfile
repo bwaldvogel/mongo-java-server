@@ -19,7 +19,6 @@ io.netty:netty-tcnative-classes:2.0.48.Final=default
 io.netty:netty-transport-native-unix-common:4.1.80.Final=runtimeClasspath,testRuntimeClasspath
 io.netty:netty-transport:4.1.74.Final=default
 io.netty:netty-transport:4.1.80.Final=runtimeClasspath,testRuntimeClasspath
-io.reactivex.rxjava2:rxjava:2.2.21=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy-agent:1.12.13=testCompileClasspath,testRuntimeClasspath
 net.bytebuddy:byte-buddy:1.12.13=testCompileClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath

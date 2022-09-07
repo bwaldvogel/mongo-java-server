@@ -17,13 +17,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import org.bson.BsonDocument;
 import org.bson.BsonInt32;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,6 @@ import com.mongodb.client.result.UpdateResult;
 import com.mongodb.reactivestreams.client.Success;
 
 import de.bwaldvogel.mongo.oplog.OperationType;
-import io.reactivex.subscribers.TestSubscriber;
 
 public abstract class AbstractOplogTest extends AbstractTest {
 
@@ -52,6 +51,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
         backend.enableOplog();
     }
 
+    @AfterEach
     @Override
     void assertNoOpenCursors() throws Exception {
         // workaround to close all change stream publishers
@@ -384,16 +384,17 @@ public abstract class AbstractOplogTest extends AbstractTest {
             ChangeStreamDocument<Document> document = cursor.next();
             BsonTimestamp startAtOperationTime = document.getClusterTime();
 
-            MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2 = collection.watch().startAtOperationTime(startAtOperationTime).cursor();
-            ChangeStreamDocument<Document> document2 = cursor2.next();
-            assertThat(document2.getFullDocument().get("a")).isEqualTo(2);
-            document2 = cursor2.next();
-            assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+            try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2 = collection.watch().startAtOperationTime(startAtOperationTime).cursor()) {
+                ChangeStreamDocument<Document> document2 = cursor2.next();
+                assertThat(document2.getFullDocument().get("a")).isEqualTo(2);
+                document2 = cursor2.next();
+                assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
+            }
         }
     }
 
     @Test
-    public void testChangeStreamAndReplaceOneWithUpsertTrue() throws Exception {
+    void testChangeStreamAndReplaceOneWithUpsertTrue() throws Throwable {
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).subscribe(streamSubscriber);
 
@@ -401,71 +402,68 @@ public abstract class AbstractOplogTest extends AbstractTest {
         asyncCollection.replaceOne(json("a: 1"), json("a: 1"), new ReplaceOptions().upsert(true))
             .subscribe(replaceOneSubscriber);
 
-        replaceOneSubscriber.awaitTerminalEvent();
-        replaceOneSubscriber.assertNoErrors();
+        replaceOneSubscriber.awaitSingleValue();
 
         TestSubscriber<Document> findSubscriber = new TestSubscriber<>();
         asyncCollection.find(json("a:1")).subscribe(findSubscriber);
-        findSubscriber.awaitTerminalEvent();
-        assertThat(getSingleValue(findSubscriber).get("a")).isEqualTo(1);
+        assertThat(findSubscriber.awaitSingleValue().get("a")).isEqualTo(1);
 
-        streamSubscriber.awaitCount(1).assertValueCount(1).cancel();
-        assertThat(getSingleValue(streamSubscriber).getOperationType().getValue()).isEqualTo("insert");
-        assertThat(getSingleValue(streamSubscriber).getFullDocument()).isEqualTo(getSingleValue(findSubscriber));
+        ChangeStreamDocument<Document> value = streamSubscriber.awaitSingleValue();
+        assertThat(value.getOperationType().getValue()).isEqualTo("insert");
+        assertThat(value.getFullDocument()).isEqualTo(findSubscriber.awaitSingleValue());
     }
 
     @Test
-    public void testSimpleChangeStreamWithFilter() throws Exception {
-        TestSubscriber<Success> insertSubscriber1 = new TestSubscriber<>();
-        TestSubscriber<Success> insertSubscriber2 = new TestSubscriber<>();
+    void testSimpleChangeStreamWithFilter() throws Exception {
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
 
-        asyncCollection.insertOne(json("_id: 2")).subscribe(insertSubscriber1);
-        insertSubscriber1.awaitTerminalEvent();
+        insertOne(asyncCollection, json("_id: 1"));
 
         Bson filter = match(Filters.eq("fullDocument.bu", "abc"));
         List<Bson> pipeline = singletonList(filter);
 
         asyncCollection.watch(pipeline).subscribe(streamSubscriber);
 
-        insertSubscriber1 = new TestSubscriber<>();
-        asyncCollection.insertOne(json("_id: 2, bu: 'abc'")).subscribe(insertSubscriber1);
-        asyncCollection.insertOne(json("_id: 3, bu: 'xyz'")).subscribe(insertSubscriber2);
-        insertSubscriber1.awaitTerminalEvent();
-        insertSubscriber2.awaitTerminalEvent();
+        insertOne(asyncCollection, json("_id: 2, bu: 'abc'"));
+        insertOne(asyncCollection, json("_id: 3, bu: 'xyz'"));
 
-        streamSubscriber.awaitCount(1).assertValueCount(1).cancel();
-        assertThat(getSingleValue(streamSubscriber).getFullDocument().get("bu")).isEqualTo("abc");
+        ChangeStreamDocument<Document> changeStreamDocument = streamSubscriber.awaitSingleValue();
+        assertThat(changeStreamDocument.getFullDocument().get("bu")).isEqualTo("abc");
     }
 
     @Test
-    public void testOplogShouldFilterNamespaceOnChangeStreams() throws Exception {
-        TestSubscriber<Success> insertSubscriber = new TestSubscriber<>();
+    void testOplogSubscription() throws Exception {
+        TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
+        asyncCollection.watch().subscribe(streamSubscriber);
+
+        insertOne(asyncCollection, json("_id: 1"));
+
+        ChangeStreamDocument<Document> changeStreamDocument = streamSubscriber.awaitSingleValue();
+        assertThat(changeStreamDocument.getOperationType()).isEqualTo(com.mongodb.client.model.changestream.OperationType.INSERT);
+        assertThat(changeStreamDocument.getFullDocument()).isEqualTo(json("_id: 1"));
+    }
+
+    @Test
+    void testOplogShouldFilterNamespaceOnChangeStreams() throws Exception {
         com.mongodb.reactivestreams.client.MongoCollection<Document> asyncCollection1 =
             asyncDb.getCollection(asyncCollection.getNamespace().getCollectionName() + "1");
 
-        asyncCollection.insertOne(json("_id: 1")).subscribe(insertSubscriber);
-        asyncCollection1.insertOne(json("_id: 1")).subscribe(insertSubscriber);
-
-        insertSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
+        insertOne(asyncCollection, json("_id: 1"));
+        insertOne(asyncCollection1, json("_id: 1"));
 
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
-        Bson filter = match(Filters.eq("fullDocument.a", 1));
-        asyncCollection.watch(singletonList(filter)).subscribe(streamSubscriber);
+        asyncCollection.watch().subscribe(streamSubscriber);
 
-        // Necessary to give time for the change stream to start before the below insert operation is executed.
-        Thread.sleep(50);
+        insertOne(asyncCollection1, json("_id: 2"));
+        insertOne(asyncCollection, json("_id: 2"));
 
-        insertSubscriber = new TestSubscriber<>();
-        asyncCollection1.insertOne(json("_id: 2, a: 1")).subscribe(insertSubscriber);
-        insertSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
-
-        streamSubscriber.awaitTerminalEvent(1, TimeUnit.SECONDS);
-        assertThat(streamSubscriber.values()).isEmpty();
+        streamSubscriber.awaitSingleValue();
     }
 
-    private static <T> T getSingleValue(TestSubscriber<T> subscriber) {
-        return subscriber.values().get(0);
+    private static void insertOne(com.mongodb.reactivestreams.client.MongoCollection<Document> collection, Document document) throws Exception {
+        TestSubscriber<Success> insertSubscriber = new TestSubscriber<>();
+        collection.insertOne(document).subscribe(insertSubscriber);
+        insertSubscriber.awaitSingleValue();
     }
 
 }
