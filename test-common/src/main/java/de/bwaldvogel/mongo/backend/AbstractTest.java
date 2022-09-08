@@ -17,6 +17,8 @@ import org.bson.Document;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoNamespace;
@@ -30,6 +32,8 @@ import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.wire.message.MongoKillCursors;
 
 public abstract class AbstractTest {
+
+    private static final Logger log = LoggerFactory.getLogger(AbstractTest.class);
 
     protected static final String ADMIN_DB_NAME = "admin";
     protected static final String TEST_DATABASE_NAME = "testdb";
@@ -64,6 +68,14 @@ public abstract class AbstractTest {
 
     @AfterEach
     void assertNoOpenCursors() throws Exception {
+        for (int i = 0; i < 50; i++) {
+            long numberOfOpenCursors = getNumberOfOpenCursors();
+            if (numberOfOpenCursors == 0) {
+                return;
+            }
+            log.warn("Found {} open cursors. Waiting trial {}", numberOfOpenCursors, i + 1);
+            Thread.sleep(100);
+        }
         assertThat(getNumberOfOpenCursors()).isZero();
     }
 
