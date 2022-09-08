@@ -64,14 +64,7 @@ public abstract class AbstractTest {
 
     @AfterEach
     void assertNoOpenCursors() throws Exception {
-        Document serverStatus = runCommand("serverStatus");
-        assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
-        Document openCursors = serverStatus.get("metrics", Document.class)
-            .get("cursor", Document.class)
-            .get("open", Document.class);
-
-        Long totalOpenCursors = openCursors.getLong("total");
-        assertThat(totalOpenCursors).isZero();
+        assertThat(getNumberOfOpenCursors()).isZero();
     }
 
     protected void dropAllDatabases() {
@@ -189,5 +182,27 @@ public abstract class AbstractTest {
 
     protected MongoDatabase getAdminDb() {
         return syncClient.getDatabase(ADMIN_DB_NAME);
+    }
+
+    protected long getNumberOfOpenCursors() {
+        Document serverStatus = runCommand("serverStatus");
+        assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
+        Document metrics = serverStatus.get("metrics", Document.class);
+        Document cursorMetrics = metrics.get("cursor", Document.class);
+        Document openCursors = cursorMetrics.get("open", Document.class);
+        return openCursors.getLong("total");
+    }
+
+    protected void awaitNumberOfOpenCursors(long expectedNumberOfOpenCursors) throws Exception {
+        long numberOfOpenCursors = 0;
+        for (int i = 0; i < 10; i++) {
+            numberOfOpenCursors = getNumberOfOpenCursors();
+            if (numberOfOpenCursors == expectedNumberOfOpenCursors) {
+                return;
+            }
+            Thread.sleep(10);
+        }
+        throw new RuntimeException("Failed waiting for " + expectedNumberOfOpenCursors + " open cursors." +
+            " Current: " + numberOfOpenCursors + " open cursors");
     }
 }

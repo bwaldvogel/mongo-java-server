@@ -333,9 +333,10 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    public void testChangeStreamResumeAfter() {
+    public void testChangeStreamResumeAfter() throws Exception {
         collection.insertOne(json("a: 1"));
-        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor();) {
+        try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor = collection.watch().cursor()) {
+            awaitNumberOfOpenCursors(1);
             collection.insertOne(json("a: 2"));
             collection.insertOne(json("a: 3"));
             ChangeStreamDocument<Document> document = cursor.next();
@@ -343,6 +344,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
             try (MongoChangeStreamCursor<ChangeStreamDocument<Document>> cursor2
                      = collection.watch().resumeAfter(resumeToken).cursor()) {
+                awaitNumberOfOpenCursors(2);
                 ChangeStreamDocument<Document> document2 = cursor2.next();
                 assertThat(document2.getFullDocument().get("a")).isEqualTo(3);
             }
@@ -397,6 +399,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     void testChangeStreamAndReplaceOneWithUpsertTrue() throws Throwable {
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().fullDocument(FullDocument.UPDATE_LOOKUP).subscribe(streamSubscriber);
+        awaitNumberOfOpenCursors(1);
 
         TestSubscriber<UpdateResult> replaceOneSubscriber = new TestSubscriber<>();
         asyncCollection.replaceOne(json("a: 1"), json("a: 1"), new ReplaceOptions().upsert(true))
@@ -415,14 +418,15 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     @Test
     void testSimpleChangeStreamWithFilter() throws Exception {
-        TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
-
         insertOne(asyncCollection, json("_id: 1"));
 
         Bson filter = match(Filters.eq("fullDocument.bu", "abc"));
         List<Bson> pipeline = singletonList(filter);
 
+        super.assertNoOpenCursors();
+        TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch(pipeline).subscribe(streamSubscriber);
+        awaitNumberOfOpenCursors(1);
 
         insertOne(asyncCollection, json("_id: 2, bu: 'abc'"));
         insertOne(asyncCollection, json("_id: 3, bu: 'xyz'"));
@@ -433,8 +437,10 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     @Test
     void testOplogSubscription() throws Exception {
+        super.assertNoOpenCursors();
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().subscribe(streamSubscriber);
+        awaitNumberOfOpenCursors(1);
 
         insertOne(asyncCollection, json("_id: 1"));
 
@@ -451,8 +457,10 @@ public abstract class AbstractOplogTest extends AbstractTest {
         insertOne(asyncCollection, json("_id: 1"));
         insertOne(asyncCollection1, json("_id: 1"));
 
+        super.assertNoOpenCursors();
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();
         asyncCollection.watch().subscribe(streamSubscriber);
+        awaitNumberOfOpenCursors(1);
 
         insertOne(asyncCollection1, json("_id: 2"));
         insertOne(asyncCollection, json("_id: 2"));
