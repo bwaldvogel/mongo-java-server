@@ -38,10 +38,6 @@ public class OplogCursor extends AbstractCursor {
         return documents;
     }
 
-    OplogPosition getPosition() {
-        return position;
-    }
-
     private void updatePosition(List<Document> documents) {
         if (!documents.isEmpty()) {
             position = getOplogPosition(CollectionUtils.getLastElement(documents));
