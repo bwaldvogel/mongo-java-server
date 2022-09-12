@@ -124,19 +124,6 @@ public abstract class Index<P> {
         return valuesPerKey;
     }
 
-    private static Set<KeyValue> collectCollectionValues(List<Collection<?>> collectionValues) {
-        int size = collectionValues.get(0).size();
-        Set<KeyValue> keyValues = new LinkedHashSet<>();
-        for (int i = 0; i < size; i++) {
-            int pos = i;
-            List<Object> values = collectionValues.stream()
-                .map(collection -> CollectionUtils.getElementAtPosition(collection, pos))
-                .collect(Collectors.toList());
-            keyValues.add(new KeyValue(values));
-        }
-        return keyValues;
-    }
-
     public abstract P getPosition(Document document);
 
     public abstract void checkAdd(Document document, MongoCollection<P> collection);
