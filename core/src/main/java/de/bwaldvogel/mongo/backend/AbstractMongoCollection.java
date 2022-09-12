@@ -110,7 +110,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                                          int numberToSkip, int limit, int batchSize,
                                          Document fieldSelector) {
         Stream<Document> documentStream = StreamSupport.stream(positions.spliterator(), false)
-            .map(position -> getDocument(position));
+            .map(this::getDocument);
 
         return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
