@@ -3901,6 +3901,100 @@ public abstract class AbstractBackendTest extends AbstractTest {
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b.c_1 dup key: { a.b.c: { d: null } }");
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/201
+    @Test
+    public void testUniqueIndexOnArrayField() throws Exception {
+        collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1, a: ['val1', 'val2']"));
+        collection.insertOne(json("_id: 2, a: ['val3', 'val4']"));
+        collection.insertOne(json("_id: 3, a: []"));
+        collection.insertOne(json("_id: 4, a: ['val5']"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: ['val1']")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: \"val1\" }'");
+
+        assertThat(toArray(collection.find(json("a: ['val1']"))))
+            .isEmpty();
+
+        assertThat(toArray(collection.find(json("a: ['val1', 'val3']"))))
+            .isEmpty();
+
+        assertThat(toArray(collection.find(json("a: ['val1', 'val10']"))))
+            .isEmpty();
+
+        assertThat(toArray(collection.find(json("a: ['val10']"))))
+            .isEmpty();
+
+        assertThat(toArray(collection.find(json("a: ['val5']"))))
+            .containsExactly(json("_id: 4, a: ['val5']"));
+
+        assertThat(toArray(collection.find(json("a: ['val1', 'val2']"))))
+            .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
+
+        assertThat(toArray(collection.find(json("a: ['val2', 'val1']"))))
+            .isEmpty();
+
+        assertThat(toArray(collection.find(json("a: {$all: ['val1', 'val2']}"))))
+            .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
+
+        assertThat(toArray(collection.find(json("a: {$all: ['val2', 'val1']}"))))
+            .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
+    }
+
+    @Test
+    public void testUniqueIndexOnArrayField_updates() throws Exception {
+        collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1, a: ['val1', 'val2']"));
+        collection.insertOne(json("_id: 2, a: ['val3', 'val4']"));
+
+        assertMongoWriteException(() -> collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val3']")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: \"val3\" }'");
+
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$push: {a: 'val3'}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: \"val3\" }");
+
+        collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val5']"));
+        collection.insertOne(json("_id: 3, a: ['val2']"));
+
+        assertThat(toArray(collection.find(json("a: ['val1', 'val5']"))))
+            .containsExactly(json("_id: 1, a: ['val1', 'val5']"));
+
+        assertThat(toArray(collection.find(json("a: ['val2']"))))
+            .containsExactly(json("_id: 3, a: ['val2']"));
+
+        collection.updateOne(json("a: ['val2']"), json("$push: {a: 'val7'}"));
+
+        assertThat(toArray(collection.find(json("a: ['val2', 'val7']"))))
+            .containsExactly(json("_id: 3, a: ['val2', 'val7']"));
+    }
+
+    @Test
+    public void testUniqueIndexOnArrayFieldInSubdocument() throws Exception {
+        collection.createIndex(json("'a.b': 1"), new IndexOptions().unique(true));
+
+        collection.insertOne(json("_id: 1, a: {b: ['val1', 'val2']}"));
+        collection.insertOne(json("_id: 2, a: {b: ['val3', 'val4']}"));
+        collection.insertOne(json("_id: 3, a: []"));
+        collection.insertOne(json("_id: 4, a: {b: 'val5'}"));
+
+        assertMongoWriteException(() -> collection.insertOne(json("a: {b: ['val1']}")),
+            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b_1 dup key: { a.b: \"val1\" }'");
+
+        assertThat(toArray(collection.find(json("'a.b': 'val5'"))))
+            .containsExactly(json("_id: 4, a: {b: 'val5'}"));
+
+        assertThat(toArray(collection.find(json("'a.b': ['val1', 'val2']"))))
+            .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
+
+        assertThat(toArray(collection.find(json("a: {b: ['val1', 'val2']}"))))
+            .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
+
+        assertThat(toArray(collection.find(json("'a.b': ['val1']"))))
+            .isEmpty();
+    }
+
     @Test
     public void testAddNonUniqueIndexOnNonIdField() {
         collection.insertOne(json("someField: 'abc'"));

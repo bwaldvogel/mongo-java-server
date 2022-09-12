@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo.backend.postgresql;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
@@ -263,6 +264,112 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
+    public void testUniqueIndexOnArrayField() throws Exception {
+        if (isStrictTestsEnabled()) {
+            super.testUniqueIndexOnArrayField();
+        } else {
+            collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+
+            collection.insertOne(json("_id: 1, a: ['val1', 'val2']"));
+            collection.insertOne(json("_id: 2, a: ['val3', 'val4']"));
+            collection.insertOne(json("_id: 3, a: []"));
+            collection.insertOne(json("_id: 4, a: ['val5']"));
+
+            // this should actually not be allowed
+            collection.insertOne(json("_id: 5, a: ['val1']"));
+
+            assertThat(toArray(collection.find(json("a: ['val1', 'val3']"))))
+                .isEmpty();
+
+            assertThat(toArray(collection.find(json("a: ['val1', 'val10']"))))
+                .isEmpty();
+
+            assertThat(toArray(collection.find(json("a: ['val10']"))))
+                .isEmpty();
+
+            assertThat(toArray(collection.find(json("a: ['val5']"))))
+                .containsExactly(json("_id: 4, a: ['val5']"));
+
+            assertThat(toArray(collection.find(json("a: ['val1', 'val2']"))))
+                .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
+
+            assertThat(toArray(collection.find(json("a: ['val2', 'val1']"))))
+                .isEmpty();
+
+            assertThat(toArray(collection.find(json("a: {$all: ['val1', 'val2']}"))))
+                .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
+
+            assertThat(toArray(collection.find(json("a: {$all: ['val2', 'val1']}"))))
+                .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
+        }
+    }
+
+    @Test
+    @Override
+    public void testUniqueIndexOnArrayField_updates() throws Exception {
+        if (isStrictTestsEnabled()) {
+            super.testUniqueIndexOnArrayField_updates();
+        } else {
+            collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
+
+            collection.insertOne(json("_id: 1, a: ['val1', 'val2']"));
+            collection.insertOne(json("_id: 2, a: ['val3', 'val4']"));
+
+            // this should actually not be allowed
+            collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val3']"));
+            // undo the change
+            collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val2']"));
+
+            // this should actually not be allowed
+            collection.updateOne(json("_id: 1"), json("$push: {a: 'val3'}"));
+            // undo the change
+            collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val2']"));
+
+            collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val5']"));
+            collection.insertOne(json("_id: 3, a: ['val2']"));
+
+            assertThat(toArray(collection.find(json("a: ['val1', 'val5']"))))
+                .containsExactly(json("_id: 1, a: ['val1', 'val5']"));
+
+            assertThat(toArray(collection.find(json("a: ['val2']"))))
+                .containsExactly(json("_id: 3, a: ['val2']"));
+
+            collection.updateOne(json("a: ['val2']"), json("$push: {a: 'val7'}"));
+
+            assertThat(toArray(collection.find(json("a: ['val2', 'val7']"))))
+                .containsExactly(json("_id: 3, a: ['val2', 'val7']"));
+        }
+    }
+
+    @Test
+    @Override
+    public void testUniqueIndexOnArrayFieldInSubdocument() throws Exception {
+        if (isStrictTestsEnabled()) {
+            super.testUniqueIndexOnArrayFieldInSubdocument();
+        } else {
+            collection.createIndex(json("'a.b': 1"), new IndexOptions().unique(true));
+
+            collection.insertOne(json("_id: 1, a: {b: ['val1', 'val2']}"));
+            collection.insertOne(json("_id: 2, a: {b: ['val3', 'val4']}"));
+            collection.insertOne(json("_id: 3, a: []"));
+            collection.insertOne(json("_id: 4, a: {b: 'val5'}"));
+
+            // this should actually not be allowed
+            collection.insertOne(json("a: {b: ['val1']}"));
+
+            assertThat(toArray(collection.find(json("'a.b': 'val5'"))))
+                .containsExactly(json("_id: 4, a: {b: 'val5'}"));
+
+            assertThat(toArray(collection.find(json("'a.b': ['val1', 'val2']"))))
+                .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
+
+            assertThat(toArray(collection.find(json("a: {b: ['val1', 'val2']}"))))
+                .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
+        }
+    }
+
+    @Test
+    @Override
     public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
         assumeStrictTests();
         super.testGetKeyValues_multiKey_document_nested_objects();
@@ -317,7 +424,11 @@ class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     private void assumeStrictTests() {
-        Assumptions.assumeTrue(Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest"));
+        Assumptions.assumeTrue(isStrictTestsEnabled());
+    }
+
+    private static boolean isStrictTestsEnabled() {
+        return Boolean.getBoolean(PostgresqlBackend.class.getSimpleName() + ".strictTest");
     }
 
 }

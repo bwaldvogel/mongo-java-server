@@ -216,6 +216,13 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                         return getPositionsForExpression(keyObj, expression);
                     }
                 }
+            } else if (queriedKey instanceof Collection) {
+                Collection<?> values = (Collection<?>) queriedKey;
+                return values.stream()
+                    .map(KeyValue::new)
+                    .map(this::getPosition)
+                    .filter(Objects::nonNull)
+                    .collect(StreamUtils.toLinkedHashSet());
             }
         }
 
