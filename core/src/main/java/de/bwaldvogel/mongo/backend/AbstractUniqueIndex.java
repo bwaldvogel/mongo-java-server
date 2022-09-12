@@ -181,10 +181,10 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
     @Override
     public synchronized Iterable<P> getPositions(Document query) {
-        KeyValue queriedKeys = getQueriedKeys(query);
+        KeyValue queriedKeyValues = getQueriedKeyValues(query);
 
-        for (Object queriedKey : queriedKeys) {
-            if (BsonRegularExpression.isRegularExpression(queriedKey)) {
+        for (Object queriedValue : queriedKeyValues) {
+            if (BsonRegularExpression.isRegularExpression(queriedValue)) {
                 if (isCompoundIndex()) {
                     throw new UnsupportedOperationException("Not yet implemented");
                 }
@@ -194,7 +194,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                     if (obj.size() == 1) {
                         Object o = obj.get(0);
                         if (o instanceof String) {
-                            BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(queriedKey);
+                            BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(queriedValue);
                             Matcher matcher = regularExpression.matcher(o.toString());
                             if (matcher.find()) {
                                 positions.add(entry.getValue());
@@ -203,21 +203,21 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                     }
                 }
                 return positions;
-            } else if (queriedKey instanceof Document) {
+            } else if (queriedValue instanceof Document) {
                 if (isCompoundIndex()) {
                     throw new UnsupportedOperationException("Not yet implemented");
                 }
-                Document keyObj = (Document) queriedKey;
+                Document keyObj = (Document) queriedValue;
                 if (Utils.containsQueryExpression(keyObj)) {
                     String expression = CollectionUtils.getSingleElement(keyObj.keySet(),
-                        () -> new UnsupportedOperationException("illegal query key: " + queriedKeys));
+                        () -> new UnsupportedOperationException("illegal query key: " + queriedKeyValues));
 
                     if (expression.startsWith("$")) {
                         return getPositionsForExpression(keyObj, expression);
                     }
                 }
-            } else if (queriedKey instanceof Collection) {
-                Collection<?> values = (Collection<?>) queriedKey;
+            } else if (queriedValue instanceof Collection) {
+                Collection<?> values = (Collection<?>) queriedValue;
                 return values.stream()
                     .map(KeyValue::new)
                     .map(this::getPosition)
@@ -226,14 +226,14 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
             }
         }
 
-        P position = getPosition(queriedKeys);
+        P position = getPosition(queriedKeyValues);
         if (position == null) {
             return Collections.emptyList();
         }
         return Collections.singletonList(position);
     }
 
-    private KeyValue getQueriedKeys(Document query) {
+    private KeyValue getQueriedKeyValues(Document query) {
         return new KeyValue(keys().stream()
             .map(query::get)
             .map(Utils::normalizeValue)
