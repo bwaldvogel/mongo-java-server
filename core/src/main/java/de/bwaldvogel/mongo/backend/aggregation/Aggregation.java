@@ -33,6 +33,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.OutStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.RedactStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ReplaceRootStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.SampleStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnsetStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
@@ -137,6 +138,10 @@ public class Aggregation {
                 case "$replaceRoot":
                     Document replaceRoot = (Document) stage.get(stageOperation);
                     aggregation.addStage(new ReplaceRootStage(replaceRoot));
+                    break;
+                case "$sample":
+                    Object sample = stage.get(stageOperation);
+                    aggregation.addStage(new SampleStage(sample));
                     break;
                 case "$sortByCount":
                     Object expression = stage.get(stageOperation);
