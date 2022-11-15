@@ -282,7 +282,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCursorNotFoundException.class)
             .isThrownBy(cursor::next)
-            .withMessageContaining("Query failed with error code -5 and error message");
+            .withMessageMatching("Command failed with error 43 \\(CursorNotFound\\): 'Cursor id \\d+ does not exist'.+");
     }
 
     @Test
@@ -1035,25 +1035,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: []}")).first())
-            .withMessageContaining("Query failed with error code 9 with name 'FailedToParse' and error message 'n must match at least one type'");
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'n must match at least one type'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("'a.b.c': {$type: []}")).first())
-            .withMessageContaining("Query failed with error code 9 with name 'FailedToParse' and error message 'a.b.c must match at least one type'");
+            .withMessageContaining("Command failed with error 9 (FailedToParse): 'a.b.c must match at least one type'");
 
         assertThat(collection.find(json("a: {b: {$type: []}}"))).isEmpty();
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: 'abc'}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'Unknown type name alias: abc'");
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Unknown type name alias: abc'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: null}")).first())
-            .withMessageContaining("Query failed with error code 14 with name 'TypeMismatch' and error message 'type must be represented as a number or a string'");
+            .withMessageContaining("Command failed with error 14 (TypeMismatch): 'type must be represented as a number or a string'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: {$type: 16.3}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'Invalid numerical type code: 16.3'");
+            .withMessageContaining("Command failed with error 2 (BadValue): 'Invalid numerical type code: 16.3'");
     }
 
     @Test
@@ -2180,7 +2180,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {x: 1, y: 1}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '>1 field in obj: { x: 1, y: 1 }'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '>1 field in obj: { x: 1, y: 1 }'");
     }
 
     @Test
@@ -2528,7 +2528,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUpdateSubdocument() throws Exception {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> collection.updateOne(json(""), json("'a.b.c': 123")))
-            .withMessage("Invalid BSON field name a.b.c");
+            .withMessage("All update operators must start with '$', but 'a.b.c' does not");
     }
 
     @ParameterizedTest
@@ -4465,7 +4465,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message " +
+            .withMessageContaining("Command failed with error 2 (BadValue): " +
                 "'Projection cannot have a mix of inclusion and exclusion.'");
     }
 
@@ -4572,7 +4572,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("ref: {$ref: 'coll'}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'unknown operator: $ref'");
+            .withMessageContaining("Command failed with error 2 (BadValue): 'unknown operator: $ref'");
     }
 
     @Test
@@ -4581,15 +4581,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(and()).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$and/$or/$nor must be a nonempty array'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(nor()).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$and/$or/$nor must be a nonempty array'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(or()).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$and/$or/$nor must be a nonempty array'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
     }
 
     @Test
@@ -4935,23 +4935,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['$_id', '$_id']}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice limit must be positive'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$slice limit must be positive'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 0]}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice limit must be positive'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$slice limit must be positive'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 'xyz']}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice limit must be positive'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$slice limit must be positive'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 2, 3]}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice array wrong size'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$slice array wrong size'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: 'abc'}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$slice only supports numbers and [skip, limit] arrays'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$slice only supports numbers and [skip, limit] arrays'");
     }
 
     @Test
@@ -4973,11 +4973,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: [ 85 ]}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$elemMatch needs an Object'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: 1}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message '$elemMatch needs an Object'");
+            .withMessageContaining("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
     }
 
     @Test
@@ -4988,7 +4988,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("x: {$lt: 10, y: 23}")).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'unknown operator: y'");
+            .withMessageContaining("Command failed with error 2 (BadValue): 'unknown operator: y'");
 
         assertThat(collection.find(json("x: {y: 23, $lt: 10}"))).isEmpty();
         assertThat(collection.find(json("x: {y: {$lt: 100, z: 23}}"))).isEmpty();
@@ -5066,7 +5066,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(query).first())
-            .withMessageContaining("Query failed with error code 2 with name 'BadValue' and error message 'unknown top level operator: $illegalOperator'");
+            .withMessageContaining("Command failed with error 2 (BadValue): 'unknown top level operator: $illegalOperator'");
     }
 
     @Test
@@ -5101,15 +5101,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a.', 10]}")).first())
-            .withMessageContaining("Query failed with error code 40353 with name 'Location40353' and error message 'FieldPath must not end with a '.'.'");
+            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$.a', 10]}")).first())
-            .withMessageContaining("Query failed with error code 15998 with name 'Location15998' and error message 'FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a..1', 10]}")).first())
-            .withMessageContaining("Query failed with error code 15998 with name 'Location15998' and error message 'FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
