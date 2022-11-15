@@ -4,6 +4,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.date;
 import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
+import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.sql.Date;
@@ -989,9 +990,9 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, group: 1, field1: 'abc'"));
 
         assertThat(collection.aggregate(pipeline))
-                .containsExactly(
-                        json("_id: 1, first: null")
-                );
+            .containsExactly(
+                json("_id: 1, first: null")
+            );
     }
 
     @Test
@@ -1004,9 +1005,9 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 2, group: 1"));
 
         assertThat(collection.aggregate(pipeline))
-                .containsExactly(
-                        json("_id: 1, last: null")
-                );
+            .containsExactly(
+                json("_id: 1, last: null")
+            );
     }
 
     @Test
@@ -2473,6 +2474,65 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
             .withMessageStartingWith("Command failed with error 9 (FailedToParse): '$convert expects an object of named arguments but found: int'");
+    }
+
+    @Test
+    void testSampleAggregation() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            collection.insertOne(json("flag: 1"));
+        }
+
+        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: 3 }}", "$project: { _id: 0 }"))))
+            .containsExactly(
+                json("flag: 1"),
+                json("flag: 1"),
+                json("flag: 1")
+            );
+
+        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: 2.5 }}", "$project: { _id: 0 }"))))
+            .containsExactly(
+                json("flag: 1"),
+                json("flag: 1")
+            );
+
+        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: 0 }}"))))
+            .isEmpty();
+
+        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: -0.3 }}"))))
+            .isEmpty();
+    }
+
+    @Test
+    void testSampleAggregation_illegalParameters() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$sample: 3}")).first())
+            .withMessageStartingWith("Command failed with error 28745 (Location28745): 'the $sample stage specification must be an object'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$sample: [1, 2]}")).first())
+            .withMessageStartingWith("Command failed with error 28745 (Location28745): 'the $sample stage specification must be an object'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: 'a' }}")).first())
+            .withMessageStartingWith("Command failed with error 28746 (Location28746): 'size argument to $sample must be a number'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: null }}")).first())
+            .withMessageStartingWith("Command failed with error 28746 (Location28746): 'size argument to $sample must be a number'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: -1 }}")).first())
+            .withMessageStartingWith("Command failed with error 28747 (Location28747): 'size argument to $sample must not be negative'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: 1, bla: 2}}")).first())
+            .withMessageStartingWith("Command failed with error 28748 (Location28748): 'unrecognized option to $sample: bla'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$sample: {}}")).first())
+            .withMessageStartingWith("Command failed with error 28749 (Location28749): '$sample stage must specify a size'");
     }
 
     private static Function<Document, Document> withSortedStringList(String key) {
