@@ -252,12 +252,14 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
         assertThatExceptionOfType(DuplicateKeyException.class)
             .isThrownBy(() -> collection.createIndex(json("value: 1"), new IndexOptions().unique(true)))
-            .withMessage("Write failed with error code 11000 and error message " +
-                "'E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: " +
-                "ERROR: could not create unique index \"testcoll_value_1\"\n  Detail: Key ((data ->> 'value'::text))=(b) is duplicated.'");
+            .withMessageMatching("Write failed with error code 11000 and error message " +
+                "'Index build failed: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}: " +
+                "Collection testdb\\.testcoll \\( [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} \\) :: caused by :: " +
+                "E11000 duplicate key error collection: testdb\\.testcoll index: value_1 dup key: " +
+                "ERROR: could not create unique index \"testcoll_value_1\"\n  Detail: Key \\(\\(data ->> 'value'::text\\)\\)=\\(b\\) is duplicated\\.'");
 
         assertThat(collection.listIndexes())
-            .containsExactly(json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"));
+            .containsExactly(json("name: '_id_', key: {_id: 1}, v: 2"));
 
         collection.insertOne(json("_id: 5, value: 'a'"));
     }

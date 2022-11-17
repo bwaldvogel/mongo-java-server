@@ -19,6 +19,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.DollarPrefixedFieldNameException;
+import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.PathNotViableException;
@@ -31,12 +32,12 @@ public class Utils {
     public static final String PATH_DELIMITER = ".";
     private static final Pattern PATH_DELIMITER_PATTERN = Pattern.compile(Pattern.quote(PATH_DELIMITER));
 
-    private static void validateKey(String key) {
+    static void validateKey(String key) {
         if (key.endsWith(PATH_DELIMITER)) {
-            throw new MongoServerError(40353, "FieldPath must not end with a '.'.");
+            throw new MongoServerError(ErrorCode._40353, "FieldPath must not end with a '.'.");
         }
         if (key.startsWith(PATH_DELIMITER) || key.contains("..")) {
-            throw new MongoServerError(15998, "FieldPath field names may not be empty strings.");
+            throw new MongoServerError(ErrorCode._15998, "FieldPath field names may not be empty strings.");
         }
     }
 
@@ -436,9 +437,8 @@ public class Utils {
                 String key = entry.getKey();
                 String nextPath = path != null ? path + "." + key : key;
                 if (key.startsWith("$") && !Constants.REFERENCE_KEYS.contains(key)) {
-                    throw new DollarPrefixedFieldNameException("The dollar ($) prefixed field '" + key + "' in '" + nextPath + "' is not valid for storage.");
+                    throw new DollarPrefixedFieldNameException("The dollar ($) prefixed field '" + key + "' in '" + nextPath + "' is not allowed in the context of an update's replacement document. Consider using an aggregation pipeline with $replaceWith.");
                 }
-                validateFieldNames(entry.getValue(), nextPath);
             }
         } else if (value instanceof Collection<?>) {
             Collection<?> values = (Collection<?>) value;
@@ -515,6 +515,10 @@ public class Utils {
             firstBatch.add(document);
         }
         return firstBatchCursorResponse(ns, firstBatch);
+    }
+
+    static Document firstBatchCursorResponse(String ns, Stream<Document> firstBatch) {
+        return firstBatchCursorResponse(ns, firstBatch.collect(Collectors.toList()));
     }
 
     static Document firstBatchCursorResponse(String ns, List<Document> firstBatch) {

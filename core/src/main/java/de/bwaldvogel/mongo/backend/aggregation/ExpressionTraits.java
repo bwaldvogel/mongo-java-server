@@ -18,6 +18,7 @@ import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
+import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 interface ExpressionTraits {
@@ -32,7 +33,7 @@ interface ExpressionTraits {
     default String requireSingleStringValue(List<?> expressionValue) {
         Object value = requireSingleValue(expressionValue);
         if (!(value instanceof String)) {
-            throw new MongoServerError(34471, name() + " requires a string argument, found: " + describeType(value));
+            throw new MongoServerError(ErrorCode._34471, name() + " requires a string argument, found: " + describeType(value));
         }
         return (String) value;
     }

@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.util.Arrays;
+
 public class MongoServerError extends MongoServerException {
 
     private static final long serialVersionUID = 1L;
@@ -13,11 +15,15 @@ public class MongoServerError extends MongoServerException {
     }
 
     public MongoServerError(ErrorCode errorCode, String message) {
-        this(errorCode.getValue(), errorCode.name(), message);
+        this(errorCode.getValue(), errorCode.getName(), message);
     }
 
     public MongoServerError(int errorCode, String codeName, String message) {
-        super("[Error " + errorCode + "] " + message);
+        this(errorCode, codeName, message, null);
+    }
+
+    public MongoServerError(int errorCode, String codeName, String message, Throwable cause) {
+        super("[Error " + errorCode + "] " + message, cause);
         this.errorCode = errorCode;
         this.codeName = codeName;
         this.message = message;
@@ -34,5 +40,13 @@ public class MongoServerError extends MongoServerException {
     @Override
     public String getMessageWithoutErrorCode() {
         return message;
+    }
+
+    public boolean shouldPrefixCommandContext() {
+        return true;
+    }
+
+    public boolean hasCode(ErrorCode... errorCodes) {
+        return Arrays.stream(errorCodes).anyMatch(code -> getCode() == code.getValue());
     }
 }

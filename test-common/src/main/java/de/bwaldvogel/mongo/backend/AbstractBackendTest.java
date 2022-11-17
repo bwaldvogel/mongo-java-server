@@ -19,7 +19,6 @@ import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.time.Duration;
@@ -48,6 +47,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.bson.BsonInt32;
 import org.bson.BsonJavaScript;
 import org.bson.BsonObjectId;
@@ -330,7 +330,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions().capped(true)))
-            .withMessageContaining("Command failed with error 72 (InvalidOptions): 'the 'size' field is required when 'capped' is true'");
+            .withMessageStartingWith("Command failed with error 72 (InvalidOptions): 'the 'size' field is required when 'capped' is true'");
     }
 
     @Test
@@ -339,7 +339,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions()))
-            .withMessageContaining("Command failed with error 48 (NamespaceExists): 'a collection 'testdb.some-collection' already exists'");
+            .withMessageStartingWith("Command failed with error 48 (NamespaceExists): 'Collection already exists. NS: testdb.some-collection'");
     }
 
     @Test
@@ -412,7 +412,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testGetLogWhichDoesNotExist() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand(json("getLog: 'illegal'")))
-            .withMessageContaining("Command failed with error -1: 'no RamLog named: illegal'");
+            .withMessageStartingWith("Command failed with error -1: 'no RamLog named: illegal'");
     }
 
     @Test
@@ -536,9 +536,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {n: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "n_1").append("v", 2),
-                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {n: 1}").append("name", "n_1").append("v", 2),
+                json("key: {b: 1}").append("name", "b_1").append("v", 2)
             );
     }
 
@@ -551,8 +551,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {b: 1}").append("name", "b_1").append("v", 2)
             );
     }
 
@@ -565,7 +565,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2)
             );
 
         db.drop();
@@ -593,7 +593,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.dropIndex(new Document("n", 1)))
-            .withMessageContaining("Command failed with error 27 (IndexNotFound): 'can't find index with key: { n: 1 }'");
+            .withMessageStartingWith("Command failed with error 27 (IndexNotFound): 'can't find index with key: { n: 1 }'");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 2, c: 10")),
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: c_1 dup key: { c: 10 }");
@@ -602,29 +602,31 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.dropIndex(new Document("c", 1)))
-            .withMessageContaining("Command failed with error 27 (IndexNotFound): 'can't find index with key: { c: 1 }'");
+            .withMessageStartingWith("Command failed with error 27 (IndexNotFound): 'can't find index with key: { c: 1 }'");
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {b: 1}").append("name", "b_1").append("v", 2)
             );
 
         collection.insertOne(json("_id: 2, c: 10"));
 
         assertThatExceptionOfType(DuplicateKeyException.class)
             .isThrownBy(() -> collection.createIndex(new Document("c", 1), new IndexOptions().unique(true)))
-            .withMessageContaining("Write failed with error code 11000 and error message " +
-                "'E11000 duplicate key error collection: testdb.testcoll index: c_1 dup key:");
+            .withMessageMatching("Write failed with error code 11000 and error message " +
+                "'Index build failed: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}: " +
+                "Collection testdb\\.testcoll \\( [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} \\) :: caused by :: " +
+                "E11000 duplicate key error collection: testdb\\.testcoll index: c_1 dup key: .+(\n.+)?'");
 
         collection.deleteOne(json("_id: 1"));
         collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2),
-                json("key: {c: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "c_1").append("unique", true).append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {b: 1}").append("name", "b_1").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("unique", true).append("v", 2)
             );
     }
 
@@ -636,15 +638,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {c: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "c_1").append("unique", true).append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("unique", true).append("v", 2)
             );
 
         collection.dropIndexes();
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2)
             );
 
         collection.dropIndexes();
@@ -669,7 +671,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.dropIndex(indexName))
-            .withMessageContaining("Command failed with error 27 (IndexNotFound): 'index not found with name [c_1]'");
+            .withMessageStartingWith("Command failed with error 27 (IndexNotFound): 'index not found with name [c_1]'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/184
@@ -695,27 +697,27 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {c: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "c_1").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
             );
 
         assertThat(otherCollection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {c: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "c_1").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
             );
 
         collection.dropIndex(json("c: 1"));
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2)
             );
 
         assertThat(otherCollection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {c: 1}").append("ns", otherCollection.getNamespace().getFullName()).append("name", "c_1").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
             );
     }
 
@@ -764,7 +766,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             assertThat(collection.get("options")).isEqualTo(json(""));
             assertThat(collection.get("name")).isInstanceOf(String.class);
             assertThat(collection.get("type")).isEqualTo("collection");
-            assertThat(collection.get("idIndex")).isEqualTo(json("key: {_id: 1}, name: '_id_', ns: 'testdb." + name + "', v: 2"));
+            assertThat(collection.get("idIndex")).isEqualTo(json("key: {_id: 1}, name: '_id_', v: 2"));
             assertThat(collection.get("info")).isInstanceOf(Document.class);
             collectionNames.add(name);
         }
@@ -826,11 +828,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testDeleteInSystemNamespace() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> getCollection("system.foobar").deleteOne(json("")))
-            .withMessageContaining("Command failed with error 73 (InvalidNamespace): 'cannot write to 'testdb.system.foobar'");
+            .withMessageStartingWith("Command failed with error 73 (InvalidNamespace): 'Invalid system namespace: testdb.system.foobar'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> getCollection("system.namespaces").deleteOne(json("")))
-            .withMessageContaining("Command failed with error 73 (InvalidNamespace): 'cannot write to 'testdb.system.namespaces'");
+            .withMessageStartingWith("Command failed with error 73 (InvalidNamespace): 'Invalid system namespace: testdb.system.namespaces'");
     }
 
     @Test
@@ -1035,25 +1037,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: []}")).first())
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'n must match at least one type'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'n must match at least one type'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("'a.b.c': {$type: []}")).first())
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'a.b.c must match at least one type'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'a.b.c must match at least one type'");
 
         assertThat(collection.find(json("a: {b: {$type: []}}"))).isEmpty();
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: 'abc'}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Unknown type name alias: abc'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): 'Unknown type name alias: abc'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: null}")).first())
-            .withMessageContaining("Command failed with error 14 (TypeMismatch): 'type must be represented as a number or a string'");
+            .withMessageStartingWith("Command failed with error 14 (TypeMismatch): 'type must be represented as a number or a string'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: {$type: 16.3}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Invalid numerical type code: 16.3'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): 'Invalid numerical type code: 16.3'");
     }
 
     @Test
@@ -1082,9 +1084,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("key: {_id: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "_id_").append("v", 2),
-                json("key: {n: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "n_1").append("v", 2),
-                json("key: {b: 1}").append("ns", collection.getNamespace().getFullName()).append("name", "b_1").append("v", 2)
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {n: 1}").append("name", "n_1").append("v", 2),
+                json("key: {b: 1}").append("name", "b_1").append("v", 2)
             );
 
         collection.drop();
@@ -1151,7 +1153,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.createIndex(json("a: 1"), new IndexOptions().unique(true).sparse(true)))
-            .withMessageContaining("Command failed with error 85 (IndexOptionsConflict): 'Index with name: a_1 already exists with different options'");
+            .withMessageStartingWith("Command failed with error 86 (IndexKeySpecsConflict): " +
+                "'An existing index has the same name as the requested index. " +
+                "When index names are not specified, they are auto generated and can cause conflicts. " +
+                "Please refer to our documentation. " +
+                "Requested index: { v: 2, unique: true, key: { a: 1 }, name: \"a_1\", sparse: true }, " +
+                "existing index: { v: 2, unique: true, key: { a: 1 }, name: \"a_1\" }'");
     }
 
     @Test
@@ -1202,7 +1209,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(cmd))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Either an update or remove=true must be specified'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Either an update or remove=true must be specified'");
     }
 
     @Test
@@ -1217,7 +1224,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(cmd))
-            .withMessageContaining("Command failed with error 66 (ImmutableField): 'Performing an update on the path '_id' would modify the immutable field '_id'");
+            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Performing an update on the path '_id' would modify the immutable field '_id'");
     }
 
     @Test
@@ -1242,7 +1251,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$inc: {x: 0, a: 1}, $set: {a: 2}")))
-            .withMessageContaining("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a' would create a conflict at 'a'");
+            .withMessageStartingWith("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a' would create a conflict at 'a'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/75
@@ -1252,11 +1261,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'x': 1, 'a.b': {c: 1}}, $inc: {'a.b.c': 1}")))
-            .withMessageContaining("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b.c' would create a conflict at 'a.b'");
+            .withMessageStartingWith("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b.c' would create a conflict at 'a.b'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'x': 1, 'a.b.c': 1}, $unset: {'a.b': 1}")))
-            .withMessageContaining("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b' would create a conflict at 'a.b'");
+            .withMessageStartingWith("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b' would create a conflict at 'a.b'");
     }
 
     @Test
@@ -1265,7 +1274,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$inc: {_id: 1}")))
-            .withMessageContaining("Command failed with error 66 (ImmutableField): 'Performing an update on the path '_id' would modify the immutable field '_id'");
+            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+                "'Plan executor error during findAndModify :: caused by ::" +
+                " Performing an update on the path '_id' would modify the immutable field '_id'");
     }
 
     @Test
@@ -1543,7 +1554,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'The array filter for identifier 'element' was not used in the update { $set: { grades: \"abc\" } }'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'The array filter for identifier 'element' was not used in the update { $set: { grades: \"abc\" } }'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
@@ -1553,63 +1564,74 @@ public abstract class AbstractBackendTest extends AbstractTest {
                     json("element: {$gte: 100}"),
                     json("element: {$lt: 100}")
                 ))))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Found multiple array filters with the same top-level field name element'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Found multiple array filters with the same top-level field name element'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("a: {$gte: 100}, b: {$gte: 100}, c: {$gte: 10}")))))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("")))))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Cannot use an expression without a top-level field name in arrayFilters'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Cannot use an expression without a top-level field name in arrayFilters'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element grades: \"abc\"'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot apply array updates to non-array element grades: \"abc\"'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'$[element]': 10}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 2")))))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '$[element]'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '$[element]'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.subGrades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'The path 'grades.subGrades' must exist in the document in order to apply array updates.'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "The path 'grades.subGrades' must exist in the document in order to apply array updates.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[some value]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'some value': {$gte: 100}")))))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Error parsing array filter :: caused by :: The top-level field name must be an alphanumeric string beginning with a lowercase letter, found 'some value''");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Error parsing array filter :: caused by :: " +
+                "The top-level field name must be an alphanumeric string beginning with a lowercase letter, found 'some value''");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'a.b.$[x]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gte: 100}")))))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element b: 123'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot apply array updates to non-array element b: 123'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'a.b': 10, b: 12")))))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b''");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): " +
+                "'Error parsing array filter :: caused by :: " +
+                "Expected a single top-level field name, found 'a' and 'b''");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
@@ -1619,7 +1641,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
                     json("'a.b': 10"),
                     json("'a.c': 10")
                 ))))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'Found multiple array filters with the same top-level field name a'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): " +
+                "'Found multiple array filters with the same top-level field name a'");
     }
 
     @Test
@@ -1633,32 +1656,42 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'a.b.$[x].c': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 1}")))))
-            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {1: 2}");
+            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot create field 'c' in element {1: 2}");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'a.b.$[x].c.d': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 1}")))))
-            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {1: 2}");
+            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot create field 'c' in element {1: 2}");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 2"),
                 json("$set: {'a.b.$[].c.$[]': 'abc'}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element c: 1");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot apply array updates to non-array element c: 1");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 3"),
                 json("$set: {'a.b.$[].0.c': 'abc'}")))
-            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: [ 1, 2 ]}");
+            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot create field 'c' in element {0: [ 1, 2 ]}");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 3"),
                 json("$set: {'a.b.$[].0.$[].c': 'abc'}")))
-            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: 1}");
+            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot create field 'c' in element {0: 1}");
     }
 
     @Test
@@ -1896,7 +1929,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testIllegalCommand() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("foo: 1")))
-            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
+            .withMessageStartingWith("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
     }
 
     @Test
@@ -2147,11 +2180,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         obj = collection.find(json("_id: 1")).projection(json("'foo.a.b.c.d': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 1, foo: {}"));
 
-        obj = collection.find(json("_id: 1")).projection(json("'foo..': 1")).first();
-        assertThat(obj).isEqualTo(json("_id: 1, foo: {}"));
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("'foo..': 1")).first())
+            .withMessageStartingWith("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
-        obj = collection.find(json("_id: 2")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c': 1, 'foo.c.d': 1")).first();
+        obj = collection.find(json("_id: 2")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c.d': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 2, foo: {b: null}"));
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 2")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c': 1, 'foo.c.d': 1")).first())
+            .withMessageStartingWith("Command failed with error 31249 (Location31249): 'Path collision at foo.c.d remaining portion c.d'");
 
         obj = collection.find(json("_id: 2")).projection(json("'foo.a': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 2, foo: {a: null}"));
@@ -2175,12 +2213,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testQueryWithIllegalFieldSelection() throws Exception {
+    public void testQueryWithDocumentAsFieldSelection() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        assertThatExceptionOfType(MongoQueryException.class)
-            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {x: 1, y: 1}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '>1 field in obj: { x: 1, y: 1 }'");
+        assertThat(collection.find(json("_id: 1")).projection(json("values: {x: 1}")).first())
+            .isEqualTo(json("_id: 1"));
+
+        assertThat(collection.find(json("_id: 1")).projection(json("values: {x: 1, y: 1}")).first())
+            .isEqualTo(json("_id: 1"));
     }
 
     @Test
@@ -2371,7 +2411,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testReplSetGetStatus() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand("replSetGetStatus"))
-            .withMessageContaining("Command failed with error 76 (NoReplicationEnabled): 'not running with --replSet'");
+            .withMessageStartingWith("Command failed with error 76 (NoReplicationEnabled): 'not running with --replSet'");
     }
 
     @Test
@@ -2512,16 +2552,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(json("x: 1"), json("$set: {y: 1}")); // ok
 
         assertMongoWriteException(() -> collection.updateOne(json("x: 1"), json("$set: {$z: 1}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not valid for storage.");
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not allowed in the context of an update's replacement document. " +
+                "Consider using an aggregation pipeline with $replaceWith.");
 
         // unset ok to remove bad fields
         collection.updateOne(json("x: 1"), json("$unset: {$z: 1}"));
 
         assertMongoWriteException(() -> collection.updateOne(json("x: 1"), json("$inc: {$z: 1}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not valid for storage.");
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not allowed in the context of an update's replacement document. " +
+                "Consider using an aggregation pipeline with $replaceWith.");
 
         assertMongoWriteException(() -> collection.updateOne(json("x: 1"), json("$push: {$z: [1, 2, 3]}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not valid for storage.");
+            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$z' in '$z' is not allowed in the context of an update's replacement document. " +
+                "Consider using an aggregation pipeline with $replaceWith.");
     }
 
     @Test
@@ -2585,6 +2628,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateOne(idObj, pushObj);
         expected.put("field1", Arrays.asList("value", "value"));
         assertThat(collection.find(idObj).first()).isEqualTo(expected);
+    }
+
+    @Test
+    void testPushDollarFieldName() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        collection.updateOne(json(""), json("$push: {value: {$position: 1}}"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactly(json("_id: 1, value: [{$position: 1}]"));
     }
 
     @Test
@@ -2681,14 +2734,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUpdatePushEach_unknownModifier() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $illegal: 1}}")),
+        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$push: {value: {$each: [1, 2, 3], $illegal: 1}}")),
             2, "BadValue", "Unrecognized clause in $push: $illegal");
-
-        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$position: 1}}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$position' in 'value..$position' is not valid for storage.");
-
-        assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$illegal: 1}}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$illegal' in 'value..$illegal' is not valid for storage.");
     }
 
     @Test
@@ -2771,13 +2818,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$each: [1, 2, 3], value: 2}}")),
             2, "BadValue", "Found unexpected fields after $each in $addToSet: { $each: [ 1, 2, 3 ], value: 2 }");
 
-        String expectedPathPrefix = getExpectedPathPrefix_testUpdateAddToSetEach_unknownModifier();
+        collection.updateOne(json("_id: 1"), json("$addToSet: {value: {key: 2, $each: [1, 2, 3]}}"));
 
-        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {key: 2, $each: [1, 2, 3]}}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$each' in '" + expectedPathPrefix + ".$each' is not valid for storage.");
+        assertThat(toArray(collection.find()))
+            .containsExactly(json("_id: 1, value: [{key: 2, $each: [1, 2, 3]}]"));
 
-        assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$slice: 2, $each: [1, 2, 3]}}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$slice' in '" + expectedPathPrefix + ".$slice' is not valid for storage.");
+        collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$slice: 2, $each: [1, 2, 3]}}"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactly(json("_id: 1, value: [{key: 2, $each: [1, 2, 3]}, {$slice: 2, $each: [1, 2, 3]}]"));
+
     }
 
     protected String getExpectedPathPrefix_testUpdateAddToSetEach_unknownModifier() {
@@ -3550,7 +3600,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(0, 1);
 
         assertThat(collection.find())
-            .containsExactlyInAnyOrder(json("_id: 1, a: 1"), json("_id: 2, a: 1"));
+            .containsExactly(json("_id: 1, a: 1"), json("_id: 2, a: 1"));
 
         models = Arrays.asList(
             new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 2"), new ReplaceOptions().upsert(true)),
@@ -3646,7 +3696,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testInsertWithIllegalId() throws Exception {
         assertMongoWriteException(() -> collection.insertOne(json("_id: [1, 2, 3]")),
-            2, "BadValue", "can't use an array for _id");
+            53, "InvalidIdField", "The '_id' value cannot be of type array");
     }
 
     @Test
@@ -4135,11 +4185,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(DuplicateKeyException.class)
             .isThrownBy(() -> collection.createIndex(json("value: 1"), new IndexOptions().unique(true)))
-            .withMessage("Write failed with error code 11000 and error message " +
-                "'E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: { value: \"b\" }'");
+            .withMessageMatching("Write failed with error code 11000 and error message " +
+                "'Index build failed: [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}: " +
+                "Collection testdb\\.testcoll \\( [0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} \\) :: caused by :: " +
+                "E11000 duplicate key error collection: testdb.testcoll index: value_1 dup key: \\{ value: \"b\" \\}'");
 
         assertThat(collection.listIndexes())
-            .containsExactly(json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"));
+            .containsExactly(json("name: '_id_', key: {_id: 1}, v: 2"));
 
         collection.insertOne(json("_id: 5, value: 'a'"));
     }
@@ -4350,8 +4402,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(otherCollection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("name: '_id_', ns: 'testdb.other-collection-name', key: {_id: 1}, v: 2"),
-                json("name: 'a_1', ns: 'testdb.other-collection-name', key: {a: 1}, unique: true, v: 2")
+                json("name: '_id_', key: {_id: 1}, v: 2"),
+                json("name: 'a_1', key: {a: 1}, unique: true, v: 2")
             );
 
         assertThat(collection.listIndexes()).isEmpty();
@@ -4368,7 +4420,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.renameCollection(new MongoNamespace(db.getName(), "other-collection-name")))
-            .withMessageContaining("Command failed with error 48 (NamespaceExists): 'target namespace exists'");
+            .withMessageStartingWith("Command failed with error 48 (NamespaceExists): 'target namespace exists'");
 
         assertThat(db.listCollectionNames())
             .containsExactlyInAnyOrder(getCollectionName(), "other-collection-name");
@@ -4420,16 +4472,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
-                json("name: '_id_', ns: 'testdb.testcoll', key: {_id: 1}, v: 2"),
-                json("name: 'bla_1', ns: 'testdb.testcoll', key: {bla: 1}, v: 2"),
-                json("name: 'a_1', ns: 'testdb.testcoll', key: {a: 1}, unique: true, v: 2"),
-                json("name: 'a_1_b_-1', ns: 'testdb.testcoll', key: {a: 1, b: -1.0}, unique: true, v: 2")
+                json("name: '_id_', key: {_id: 1}, v: 2"),
+                json("name: 'bla_1', key: {bla: 1}, v: 2"),
+                json("name: 'a_1', key: {a: 1}, unique: true, v: 2"),
+                json("name: 'a_1_b_-1', key: {a: 1, b: -1.0}, unique: true, v: 2")
             );
 
         assertThat(other.listIndexes())
-            .containsExactlyInAnyOrder(
-                json("name: '_id_', ns: 'testdb.other', key: {_id: 1}, v: 2")
-            );
+            .containsExactly(json("name: '_id_', key: {_id: 1}, v: 2"));
     }
 
     @Test
@@ -4465,8 +4515,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): " +
-                "'Projection cannot have a mix of inclusion and exclusion.'");
+            .withMessageStartingWith("Command failed with error 31253 (Location31253): " +
+                "'Cannot do inclusion on field eid in exclusion projection'");
     }
 
     @Test
@@ -4572,7 +4622,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("ref: {$ref: 'coll'}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): 'unknown operator: $ref'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): 'unknown operator: $ref'");
     }
 
     @Test
@@ -4581,15 +4631,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(and()).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(nor()).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(or()).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
     }
 
     @Test
@@ -4924,7 +4974,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find(json("_id: 1")).projection(json("values: {$slice: 1}")))
             .containsExactly(json("_id: 1, values: ['a']"));
 
-        assertThat(collection.find(json("_id: 1")).projection(json("values: {$slice: ['xyz', 2]}")))
+        assertThat(collection.find(json("_id: 1")).projection(json("values: {$slice: [0, 2]}")))
             .containsExactly(json("_id: 1, values: ['a', 'b']"));
 
         assertThat(collection.find(json("_id: 1")).projection(json("values: {$slice: [-3, 2]}")))
@@ -4934,24 +4984,37 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(json("_id: 2, values: 'xyz'"));
 
         assertThatExceptionOfType(MongoQueryException.class)
-            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['$_id', '$_id']}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$slice limit must be positive'");
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['a', 'b']}")).first())
+            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+                "'First argument to $slice must be an array, but is of type: string'");
+
+        assertThatExceptionOfType(MongoQueryException.class)
+            .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['xyz', 2]}")).first())
+            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+                "'First argument to $slice must be an array, but is of type: string'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 0]}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$slice limit must be positive'");
+            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+                "'First argument to $slice must be an array, but is of type: int'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 'xyz']}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$slice limit must be positive'");
+            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+                "'First argument to $slice must be an array, but is of type: int'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 2, 3]}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$slice array wrong size'");
+            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+                "'First argument to $slice must be an array, but is of type: int'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: 'abc'}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$slice only supports numbers and [skip, limit] arrays'");
+            .withMessageStartingWith("Command failed with error 28667 (Location28667): " +
+                "'Invalid $slice syntax. The given syntax { $slice: \"abc\" } did not match the find() syntax because :: " +
+                "Location31273: $slice only supports numbers and [skip, limit] arrays :: " +
+                "The given syntax did not match the expression $slice syntax. :: caused by :: " +
+                "Expression $slice takes at least 2 arguments, and at most 3, but 1 were passed in.'");
     }
 
     @Test
@@ -4973,11 +5036,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: [ 85 ]}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: 1}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
     }
 
     @Test
@@ -4988,7 +5051,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("x: {$lt: 10, y: 23}")).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): 'unknown operator: y'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): 'unknown operator: y'");
 
         assertThat(collection.find(json("x: {y: 23, $lt: 10}"))).isEmpty();
         assertThat(collection.find(json("x: {y: {$lt: 100, z: 23}}"))).isEmpty();
@@ -5010,7 +5073,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testValidate() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(new Document("validate", getCollectionName())))
-            .withMessageContaining("Command failed with error 26 (NamespaceNotFound): 'ns not found'");
+            .withMessageStartingWith("Command failed with error 26 (NamespaceNotFound): " +
+                "'Collection 'testdb.testcoll' does not exist to validate.'");
 
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
@@ -5066,7 +5130,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(query).first())
-            .withMessageContaining("Command failed with error 2 (BadValue): 'unknown top level operator: $illegalOperator'");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'unknown top level operator: $illegalOperator. " +
+                "If you have a field name that starts with a '$' symbol, consider using $getField or $setField.'");
     }
 
     @Test
@@ -5101,15 +5167,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a.', 10]}")).first())
-            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+            .withMessageStartingWith("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$.a', 10]}")).first())
-            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+            .withMessageStartingWith("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a..1', 10]}")).first())
-            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+            .withMessageStartingWith("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
@@ -5148,13 +5214,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find(json("'b.c': {d: {$gte: 1}, e: {$lte: 2}}"))).isEmpty();
 
         assertThat(collection.find(json("'b.c.d': {$gte: 1}")))
-            .containsExactlyInAnyOrder(json("_id: 8, b: {c: {d: 1, e: 2}}"));
+            .containsExactly(json("_id: 8, b: {c: {d: 1, e: 2}}"));
 
         assertThat(collection.find(json("'b.c': {d: 1, e: 2}")))
-            .containsExactlyInAnyOrder(json("_id: 8, b: {c: {d: 1, e: 2}}"));
+            .containsExactly(json("_id: 8, b: {c: {d: 1, e: 2}}"));
 
         assertThat(collection.find(json("'b.c.e': 2")))
-            .containsExactlyInAnyOrder(json("_id: 8, b: {c: {d: 1, e: 2}}"));
+            .containsExactly(json("_id: 8, b: {c: {d: 1, e: 2}}"));
     }
 
     @Test
@@ -5768,27 +5834,20 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.countDocuments()).isZero();
     }
 
-    @FunctionalInterface
-    protected interface Callable {
-        void call();
-    }
-
-    protected static void assertMongoWriteException(Callable callable, int expectedErrorCode, String expectedMessage) {
+    protected static void assertMongoWriteException(ThrowingCallable callable, int expectedErrorCode, String expectedMessage) {
         assertMongoWriteException(callable, expectedErrorCode, "Location" + expectedErrorCode, expectedMessage);
     }
 
-    protected static void assertMongoWriteException(Callable callable, int expectedErrorCode, String expectedCodeName,
+    protected static void assertMongoWriteException(ThrowingCallable callable, int expectedErrorCode, String expectedCodeName,
                                                     String expectedMessage) {
-        try {
-            callable.call();
-            fail("MongoWriteException expected");
-        } catch (MongoWriteException e) {
-            assertThat(e).hasMessageContaining(expectedMessage);
-            assertThat(e.getError().getCode()).isEqualTo(expectedErrorCode);
+        assertThatExceptionOfType(MongoWriteException.class)
+            .isThrownBy(callable)
+            .withMessageContaining(expectedMessage)
+            .extracting(e -> e.getError().getCode())
+            .isEqualTo(expectedErrorCode);
 
-            Document actual = db.runCommand(json("getlasterror: 1"));
-            assertThat(actual.getString("codeName")).isEqualTo(expectedCodeName);
-        }
+        Document lastError = db.runCommand(json("getlasterror: 1"));
+        assertThat(lastError.getString("codeName")).isEqualTo(expectedCodeName);
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/76
@@ -6049,15 +6108,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'a.$[]': 'abc'}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element a: { b: [ 1, 2, 3 ] }");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot apply array updates to non-array element a: { b: [ 1, 2, 3 ] }");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 2"), json("$set: {'a.b.$[]': 'abc'}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'Cannot apply array updates to non-array element b: 5");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot apply array updates to non-array element b: 5");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'a.b.$[].c': 'abc'}")))
-            .withMessageContaining("Command failed with error 28 (PathNotViable): 'Cannot create field 'c' in element {0: 1}");
+            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "Cannot create field 'c' in element {0: 1}");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/82
@@ -6152,7 +6217,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 3"), json("$inc: {'grades.$[].c.$[]': 1}")))
-            .withMessageContaining("Command failed with error 2 (BadValue): 'The path 'grades.2.c' must exist in the document in order to apply array updates.");
+            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+                "'Plan executor error during findAndModify :: caused by :: " +
+                "The path 'grades.2.c' must exist in the document in order to apply array updates.");
     }
 
     @Test
@@ -6175,7 +6242,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$inc: {'grades.$[].$[]': 1}")))
-            .withMessageContaining("Command failed with error 14 (TypeMismatch): 'Cannot apply $inc to a value of non-numeric type. {_id: 1} has the field '0' of non-numeric type array");
+            .withMessageStartingWith("Command failed with error 14 (TypeMismatch): '" +
+                "Plan executor error during findAndModify :: caused by :: " +
+                "Cannot apply $inc to a value of non-numeric type. {_id: 1} has the field '0' of non-numeric type array");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
@@ -6412,12 +6481,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUpdateWithExpressionIsNotPossible() throws Exception {
+    public void testUpdateWithDollarFieldNames() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        assertMongoWriteException(
-            () -> collection.updateOne(json("_id: 1"), json("$set: {x: {$expr: {$add: ['$_id', 10]}}}")),
-            52, "DollarPrefixedFieldName", "The dollar ($) prefixed field '$expr' in 'x.$expr' is not valid for storage.");
+        collection.updateOne(json("_id: 1"), json("$set: {x: {$expr: {$add: ['$_id', 10]}}}"));
+
+        assertThat(toArray(collection.find()))
+            .containsExactly(json("_id: 1, x: {$expr: {$add: ['$_id', 10]}}"));
     }
 
     @Test
@@ -6503,8 +6573,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
                 assertThat(toArray(collection.listIndexes()))
                     .containsExactlyInAnyOrder(
-                        json("key: {_id: 1}, name: '_id_', ns: 'testdb.testcoll', v: 2"),
-                        json("key: {data: 1}, name: 'data_1', ns: 'testdb.testcoll', v: 2")
+                        json("key: {_id: 1}, name: '_id_', v: 2"),
+                        json("key: {data: 1}, name: 'data_1', v: 2")
                     );
 
                 assertThat(collection.countDocuments()).isEqualTo(numberOfThreads * numberOfDocumentsPerThread);

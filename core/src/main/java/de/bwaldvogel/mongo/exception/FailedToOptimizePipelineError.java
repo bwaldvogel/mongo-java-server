@@ -9,4 +9,8 @@ public class FailedToOptimizePipelineError extends MongoServerError {
     public FailedToOptimizePipelineError(int errorCode, String message) {
         super(errorCode, FAILED_TO_OPTIMIZE_MESSAGE + message);
     }
+
+    public FailedToOptimizePipelineError(ErrorCode errorCode, String message) {
+        super(errorCode, FAILED_TO_OPTIMIZE_MESSAGE + message);
+    }
 }

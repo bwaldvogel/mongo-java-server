@@ -9,4 +9,8 @@ public class ConflictingUpdateOperatorsException extends MongoServerError {
             "Updating the path '" + updatePath + "' would create a conflict at '" + conflictingPath + "'");
     }
 
+    @Override
+    public boolean shouldPrefixCommandContext() {
+        return false;
+    }
 }

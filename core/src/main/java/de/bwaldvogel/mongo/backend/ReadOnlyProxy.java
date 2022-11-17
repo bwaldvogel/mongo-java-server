@@ -42,7 +42,7 @@ public class ReadOnlyProxy implements MongoBackend {
 
     public static class ReadOnlyException extends MongoServerException {
 
-        private static final long serialVersionUID = 4781141056923033645L;
+        private static final long serialVersionUID = 1L;
 
         ReadOnlyException(String message) {
             super(message);

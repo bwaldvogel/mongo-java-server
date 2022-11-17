@@ -1,5 +1,8 @@
 package de.bwaldvogel.mongo;
 
+import static de.bwaldvogel.mongo.backend.TestUtils.json;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
 import java.util.Date;
 
 import org.bson.Document;
@@ -8,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+
+import com.mongodb.MongoCommandException;
 
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
 
@@ -120,12 +125,6 @@ public class RealMongoBackendTest extends AbstractBackendTest {
         assertThat(connections.get("current")).isNotNull();
     }
 
-    @Override
-    protected String getExpectedPathPrefix_testUpdateAddToSetEach_unknownModifier() {
-        // this is probably a bug
-        return "value.value";
-    }
-
     @Test
     @Disabled
     @Override
@@ -133,4 +132,13 @@ public class RealMongoBackendTest extends AbstractBackendTest {
         // disabled on real MongoDB
     }
 
+    @Test
+    @Override
+    public void testResetError() throws Exception {
+        // Note: No longer implemented since MongoDB 5: "Command failed with error 59 (CommandNotFound): 'no such command: 'reseterror'"
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(json("reseterror: 1")))
+            .withMessageStartingWith("Command failed with error 59 (CommandNotFound): 'no such command: 'reseterror'");
+    }
 }

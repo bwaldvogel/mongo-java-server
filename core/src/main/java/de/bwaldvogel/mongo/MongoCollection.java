@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo;
 
 import java.util.List;
 import java.util.Spliterator;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -16,6 +17,8 @@ import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.util.FutureUtils;
 
 public interface MongoCollection<P> extends AsyncMongoCollection {
+
+    UUID getUuid();
 
     MongoDatabase getDatabase();
 

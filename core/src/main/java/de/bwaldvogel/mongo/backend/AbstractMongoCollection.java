@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,12 +25,13 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
-import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
+import de.bwaldvogel.mongo.exception.IndexBuildFailedException;
+import de.bwaldvogel.mongo.exception.IndexKeySpecsConflictException;
 import de.bwaldvogel.mongo.exception.IndexNotFoundException;
-import de.bwaldvogel.mongo.exception.IndexOptionsConflictException;
+import de.bwaldvogel.mongo.exception.InvalidIdFieldError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.oplog.Oplog;
@@ -37,6 +39,8 @@ import de.bwaldvogel.mongo.oplog.Oplog;
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private static final Logger log = LoggerFactory.getLogger(AbstractMongoCollection.class);
+
+    private final UUID uuid = UUID.randomUUID();
 
     private MongoDatabase database;
     private String collectionName;
@@ -51,6 +55,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         this.collectionName = Objects.requireNonNull(collectionName);
         this.options = Objects.requireNonNull(options);
         this.cursorRegistry = cursorRegistry;
+    }
+
+    @Override
+    public UUID getUuid() {
+        return uuid;
     }
 
     protected boolean documentMatchesQuery(Document document, Document query) {
@@ -153,7 +162,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     @Override
     public void addDocument(Document document) {
         if (document.get(ID_FIELD) instanceof Collection) {
-            throw new BadValueException("can't use an array for _id");
+            throw new InvalidIdFieldError("The '_id' value cannot be of type array");
         }
 
         if (!document.containsKey(ID_FIELD) && !isSystemCollection()) {
@@ -197,21 +206,25 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         Index<P> existingIndex = findByName(index.getName());
         if (existingIndex != null) {
             if (!existingIndex.hasSameOptions(index)) {
-                throw new IndexOptionsConflictException(existingIndex);
+                throw new IndexKeySpecsConflictException(index, existingIndex);
             }
             log.debug("Index with name '{}' already exists", index.getName());
             return;
         }
         if (index.isEmpty()) {
-            streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
-                Document document = documentWithPosition.getDocument();
-                index.checkAdd(document, this);
-            });
-            streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
-                Document document = documentWithPosition.getDocument();
-                P position = documentWithPosition.getPosition();
-                index.add(document, position, this);
-            });
+            try {
+                streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
+                    Document document = documentWithPosition.getDocument();
+                    index.checkAdd(document, this);
+                });
+                streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
+                    Document document = documentWithPosition.getDocument();
+                    P position = documentWithPosition.getPosition();
+                    index.add(document, position, this);
+                });
+            } catch (MongoServerError e) {
+                throw new IndexBuildFailedException(e, this);
+            }
         } else {
             log.debug("Index is not empty");
         }
@@ -383,9 +396,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         Document lastErrorObject = null;
         Document returnDocument = null;
-        int num = 0;
+        boolean matchingDocument = false;
         for (Document document : handleQuery(queryObject, 0, 1)) {
-            num++;
+            matchingDocument = true;
             if (Utils.isTrue(query.get("remove"))) {
                 removeDocument(document);
                 returnDocument = document;
@@ -395,7 +408,19 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 Integer matchPos = matcher.matchPosition(document, (Document) queryObject.get("query"));
 
                 ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
-                Document oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
+
+                final Document oldDocument;
+                try {
+                    oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
+                } catch (MongoServerError e) {
+                    if (e.shouldPrefixCommandContext()) {
+                        String prefix = "Plan executor error during findAndModify :: caused by :: ";
+                        throw new MongoServerError(e.getCode(), e.getCodeName(), prefix + e.getMessageWithoutErrorCode());
+                    } else {
+                        throw e;
+                    }
+                }
+
                 if (returnNew) {
                     returnDocument = document;
                 } else {
@@ -405,7 +430,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 lastErrorObject.put("n", Integer.valueOf(1));
             }
         }
-        if (num == 0 && Utils.isTrue(query.get("upsert"))) {
+
+        if (!matchingDocument && Utils.isTrue(query.get("upsert"))) {
             Document selector = (Document) query.get("query");
             Document updateQuery = (Document) query.get("update");
             ArrayFilters arrayFilters = ArrayFilters.parse(query, updateQuery);
@@ -415,7 +441,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             } else {
                 returnDocument = null;
             }
-            num++;
         }
 
         Document fields = (Document) query.get("fields");

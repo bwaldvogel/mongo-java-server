@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public class UnsetStageTest {
+class UnsetStageTest {
 
     @Test
     void testUnset() throws Exception {
@@ -69,7 +69,7 @@ public class UnsetStageTest {
     void testIllegalUnset() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new UnsetStage(""))
-            .withMessage("[Error 40352] Invalid $project :: caused by :: FieldPath cannot be constructed with empty string");
+            .withMessage("[Error 40352] Invalid $unset :: caused by :: FieldPath cannot be constructed with empty string");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new UnsetStage(Arrays.asList(123, 456)))

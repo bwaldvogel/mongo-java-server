@@ -8,7 +8,8 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.bson.Json;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 
 class Projection {
 
@@ -50,12 +51,18 @@ class Projection {
     }
 
     private static void validateFields(Document fields) {
-        for (Entry<String, Object> entry : fields.entrySet()) {
-            Object value = entry.getValue();
-            if (value instanceof Document) {
-                Document document = (Document) value;
-                if (document.size() > 1) {
-                    throw new BadValueException(">1 field in obj: " + document.toString(true, "{ ", " }"));
+        for (String key : fields.keySet()) {
+            Utils.validateKey(key);
+            for (String otherKey : fields.keySet()) {
+                if (key.equals(otherKey) || otherKey.length() < key.length()) {
+                    continue;
+                }
+                String pathPrefix = Utils.getShorterPathIfPrefix(key, otherKey);
+                if (pathPrefix != null) {
+                    List<String> shorterPathFragments = Utils.splitPath(key);
+                    List<String> longerPathFragments = Utils.splitPath(otherKey);
+                    String remainingPortion = Utils.joinPath(longerPathFragments.subList(shorterPathFragments.size() - 1, longerPathFragments.size()));
+                    throw new MongoServerError(31249, "Path collision at " + otherKey + " remaining portion " + remainingPortion);
                 }
             }
         }
@@ -74,22 +81,23 @@ class Projection {
     }
 
     private boolean onlyExclusions(Document fields) {
-        Map<Type, Long> nonIdInclusionsAndExclusions = fields.entrySet().stream()
+        Map<Type, List<String>> nonIdInclusionsAndExclusions = fields.entrySet().stream()
             // Special case: if the idField is to be excluded that's always ok:
             .filter(entry -> !(entry.getKey().equals(idField) && !Utils.isTrue(entry.getValue())))
             .collect(Collectors.groupingBy(
                 entry -> Type.fromValue(entry.getValue()),
-                Collectors.counting()
+                Collectors.mapping(Entry::getKey, Collectors.toList())
             ));
 
         // Mongo will police that all the entries are inclusions or exclusions.
-        long inclusions = nonIdInclusionsAndExclusions.getOrDefault(Type.INCLUSIONS, 0L);
-        long exclusions = nonIdInclusionsAndExclusions.getOrDefault(Type.EXCLUSIONS, 0L);
+        List<String> inclusions = nonIdInclusionsAndExclusions.getOrDefault(Type.INCLUSIONS, Collections.emptyList());
+        List<String> exclusions = nonIdInclusionsAndExclusions.getOrDefault(Type.EXCLUSIONS, Collections.emptyList());
 
-        if (inclusions > 0 && exclusions > 0) {
-            throw new BadValueException("Projection cannot have a mix of inclusion and exclusion.");
+        if (!inclusions.isEmpty() && !exclusions.isEmpty()) {
+            List<String> includedFields = nonIdInclusionsAndExclusions.get(Type.INCLUSIONS);
+            throw new MongoServerError(31253, "Cannot do inclusion on field " + includedFields.get(0) + " in exclusion projection");
         }
-        return (inclusions == 0);
+        return inclusions.isEmpty();
     }
 
     private static void projectField(Document document, Document newDocument, String key, Object projectionValue) {
@@ -153,7 +161,7 @@ class Projection {
                     Object slice = projectionDocument.get("$slice");
                     projectSlice(newDocument, slice, key, value);
                 } else {
-                    throw new IllegalArgumentException("Unsupported projection: " + projectionValue);
+                    // ignore
                 }
             } else {
                 if (Utils.isTrue(projectionValue)) {
@@ -196,24 +204,33 @@ class Projection {
         } else if (slice instanceof List) {
             List<?> sliceParams = (List<?>) slice;
             if (sliceParams.size() != 2) {
-                throw new BadValueException("$slice array wrong size");
+                throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: int");
             }
-            if (sliceParams.get(0) instanceof Number) {
-                fromIndex = ((Number) sliceParams.get(0)).intValue();
+
+            if (!(sliceParams.get(0) instanceof Number)) {
+                throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: " + Utils.describeType(sliceParams.get(0)));
             }
+            if (!(sliceParams.get(1) instanceof Number)) {
+                throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: int");
+            }
+
+            fromIndex = ((Number) sliceParams.get(0)).intValue();
             if (fromIndex < 0) {
                 fromIndex += values.size();
             }
-            int limit = 0;
-            if (sliceParams.get(1) instanceof Number) {
-                limit = ((Number) sliceParams.get(1)).intValue();
-            }
+
+            int limit = ((Number) sliceParams.get(1)).intValue();
             if (limit <= 0) {
-                throw new BadValueException("$slice limit must be positive");
+                throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: int");
             }
             toIndex = fromIndex + limit;
         } else {
-            throw new BadValueException("$slice only supports numbers and [skip, limit] arrays");
+            String sliceJson = Json.toJsonValue(slice);
+            throw new MongoServerError(28667, "Invalid $slice syntax. " +
+                "The given syntax { $slice: " + sliceJson + " } did not match the find() syntax because :: Location31273: " +
+                "$slice only supports numbers and [skip, limit] arrays :: " +
+                "The given syntax did not match the expression $slice syntax. :: caused by :: " +
+                "Expression $slice takes at least 2 arguments, and at most 3, but 1 were passed in.");
         }
         List<?> slicedValue = values.subList(Math.max(0, fromIndex), Math.min(values.size(), toIndex));
         newDocument.put(key, slicedValue);

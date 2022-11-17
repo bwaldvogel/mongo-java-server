@@ -17,6 +17,10 @@ public final class Json {
         return toJsonValue(value, false, "{", "}");
     }
 
+    public static String toCompactJsonValue(Object value) {
+        return toJsonValue(value, true, "{ ", " }");
+    }
+
     public static String toJsonValue(Object value, boolean compactKey, String jsonPrefix, String jsonSuffix) {
         if (Missing.isNullOrMissing(value)) {
             return "null";

@@ -29,7 +29,7 @@ public class UnsetStage implements AggregationStage {
         }
         String fieldPathString = (String) fieldPath;
         if (fieldPathString.isEmpty()) {
-            throw new MongoServerError(40352, "Invalid $project :: caused by :: FieldPath cannot be constructed with empty string");
+            throw new MongoServerError(40352, "Invalid $unset :: caused by :: FieldPath cannot be constructed with empty string");
         }
         unsetPaths.add(fieldPathString);
     }

@@ -263,6 +263,11 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
     }
 
     @Override
+    protected boolean isUnique() {
+        return true;
+    }
+
+    @Override
     public void drop() {
         log.debug("Dropping {}", this);
     }

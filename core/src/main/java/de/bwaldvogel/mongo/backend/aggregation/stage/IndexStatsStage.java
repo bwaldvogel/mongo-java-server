@@ -31,7 +31,6 @@ public class IndexStatsStage implements AggregationStage {
                 indexStats.append("spec",
                     new Document("key", key)
                         .append("name", index.getName())
-                        .append("ns", collection.getFullName())
                         .append("v", 2)
                 );
                 indexStats.append("accesses", new Document()

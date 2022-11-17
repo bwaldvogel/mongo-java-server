@@ -142,7 +142,7 @@ public class ArrayFilters {
 
     List<String> calculateKeys(Document document, String key) {
         if (isPositionalOperator(key)) {
-            throw new BadValueException("Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '" + key + "'");
+            throw new BadValueException("Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '" + key + "'", false);
         }
 
         List<String> pathFragments = Utils.splitPath(key);
@@ -166,7 +166,7 @@ public class ArrayFilters {
             throw new BadValueException("The path '" + path + "' must exist in the document in order to apply array updates.");
         } else if (!(object instanceof List)) {
             String previousKey = Utils.getLastFragment(path);
-            String element = Json.toJsonValue(object, true, "{ ", " }");
+            String element = Json.toCompactJsonValue(object);
             throw new BadValueException("Cannot apply array updates to non-array element " + previousKey + ": " + element);
         }
 

@@ -38,6 +38,8 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.SkipStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnsetStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.UnwindStage;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.ErrorCode;
+import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerNotYetImplementedException;
@@ -78,7 +80,7 @@ public class Aggregation {
     }
 
     public static Aggregation fromPipeline(List<Document> pipeline, MongoDatabase database,
-                                            MongoCollection<?> collection, Oplog oplog) {
+                                           MongoCollection<?> collection, Oplog oplog) {
         Aggregation aggregation = new Aggregation(collection);
 
         for (Document stage : pipeline) {
@@ -225,7 +227,16 @@ public class Aggregation {
         if (collection == null) {
             return Collections.emptyList();
         }
-        return runStages();
+        try {
+            return runStages();
+        } catch (TypeMismatchException | FailedToOptimizePipelineError | ProjectStage.InvalidProjectException e) {
+            throw e;
+        } catch (MongoServerError e) {
+            if (e.hasCode(ErrorCode._15998, ErrorCode._40353)) {
+                throw e;
+            }
+            throw new PlanExecutorError(e);
+        }
     }
 
     public void setVariables(Map<String, Object> variables) {
@@ -259,5 +270,17 @@ public class Aggregation {
 
     public boolean isModifying() {
         return stages.stream().anyMatch(AggregationStage::isModifying);
+    }
+
+    public static class PlanExecutorError extends MongoServerError {
+
+        private static final long serialVersionUID = 1L;
+
+        private static final String MESSAGE_PREFIX = "PlanExecutor error during aggregation :: caused by :: ";
+
+        private PlanExecutorError(MongoServerError cause) {
+            super(cause.getCode(), cause.getCodeName(), MESSAGE_PREFIX + cause.getMessageWithoutErrorCode(),
+                cause);
+        }
     }
 }

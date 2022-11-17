@@ -23,7 +23,7 @@ public class DuplicateKeyError extends KeyConstraintError {
             .mapToObj(index -> {
                 IndexKey key = keys.get(index);
                 Object value = keyValue.get(index);
-                return key.getKey() + ": " + Json.toJsonValue(value, true, "{ ", " }");
+                return key.getKey() + ": " + Json.toCompactJsonValue(value);
             })
             .collect(Collectors.joining(", ", "{ ", " }"));
     }

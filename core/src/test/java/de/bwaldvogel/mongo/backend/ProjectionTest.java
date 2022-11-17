@@ -7,9 +7,9 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public class ProjectionTest {
+class ProjectionTest {
 
     @Test
     void testProjectDocument() throws Exception {
@@ -51,17 +51,17 @@ public class ProjectionTest {
 
     @Test
     void testInvalidMixedProjections() throws Exception {
-        assertThatExceptionOfType(BadValueException.class)
+        assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> projectDocument(json("{}"), json("_id: 1, foo: 0"), "_id"))
-            .withMessage("[Error 2] Projection cannot have a mix of inclusion and exclusion.");
+            .withMessage("[Error 31253] Cannot do inclusion on field _id in exclusion projection");
 
-        assertThatExceptionOfType(BadValueException.class)
+        assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> projectDocument(json("{}"), json("_id: 1, foo: 1, bar: 0"), "_id"))
-            .withMessage("[Error 2] Projection cannot have a mix of inclusion and exclusion.");
+            .withMessage("[Error 31253] Cannot do inclusion on field _id in exclusion projection");
 
-        assertThatExceptionOfType(BadValueException.class)
+        assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> projectDocument(json("{}"), json("_id: 1, 'foo.a': 1, 'foo.b': 0"), "_id"))
-            .withMessage("[Error 2] Projection cannot have a mix of inclusion and exclusion.");
+            .withMessage("[Error 31253] Cannot do inclusion on field _id in exclusion projection");
     }
 
     @Test

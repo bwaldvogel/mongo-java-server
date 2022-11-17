@@ -60,7 +60,7 @@ public final class KeyValue implements Serializable, Iterable<Object> {
     @Override
     public String toString() {
         return values.stream()
-            .map(value -> ": " + Json.toJsonValue(value, true, "{ ", " }"))
+            .map(value -> ": " + Json.toCompactJsonValue(value))
             .collect(Collectors.joining(", ", "{ ", " }"));
     }
 

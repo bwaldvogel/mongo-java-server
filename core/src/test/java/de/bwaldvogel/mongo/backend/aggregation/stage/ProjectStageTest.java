@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public class ProjectStageTest {
+class ProjectStageTest {
 
     @Test
     void testProject() throws Exception {
@@ -72,7 +72,7 @@ public class ProjectStageTest {
     void testIllegalProject() throws Exception {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ProjectStage(json("")))
-            .withMessage("[Error 40177] Invalid $project :: caused by :: specification must have at least one field");
+            .withMessage("[Error 40177] specification must have at least one field");
     }
 
 }

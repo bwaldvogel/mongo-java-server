@@ -11,6 +11,10 @@ import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.ConversionFailureException;
+import de.bwaldvogel.mongo.exception.ErrorCode;
+import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class ProjectStage implements AggregationStage {
@@ -20,7 +24,7 @@ public class ProjectStage implements AggregationStage {
 
     public ProjectStage(Document projection) {
         if (projection.isEmpty()) {
-            throw new MongoServerError(40177, "Invalid $project :: caused by :: specification must have at least one field");
+            throw new MongoServerError(40177, "specification must have at least one field");
         }
         this.projection = projection;
         this.hasInclusions = hasInclusions(projection);
@@ -37,57 +41,74 @@ public class ProjectStage implements AggregationStage {
     }
 
     Document projectDocument(Document document) {
-        final Document result;
-        if (hasInclusions) {
-            result = new Document();
-            if (!projection.containsKey(ID_FIELD)) {
-                Utils.copySubdocumentValue(document, result, ID_FIELD);
-            }
-        } else {
-            result = document.cloneDeeply();
-        }
-
-        for (Entry<String, Object> entry : projection.entrySet()) {
-            String field = entry.getKey();
-            Object projectionValue = entry.getValue();
-            if (isNumberOrBoolean(projectionValue)) {
-                if (Utils.isTrue(projectionValue)) {
-                    Utils.copySubdocumentValue(document, result, field);
-                } else {
-                    Utils.removeSubdocumentValue(result, field);
+        try {
+            final Document result;
+            if (hasInclusions) {
+                result = new Document();
+                if (!projection.containsKey(ID_FIELD)) {
+                    Utils.copySubdocumentValue(document, result, ID_FIELD);
                 }
-            }
-            else if (projectionValue instanceof List) {
-                List<Object> resolvedProjectionValues = ((List<Object>) projectionValue)
-                    .stream()
-                    .map(value -> Expression.evaluateDocument(value, document))
-                    .collect(Collectors.toList());
-                result.put(field, resolvedProjectionValues);
-            }
-            else if (projectionValue == null) {
-                result.put(field, null);
             } else {
-                Object value = Expression.evaluateDocument(projectionValue, document);
-                if (!(value instanceof Missing)) {
-                    result.put(field, value);
+                result = document.cloneDeeply();
+            }
+
+            for (Entry<String, Object> entry : projection.entrySet()) {
+                String field = entry.getKey();
+                Object projectionValue = entry.getValue();
+                if (isNumberOrBoolean(projectionValue)) {
+                    if (Utils.isTrue(projectionValue)) {
+                        Utils.copySubdocumentValue(document, result, field);
+                    } else {
+                        Utils.removeSubdocumentValue(result, field);
+                    }
+                } else if (projectionValue instanceof List) {
+                    List<Object> resolvedProjectionValues = ((List<Object>) projectionValue)
+                        .stream()
+                        .map(value -> Expression.evaluateDocument(value, document))
+                        .collect(Collectors.toList());
+                    result.put(field, resolvedProjectionValues);
+                } else if (projectionValue == null) {
+                    result.put(field, null);
+                } else {
+                    Object value = Expression.evaluateDocument(projectionValue, document);
+                    if (!(value instanceof Missing)) {
+                        result.put(field, value);
+                    }
                 }
             }
+            return result;
+        } catch (ConversionFailureException | FailedToOptimizePipelineError | BadValueException e) {
+            throw e;
+        } catch (MongoServerError e) {
+            if (e.hasCode(ErrorCode._34471, ErrorCode._40390)) {
+                throw e;
+            }
+            throw new InvalidProjectException(e);
         }
-        return result;
+    }
+
+    public static class InvalidProjectException extends MongoServerError {
+
+        private static final long serialVersionUID = 1L;
+
+        private static final String MESSAGE_PREFIX = "Invalid $project :: caused by :: ";
+
+        private InvalidProjectException(MongoServerError cause) {
+            super(cause.getCode(), cause.getCodeName(), MESSAGE_PREFIX + cause.getMessageWithoutErrorCode());
+        }
     }
 
     private void validateProjection() {
         if (hasInclusions) {
-            boolean nonIdExclusion = projection.entrySet().stream()
+            projection.entrySet().stream()
                 .filter(entry -> !entry.getKey().equals(ID_FIELD))
-                .map(Entry::getValue)
-                .filter(ProjectStage::isNumberOrBoolean)
-                .anyMatch(entry -> !Utils.isTrue(entry));
-            if (nonIdExclusion) {
-                throw new MongoServerError(40178,
-                    "Bad projection specification, cannot exclude fields other than '_id' in an inclusion projection: "
-                        + projection.toString(true, "{ ", " }"));
-            }
+                .filter(entry -> isNumberOrBoolean(entry.getValue()))
+                .filter(entry -> !Utils.isTrue(entry.getValue()))
+                .findFirst()
+                .ifPresent(nonIdExclusion -> {
+                    throw new MongoServerError(31254,
+                        "Invalid $project :: caused by :: Cannot do exclusion on field " + nonIdExclusion.getKey() + " in inclusion projection");
+                });
         }
     }
 

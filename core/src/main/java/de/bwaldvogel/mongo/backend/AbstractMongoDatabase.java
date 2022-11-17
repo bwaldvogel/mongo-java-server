@@ -16,6 +16,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.IndexNotFoundException;
+import de.bwaldvogel.mongo.exception.InvalidNamespaceError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.MongoSilentServerException;
@@ -151,7 +153,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("validate")) {
             MongoCollection<P> collection = resolveCollection(command, query);
             if (collection == null) {
-                throw new MongoServerError(26, "NamespaceNotFound", "ns not found");
+                String collectionName = query.get(command).toString();
+                String fullCollectionName = getDatabaseName() + "." + collectionName;
+                throw new MongoServerError(26, "NamespaceNotFound", "Collection '" + fullCollectionName + "' does not exist to validate.");
             }
             return collection.validate();
         } else if (command.equalsIgnoreCase("findAndModify")) {
@@ -210,18 +214,26 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             collectionDescription.put("options", collectionOptions);
             collectionDescription.put("info", new Document("readOnly", false));
             collectionDescription.put("type", "collection");
-            collectionDescription.put("idIndex", getPrimaryKeyIndexDescription(namespace));
+            collectionDescription.put("idIndex", getPrimaryKeyIndexDescription());
             firstBatch.add(collectionDescription);
         }
 
         return Utils.firstBatchCursorResponse(getDatabaseName() + ".$cmd.listCollections", firstBatch);
     }
 
+    private static Document getPrimaryKeyIndexDescription() {
+        return getPrimaryKeyIndexDescription(null);
+    }
+
     private static Document getPrimaryKeyIndexDescription(String namespace) {
-        return new Document("key", new Document(ID_FIELD, 1))
-            .append("name", Constants.PRIMARY_KEY_INDEX_NAME)
-            .append("ns", namespace)
-            .append("v", 2);
+        Document indexDescription = new Document("key", new Document(ID_FIELD, 1))
+            .append("name", PRIMARY_KEY_INDEX_NAME);
+
+        if (namespace != null) {
+            indexDescription.put("ns", namespace);
+        }
+
+        return indexDescription.append("v", 2);
     }
 
     private Iterable<String> listCollectionNamespaces() {
@@ -231,9 +243,14 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document listIndexes(String collectionName) {
-        Iterable<Document> indexes = Optional.ofNullable(resolveCollection(INDEXES_COLLECTION_NAME, false))
-            .map(collection -> collection.handleQuery(new Document("ns", getFullCollectionNamespace(collectionName))))
-            .orElse(Collections.emptyList());
+        Stream<Document> indexes = Optional.ofNullable(resolveCollection(INDEXES_COLLECTION_NAME, false))
+            .map(collection -> collection.handleQueryAsStream(new Document("ns", getFullCollectionNamespace(collectionName))))
+            .orElse(Stream.empty())
+            .map(indexDescription -> {
+                Document clone = indexDescription.clone();
+                clone.remove("ns");
+                return clone;
+            });
         return Utils.firstBatchCursorResponse(getDatabaseName() + ".$cmd.listIndexes", indexes);
     }
 
@@ -402,7 +419,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     public MongoCollection<P> createCollectionOrThrowIfExists(String collectionName, CollectionOptions options) {
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
-            throw new NamespaceExistsException("a collection '" + collection.getFullName() + "' already exists");
+            throw new NamespaceExistsException("Collection already exists. NS: " + collection.getFullName());
         }
 
         return createCollection(collectionName, options);
@@ -628,14 +645,20 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (!pipeline.isEmpty()) {
             Document changeStream = (Document) pipeline.get(0).get("$changeStream");
             if (changeStream != null) {
-                Aggregation aggregation = Aggregation.fromPipeline(pipeline.subList(1, pipeline.size()), this, collection, oplog);
+                Aggregation aggregation = getAggregation(pipeline.subList(1, pipeline.size()), query, collection, oplog);
                 aggregation.validate(query);
                 return commandChangeStreamPipeline(query, oplog, collectionName, changeStream, aggregation);
             }
         }
+
+        Aggregation aggregation = getAggregation(pipeline, query, collection, oplog);
+        return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), aggregation.computeResult());
+    }
+
+    private Aggregation getAggregation(List<Document> pipeline, Document query, MongoCollection<?> collection, Oplog oplog) {
         Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection, oplog);
         aggregation.validate(query);
-        return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), aggregation.computeResult());
+        return aggregation;
     }
 
     private Document commandChangeStreamPipeline(Document query, Oplog oplog, String collectionName, Document changeStreamDocument,
@@ -854,8 +877,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         clearLastStatus(channel);
         try {
             if (isSystemCollection(collectionName)) {
-                throw new MongoServerError(73, "InvalidNamespace",
-                    "cannot write to '" + getFullCollectionNamespace(collectionName) + "'");
+                throw new InvalidNamespaceError(getFullCollectionNamespace(collectionName));
             }
             MongoCollection<P> collection = resolveCollection(collectionName, false);
             final int n;

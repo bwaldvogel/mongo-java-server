@@ -20,7 +20,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 
-public class ExpressionTest {
+class ExpressionTest {
 
     @Test
     void testEvaluateSimpleValue() throws Exception {

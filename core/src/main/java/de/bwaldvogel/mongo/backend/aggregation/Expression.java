@@ -45,6 +45,7 @@ import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.ConversionFailureException;
 import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.FailedToOptimizePipelineError;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
@@ -381,9 +382,9 @@ public enum Expression implements ExpressionTraits {
                     throw new IllegalArgumentException("$convert's 'to' argument must be a string or number, but is " + describeType(to));
                 }
             } catch (BadValueException e) {
-                throw new BadValueException("Failed to optimize pipeline :: caused by :: Unknown type name: " + to);
+                throw new FailedToOptimizePipelineError(ErrorCode.BadValue, "Unknown type name: " + to);
             } catch (IllegalArgumentException e) {
-                throw new FailedToParseException("Failed to optimize pipeline :: caused by :: " + e.getMessage());
+                throw new FailedToOptimizePipelineError(ErrorCode.FailedToParse, e.getMessage());
             }
         }
 
@@ -417,7 +418,7 @@ public enum Expression implements ExpressionTraits {
                         throw new UnsupportedOperationException("Unsupported conversion to type " + bsonType);
                 }
             } catch (MongoServerError e) {
-                if (e.getCode() == ErrorCode.ConversionFailure.getValue()) {
+                if (e.hasCode(ErrorCode.ConversionFailure)) {
                     if (convertDocument.containsKey("onError")) {
                         return convertDocument.get("onError");
                     }
@@ -1028,7 +1029,7 @@ public enum Expression implements ExpressionTraits {
         List<Document> apply(List<?> expressionValue, Document document) {
             Object value = requireSingleValue(expressionValue);
             if (!(value instanceof Document)) {
-                throw new MongoServerError(40390, name() + " requires a document input, found: " + describeType(value));
+                throw new MongoServerError(ErrorCode._40390, name() + " requires a document input, found: " + describeType(value));
             }
             List<Document> result = new ArrayList<>();
             for (Entry<String, Object> entry : ((Document) value).entrySet()) {
@@ -1548,8 +1549,7 @@ public enum Expression implements ExpressionTraits {
                                 int month = temporalAccessor.get(ChronoField.MONTH_OF_YEAR);
                                 return LocalDate.of(year, month, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
                             } catch (DateTimeParseException e) {
-                                throw new MongoServerError(ErrorCode.ConversionFailure,
-                                    "Error parsing date string '" + dateString + "';");
+                                throw new ConversionFailureException("Error parsing date string '" + dateString + "';");
                             }
                         }
                     }
@@ -1580,9 +1580,8 @@ public enum Expression implements ExpressionTraits {
                 try {
                     return Double.valueOf(string);
                 } catch (NumberFormatException e) {
-                    throw new MongoServerError(ErrorCode.ConversionFailure,
-                        "Failed to parse number '" + value + "' in $convert with no onError value:" +
-                            " Did not consume whole number.");
+                    throw new ConversionFailureException("Failed to parse number '" + value
+                        + "' in $convert with no onError value: Did not consume whole number.");
                 }
             } else {
                 throw new UnsupportedConversionError(value, Double.class);
@@ -1607,8 +1606,8 @@ public enum Expression implements ExpressionTraits {
                 try {
                     return Integer.valueOf(string);
                 } catch (NumberFormatException e) {
-                    throw new MongoServerError(ErrorCode.ConversionFailure,
-                        "Failed to parse number '" + value + "' in $convert with no onError value.");
+                    throw new ConversionFailureException("Failed to parse number '" + value
+                        + "' in $convert with no onError value.");
                 }
             } else {
                 throw new UnsupportedConversionError(value, Integer.class);
@@ -1636,8 +1635,8 @@ public enum Expression implements ExpressionTraits {
                 try {
                     return Long.valueOf(string);
                 } catch (NumberFormatException e) {
-                    throw new MongoServerError(ErrorCode.ConversionFailure,
-                        "Failed to parse number '" + value + "' in $convert with no onError value.");
+                    throw new ConversionFailureException("Failed to parse number '" + value
+                        + "' in $convert with no onError value.");
                 }
             } else {
                 throw new UnsupportedConversionError(value, Long.class);
@@ -1663,8 +1662,8 @@ public enum Expression implements ExpressionTraits {
                 try {
                     return new ObjectId(string);
                 } catch (RuntimeException e) {
-                    throw new MongoServerError(ErrorCode.ConversionFailure,
-                        "Failed to parse objectId '" + value + "' in $convert with no onError value.");
+                    throw new ConversionFailureException("Failed to parse objectId '" + value
+                        + "' in $convert with no onError value.");
                 }
             } else {
                 throw new UnsupportedConversionError(value, ObjectId.class);

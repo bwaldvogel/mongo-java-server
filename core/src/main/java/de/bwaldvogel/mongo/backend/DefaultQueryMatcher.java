@@ -119,7 +119,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             QueryFilter filter = QueryFilter.fromValue(firstKey);
             return checkMatch(queryValue, filter, value);
         } else if (firstKey.startsWith("$") && !Constants.REFERENCE_KEYS.contains(firstKey)) {
-            throw new BadValueException("unknown top level operator: " + firstKey);
+            throw new BadValueException("unknown top level operator: " + firstKey + ". If you have a field name that starts with a '$' symbol, consider using $getField or $setField.");
         }
 
         if (value instanceof List<?>) {

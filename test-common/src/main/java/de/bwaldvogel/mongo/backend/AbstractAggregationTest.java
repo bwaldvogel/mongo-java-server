@@ -632,8 +632,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40178 (Location40178): " +
-                "'Bad projection specification, cannot exclude fields other than '_id' in an inclusion projection: { x.b: 1, x.c: 1, x.d: 0, y: 0 }'");
+            .withMessageContaining("Command failed with error 31254 (Location31254): " +
+                "'Invalid $project :: caused by :: Cannot do exclusion on field x.d in inclusion projection'");
     }
 
     @Test
@@ -642,11 +642,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 0, v: '$x.1.'}")).first())
-            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+            .withMessageContaining("Command failed with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 0, v: '$x..1'}")).first())
-            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Command failed with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/pull/189
@@ -711,11 +711,15 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {len: {$strLenCP: '$x'}}")).first())
-            .withMessageContaining("Command failed with error 34471 (Location34471): '$strLenCP requires a string argument, found: missing'");
+            .withMessageContaining("Command failed with error 34471 (Location34471): " +
+                "'PlanExecutor error during aggregation :: caused by :: " +
+                "$strLenCP requires a string argument, found: missing'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {len: {$strLenCP: '$b'}}")).first())
-            .withMessageContaining("Command failed with error 34471 (Location34471): '$strLenCP requires a string argument, found: int'");
+            .withMessageContaining("Command failed with error 34471 (Location34471): " +
+                "'PlanExecutor error during aggregation :: caused by :: " +
+                "$strLenCP requires a string argument, found: int'");
     }
 
     @Test
@@ -738,7 +742,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: 'abc'}}")).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $substrBytes takes exactly 3 arguments. 1 were passed in.'");
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $substrBytes takes exactly 3 arguments. 1 were passed in.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: ['abc', 'abc', 3]}}")).first())
@@ -750,7 +754,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: 'abc'}}")).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $substrCP takes exactly 3 arguments. 1 were passed in.'");
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $substrCP takes exactly 3 arguments. 1 were passed in.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: ['abc', 'abc', 3]}}")).first())
@@ -1031,7 +1035,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 17276 (Location17276): 'Use of undefined variable: UNDEFINED'");
+            .withMessageContaining("Command failed with error 17276 (Location17276): 'Invalid $project :: caused by :: Use of undefined variable: UNDEFINED'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/31
@@ -1053,11 +1057,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: '$$ROOT.a.'}")).first())
-            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+            .withMessageContaining("Command failed with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: '$$ROOT.a..1'}")).first())
-            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Command failed with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'");
     }
 
     @Test
@@ -1472,7 +1476,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
             .withMessageContaining("Command failed with error 40228 (Location40228): " +
-                "''newRoot' expression must evaluate to an object, but resulting value was: 10." +
+                "'PlanExecutor error during aggregation :: caused by :: 'newRoot' expression must evaluate to an object, but resulting value was: 10." +
                 " Type of resulting value: 'int'.")
             .withMessageContaining("a: {b: 10}");
     }
@@ -1571,7 +1575,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40390 (Location40390): '$objectToArray requires a document input, found: int'");
+            .withMessageContaining("Command failed with error 40390 (Location40390): 'PlanExecutor error during aggregation :: caused by :: $objectToArray requires a document input, found: int'");
 
         collection.replaceOne(json("_id: 1"), json("_id: 1, value: {a: 1, b: 'foo', c: {x: 10}}"));
 
@@ -1583,7 +1587,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         Document illegalQuery = json("$project: {_id: 1, a: {$objectToArray: ['$value', 1]}}");
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(Collections.singletonList(illegalQuery)).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
     }
 
     @Test
@@ -1608,7 +1612,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: []}}")).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Expression $arrayToObject takes exactly 1 arguments. 0 were passed in.'");
+            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $arrayToObject takes exactly 1 arguments. 0 were passed in.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [['foo']]}}}}")).first())
@@ -1777,7 +1781,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [100, 200, 400]}")).first())
-            .withMessageContaining("Command failed with error 40066 (Location40066): '$switch could not find a matching branch for an input, and no default was specified.'");
+            .withMessageContaining("Command failed with error 40066 (Location40066): 'PlanExecutor error during aggregation :: caused by :: $switch could not find a matching branch for an input, and no default was specified.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, 400], default: 200}")).first())
@@ -1959,7 +1963,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$unset: ['']")).first())
-            .withMessageStartingWith("Command failed with error 40352 (Location40352): 'Invalid $project :: caused by :: FieldPath cannot be constructed with empty string'");
+            .withMessageStartingWith("Command failed with error 40352 (Location40352): 'Invalid $unset :: caused by :: FieldPath cannot be constructed with empty string'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$unset: ['field1', 123]")).first())
@@ -1980,7 +1984,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsOnlyKeys("name", "key", "host", "accesses", "spec")
             .containsEntry("name", "_id_")
             .containsEntry("key", json("_id: 1"))
-            .containsEntry("spec", json("key: {_id: 1}, name: '_id_', ns: 'testdb.testcoll', v: 2"));
+            .containsEntry("spec", json("key: {_id: 1}, name: '_id_', v: 2"));
 
         assertThat((Document) indexStats.get("accesses"))
             .containsEntry("ops", 0L);
@@ -2033,7 +2037,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 'some$collection'")).first())
-            .withMessageContaining("Command failed with error 17385 (Location17385): 'Can't $out to special collection: some$collection'");
+            .withMessageContaining("Command failed with error 20 (IllegalOperation): 'PlanExecutor error during aggregation :: caused by :: error with target namespace: Invalid collection name: some$collection'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 'one'", "$out : 'other'")).first())
@@ -2114,8 +2118,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     private static Stream<Arguments> aggregateWithToDoubleArguments_illegalValue() {
         return Stream.of(
-            Arguments.of("abc", "'Failed to parse number 'abc' in $convert with no onError value"),
-            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to double in $convert with no onError value'")
+            Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Failed to parse number 'abc' in $convert with no onError value"),
+            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to double in $convert with no onError value'")
         );
     }
 
@@ -2165,11 +2169,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     private static Stream<Arguments> aggregateWithToDateArguments_illegalValue() {
         return Stream.of(
-            Arguments.of("abc", "'Error parsing date string 'abc';"),
-            Arguments.of(123, "'Unsupported conversion from int to date in $convert with no onError value'"),
-            Arguments.of("123456789", "'Error parsing date string '123456789';"),
-            Arguments.of("2020-07-13T14", "'Error parsing date string '2020-07-13T14';"),
-            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to date in $convert with no onError value'")
+            Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string 'abc';"),
+            Arguments.of(123, "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from int to date in $convert with no onError value'"),
+            Arguments.of("123456789", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string '123456789';"),
+            Arguments.of("2020-07-13T14", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string '2020-07-13T14';"),
+            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to date in $convert with no onError value'")
         );
     }
 
@@ -2213,8 +2217,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     private static Stream<Arguments> aggregateWithToIntArguments_illegalValue() {
         return Stream.of(
-            Arguments.of("abc", "'Failed to parse number 'abc' in $convert with no onError value"),
-            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to int in $convert with no onError value'")
+            Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Failed to parse number 'abc' in $convert with no onError value"),
+            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to int in $convert with no onError value'")
         );
     }
 
@@ -2303,8 +2307,8 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     private static Stream<Arguments> aggregateWithToLongArguments_illegalValue() {
         return Stream.of(
-            Arguments.of("abc", "'Failed to parse number 'abc' in $convert with no onError value"),
-            Arguments.of(Arrays.asList(123), "'Unsupported conversion from array to long in $convert with no onError value'")
+            Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Failed to parse number 'abc' in $convert with no onError value"),
+            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to long in $convert with no onError value'")
         );
     }
 
@@ -2345,10 +2349,10 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     private static Stream<Arguments> aggregateWithToObjectIdArguments_illegalValue() {
         return Stream.of(
-            Arguments.of("5ab9cbfa31c2ab715d42129", "'Failed to parse objectId '5ab9cbfa31c2ab715d42129' in $convert with no onError value"),
-            Arguments.of("5ab9cbfa31c2ab715d42129z", "'Failed to parse objectId '5ab9cbfa31c2ab715d42129z' in $convert with no onError value"),
-            Arguments.of(123, "'Unsupported conversion from int to objectId in $convert with no onError value'"),
-            Arguments.of(Arrays.asList("5ab9cbfa31c2ab715d421290"), "'Unsupported conversion from array to objectId in $convert with no onError value'")
+            Arguments.of("5ab9cbfa31c2ab715d42129", "'PlanExecutor error during aggregation :: caused by :: Failed to parse objectId '5ab9cbfa31c2ab715d42129' in $convert with no onError value"),
+            Arguments.of("5ab9cbfa31c2ab715d42129z", "'PlanExecutor error during aggregation :: caused by :: Failed to parse objectId '5ab9cbfa31c2ab715d42129z' in $convert with no onError value"),
+            Arguments.of(123, "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from int to objectId in $convert with no onError value'"),
+            Arguments.of(Arrays.asList("5ab9cbfa31c2ab715d421290"), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to objectId in $convert with no onError value'")
         );
     }
 
@@ -2437,16 +2441,16 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "Command failed with error 9 (FailedToParse): 'Failed to optimize pipeline :: caused by :: $convert's 'to' argument must be a string or number, but is array'"),
 
             Arguments.of("x: 123",
-                "Command failed with error 9 (FailedToParse): '$convert found an unknown argument: x'"),
+                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert found an unknown argument: x'"),
 
             Arguments.of("to: 'int'",
-                "Command failed with error 9 (FailedToParse): 'Missing 'input' parameter to $convert'"),
+                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: Missing 'input' parameter to $convert'"),
 
             Arguments.of("input: 123, onError: 123",
-                "Command failed with error 9 (FailedToParse): 'Missing 'to' parameter to $convert'"),
+                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: Missing 'to' parameter to $convert'"),
 
             Arguments.of("input: 123, to: 'int', onElse: 123",
-                "Command failed with error 9 (FailedToParse): '$convert found an unknown argument: onElse'")
+                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert found an unknown argument: onElse'")
         );
     }
 
@@ -2473,7 +2477,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): '$convert expects an object of named arguments but found: int'");
+            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert expects an object of named arguments but found: int'");
     }
 
     @Test

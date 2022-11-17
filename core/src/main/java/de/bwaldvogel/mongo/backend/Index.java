@@ -165,4 +165,28 @@ public abstract class Index<P> {
         return getClass().getSimpleName() + "[name=" + getName() + "]";
     }
 
+    protected boolean isUnique() {
+        return false;
+    }
+
+    public Document toIndexDescription() {
+        Document indexDescription = new Document("v", 2)
+            .append("unique", isUnique());
+
+        Document key = new Document();
+        for (IndexKey indexKey : getKeys()) {
+            key.put(indexKey.getKey(), indexKey.isAscending() ? 1 : -1);
+        }
+
+        indexDescription.put("key", key);
+
+        indexDescription.put("name", getName());
+
+        if (isSparse()) {
+            indexDescription.put("sparse", true);
+        }
+
+        return indexDescription;
+    }
+
 }
