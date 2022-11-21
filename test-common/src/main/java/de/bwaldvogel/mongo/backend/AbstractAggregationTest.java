@@ -6,6 +6,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.sql.Date;
 import java.time.Instant;
@@ -13,7 +14,9 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.bson.Document;
@@ -2042,6 +2045,71 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 'one'", "$out : 'other'")).first())
             .withMessageContaining("Command failed with error 40601 (Location40601): '$out can only be the final stage in the pipeline'");
+    }
+
+    @Test
+    void testAggregateWithRandInMatch() {
+        List<Document> pipeline = jsonList("$match: { $expr: { $lt: [0.5, {$rand: {} }]}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3"));
+        collection.insertOne(json("_id: 4"));
+
+        for (int i = 0; i < 10; i++) {
+            if (toArray(collection.aggregate(pipeline)).size() == 2) {
+                return;
+            }
+        }
+        fail("Expecting to receive 50% of all documents in at least one of 10 trials");
+    }
+
+    @Test
+    void testAggregateWithRandInProjection() {
+        List<Document> pipeline = jsonList("$project: { _id: 1, rand: {$rand: {}}}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1"));
+        collection.insertOne(json("_id: 2"));
+        collection.insertOne(json("_id: 3"));
+        collection.insertOne(json("_id: 4"));
+
+        Set<Double> values = new LinkedHashSet<>();
+        for (Document document : toArray(collection.aggregate(pipeline))) {
+            assertThat(document.get("rand")).isInstanceOf(Double.class);
+            Double rand = document.getDouble("rand");
+            assertThat(rand).isBetween(0.0, 1.0);
+            values.add(rand);
+        }
+        assertThat(values).hasSize(4);
+    }
+
+    @Test
+    void testAggregateWithRand_illegalArguments() {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: { r: {$rand: {a: 1}}}")).first())
+            .withMessageStartingWith("Command failed with error 3040501 (Location3040501): " +
+                "'Invalid $project :: caused by :: $rand does not currently accept arguments'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: { r: {$rand: [{}, {}]}}")).first())
+            .withMessageStartingWith("Command failed with error 3040501 (Location3040501): " +
+                "'Invalid $project :: caused by :: $rand does not currently accept arguments'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$project: { r: {$rand: null}}")).first())
+            .withMessageStartingWith("Command failed with error 10065 (Location10065): " +
+                "'Invalid $project :: caused by :: invalid parameter: expected an object ($rand)'");
+
+        assertThat(collection.aggregate(jsonList("$project: { r: {$rand: []}}")))
+            .map(Document::toJson)
+            .hasSize(1)
+            .allMatch(document -> document.matches("\\{\"_id\": 1, \"r\": 0\\.\\d+}"));
     }
 
     @Test

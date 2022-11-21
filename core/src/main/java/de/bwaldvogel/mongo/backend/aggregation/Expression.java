@@ -7,6 +7,7 @@ import static de.bwaldvogel.mongo.bson.Json.toJsonValue;
 import static java.util.Arrays.asList;
 
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -1081,6 +1082,25 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $rand {
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            if (expressionValue.size() > 1) {
+                throw new MongoServerError(3040501, name() + " does not currently accept arguments");
+            } else if (expressionValue.size() == 1) {
+                Object parameter = expressionValue.get(0);
+                if (!(parameter instanceof Document)) {
+                    throw new MongoServerError(10065, "invalid parameter: expected an object (" + name() + ")");
+                }
+                Document params = (Document) parameter;
+                if (!params.isEmpty()) {
+                    throw new MongoServerError(3040501, name() + " does not currently accept arguments");
+                }
+            }
+            return random.nextDouble();
+        }
+    },
+
     $range {
         @Override
         Object apply(List<?> expressionValue, Document document) {
@@ -1700,6 +1720,8 @@ public enum Expression implements ExpressionTraits {
     };
 
     private static final Set<String> KEYWORD_EXPRESSIONS = new HashSet<>(asList("$$PRUNE", "$$KEEP", "$$DESCEND"));
+
+    private static final SecureRandom random = new SecureRandom();
 
     private static Collection<?> getValues(List<?> expressionValue) {
         Collection<?> values = expressionValue;

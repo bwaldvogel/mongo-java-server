@@ -94,7 +94,7 @@ public class ProjectStage implements AggregationStage {
         private static final String MESSAGE_PREFIX = "Invalid $project :: caused by :: ";
 
         private InvalidProjectException(MongoServerError cause) {
-            super(cause.getCode(), cause.getCodeName(), MESSAGE_PREFIX + cause.getMessageWithoutErrorCode());
+            super(cause.getCode(), cause.getCodeName(), MESSAGE_PREFIX + cause.getMessageWithoutErrorCode(), cause);
         }
     }
 
