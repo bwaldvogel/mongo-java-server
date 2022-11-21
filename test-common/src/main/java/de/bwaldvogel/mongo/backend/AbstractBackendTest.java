@@ -2636,7 +2636,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(json(""), json("$push: {value: {$position: 1}}"));
 
-        assertThat(toArray(collection.find()))
+        assertThat(collection.find())
             .containsExactly(json("_id: 1, value: [{$position: 1}]"));
     }
 
@@ -2820,12 +2820,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(json("_id: 1"), json("$addToSet: {value: {key: 2, $each: [1, 2, 3]}}"));
 
-        assertThat(toArray(collection.find()))
+        assertThat(collection.find())
             .containsExactly(json("_id: 1, value: [{key: 2, $each: [1, 2, 3]}]"));
 
         collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$slice: 2, $each: [1, 2, 3]}}"));
 
-        assertThat(toArray(collection.find()))
+        assertThat(collection.find())
             .containsExactly(json("_id: 1, value: [{key: 2, $each: [1, 2, 3]}, {$slice: 2, $each: [1, 2, 3]}]"));
 
     }
@@ -3964,31 +3964,31 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertMongoWriteException(() -> collection.insertOne(json("a: ['val1']")),
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a_1 dup key: { a: \"val1\" }'");
 
-        assertThat(toArray(collection.find(json("a: ['val1']"))))
+        assertThat(collection.find(json("a: ['val1']")))
             .isEmpty();
 
-        assertThat(toArray(collection.find(json("a: ['val1', 'val3']"))))
+        assertThat(collection.find(json("a: ['val1', 'val3']")))
             .isEmpty();
 
-        assertThat(toArray(collection.find(json("a: ['val1', 'val10']"))))
+        assertThat(collection.find(json("a: ['val1', 'val10']")))
             .isEmpty();
 
-        assertThat(toArray(collection.find(json("a: ['val10']"))))
+        assertThat(collection.find(json("a: ['val10']")))
             .isEmpty();
 
-        assertThat(toArray(collection.find(json("a: ['val5']"))))
+        assertThat(collection.find(json("a: ['val5']")))
             .containsExactly(json("_id: 4, a: ['val5']"));
 
-        assertThat(toArray(collection.find(json("a: ['val1', 'val2']"))))
+        assertThat(collection.find(json("a: ['val1', 'val2']")))
             .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
 
-        assertThat(toArray(collection.find(json("a: ['val2', 'val1']"))))
+        assertThat(collection.find(json("a: ['val2', 'val1']")))
             .isEmpty();
 
-        assertThat(toArray(collection.find(json("a: {$all: ['val1', 'val2']}"))))
+        assertThat(collection.find(json("a: {$all: ['val1', 'val2']}")))
             .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
 
-        assertThat(toArray(collection.find(json("a: {$all: ['val2', 'val1']}"))))
+        assertThat(collection.find(json("a: {$all: ['val2', 'val1']}")))
             .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
     }
 
@@ -4008,15 +4008,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val5']"));
         collection.insertOne(json("_id: 3, a: ['val2']"));
 
-        assertThat(toArray(collection.find(json("a: ['val1', 'val5']"))))
+        assertThat(collection.find(json("a: ['val1', 'val5']")))
             .containsExactly(json("_id: 1, a: ['val1', 'val5']"));
 
-        assertThat(toArray(collection.find(json("a: ['val2']"))))
+        assertThat(collection.find(json("a: ['val2']")))
             .containsExactly(json("_id: 3, a: ['val2']"));
 
         collection.updateOne(json("a: ['val2']"), json("$push: {a: 'val7'}"));
 
-        assertThat(toArray(collection.find(json("a: ['val2', 'val7']"))))
+        assertThat(collection.find(json("a: ['val2', 'val7']")))
             .containsExactly(json("_id: 3, a: ['val2', 'val7']"));
     }
 
@@ -4032,16 +4032,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertMongoWriteException(() -> collection.insertOne(json("a: {b: ['val1']}")),
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: a.b_1 dup key: { a.b: \"val1\" }'");
 
-        assertThat(toArray(collection.find(json("'a.b': 'val5'"))))
+        assertThat(collection.find(json("'a.b': 'val5'")))
             .containsExactly(json("_id: 4, a: {b: 'val5'}"));
 
-        assertThat(toArray(collection.find(json("'a.b': ['val1', 'val2']"))))
+        assertThat(collection.find(json("'a.b': ['val1', 'val2']")))
             .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
 
-        assertThat(toArray(collection.find(json("a: {b: ['val1', 'val2']}"))))
+        assertThat(collection.find(json("a: {b: ['val1', 'val2']}")))
             .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
 
-        assertThat(toArray(collection.find(json("'a.b': ['val1']"))))
+        assertThat(collection.find(json("'a.b': ['val1']")))
             .isEmpty();
     }
 
@@ -6486,7 +6486,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(json("_id: 1"), json("$set: {x: {$expr: {$add: ['$_id', 10]}}}"));
 
-        assertThat(toArray(collection.find()))
+        assertThat(collection.find())
             .containsExactly(json("_id: 1, x: {$expr: {$add: ['$_id', 10]}}"));
     }
 
@@ -6522,23 +6522,23 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(new Document("_id", 223372036854775808L).append("name", "item 3"));
         collection.insertOne(new Document("_id", 10.5).append("name", "item 4"));
 
-        assertThat(toArray(collection.find(Filters.lt("_id", 223372036854775807L))))
+        assertThat(collection.find(Filters.lt("_id", 223372036854775807L)))
             .containsExactlyInAnyOrder(
                 json("_id: 223372036854775806, name: 'item 1'"),
                 json("_id: 10.5, name: 'item 4'")
             );
 
-        assertThat(toArray(collection.find(Filters.lte("_id", 223372036854775807L))))
+        assertThat(collection.find(Filters.lte("_id", 223372036854775807L)))
             .containsExactlyInAnyOrder(
                 json("_id: 223372036854775806, name: 'item 1'"),
                 json("_id: 223372036854775807, name: 'item 2'"),
                 json("_id: 10.5, name: 'item 4'")
             );
 
-        assertThat(toArray(collection.find(Filters.gt("_id", 223372036854775807L))))
+        assertThat(collection.find(Filters.gt("_id", 223372036854775807L)))
             .containsExactly(json("_id: 223372036854775808, name: 'item 3'"));
 
-        assertThat(toArray(collection.find(Filters.gte("_id", 223372036854775807L))))
+        assertThat(collection.find(Filters.gte("_id", 223372036854775807L)))
             .containsExactlyInAnyOrder(
                 json("_id: 223372036854775807, name: 'item 2'"),
                 json("_id: 223372036854775808, name: 'item 3'")
@@ -6571,7 +6571,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                     future.get(DEFAULT_TEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                 }
 
-                assertThat(toArray(collection.listIndexes()))
+                assertThat(collection.listIndexes())
                     .containsExactlyInAnyOrder(
                         json("key: {_id: 1}, name: '_id_', v: 2"),
                         json("key: {data: 1}, name: 'data_1', v: 2")
@@ -6597,8 +6597,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(document1);
         collection.insertOne(document2);
 
-        assertThat(toArray(collection.find(document1))).containsExactly(document1);
-        assertThat(toArray(collection.find(document2))).containsExactly(document2);
+        assertThat(collection.find(document1))
+            .containsExactly(document1);
+
+        assertThat(collection.find(document2))
+            .containsExactly(document2);
     }
 
     @Test

@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.postgresql;
 
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Arrays;
@@ -280,28 +279,28 @@ class PostgresqlBackendTest extends AbstractBackendTest {
             // this should actually not be allowed
             collection.insertOne(json("_id: 5, a: ['val1']"));
 
-            assertThat(toArray(collection.find(json("a: ['val1', 'val3']"))))
+            assertThat(collection.find(json("a: ['val1', 'val3']")))
                 .isEmpty();
 
-            assertThat(toArray(collection.find(json("a: ['val1', 'val10']"))))
+            assertThat(collection.find(json("a: ['val1', 'val10']")))
                 .isEmpty();
 
-            assertThat(toArray(collection.find(json("a: ['val10']"))))
+            assertThat(collection.find(json("a: ['val10']")))
                 .isEmpty();
 
-            assertThat(toArray(collection.find(json("a: ['val5']"))))
+            assertThat(collection.find(json("a: ['val5']")))
                 .containsExactly(json("_id: 4, a: ['val5']"));
 
-            assertThat(toArray(collection.find(json("a: ['val1', 'val2']"))))
+            assertThat(collection.find(json("a: ['val1', 'val2']")))
                 .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
 
-            assertThat(toArray(collection.find(json("a: ['val2', 'val1']"))))
+            assertThat(collection.find(json("a: ['val2', 'val1']")))
                 .isEmpty();
 
-            assertThat(toArray(collection.find(json("a: {$all: ['val1', 'val2']}"))))
+            assertThat(collection.find(json("a: {$all: ['val1', 'val2']}")))
                 .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
 
-            assertThat(toArray(collection.find(json("a: {$all: ['val2', 'val1']}"))))
+            assertThat(collection.find(json("a: {$all: ['val2', 'val1']}")))
                 .containsExactly(json("_id: 1, a: ['val1', 'val2']"));
         }
     }
@@ -330,15 +329,15 @@ class PostgresqlBackendTest extends AbstractBackendTest {
             collection.replaceOne(json("_id: 1"), json("_id: 1, a: ['val1', 'val5']"));
             collection.insertOne(json("_id: 3, a: ['val2']"));
 
-            assertThat(toArray(collection.find(json("a: ['val1', 'val5']"))))
+            assertThat(collection.find(json("a: ['val1', 'val5']")))
                 .containsExactly(json("_id: 1, a: ['val1', 'val5']"));
 
-            assertThat(toArray(collection.find(json("a: ['val2']"))))
+            assertThat(collection.find(json("a: ['val2']")))
                 .containsExactly(json("_id: 3, a: ['val2']"));
 
             collection.updateOne(json("a: ['val2']"), json("$push: {a: 'val7'}"));
 
-            assertThat(toArray(collection.find(json("a: ['val2', 'val7']"))))
+            assertThat(collection.find(json("a: ['val2', 'val7']")))
                 .containsExactly(json("_id: 3, a: ['val2', 'val7']"));
         }
     }
@@ -359,13 +358,13 @@ class PostgresqlBackendTest extends AbstractBackendTest {
             // this should actually not be allowed
             collection.insertOne(json("a: {b: ['val1']}"));
 
-            assertThat(toArray(collection.find(json("'a.b': 'val5'"))))
+            assertThat(collection.find(json("'a.b': 'val5'")))
                 .containsExactly(json("_id: 4, a: {b: 'val5'}"));
 
-            assertThat(toArray(collection.find(json("'a.b': ['val1', 'val2']"))))
+            assertThat(collection.find(json("'a.b': ['val1', 'val2']")))
                 .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
 
-            assertThat(toArray(collection.find(json("a: {b: ['val1', 'val2']}"))))
+            assertThat(collection.find(json("a: {b: ['val1', 'val2']}")))
                 .containsExactly(json("_id: 1, a: {b: ['val1', 'val2']}"));
         }
     }

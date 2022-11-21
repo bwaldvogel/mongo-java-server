@@ -2486,23 +2486,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             collection.insertOne(json("flag: 1"));
         }
 
-        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: 3 }}", "$project: { _id: 0 }"))))
+        assertThat(collection.aggregate(jsonList("$sample: { size: 3 }}", "$project: { _id: 0 }")))
             .containsExactly(
                 json("flag: 1"),
                 json("flag: 1"),
                 json("flag: 1")
             );
 
-        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: 2.5 }}", "$project: { _id: 0 }"))))
+        assertThat(collection.aggregate(jsonList("$sample: { size: 2.5 }}", "$project: { _id: 0 }")))
             .containsExactly(
                 json("flag: 1"),
                 json("flag: 1")
             );
 
-        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: 0 }}"))))
+        assertThat(collection.aggregate(jsonList("$sample: { size: 0 }}")))
             .isEmpty();
 
-        assertThat(toArray(collection.aggregate(jsonList("$sample: { size: -0.3 }}"))))
+        assertThat(collection.aggregate(jsonList("$sample: { size: -0.3 }}")))
             .isEmpty();
     }
 

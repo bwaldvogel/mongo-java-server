@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend;
 
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
@@ -25,6 +24,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -137,8 +137,9 @@ public abstract class AbstractBackendSpringDataTest {
         personRepository.save(new Person("Alice", 2));
 
         MongoDatabase database = mongoClient.getDatabase(DATABASE_NAME);
-        List<Document> indexes = toArray(database.getCollection("person").listIndexes());
-        assertThat(indexes)
+        MongoCollection<Document> personCollection = database.getCollection("person");
+
+        assertThat(personCollection.listIndexes())
             .extracting(index -> index.get("name"))
             .containsExactlyInAnyOrder("_id_", "unique_ssn");
 

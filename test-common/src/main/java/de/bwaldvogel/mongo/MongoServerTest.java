@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo;
 
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static de.bwaldvogel.mongo.backend.TestUtils.toInetSocketAddress;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -60,7 +59,7 @@ public abstract class MongoServerTest {
         InetSocketAddress inetSocketAddress = server.bind();
         try (MongoClient mongoClient = MongoClients.create("mongodb://" + inetSocketAddress.getHostString() + ":" + inetSocketAddress.getPort())) {
             mongoClient.getDatabase("abc").createCollection("def");
-            assertThat(toArray(mongoClient.listDatabaseNames()))
+            assertThat(mongoClient.listDatabaseNames())
                 .containsExactly("abc");
         }
     }
@@ -70,7 +69,7 @@ public abstract class MongoServerTest {
         String connectionString = server.bindAndGetConnectionString();
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
             mongoClient.getDatabase("abc").createCollection("def");
-            assertThat(toArray(mongoClient.listDatabaseNames()))
+            assertThat(mongoClient.listDatabaseNames())
                 .containsExactly("abc");
         }
     }
