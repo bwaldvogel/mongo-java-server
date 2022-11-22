@@ -414,8 +414,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                     oldDocument = updateDocument(document, updateQuery, arrayFilters, matchPos);
                 } catch (MongoServerError e) {
                     if (e.shouldPrefixCommandContext()) {
-                        String prefix = "Plan executor error during findAndModify :: caused by :: ";
-                        throw new MongoServerError(e.getCode(), e.getCodeName(), prefix + e.getMessageWithoutErrorCode());
+                        throw new FindAndModifyPlanExecutorError(e);
+
                     } else {
                         throw e;
                     }
@@ -455,6 +455,17 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         result.put("value", returnDocument);
         Utils.markOkay(result);
         return result;
+    }
+
+    private static class FindAndModifyPlanExecutorError extends MongoServerError {
+
+        private static final long serialVersionUID = 1L;
+
+        private static final String PREFIX = "Plan executor error during findAndModify :: caused by :: ";
+
+        private FindAndModifyPlanExecutorError(MongoServerError cause) {
+            super(cause.getCode(), cause.getCodeName(), PREFIX + cause.getMessageWithoutErrorCode(), cause);
+        }
     }
 
     @Override

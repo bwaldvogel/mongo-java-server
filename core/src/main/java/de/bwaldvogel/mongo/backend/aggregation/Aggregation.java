@@ -272,7 +272,7 @@ public class Aggregation {
         return stages.stream().anyMatch(AggregationStage::isModifying);
     }
 
-    public static class PlanExecutorError extends MongoServerError {
+    private static class PlanExecutorError extends MongoServerError {
 
         private static final long serialVersionUID = 1L;
 
