@@ -72,8 +72,8 @@ public interface MongoCollection<P> {
 
     QueryResult handleQuery(QueryParameters queryParameters);
 
-    default List<Document> insertDocuments(List<Document> documents) {
-        return insertDocuments(documents, true);
+    default void insertDocuments(List<Document> documents) {
+        insertDocuments(documents, true);
     }
 
     List<Document> insertDocuments(List<Document> documents, boolean isOrdered);
