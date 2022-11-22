@@ -6,7 +6,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.CompletionStage;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -84,26 +83,4 @@ class AbstractMongoBackendTest {
         assertThat(response.get("message")).isEqualTo("fakeResponse");
     }
 
-    @Test
-    void testHandleCommandAsyncDropDatabase() throws Exception {
-        Channel channel = Mockito.mock(Channel.class);
-
-        CompletionStage<Document> responseFuture = backend.handleCommandAsync(channel, "mockDatabase", "dropDatabase", null);
-        Document response = responseFuture.toCompletableFuture().get();
-        assertThat(response).isNotNull();
-        assertThat(response.get("ok")).isEqualTo(1.0);
-        assertThat(response.get("dropped")).isEqualTo("mockDatabase");
-    }
-
-    @Test
-    void testHandleCommandAsyncDropDatabaseError() throws Exception {
-        Channel channel = Mockito.mock(Channel.class);
-
-        CompletionStage<Document> responseFuture = backendWithError.handleCommandAsync(channel, "mockDatabase", "dropDatabase", null);
-        Document response = responseFuture.toCompletableFuture().get();
-        assertThat(response).isNotNull();
-        assertThat(response.get("ok")).isEqualTo(0.0);
-        assertThat(response.get("dropped")).isEqualTo("mockDatabase");
-        assertThat(response.get("errmsg")).isEqualTo("unexpected");
-    }
 }

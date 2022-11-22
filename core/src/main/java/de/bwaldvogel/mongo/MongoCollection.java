@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.UUID;
-import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -14,9 +13,8 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
-import de.bwaldvogel.mongo.util.FutureUtils;
 
-public interface MongoCollection<P> extends AsyncMongoCollection {
+public interface MongoCollection<P> {
 
     UUID getUuid();
 
@@ -73,11 +71,6 @@ public interface MongoCollection<P> extends AsyncMongoCollection {
     }
 
     QueryResult handleQuery(QueryParameters queryParameters);
-
-    @Override
-    default CompletionStage<QueryResult> handleQueryAsync(QueryParameters queryParameters) {
-        return FutureUtils.wrap(() -> handleQuery(queryParameters));
-    }
 
     default List<Document> insertDocuments(List<Document> documents) {
         return insertDocuments(documents, true);
