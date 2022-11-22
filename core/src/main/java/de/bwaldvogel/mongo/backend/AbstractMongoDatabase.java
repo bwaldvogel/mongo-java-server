@@ -167,6 +167,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("listIndexes")) {
             String collectionName = query.get(command).toString();
             return listIndexes(collectionName);
+        } else if (command.equals("triggerInternalException")) {
+            throw new NullPointerException("For testing purposes");
         } else {
             log.error("unknown query: {}", query);
         }

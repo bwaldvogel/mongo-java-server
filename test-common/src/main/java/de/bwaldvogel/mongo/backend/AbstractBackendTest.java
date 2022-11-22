@@ -17,7 +17,6 @@ import static de.bwaldvogel.mongo.backend.TestUtils.date;
 import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
-import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -1926,10 +1925,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testIllegalCommand() throws Exception {
+    void testIllegalCommand() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("foo: 1")))
             .withMessageStartingWith("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
+    }
+
+    @Test
+    public void testCommandThatTriggersAnInternalException() throws Exception {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(json("triggerInternalException: 1")))
+            .withMessageStartingWith("Command failed with error -1: 'Unknown error: For testing purposes'");
     }
 
     @Test
