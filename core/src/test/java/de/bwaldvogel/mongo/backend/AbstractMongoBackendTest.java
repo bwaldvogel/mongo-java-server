@@ -33,7 +33,7 @@ class AbstractMongoBackendTest {
                 Utils.markOkay(fakeResponse);
                 fakeResponse.put("message", "fakeResponse");
 
-                when(mockDatabase.handleCommand(any(), any(), any(), any())).thenReturn(fakeResponse);
+                when(mockDatabase.handleCommand(any(), any(), any(), any(), any())).thenReturn(fakeResponse);
 
                 return mockDatabase;
             }

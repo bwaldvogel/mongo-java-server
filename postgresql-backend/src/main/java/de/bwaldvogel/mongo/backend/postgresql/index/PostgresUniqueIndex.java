@@ -214,7 +214,7 @@ public class PostgresUniqueIndex extends Index<Long> {
     }
 
     @Override
-    protected boolean isUnique() {
+    public boolean isUnique() {
         return true;
     }
 }

@@ -949,7 +949,7 @@ public enum Expression implements ExpressionTraits {
                     throw new MongoServerError(40400,
                         "$mergeObjects requires object inputs, but input " + toJsonValue(value) + " is of type " + describeType(value));
                 }
-                result.putAll((Document) value);
+                result.merge((Document) value);
             }
             return result;
         }

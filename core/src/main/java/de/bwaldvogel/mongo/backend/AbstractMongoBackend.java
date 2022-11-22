@@ -334,7 +334,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         }
 
         MongoDatabase mongoDatabase = resolveDatabase(databaseName);
-        return mongoDatabase.handleCommand(channel, command, query, oplog);
+        return mongoDatabase.handleCommand(channel, command, query, this::resolveDatabase, oplog);
     }
 
     @Override
@@ -456,7 +456,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         MongoDatabase localDatabase = resolveDatabase("local");
         MongoCollection<Document> collection = (MongoCollection<Document>) localDatabase.resolveCollection(OPLOG_COLLECTION_NAME, false);
         if (collection == null) {
-            collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME, CollectionOptions.withDefaults());
+            collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME);
         }
         return new CollectionBackedOplog(this, collection, cursorRegistry);
     }

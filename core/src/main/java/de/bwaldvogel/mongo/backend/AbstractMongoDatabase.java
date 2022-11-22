@@ -104,7 +104,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     @Override
-    public Document handleCommand(Channel channel, String command, Document query, Oplog oplog) {
+    public Document handleCommand(Channel channel, String command, Document query, DatabaseResolver databaseResolver, Oplog oplog) {
         Document commandErrorDocument = commandError(channel, command, query);
         if (commandErrorDocument != null) {
             return commandErrorDocument;
@@ -128,7 +128,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         } else if (command.equalsIgnoreCase("count")) {
             return commandCount(command, query);
         } else if (command.equalsIgnoreCase("aggregate")) {
-            return commandAggregate(command, query, oplog);
+            return commandAggregate(command, query, databaseResolver, oplog);
         } else if (command.equalsIgnoreCase("distinct")) {
             MongoCollection<P> collection = resolveCollection(command, query);
             if (collection == null) {
@@ -604,7 +604,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandAggregate(String command, Document query, Oplog oplog) {
+    private Document commandAggregate(String command, Document query, DatabaseResolver databaseResolver, Oplog oplog) {
         String collectionName = query.get(command).toString();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         Object pipelineObject = Aggregation.parse(query.get("pipeline"));
@@ -612,18 +612,19 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (!pipeline.isEmpty()) {
             Document changeStream = (Document) pipeline.get(0).get("$changeStream");
             if (changeStream != null) {
-                Aggregation aggregation = getAggregation(pipeline.subList(1, pipeline.size()), query, collection, oplog);
+                Aggregation aggregation = getAggregation(pipeline.subList(1, pipeline.size()), query, databaseResolver, collection, oplog);
                 aggregation.validate(query);
                 return commandChangeStreamPipeline(query, oplog, collectionName, changeStream, aggregation);
             }
         }
 
-        Aggregation aggregation = getAggregation(pipeline, query, collection, oplog);
+        Aggregation aggregation = getAggregation(pipeline, query, databaseResolver, collection, oplog);
         return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), aggregation.computeResult());
     }
 
-    private Aggregation getAggregation(List<Document> pipeline, Document query, MongoCollection<?> collection, Oplog oplog) {
-        Aggregation aggregation = Aggregation.fromPipeline(pipeline, this, collection, oplog);
+    private Aggregation getAggregation(List<Document> pipeline, Document query, DatabaseResolver databaseResolver,
+                                       MongoCollection<?> collection, Oplog oplog) {
+        Aggregation aggregation = Aggregation.fromPipeline(pipeline, databaseResolver, this, collection, oplog);
         aggregation.validate(query);
         return aggregation;
     }

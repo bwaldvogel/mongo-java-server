@@ -165,7 +165,7 @@ public abstract class Index<P> {
         return getClass().getSimpleName() + "[name=" + getName() + "]";
     }
 
-    protected boolean isUnique() {
+    public boolean isUnique() {
         return false;
     }
 

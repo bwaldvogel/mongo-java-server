@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.DatabaseResolver;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
@@ -30,14 +31,16 @@ public class LookupWithPipelineStage extends AbstractLookupStage {
     }
 
     private final MongoDatabase mongoDatabase;
+    private final DatabaseResolver databaseResolver;
     private final Oplog oplog;
     private final MongoCollection<?> collection;
     private final Document let;
     private final Object pipeline;
     private final String as;
 
-    public LookupWithPipelineStage(Document configuration, MongoDatabase mongoDatabase, Oplog oplog) {
+    public LookupWithPipelineStage(Document configuration, MongoDatabase mongoDatabase, DatabaseResolver databaseResolver, Oplog oplog) {
         this.mongoDatabase = mongoDatabase;
+        this.databaseResolver = databaseResolver;
         this.oplog = oplog;
         String from = readStringConfigurationProperty(configuration, FROM);
         collection = mongoDatabase.resolveCollection(from, false);
@@ -53,7 +56,7 @@ public class LookupWithPipelineStage extends AbstractLookupStage {
     }
 
     private Document joinDocuments(Document document) {
-        Aggregation aggregation = Aggregation.fromPipeline(pipeline, mongoDatabase, collection, oplog);
+        Aggregation aggregation = Aggregation.fromPipeline(pipeline, databaseResolver, mongoDatabase, collection, oplog);
         aggregation.setVariables(evaluateVariables(document));
         List<Document> documents = aggregation.computeResult();
         Document result = document.clone();

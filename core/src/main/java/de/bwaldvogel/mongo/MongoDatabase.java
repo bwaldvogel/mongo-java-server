@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo;
 
 import de.bwaldvogel.mongo.backend.CollectionOptions;
+import de.bwaldvogel.mongo.backend.DatabaseResolver;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
@@ -13,11 +14,15 @@ public interface MongoDatabase {
 
     void handleClose(Channel channel);
 
-    Document handleCommand(Channel channel, String command, Document query, Oplog oplog);
+    Document handleCommand(Channel channel, String command, Document query, DatabaseResolver databaseResolver, Oplog oplog);
 
     QueryResult handleQuery(MongoQuery query);
 
     boolean isEmpty();
+
+    default MongoCollection<?> createCollectionOrThrowIfExists(String collectionName) {
+        return createCollectionOrThrowIfExists(collectionName, CollectionOptions.withDefaults());
+    }
 
     MongoCollection<?> createCollectionOrThrowIfExists(String collectionName, CollectionOptions options);
 

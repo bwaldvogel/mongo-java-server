@@ -20,6 +20,7 @@ public enum ErrorCode {
     CannotIndexParallelArrays(171),
     ConversionFailure(241),
     DuplicateKey(11000),
+    MergeStageNoMatchingDocument(13113),
 
     _15998(15998) {
         @Override

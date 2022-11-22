@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.bson.BsonInvalidOperationException;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +31,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.mongodb.Function;
 import com.mongodb.MongoCommandException;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.IndexOptions;
 
 public abstract class AbstractAggregationTest extends AbstractTest {
 
@@ -2045,6 +2048,461 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 'one'", "$out : 'other'")).first())
             .withMessageContaining("Command failed with error 40601 (Location40601): '$out can only be the final stage in the pipeline'");
+    }
+
+    // Testing the official example from https://www.mongodb.com/docs/manual/reference/operator/aggregation/merge/ (2022-11-22)
+    @Test
+    void testAggregateWithMerge_officialExample() throws Exception {
+        syncClient.getDatabase("reporting").drop();
+
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant', dept: 'A', salary: 100000, fiscal_year: 2017",
+            "_id: 2, employee: 'Bee', dept: 'A', salary: 120000, fiscal_year: 2017",
+            "_id: 3, employee: 'Cat', dept: 'Z', salary: 115000, fiscal_year: 2017",
+            "_id: 4, employee: 'Ant', dept: 'A', salary: 115000, fiscal_year: 2018",
+            "_id: 5, employee: 'Bee', dept: 'Z', salary: 145000, fiscal_year: 2018",
+            "_id: 6, employee: 'Cat', dept: 'Z', salary: 135000, fiscal_year: 2018",
+            "_id: 7, employee: 'Gecko', dept: 'A', salary: 100000, fiscal_year: 2018",
+            "_id: 8, employee: 'Ant', dept: 'A', salary: 125000, fiscal_year: 2019",
+            "_id: 9, employee: 'Bee', dept: 'Z', salary: 160000, fiscal_year: 2019",
+            "_id: 10, employee: 'Cat', dept: 'Z', salary: 150000, fiscal_year: 2019"
+        ));
+
+        assertThat(collection.aggregate(jsonList(
+            "$group: { _id: { fiscal_year: '$fiscal_year', dept: '$dept' }, salaries: { $sum: '$salary' }}",
+            "$sort: { '_id.fiscal_year': -1, '_id.dept': 1 }",
+            "$merge : { into: { db: 'reporting', coll: 'budgets' }, on: '_id',  whenMatched: 'replace', whenNotMatched: 'insert' }"
+        ))).containsExactlyElementsOf(jsonList(
+            "_id: {dept: 'A', fiscal_year: 2019}, salaries: 125000",
+            "_id: {dept: 'Z', fiscal_year: 2019}, salaries: 310000",
+            "_id: {dept: 'A', fiscal_year: 2018}, salaries: 215000",
+            "_id: {dept: 'Z', fiscal_year: 2018}, salaries: 280000",
+            "_id: {dept: 'A', fiscal_year: 2017}, salaries: 220000",
+            "_id: {dept: 'Z', fiscal_year: 2017}, salaries: 115000"
+        ));
+
+        MongoDatabase reportingDb = syncClient.getDatabase("reporting");
+        assertThat(reportingDb.listCollectionNames()).containsExactly("budgets");
+
+        MongoCollection<Document> budgets = reportingDb.getCollection("budgets");
+        assertThat(budgets.find().sort(json("salaries: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: {dept: 'Z', fiscal_year: 2017}, salaries: 115000",
+                "_id: {dept: 'A', fiscal_year: 2019}, salaries: 125000",
+                "_id: {dept: 'A', fiscal_year: 2018}, salaries: 215000",
+                "_id: {dept: 'A', fiscal_year: 2017}, salaries: 220000",
+                "_id: {dept: 'Z', fiscal_year: 2018}, salaries: 280000",
+                "_id: {dept: 'Z', fiscal_year: 2019}, salaries: 310000"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_otherCollection() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        assertThat(collection.aggregate(jsonList("$merge : { into: 'other' }")))
+            .containsExactlyInAnyOrderElementsOf(jsonList(
+                "_id: 1, employee: 'Ant'",
+                "_id: 2, employee: 'Bee'",
+                "_id: 3, employee: 'Cat'"
+            ));
+
+        assertThat(db.getCollection("other").find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, employee: 'Ant'",
+                "_id: 2, employee: 'Bee'",
+                "_id: 3, employee: 'Cat'"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_sameCollection() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant', otherId: 4",
+            "_id: 2, employee: 'Bee', otherId: 5",
+            "_id: 3, employee: 'Cat', otherId: 6"
+        ));
+
+        assertThat(collection.aggregate(jsonList(
+            "$project: { _id: '$otherId', employee: 1 }",
+            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "' }"
+        ))).containsExactlyInAnyOrderElementsOf(jsonList(
+            "_id: 1, employee: 'Ant', otherId: 4",
+            "_id: 2, employee: 'Bee', otherId: 5",
+            "_id: 3, employee: 'Cat', otherId: 6",
+            "_id: 4, employee: 'Ant'",
+            "_id: 5, employee: 'Bee'",
+            "_id: 6, employee: 'Cat'"
+        ));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, employee: 'Ant', otherId: 4",
+                "_id: 2, employee: 'Bee', otherId: 5",
+                "_id: 3, employee: 'Cat', otherId: 6",
+                "_id: 4, employee: 'Ant'",
+                "_id: 5, employee: 'Bee'",
+                "_id: 6, employee: 'Cat'"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_mergeDocuments_simple() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        assertThat(collection.aggregate(jsonList(
+            "$addFields: { newField: 1 }",
+            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'merge', whenNotMatched: 'fail' }"
+        ))).containsExactlyInAnyOrderElementsOf(jsonList(
+            "_id: 1, employee: 'Ant', newField: 1",
+            "_id: 2, employee: 'Bee', newField: 1",
+            "_id: 3, employee: 'Cat', newField: 1"));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, employee: 'Ant', newField: 1",
+                "_id: 2, employee: 'Bee', newField: 1",
+                "_id: 3, employee: 'Cat', newField: 1"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_mergeDocuments_complex() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, x: 1",
+            "_id: 2, x: { a: 1, b: 2 }",
+            "_id: 3, x: { a: 1, b: 2 }"
+        ));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+
+        otherCollection.insertMany(jsonList(
+            "_id: 1, x: 2",
+            "_id: 2, x: 'abc'",
+            "_id: 3, x: { c: 4 }"
+        ));
+
+        assertThat(collection.aggregate(jsonList("$merge : { into: 'other' }")))
+            .containsExactlyInAnyOrderElementsOf(jsonList(
+                "_id: 1, x: 1",
+                "_id: 2, x: { a: 1, b: 2}",
+                "_id: 3, x: { a: 1, b: 2}"
+            ));
+
+        assertThat(otherCollection.find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, x: 1",
+                "_id: 2, x: { a: 1, b: 2}",
+                "_id: 3, x: { a: 1, b: 2}"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_replaceDocuments() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        assertThat(collection.aggregate(jsonList(
+            "$addFields: { newField: 1 }",
+            "$project: { employee: 0 }",
+            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'replace', whenNotMatched: 'fail' }"
+        ))).containsExactlyInAnyOrderElementsOf(jsonList(
+            "_id: 1, newField: 1",
+            "_id: 2, newField: 1",
+            "_id: 3, newField: 1"
+        ));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, newField: 1",
+                "_id: 2, newField: 1",
+                "_id: 3, newField: 1"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_keepExistingDocuments() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        assertThat(collection.aggregate(jsonList(
+            "$addFields: { newField: 1 }",
+            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'keepExisting' }"
+        ))).containsExactlyInAnyOrderElementsOf(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        assertThat(collection.find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, employee: 'Ant'",
+                "_id: 2, employee: 'Bee'",
+                "_id: 3, employee: 'Cat'"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_whenNotMatched_discard() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+        otherCollection.insertMany(jsonList(
+            "_id: 1",
+            "_id: 3"
+        ));
+
+        assertThat(collection.aggregate(jsonList("$merge : { into: 'other', whenNotMatched: 'discard' }")))
+            .containsExactlyInAnyOrderElementsOf(jsonList(
+                "_id: 1, employee: 'Ant'",
+                "_id: 3, employee: 'Cat'"
+            ));
+
+        assertThat(otherCollection.find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, employee: 'Ant'",
+                "_id: 3, employee: 'Cat'"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_whenMatched_fail() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+        otherCollection.insertMany(jsonList(
+            "_id: 1",
+            "_id: 3"
+        ));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', whenMatched: 'fail' }")).first())
+            .withMessageStartingWith("Command failed with error 11000 (DuplicateKey): " +
+                "'PlanExecutor error during aggregation :: caused by :: " +
+                "E11000 duplicate key error collection: testdb.other index: _id_ dup key: { _id: 1 }'");
+    }
+
+    @Test
+    void testAggregateWithMerge_whenNotMatched_fail() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, employee: 'Ant'",
+            "_id: 2, employee: 'Bee'",
+            "_id: 3, employee: 'Cat'"
+        ));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', whenNotMatched: 'fail' }")).first())
+            .withMessageStartingWith("Command failed with error 13113 (MergeStageNoMatchingDocument): " +
+                "'PlanExecutor error during aggregation :: caused by :: " +
+                "$merge could not find a matching document in the target collection for at least one document in the source collection'");
+    }
+
+
+    @Test
+    void testAggregateWithMerge_multipleOnFields() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, name: 'Ant', year: 2020, data: 'a'",
+            "_id: 2, name: 'Bee', year: 2021, data: 'b'",
+            "_id: 3, name: 'Cat', year: 2022, data: 'c'",
+            "_id: 4, name: 'Ant', year: 2021, data: 'd'"
+        ));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+
+        otherCollection.insertMany(jsonList(
+            "_id: 10, name: 'Ant', year: 2020",
+            "_id: 11, name: 'Bee', year: 2021",
+            "_id: 12, name: 'Cat', year: 2022",
+            "_id: 13, name: 'Ant', year: 2021"
+        ));
+
+        otherCollection.createIndex(json("year: 1, name: -1"), new IndexOptions().unique(true));
+
+        assertThat(collection.aggregate(jsonList(
+            "$project: { _id: 0 }",
+            "$merge : { into: 'other', on: ['name', 'year'] }"
+        ))).containsExactlyInAnyOrderElementsOf(jsonList(
+            "_id: 10, name: 'Ant', year: 2020, data: 'a'",
+            "_id: 11, name: 'Bee', year: 2021, data: 'b'",
+            "_id: 12, name: 'Cat', year: 2022, data: 'c'",
+            "_id: 13, name: 'Ant', year: 2021, data: 'd'"
+        ));
+
+        assertThat(otherCollection.find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 10, name: 'Ant', year: 2020, data: 'a'",
+                "_id: 11, name: 'Bee', year: 2021, data: 'b'",
+                "_id: 12, name: 'Cat', year: 2022, data: 'c'",
+                "_id: 13, name: 'Ant', year: 2021, data: 'd'"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_stringParameter() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, name: 'Ant', year: 2020, data: 'a'",
+            "_id: 2, name: 'Bee', year: 2021, data: 'b'",
+            "_id: 3, name: 'Cat', year: 2022, data: 'c'"
+        ));
+
+        assertThat(collection.aggregate(jsonList(
+            "$project: { year: 0, data: 0 }",
+            "$merge : 'other'"
+        ))).containsExactlyInAnyOrderElementsOf(jsonList(
+            "_id: 1, name: 'Ant'",
+            "_id: 2, name: 'Bee'",
+            "_id: 3, name: 'Cat'"));
+
+        assertThat(db.getCollection("other").find().sort(json("_id: 1")))
+            .containsExactlyElementsOf(jsonList(
+                "_id: 1, name: 'Ant'",
+                "_id: 2, name: 'Bee'",
+                "_id: 3, name: 'Cat'"
+            ));
+    }
+
+    @Test
+    void testAggregateWithMerge_idMustNotBeModified() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, name: 'Ant'",
+            "_id: 2, name: 'Bee'",
+            "_id: 3, name: 'Cat'"
+        ));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+
+        otherCollection.insertMany(jsonList(
+            "_id: 10, name: 'Ant'",
+            "_id: 11, name: 'Bee'",
+            "_id: 12, name: 'Cat'"
+        ));
+
+        otherCollection.createIndex(json("name: 1"), new IndexOptions().unique(true));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', on: 'name' }")).first())
+            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+                "'PlanExecutor error during aggregation :: caused by :: " +
+                "$merge failed to update the matching document, did you attempt to modify the _id or the shard key? :: caused by :: " +
+                "Performing an update on the path '_id' would modify the immutable field '_id''");
+    }
+
+    @Test
+    void testAggregateWithMerge_onWithoutUniqueIndex() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', on: 'xyz' }")).first())
+            .withMessageStartingWith("Command failed with error 51183 (Location51183): " +
+                "'Cannot find index to verify that join fields will be unique'");
+    }
+
+    @Test
+    void testAggregateWithMerge_onWithIndexWhichIsNotUnique() throws Exception {
+        collection.insertOne(json("_id: 1"));
+        collection.createIndex(json("xyz: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: 'xyz' }")).first())
+            .withMessageStartingWith("Command failed with error 51183 (Location51183): " +
+                "'Cannot find index to verify that join fields will be unique'");
+    }
+
+    private static Stream<Arguments> aggregateWithMerge_illegalParametersArguments() {
+        return Stream.of(
+            Arguments.of("$merge: null", IllegalStateException.class,
+                "Cannot return a cursor when the value for $merge stage is not a string or a document"),
+
+            Arguments.of("$merge: []", IllegalStateException.class,
+                "Cannot return a cursor when the value for $merge stage is not a string or a document"),
+
+            Arguments.of("$merge: 1", IllegalStateException.class,
+                "Cannot return a cursor when the value for $merge stage is not a string or a document"),
+
+            Arguments.of("$merge: { otherParam: 1 }", MongoCommandException.class,
+                "Command failed with error 40415 (Location40415): 'BSON field '$merge.otherParam' is an unknown field.'"),
+
+            Arguments.of("$merge: { into: {} }", BsonInvalidOperationException.class,
+                "Document does not contain key coll"),
+
+            Arguments.of("$merge: { into: { coll: 'abc', other: 1} }", MongoCommandException.class,
+                "Command failed with error 40415 (Location40415): 'BSON field 'into.other' is an unknown field.'"),
+
+            Arguments.of("$merge: { into: { coll: 1} }", BsonInvalidOperationException.class,
+                "Value expected to be of type STRING is of unexpected type INT32"),
+
+            Arguments.of("$merge: { into: { db: 1, coll: 'xyz' } }", BsonInvalidOperationException.class,
+                "Value expected to be of type STRING is of unexpected type INT32"),
+
+            Arguments.of("$merge: { into: 'abc', on: 1 }", MongoCommandException.class,
+                "Command failed with error 51186 (Location51186): '$merge 'on' field  must be either a string or an array of strings, but found int'"),
+
+            Arguments.of("$merge: { into: 'abc', on: [1, 2, 3] }", MongoCommandException.class,
+                "Command failed with error 51134 (Location51134): '$merge 'on' array elements must be strings, but found int'"),
+
+            Arguments.of("$merge: { into: 'abc', on: [] }", MongoCommandException.class,
+                "Command failed with error 51187 (Location51187): 'If explicitly specifying $merge 'on', must include at least one field'"),
+
+            Arguments.of("$merge: { into: 'abc', whenMatched: 1 }", MongoCommandException.class,
+                "Command failed with error 51191 (Location51191): '$merge 'whenMatched' field  must be either a string or an array, but found int'"),
+
+            Arguments.of("$merge: { into: 'abc', whenMatched: 'other' }", MongoCommandException.class,
+                "Command failed with error 2 (BadValue): 'Enumeration value 'other' for field 'whenMatched' is not a valid value.'"),
+
+            Arguments.of("$merge: { into: 'abc', whenNotMatched: 1 }", MongoCommandException.class,
+                "Command failed with error 14 (TypeMismatch): 'BSON field '$merge.whenNotMatched' is the wrong type 'int', expected type 'string''"),
+
+            Arguments.of("$merge: { into: 'abc', whenNotMatched: 'other' }", MongoCommandException.class,
+                "Command failed with error 2 (BadValue): 'Enumeration value 'other' for field '$merge.whenNotMatched' is not a valid value.'"),
+
+            Arguments.of("$merge: { into: 1 }", MongoCommandException.class,
+                "Command failed with error 51178 (Location51178): '$merge 'into' field  must be either a string or an object, but found int'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithMerge_illegalParametersArguments")
+    void testAggregateWithMerge_illegalParameters(String merge, Class<? extends Exception> expectedException, String expectedMessage) throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(expectedException)
+            .isThrownBy(() -> collection.aggregate(jsonList(merge)).first())
+            .withMessageStartingWith(expectedMessage);
+    }
+
+    @Test
+    void testAggregateWithMerge_mergeIsNotTheLastStage() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList(
+                "$merge : { into: 'other' }",
+                "$project : { _id: 0 }"
+            )).first())
+            .withMessageStartingWith("Command failed with error 40601 (Location40601): " +
+                "'$merge can only be the final stage in the pipeline'");
     }
 
     @Test

@@ -8,12 +8,11 @@ import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.IllegalOperationException;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 
-public class OutStage implements AggregationStage {
+public class OutStage implements TerminalStage {
 
     private static final Logger log = LoggerFactory.getLogger(OutStage.class);
 
@@ -26,12 +25,17 @@ public class OutStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$out";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         if (this.collectionName.contains("$")) {
             throw new IllegalOperationException("error with target namespace: Invalid collection name: " + this.collectionName);
         }
         String tempCollectionName = "_tmp" + System.currentTimeMillis() + "_" + this.collectionName;
-        MongoCollection<?> tempCollection = database.createCollectionOrThrowIfExists(tempCollectionName, CollectionOptions.withDefaults());
+        MongoCollection<?> tempCollection = database.createCollectionOrThrowIfExists(tempCollectionName);
         stream.forEach(document -> tempCollection.insertDocuments(Collections.singletonList(document)));
         MongoCollection<?> existingCollection = database.resolveCollection(this.collectionName, false);
         if (existingCollection != null) {

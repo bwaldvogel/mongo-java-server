@@ -70,7 +70,7 @@ public class ReadOnlyProxy implements MongoBackend {
 
         if (command.equalsIgnoreCase("aggregate")) {
             List<Document> pipeline = Aggregation.parse(query.get("pipeline"));
-            Aggregation aggregation = Aggregation.fromPipeline(pipeline, null, null, null);
+            Aggregation aggregation = Aggregation.fromPipeline(pipeline, null, null, null, null);
             if (aggregation.isModifying()) {
                 throw new MongoServerException("Aggregation contains a modifying stage and is therefore not allowed in read-only mode");
             }

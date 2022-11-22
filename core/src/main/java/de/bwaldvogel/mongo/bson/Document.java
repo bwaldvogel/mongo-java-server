@@ -201,4 +201,7 @@ public final class Document implements Map<String, Object>, Bson {
         }
     }
 
+    public void merge(Document value) {
+        putAll(value);
+    }
 }
