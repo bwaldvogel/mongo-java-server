@@ -2488,6 +2488,9 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             Arguments.of("$merge: { into: 'abc', on: [1, 2, 3] }", MongoCommandException.class,
                 "Command failed with error 51134 (Location51134): '$merge 'on' array elements must be strings, but found int'"),
 
+            Arguments.of("$merge: { into: 'abc', on: ['a', 'b', 'a'] }", MongoCommandException.class,
+                "Command failed with error 31465 (Location31465): 'Found a duplicate field 'a''"),
+
             Arguments.of("$merge: { into: 'abc', on: [] }", MongoCommandException.class,
                 "Command failed with error 51187 (Location51187): 'If explicitly specifying $merge 'on', must include at least one field'"),
 

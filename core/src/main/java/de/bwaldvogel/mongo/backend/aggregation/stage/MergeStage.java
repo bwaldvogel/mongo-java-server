@@ -118,14 +118,17 @@ public class MergeStage implements TerminalStage {
             if (collection.isEmpty()) {
                 throw new MongoServerError(51187, "If explicitly specifying $merge 'on', must include at least one field");
             }
-            return collection.stream()
-                .map(value -> {
-                    if (!(value instanceof String)) {
-                        throw new MongoServerError(51134, "$merge 'on' array elements must be strings, but found " + Utils.describeType(value));
-                    }
-                    return (String) value;
-                })
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+            Set<String> joinFields = new LinkedHashSet<>();
+            for (Object value : collection) {
+                if (!(value instanceof String)) {
+                    throw new MongoServerError(51134, "$merge 'on' array elements must be strings, but found " + Utils.describeType(value));
+                }
+                String joinField = (String) value;
+                if (!joinFields.add(joinField)) {
+                    throw new MongoServerError(31465, "Found a duplicate field '" + joinField + "'");
+                }
+            }
+            return joinFields;
         } else {
             throw new MongoServerError(51186, "$merge 'on' field  must be either a string or an array of strings, but found " + Utils.describeType(on));
         }
