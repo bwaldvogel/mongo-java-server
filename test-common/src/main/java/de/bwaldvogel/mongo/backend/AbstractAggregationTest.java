@@ -2384,7 +2384,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
-    void testAggregateWithMerge_idMustNotBeModified() throws Exception {
+    void testAggregateWithMerge_idMustNotBeModified_merge() throws Exception {
         collection.insertMany(jsonList(
             "_id: 1, name: 'Ant'",
             "_id: 2, name: 'Bee'",
@@ -2407,6 +2407,32 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$merge failed to update the matching document, did you attempt to modify the _id or the shard key? :: caused by :: " +
                 "Performing an update on the path '_id' would modify the immutable field '_id''");
+    }
+
+    @Test
+    void testAggregateWithMerge_idMustNotBeModified_replace() throws Exception {
+        collection.insertMany(jsonList(
+            "_id: 1, name: 'Ant'",
+            "_id: 2, name: 'Bee'",
+            "_id: 3, name: 'Cat'"
+        ));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+
+        otherCollection.insertMany(jsonList(
+            "_id: 10, name: 'Ant'",
+            "_id: 11, name: 'Bee'",
+            "_id: 12, name: 'Cat'"
+        ));
+
+        otherCollection.createIndex(json("name: 1"), new IndexOptions().unique(true));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', on: 'name', whenMatched: 'replace' }")).first())
+            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+                "'PlanExecutor error during aggregation :: caused by :: " +
+                "$merge failed to update the matching document, did you attempt to modify the _id or the shard key? :: caused by :: " +
+                "After applying the update, the (immutable) field '_id' was found to have been altered to _id: 1'");
     }
 
     @Test

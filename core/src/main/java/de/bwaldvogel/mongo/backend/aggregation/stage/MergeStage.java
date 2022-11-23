@@ -13,6 +13,8 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.AbstractMongoCollection.FindAndModifyPlanExecutorError;
+import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.backend.DatabaseResolver;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
@@ -220,12 +222,18 @@ public class MergeStage implements TerminalStage {
 
     private void replaceDocument(MongoCollection<?> collection, Document existingDocument, Document document) {
         Document documentSelector = new Document("_id", existingDocument.get("_id"));
-        Document result = collection.findAndModify(new Document("query", documentSelector)
-            .append("new", false)
-            .append("upsert", false)
-            .append("update", document));
-        if (!result.get("ok").equals(1.0)) {
-            throw new RuntimeException("Unexpected result: " + result);
+        try {
+            Document result = collection.findAndModify(new Document("query", documentSelector)
+                .append("new", false)
+                .append("upsert", false)
+                .append("update", document));
+            Assert.equals(result.get("ok"), 1.0);
+        } catch (FindAndModifyPlanExecutorError e) {
+            MongoServerError cause = e.getCause();
+            throw new MongoServerError(cause.getCode(), cause.getCodeName(),
+                "$merge failed to update the matching document,"
+                    + " did you attempt to modify the _id or the shard key? :: caused by :: "
+                    + cause.getMessageWithoutErrorCode(), cause);
         }
     }
 

@@ -457,7 +457,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return result;
     }
 
-    private static class FindAndModifyPlanExecutorError extends MongoServerError {
+    public static class FindAndModifyPlanExecutorError extends MongoServerError {
 
         private static final long serialVersionUID = 1L;
 
@@ -465,6 +465,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         private FindAndModifyPlanExecutorError(MongoServerError cause) {
             super(cause.getCode(), cause.getCodeName(), PREFIX + cause.getMessageWithoutErrorCode(), cause);
+        }
+
+        @Override
+        public synchronized MongoServerError getCause() {
+            return (MongoServerError) super.getCause();
         }
     }
 
