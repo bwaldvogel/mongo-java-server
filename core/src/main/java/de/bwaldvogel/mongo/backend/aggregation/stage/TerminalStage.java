@@ -6,8 +6,6 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public abstract class TerminalStage implements AggregationStage {
 
-    public abstract String name();
-
     abstract void applyLast(Stream<Document> stream);
 
     @Override

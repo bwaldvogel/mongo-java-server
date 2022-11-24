@@ -2071,7 +2071,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThat(collection.aggregate(jsonList(
             "$group: { _id: { fiscal_year: '$fiscal_year', dept: '$dept' }, salaries: { $sum: '$salary' }}",
             "$sort: { '_id.fiscal_year': -1, '_id.dept': 1 }",
-            "$merge : { into: { db: 'reporting', coll: 'budgets' }, on: '_id',  whenMatched: 'replace', whenNotMatched: 'insert' }"
+            "$merge: { into: { db: 'reporting', coll: 'budgets' }, on: '_id',  whenMatched: 'replace', whenNotMatched: 'insert' }"
         ))).containsExactlyElementsOf(jsonList(
             "_id: {dept: 'A', fiscal_year: 2019}, salaries: 125000",
             "_id: {dept: 'Z', fiscal_year: 2019}, salaries: 310000",
@@ -2104,7 +2104,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             "_id: 3, employee: 'Cat'"
         ));
 
-        assertThat(collection.aggregate(jsonList("$merge : { into: 'other' }")))
+        assertThat(collection.aggregate(jsonList("$merge: { into: 'other' }")))
             .containsExactlyInAnyOrderElementsOf(jsonList(
                 "_id: 1, employee: 'Ant'",
                 "_id: 2, employee: 'Bee'",
@@ -2129,7 +2129,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(collection.aggregate(jsonList(
             "$project: { _id: '$otherId', employee: 1 }",
-            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "' }"
+            "$merge: { into: '" + collection.getNamespace().getCollectionName() + "' }"
         ))).containsExactlyInAnyOrderElementsOf(jsonList(
             "_id: 1, employee: 'Ant', otherId: 4",
             "_id: 2, employee: 'Bee', otherId: 5",
@@ -2160,7 +2160,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(collection.aggregate(jsonList(
             "$addFields: { newField: 1 }",
-            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'merge', whenNotMatched: 'fail' }"
+            "$merge: { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'merge', whenNotMatched: 'fail' }"
         ))).containsExactlyInAnyOrderElementsOf(jsonList(
             "_id: 1, employee: 'Ant', newField: 1",
             "_id: 2, employee: 'Bee', newField: 1",
@@ -2190,7 +2190,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             "_id: 3, x: { c: 4 }"
         ));
 
-        assertThat(collection.aggregate(jsonList("$merge : { into: 'other' }")))
+        assertThat(collection.aggregate(jsonList("$merge: { into: 'other' }")))
             .containsExactlyInAnyOrderElementsOf(jsonList(
                 "_id: 1, x: 1",
                 "_id: 2, x: { a: 1, b: 2}",
@@ -2216,7 +2216,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThat(collection.aggregate(jsonList(
             "$addFields: { newField: 1 }",
             "$project: { employee: 0 }",
-            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'replace', whenNotMatched: 'fail' }"
+            "$merge: { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'replace', whenNotMatched: 'fail' }"
         ))).containsExactlyInAnyOrderElementsOf(jsonList(
             "_id: 1, newField: 1",
             "_id: 2, newField: 1",
@@ -2241,7 +2241,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(collection.aggregate(jsonList(
             "$addFields: { newField: 1 }",
-            "$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'keepExisting' }"
+            "$merge: { into: '" + collection.getNamespace().getCollectionName() + "', on: '_id', whenMatched: 'keepExisting' }"
         ))).containsExactlyInAnyOrderElementsOf(jsonList(
             "_id: 1, employee: 'Ant'",
             "_id: 2, employee: 'Bee'",
@@ -2270,7 +2270,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             "_id: 3"
         ));
 
-        assertThat(collection.aggregate(jsonList("$merge : { into: 'other', whenNotMatched: 'discard' }")))
+        assertThat(collection.aggregate(jsonList("$merge: { into: 'other', whenNotMatched: 'discard' }")))
             .containsExactlyInAnyOrderElementsOf(jsonList(
                 "_id: 1, employee: 'Ant'",
                 "_id: 3, employee: 'Cat'"
@@ -2298,7 +2298,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         ));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', whenMatched: 'fail' }")).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', whenMatched: 'fail' }")).first())
             .withMessageStartingWith("Command failed with error 11000 (DuplicateKey): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "E11000 duplicate key error collection: testdb.other index: _id_ dup key: { _id: 1 }'");
@@ -2313,7 +2313,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         ));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', whenNotMatched: 'fail' }")).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', whenNotMatched: 'fail' }")).first())
             .withMessageStartingWith("Command failed with error 13113 (MergeStageNoMatchingDocument): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$merge could not find a matching document in the target collection for at least one document in the source collection'");
@@ -2342,7 +2342,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(collection.aggregate(jsonList(
             "$project: { _id: 0 }",
-            "$merge : { into: 'other', on: ['name', 'year'] }"
+            "$merge: { into: 'other', on: ['name', 'year'] }"
         ))).containsExactlyInAnyOrderElementsOf(jsonList(
             "_id: 10, name: 'Ant', year: 2020, data: 'a'",
             "_id: 11, name: 'Bee', year: 2021, data: 'b'",
@@ -2369,7 +2369,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThat(collection.aggregate(jsonList(
             "$project: { year: 0, data: 0 }",
-            "$merge : 'other'"
+            "$merge: 'other'"
         ))).containsExactlyInAnyOrderElementsOf(jsonList(
             "_id: 1, name: 'Ant'",
             "_id: 2, name: 'Bee'",
@@ -2402,7 +2402,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         otherCollection.createIndex(json("name: 1"), new IndexOptions().unique(true));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', on: 'name' }")).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', on: 'name' }")).first())
             .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$merge failed to update the matching document, did you attempt to modify the _id or the shard key? :: caused by :: " +
@@ -2428,7 +2428,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         otherCollection.createIndex(json("name: 1"), new IndexOptions().unique(true));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', on: 'name', whenMatched: 'replace' }")).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', on: 'name', whenMatched: 'replace' }")).first())
             .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$merge failed to update the matching document, did you attempt to modify the _id or the shard key? :: caused by :: " +
@@ -2440,7 +2440,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: 'other', on: 'xyz' }")).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', on: 'xyz' }")).first())
             .withMessageStartingWith("Command failed with error 51183 (Location51183): " +
                 "'Cannot find index to verify that join fields will be unique'");
     }
@@ -2451,9 +2451,54 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.createIndex(json("xyz: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$merge : { into: '" + collection.getNamespace().getCollectionName() + "', on: 'xyz' }")).first())
+            .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: '" + collection.getNamespace().getCollectionName() + "', on: 'xyz' }")).first())
             .withMessageStartingWith("Command failed with error 51183 (Location51183): " +
                 "'Cannot find index to verify that join fields will be unique'");
+    }
+
+    @Test
+    void testAggregateWithMerge_pipeline() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+        otherCollection.insertOne(json("_id: 1, x: 123"));
+
+        assertThat(collection.aggregate(
+            jsonList("$merge: {into: 'other', let: {}, whenMatched: []}")))
+            .containsExactly(json("_id: 1, x: 123"));
+
+        assertThat(collection.aggregate(
+            jsonList("$merge: {into: 'other', whenMatched: [{$addFields: {test: 123}}]}")))
+            .containsExactly(json("_id: 1, x: 123, test: 123"));
+
+        assertThat(collection.aggregate(
+            jsonList("$merge: {into: 'other', let: {year: 2020}, whenMatched: [{$project: {test: 0}}, {$addFields: {salesYear: '$$year'}}, {$unset: 'x'}]}")))
+            .containsExactly(json("_id: 1, salesYear: 2020"));
+
+        assertThat(otherCollection.find())
+            .containsExactly(json("_id: 1, salesYear: 2020"));
+    }
+
+    @Test
+    void testAggregateWithMerge_pipeline_newVariable() throws Exception {
+        collection.insertOne(json("_id: 1, obj: {a: 1, b: 'xyz'}"));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+        otherCollection.insertOne(json("_id: 1"));
+
+        assertThat(collection.aggregate(
+            jsonList("$merge: {into: 'other', whenMatched: [{$addFields: {b: '$$new.obj.b'}}]}")))
+            .containsExactly(json("_id: 1, b: 'xyz'"));
+
+        assertThat(otherCollection.find())
+            .containsExactly(json("_id: 1, b: 'xyz'"));
+
+        assertThat(collection.aggregate(
+            jsonList("$merge: {into: 'other', let: {new: '$$ROOT'}, whenMatched: [{$addFields: {a: '$$new.obj.a'}}]}")))
+            .containsExactly(json("_id: 1, b: 'xyz', a: 1"));
+
+        assertThat(otherCollection.find())
+            .containsExactly(json("_id: 1, b: 'xyz', a: 1"));
     }
 
     private static Stream<Arguments> aggregateWithMerge_illegalParametersArguments() {
@@ -2488,6 +2533,18 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             Arguments.of("$merge: { into: 'abc', on: [1, 2, 3] }", MongoCommandException.class,
                 "Command failed with error 51134 (Location51134): '$merge 'on' array elements must be strings, but found int'"),
 
+            Arguments.of("$merge: { into: 'abc', let: 1 }", MongoCommandException.class,
+                "Command failed with error 14 (TypeMismatch): 'BSON field '$merge.let' is the wrong type 'int', expected type 'object''"),
+
+            Arguments.of("$merge: { into: 'abc', let: [] }", MongoCommandException.class,
+                "Command failed with error 14 (TypeMismatch): 'BSON field '$merge.let' is the wrong type 'array', expected type 'object''"),
+
+            Arguments.of("$merge: { into: 'abc', let: {} }", MongoCommandException.class,
+                "Command failed with error 51199 (Location51199): 'Cannot use 'let' variables with 'whenMatched: merge' mode'"),
+
+            Arguments.of("$merge: { into: 'abc', let: {new: 1}, whenMatched: [] }", MongoCommandException.class,
+                "Command failed with error 51273 (Location51273): ''let' may not define a value for the reserved 'new' variable other than '$$ROOT''"),
+
             Arguments.of("$merge: { into: 'abc', on: ['a', 'b', 'a'] }", MongoCommandException.class,
                 "Command failed with error 31465 (Location31465): 'Found a duplicate field 'a''"),
 
@@ -2499,6 +2556,12 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
             Arguments.of("$merge: { into: 'abc', whenMatched: 'other' }", MongoCommandException.class,
                 "Command failed with error 2 (BadValue): 'Enumeration value 'other' for field 'whenMatched' is not a valid value.'"),
+
+            Arguments.of("$merge: { into: 'abc', whenMatched: ['a', 'b'] }", MongoCommandException.class,
+                "Command failed with error 14 (TypeMismatch): 'Each element of the 'pipeline' array must be an object'"),
+
+            Arguments.of("$merge: { into: 'abc', whenMatched: [{$sort: {a: 1}}] }", MongoCommandException.class,
+                "Command failed with error 72 (InvalidOptions): 'PlanExecutor error during aggregation :: caused by :: $sort is not allowed to be used within an update'"),
 
             Arguments.of("$merge: { into: 'abc', whenNotMatched: 1 }", MongoCommandException.class,
                 "Command failed with error 14 (TypeMismatch): 'BSON field '$merge.whenNotMatched' is the wrong type 'int', expected type 'string''"),
@@ -2527,7 +2590,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList(
-                "$merge : { into: 'other' }",
+                "$merge: { into: 'other' }",
                 "$project : { _id: 0 }"
             )).first())
             .withMessageStartingWith("Command failed with error 40601 (Location40601): " +

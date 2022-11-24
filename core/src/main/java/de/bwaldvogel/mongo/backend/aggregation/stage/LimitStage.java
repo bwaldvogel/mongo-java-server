@@ -13,6 +13,11 @@ public class LimitStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$limit";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.limit(maxSize);
     }

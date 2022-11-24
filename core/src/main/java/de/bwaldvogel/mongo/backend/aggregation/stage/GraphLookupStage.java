@@ -43,7 +43,6 @@ public class GraphLookupStage extends AbstractLookupStage {
     private final MongoCollection<?> collection;
 
     public GraphLookupStage(Document configuration, MongoDatabase mongoDatabase) {
-        stageName = "$graphLookup";
         String from = readStringConfigurationProperty(configuration, FROM);
         collection = mongoDatabase.resolveCollection(from, false);
         readStringConfigurationProperty(configuration, FROM);
@@ -54,6 +53,11 @@ public class GraphLookupStage extends AbstractLookupStage {
         maxDepth = readOptionalIntegerConfigurationProperty(configuration, MAX_DEPTH);
         depthField = readOptionalStringConfigurationProperty(configuration, DEPTH_FIELD);
         ensureAllConfigurationPropertiesAreKnown(configuration, CONFIGURATION_KEYS);
+    }
+
+    @Override
+    public String name() {
+        return "$graphLookup";
     }
 
     Integer readOptionalIntegerConfigurationProperty(Document configuration, String name) {

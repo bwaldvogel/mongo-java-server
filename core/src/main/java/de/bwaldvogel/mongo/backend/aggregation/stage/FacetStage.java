@@ -27,6 +27,11 @@ public class FacetStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$facet";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         List<Document> allDocuments = stream.collect(Collectors.toList());
         Document result = new Document();

@@ -31,6 +31,11 @@ public class ProjectStage implements AggregationStage {
         validateProjection();
     }
 
+    @Override
+    public String name() {
+        return "$project";
+    }
+
     private static boolean hasInclusions(Document projection) {
         return projection.values().stream().anyMatch(Utils::isTrue);
     }

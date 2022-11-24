@@ -13,6 +13,11 @@ public class SkipStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$skip";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.skip(numSkip);
     }

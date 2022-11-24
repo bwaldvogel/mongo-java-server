@@ -29,7 +29,7 @@ import de.bwaldvogel.mongo.backend.aggregation.stage.LookupStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.LookupWithPipelineStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.MatchStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.MergeStage;
-import de.bwaldvogel.mongo.backend.aggregation.stage.OrderByStage;
+import de.bwaldvogel.mongo.backend.aggregation.stage.SortStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.OutStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.ProjectStage;
 import de.bwaldvogel.mongo.backend.aggregation.stage.RedactStage;
@@ -104,7 +104,7 @@ public class Aggregation {
                     break;
                 case "$sort":
                     Document orderBy = (Document) stage.get(stageOperation);
-                    aggregation.addStage(new OrderByStage(orderBy));
+                    aggregation.addStage(new SortStage(orderBy));
                     break;
                 case "$project":
                     Document projection = (Document) stage.get(stageOperation);
@@ -150,7 +150,7 @@ public class Aggregation {
                 case "$sortByCount":
                     Object expression = stage.get(stageOperation);
                     aggregation.addStage(new GroupStage(new Document(ID_FIELD, expression).append("count", new Document("$sum", 1))));
-                    aggregation.addStage(new OrderByStage(new Document("count", -1).append(ID_FIELD, 1)));
+                    aggregation.addStage(new SortStage(new Document("count", -1).append(ID_FIELD, 1)));
                     break;
                 case "$bucket":
                     Document bucket = (Document) stage.get(stageOperation);
@@ -268,6 +268,10 @@ public class Aggregation {
     private boolean isLastStage(TerminalStage stage) {
         Assert.notEmpty(stages);
         return stages.indexOf(stage) == stages.size() - 1;
+    }
+
+    public List<AggregationStage> getStages() {
+        return stages;
     }
 
     public boolean isModifying() {

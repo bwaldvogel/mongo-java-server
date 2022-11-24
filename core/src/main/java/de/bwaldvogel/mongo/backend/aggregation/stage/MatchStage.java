@@ -16,6 +16,11 @@ public class MatchStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$match";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.filter(document -> queryMatcher.matches(document, query));
     }

@@ -4,7 +4,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -15,24 +18,35 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.AbstractMongoCollection.FindAndModifyPlanExecutorError;
 import de.bwaldvogel.mongo.backend.Assert;
+import de.bwaldvogel.mongo.backend.CollectionUtils;
 import de.bwaldvogel.mongo.backend.DatabaseResolver;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.IndexKey;
 import de.bwaldvogel.mongo.backend.Utils;
+import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
+import de.bwaldvogel.mongo.exception.InvalidOptionsException;
 import de.bwaldvogel.mongo.exception.MergeStageNoMatchingDocumentException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
 public class MergeStage extends TerminalStage {
 
-    private static final Set<String> KNOWN_KEYS = new HashSet<>(Arrays.asList("into", "on", "whenMatched", "whenNotMatched"));
+    private static final Set<String> KNOWN_KEYS = new HashSet<>(Arrays.asList("into", "on", "let", "whenMatched", "whenNotMatched"));
+    private static final Set<Class<?>> ALLOWED_STAGES_IN_PIPELINE = new HashSet<>(Arrays.asList(
+        AddFieldsStage.class,
+        ProjectStage.class,
+        UnsetStage.class,
+        ReplaceRootStage.class
+    ));
 
     private final Supplier<MongoCollection<?>> targetCollectionSupplier;
     private final Set<String> joinFields;
+    private final Map<String, Object> let;
     private final WhenMatched whenMatched;
+    private Aggregation whenMatchedPipeline = null;
     private final WhenNotMatched whenNotMatched;
 
     private enum WhenMatched {
@@ -66,8 +80,34 @@ public class MergeStage extends TerminalStage {
             throw new MongoServerError(51183, "Cannot find index to verify that join fields will be unique");
         }
 
+        let = getLet(paramsDocument);
         whenMatched = getWhenMatched(paramsDocument);
         whenNotMatched = getWhenNotMatched(paramsDocument);
+
+        if (whenMatched == null) {
+            Collection<Document> pipeline = (Collection<Document>) paramsDocument.get("whenMatched");
+            whenMatchedPipeline = Aggregation.fromPipeline(pipeline, databaseResolver, database, null, null);
+        } else if (paramsDocument.containsKey("let")) {
+            throw new MongoServerError(51199, "Cannot use 'let' variables with 'whenMatched: " + whenMatched + "' mode");
+        }
+    }
+
+    private Map<String, Object> getLet(Document paramsDocument) {
+        Object let = paramsDocument.get("let");
+        if (let == null) {
+            return new Document("$new", "$$ROOT");
+        } else if (!(let instanceof Document)) {
+            throw new TypeMismatchException("BSON field '$merge.let' is the wrong type '" + Utils.describeType(let) + "', expected type 'object'");
+        } else {
+            Map<String, Object> variables = new LinkedHashMap<>();
+            for (Map.Entry<String, Object> entry : ((Document) let).entrySet()) {
+                if (entry.getKey().equals("new") && !entry.getValue().equals("$$ROOT")) {
+                    throw new MongoServerError(51273, "'let' may not define a value for the reserved 'new' variable other than '$$ROOT'");
+                }
+                variables.put("$" + entry.getKey(), entry.getValue());
+            }
+            return variables;
+        }
     }
 
     private static Supplier<MongoCollection<?>> getTargetCollectionSupplier(DatabaseResolver databaseResolver,
@@ -136,14 +176,22 @@ public class MergeStage extends TerminalStage {
 
     private WhenMatched getWhenMatched(Document paramsDocument) {
         Object whenMatched = paramsDocument.getOrDefault("whenMatched", WhenMatched.merge.name());
-        if (!(whenMatched instanceof String)) {
+        if (whenMatched instanceof String) {
+            try {
+                return WhenMatched.valueOf((String) whenMatched);
+            } catch (IllegalArgumentException e) {
+                throw new BadValueException("Enumeration value '" + whenMatched + "' for field 'whenMatched' is not a valid value.");
+            }
+        } else if (whenMatched instanceof Collection) {
+            Collection<?> pipeline = (Collection<?>) whenMatched;
+            for (Object pipelineElement : pipeline) {
+                if (!(pipelineElement instanceof Document)) {
+                    throw new TypeMismatchException("Each element of the 'pipeline' array must be an object");
+                }
+            }
+            return null;
+        } else {
             throw new MongoServerError(51191, "$merge 'whenMatched' field  must be either a string or an array, but found " + Utils.describeType(whenMatched));
-        }
-
-        try {
-            return WhenMatched.valueOf((String) whenMatched);
-        } catch (IllegalArgumentException e) {
-            throw new BadValueException("Enumeration value '" + whenMatched + "' for field 'whenMatched' is not a valid value.");
         }
     }
 
@@ -169,29 +217,40 @@ public class MergeStage extends TerminalStage {
     public void applyLast(Stream<Document> stream) {
         MongoCollection<?> collection = targetCollectionSupplier.get();
 
+        validateWhenMatchedPipeline();
+
         stream.forEach(document -> {
             Document query = getJoinQuery(document);
             Optional<Document> matchingDocument = collection.handleQueryAsStream(query).findFirst();
             if (matchingDocument.isPresent()) {
                 Document existingDocument = matchingDocument.get();
-                switch (whenMatched) {
-                    case merge:
-                        Document mergedDocument = existingDocument.clone();
-                        mergedDocument.merge(document);
-                        assertIdHasNotChanged(existingDocument, mergedDocument);
-                        replaceDocument(collection, existingDocument, mergedDocument);
-                        break;
-                    case replace:
-                        replaceDocument(collection, existingDocument, document);
-                        break;
-                    case fail:
-                        // this triggers a DuplicateKeyError
-                        collection.addDocument(document);
-                        break;
-                    case keepExisting:
-                        break;
-                    default:
-                        throw new UnsupportedOperationException("whenMatched '" + whenMatched + "' is not yet implemented");
+                if (whenMatchedPipeline != null) {
+                    let.put("$ROOT", document);
+                    whenMatchedPipeline.setVariables(let);
+                    List<Document> pipelineOutput = whenMatchedPipeline.runStages(Stream.of(existingDocument));
+                    if (!pipelineOutput.isEmpty()) {
+                        replaceDocument(collection, existingDocument, CollectionUtils.getSingleElement(pipelineOutput));
+                    }
+                } else {
+                    switch (whenMatched) {
+                        case merge:
+                            Document mergedDocument = existingDocument.clone();
+                            mergedDocument.merge(document);
+                            assertIdHasNotChanged(existingDocument, mergedDocument);
+                            replaceDocument(collection, existingDocument, mergedDocument);
+                            break;
+                        case replace:
+                            replaceDocument(collection, existingDocument, document);
+                            break;
+                        case fail:
+                            // this triggers a DuplicateKeyError
+                            collection.addDocument(document);
+                            break;
+                        case keepExisting:
+                            break;
+                        default:
+                            throw new UnsupportedOperationException("whenMatched '" + whenMatched + "' is not yet implemented");
+                    }
                 }
             } else {
                 switch (whenNotMatched) {
@@ -207,6 +266,17 @@ public class MergeStage extends TerminalStage {
                 }
             }
         });
+    }
+
+    private void validateWhenMatchedPipeline() {
+        if (whenMatchedPipeline == null) {
+            return;
+        }
+        for (AggregationStage stage : whenMatchedPipeline.getStages()) {
+            if (!ALLOWED_STAGES_IN_PIPELINE.contains(stage.getClass())) {
+                throw new InvalidOptionsException(stage.name() + " is not allowed to be used within an update");
+            }
+        }
     }
 
     private static void assertIdHasNotChanged(Document one, Document other) {

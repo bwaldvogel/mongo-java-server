@@ -6,6 +6,8 @@ import de.bwaldvogel.mongo.bson.Document;
 
 public interface AggregationStage {
 
+    String name();
+
     Stream<Document> apply(Stream<Document> stream);
 
     default boolean isModifying() {

@@ -17,6 +17,11 @@ public class IndexStatsStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$indexStats";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return collection.getIndexes().stream()
             .map(index -> {

@@ -48,6 +48,11 @@ public class UnwindStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$unwind";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.flatMap(document -> {
             Object values = Utils.getSubdocumentValue(document, path);

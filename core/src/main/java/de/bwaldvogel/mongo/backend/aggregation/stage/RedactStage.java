@@ -18,6 +18,11 @@ public class RedactStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$redact";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.map(this::redact).filter(Objects::nonNull);
     }

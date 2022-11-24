@@ -20,6 +20,11 @@ public class AddFieldsStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$addFields";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.map(this::projectDocument);
     }

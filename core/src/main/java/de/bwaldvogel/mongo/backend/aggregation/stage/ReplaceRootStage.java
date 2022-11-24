@@ -23,6 +23,11 @@ public class ReplaceRootStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$replaceRoot";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.map(this::replaceRoot);
     }

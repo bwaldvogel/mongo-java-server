@@ -5,12 +5,17 @@ import java.util.stream.Stream;
 import de.bwaldvogel.mongo.backend.DocumentComparator;
 import de.bwaldvogel.mongo.bson.Document;
 
-public class OrderByStage implements AggregationStage {
+public class SortStage implements AggregationStage {
 
     private final DocumentComparator documentComparator;
 
-    public OrderByStage(Document orderBy) {
+    public SortStage(Document orderBy) {
         this.documentComparator = new DocumentComparator(orderBy);
+    }
+
+    @Override
+    public String name() {
+        return "$sort";
     }
 
     @Override

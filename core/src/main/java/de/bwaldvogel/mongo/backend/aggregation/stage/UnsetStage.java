@@ -23,6 +23,11 @@ public class UnsetStage implements AggregationStage {
         }
     }
 
+    @Override
+    public String name() {
+        return "$unset";
+    }
+
     private void addFieldPath(Object fieldPath) {
         if (!(fieldPath instanceof String)) {
             throw new MongoServerError(31120, "$unset specification must be a string or an array containing only string values");

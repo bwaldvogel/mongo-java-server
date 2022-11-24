@@ -44,6 +44,11 @@ public class SampleStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$sample";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         return stream
             .sorted(Comparator.comparingDouble(key -> random.nextDouble()))

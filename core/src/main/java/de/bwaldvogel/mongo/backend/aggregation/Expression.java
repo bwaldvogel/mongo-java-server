@@ -1773,18 +1773,34 @@ public enum Expression implements ExpressionTraits {
             }
             String value = ((String) expression).substring(1);
             if (value.startsWith("$")) {
-                if (value.equals("$ROOT")) {
-                    return document;
-                } else if (value.startsWith("$ROOT.")) {
-                    String subKey = value.substring("$ROOT.".length());
-                    return Utils.getSubdocumentValue(document, subKey);
+                final String variableName;
+                if (value.contains(".")) {
+                    variableName = value.substring(0, value.indexOf('.'));
+                } else {
+                    variableName = value;
                 }
-                Object subdocumentValue = Utils.getSubdocumentValue(document, value);
-                if (!(subdocumentValue instanceof Missing)) {
-                    return subdocumentValue;
+
+                Object variableValue = Utils.getSubdocumentValue(document, variableName);
+                if (variableValue instanceof Missing) {
+                    if (variableName.equals("$ROOT")) {
+                        variableValue = document;
+                    } else {
+                        throw new MongoServerError(17276, "Use of undefined variable: " + variableName.substring(1));
+                    }
                 }
-                String variable = value.substring(1);
-                throw new MongoServerError(17276, "Use of undefined variable: " + variable);
+
+                if (!value.equals(variableName)) {
+                    String path = value.substring(variableName.length() + 1);
+                    final Document evaluatedVariableValue;
+                    if (variableValue instanceof Document) {
+                        evaluatedVariableValue = (Document) variableValue;
+                    } else {
+                        evaluatedVariableValue = (Document) evaluate(variableValue, document);
+                    }
+                    return Utils.getSubdocumentValue(evaluatedVariableValue, path);
+                } else {
+                    return variableValue;
+                }
             }
             return Utils.getSubdocumentValueCollectionAware(document, value);
         } else if (expression instanceof Document) {

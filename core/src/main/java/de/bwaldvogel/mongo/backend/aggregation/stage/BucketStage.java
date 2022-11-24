@@ -37,6 +37,11 @@ public class BucketStage implements AggregationStage {
         output = getAndValidateOutput(document.get("output"));
     }
 
+    @Override
+    public String name() {
+        return "$bucket";
+    }
+
     private void validateValuePresent(Object value) {
         if (value == null) {
             throw new MongoServerError(40198, "$bucket requires 'groupBy' and 'boundaries' to be specified.");

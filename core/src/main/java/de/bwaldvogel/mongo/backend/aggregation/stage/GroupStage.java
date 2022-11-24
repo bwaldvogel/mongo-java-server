@@ -33,6 +33,11 @@ public class GroupStage implements AggregationStage {
     }
 
     @Override
+    public String name() {
+        return "$group";
+    }
+
+    @Override
     public Stream<Document> apply(Stream<Document> stream) {
         Map<Object, Collection<Accumulator>> accumulatorsPerKey = new TreeMap<>(ValueComparator.asc());
         stream.forEach(document -> {
