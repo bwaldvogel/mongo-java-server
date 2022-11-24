@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import java.util.Collections;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -12,7 +11,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.IllegalOperationException;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 
-public class OutStage implements TerminalStage {
+public class OutStage extends TerminalStage {
 
     private static final Logger log = LoggerFactory.getLogger(OutStage.class);
 
@@ -30,20 +29,19 @@ public class OutStage implements TerminalStage {
     }
 
     @Override
-    public Stream<Document> apply(Stream<Document> stream) {
+    public void applyLast(Stream<Document> stream) {
         if (this.collectionName.contains("$")) {
             throw new IllegalOperationException("error with target namespace: Invalid collection name: " + this.collectionName);
         }
         String tempCollectionName = "_tmp" + System.currentTimeMillis() + "_" + this.collectionName;
         MongoCollection<?> tempCollection = database.createCollectionOrThrowIfExists(tempCollectionName);
-        stream.forEach(document -> tempCollection.insertDocuments(Collections.singletonList(document)));
+        stream.forEach(tempCollection::addDocument);
         MongoCollection<?> existingCollection = database.resolveCollection(this.collectionName, false);
         if (existingCollection != null) {
             log.info("Dropping existing collection {}", existingCollection);
             database.dropCollection(this.collectionName, NoopOplog.get());
         }
         database.moveCollection(database, tempCollection, this.collectionName);
-        return Stream.empty();
     }
 
     @Override

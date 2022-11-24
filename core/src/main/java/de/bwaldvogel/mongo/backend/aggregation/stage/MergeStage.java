@@ -26,7 +26,7 @@ import de.bwaldvogel.mongo.exception.MergeStageNoMatchingDocumentException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
-public class MergeStage implements TerminalStage {
+public class MergeStage extends TerminalStage {
 
     private static final Set<String> KNOWN_KEYS = new HashSet<>(Arrays.asList("into", "on", "whenMatched", "whenNotMatched"));
 
@@ -166,7 +166,7 @@ public class MergeStage implements TerminalStage {
     }
 
     @Override
-    public Stream<Document> apply(Stream<Document> stream) {
+    public void applyLast(Stream<Document> stream) {
         MongoCollection<?> collection = targetCollectionSupplier.get();
 
         stream.forEach(document -> {
@@ -178,11 +178,7 @@ public class MergeStage implements TerminalStage {
                     case merge:
                         Document mergedDocument = existingDocument.clone();
                         mergedDocument.merge(document);
-                        if (!mergedDocument.get("_id").equals(existingDocument.get("_id"))) {
-                            throw new ImmutableFieldException("$merge failed to update the matching document, did you attempt to modify the _id or the shard key?" +
-                                " :: caused by :: " +
-                                "Performing an update on the path '_id' would modify the immutable field '_id'");
-                        }
+                        assertIdHasNotChanged(existingDocument, mergedDocument);
                         replaceDocument(collection, existingDocument, mergedDocument);
                         break;
                     case replace:
@@ -211,8 +207,14 @@ public class MergeStage implements TerminalStage {
                 }
             }
         });
+    }
 
-        return Stream.empty();
+    private static void assertIdHasNotChanged(Document one, Document other) {
+        if (!one.get("_id").equals(other.get("_id"))) {
+            throw new ImmutableFieldException("$merge failed to update the matching document, did you attempt to modify the _id or the shard key?" +
+                " :: caused by :: " +
+                "Performing an update on the path '_id' would modify the immutable field '_id'");
+        }
     }
 
     private Document getJoinQuery(Document document) {

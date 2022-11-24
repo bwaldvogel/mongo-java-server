@@ -265,9 +265,9 @@ public class Aggregation {
         }
     }
 
-    private boolean isLastStage(TerminalStage aggregationStage) {
+    private boolean isLastStage(TerminalStage stage) {
         Assert.notEmpty(stages);
-        return stages.indexOf(aggregationStage) == stages.size() - 1;
+        return stages.indexOf(stage) == stages.size() - 1;
     }
 
     public boolean isModifying() {
