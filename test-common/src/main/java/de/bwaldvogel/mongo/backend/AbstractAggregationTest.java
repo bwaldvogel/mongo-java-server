@@ -2501,6 +2501,23 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsExactly(json("_id: 1, b: 'xyz', a: 1"));
     }
 
+    @Test
+    void testAggregateWithMerge_pipeline_nowVariable() throws Exception {
+        collection.insertOne(json("_id: 1"));
+
+        MongoCollection<Document> otherCollection = db.getCollection("other");
+        otherCollection.insertOne(json("_id: 1"));
+
+        Instant instantBefore = Instant.now();
+        Document result = collection.aggregate(
+            jsonList("$merge: {into: 'other', let: {now: '$$NOW'}, whenMatched: [{$addFields: {timestamp: '$$now'}}]}")).first();
+        Instant instantAfter = Instant.now();
+
+        assertThat(result).containsOnlyKeys("_id", "timestamp");
+        System.out.println(result.get("timestamp"));
+        assertThat(result.getDate("timestamp")).isBetween(instantBefore, instantAfter);
+    }
+
     private static Stream<Arguments> aggregateWithMerge_illegalParametersArguments() {
         return Stream.of(
             Arguments.of("$merge: null", IllegalStateException.class,

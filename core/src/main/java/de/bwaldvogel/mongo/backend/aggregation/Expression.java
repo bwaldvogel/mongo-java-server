@@ -1784,20 +1784,23 @@ public enum Expression implements ExpressionTraits {
                 if (variableValue instanceof Missing) {
                     if (variableName.equals("$ROOT")) {
                         variableValue = document;
+                    } else if (variableName.equals("$NOW")) {
+                        variableValue = Instant.now();
                     } else {
                         throw new MongoServerError(17276, "Use of undefined variable: " + variableName.substring(1));
                     }
                 }
 
+                if (variableValue instanceof String) {
+                    String variableValueString = (String) variableValue;
+                    if (variableValueString.startsWith("$")) {
+                        variableValue = evaluate(variableValue, document);
+                    }
+                }
+
                 if (!value.equals(variableName)) {
                     String path = value.substring(variableName.length() + 1);
-                    final Document evaluatedVariableValue;
-                    if (variableValue instanceof Document) {
-                        evaluatedVariableValue = (Document) variableValue;
-                    } else {
-                        evaluatedVariableValue = (Document) evaluate(variableValue, document);
-                    }
-                    return Utils.getSubdocumentValue(evaluatedVariableValue, path);
+                    return Utils.getSubdocumentValue((Document) variableValue, path);
                 } else {
                     return variableValue;
                 }

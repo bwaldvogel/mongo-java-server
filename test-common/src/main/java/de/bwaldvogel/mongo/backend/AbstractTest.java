@@ -1,10 +1,14 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.assertj.core.api.AbstractBooleanAssert;
+import org.assertj.core.api.AbstractDateAssert;
 import org.assertj.core.api.AbstractDoubleAssert;
+import org.assertj.core.api.AbstractInstantAssert;
 import org.assertj.core.api.AbstractIntegerAssert;
 import org.assertj.core.api.AbstractLongAssert;
 import org.assertj.core.api.AbstractStringAssert;
@@ -167,6 +171,14 @@ public abstract class AbstractTest {
     }
 
     protected static AbstractBooleanAssert<?> assertThat(Boolean actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static AbstractInstantAssert<?> assertThat(Instant actual) {
+        return Assertions.assertThat(actual);
+    }
+
+    protected static AbstractDateAssert<?> assertThat(Date actual) {
         return Assertions.assertThat(actual);
     }
 
