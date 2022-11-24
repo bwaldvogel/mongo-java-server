@@ -107,7 +107,7 @@ public class Aggregation {
                     aggregation.addStage(new SortStage(orderBy));
                     break;
                 case "$project":
-                    Document projection = (Document) stage.get(stageOperation);
+                    Object projection = stage.get(stageOperation);
                     aggregation.addStage(new ProjectStage(projection));
                     break;
                 case "$count":

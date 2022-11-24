@@ -630,29 +630,30 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
-    @Test
-    void testAggregateWithIllegalProjection() throws Exception {
-        List<Document> pipeline = jsonList("$project: {'x.b': 1, 'x.c': 1, 'x.d': 0, y: 0}");
+    private static Stream<Arguments> aggregateWithProjectionArguments() {
+        return Stream.of(
+            Arguments.of("$project: {'x.b': 1, 'x.c': 1, 'x.d': 0, y: 0}",
+                "Command failed with error 31254 (Location31254): 'Invalid $project :: caused by :: Cannot do exclusion on field x.d in inclusion projection'"),
 
-        collection.insertOne(json("_id: 1"));
+            Arguments.of("$project: {_id: 0, v: '$x.1.'}",
+                "Command failed with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'"),
 
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 31254 (Location31254): " +
-                "'Invalid $project :: caused by :: Cannot do exclusion on field x.d in inclusion projection'");
+            Arguments.of("$project: {_id: 0, v: '$x..1'}",
+                "Command failed with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'"),
+
+            Arguments.of("$project: 'abc'",
+                "Command failed with error 15969 (Location15969): '$project specification must be an object'")
+        );
     }
 
-    @Test
-    void testAggregateWithProjection_IllegalFieldPath() throws Exception {
+    @ParameterizedTest
+    @MethodSource("aggregateWithProjectionArguments")
+    void testAggregateWithProjection_IllegalFieldPath(String project, String expectedMessage) throws Exception {
         collection.insertOne(json("_id: 1, x: 10"));
 
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 0, v: '$x.1.'}")).first())
-            .withMessageContaining("Command failed with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'");
-
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 0, v: '$x..1'}")).first())
-            .withMessageContaining("Command failed with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'");
+            .isThrownBy(() -> collection.aggregate(jsonList(project)).first())
+            .withMessageStartingWith(expectedMessage);
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/pull/189

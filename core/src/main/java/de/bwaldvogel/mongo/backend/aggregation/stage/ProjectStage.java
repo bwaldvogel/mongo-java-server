@@ -22,12 +22,16 @@ public class ProjectStage implements AggregationStage {
     private final Document projection;
     private final boolean hasInclusions;
 
-    public ProjectStage(Document projection) {
-        if (projection.isEmpty()) {
+    public ProjectStage(Object projection) {
+        if (!(projection instanceof Document)) {
+            throw new MongoServerError(15969, "$project specification must be an object");
+        }
+        Document projectionSpecification = (Document) projection;
+        if (projectionSpecification.isEmpty()) {
             throw new MongoServerError(40177, "specification must have at least one field");
         }
-        this.projection = projection;
-        this.hasInclusions = hasInclusions(projection);
+        this.projection = projectionSpecification;
+        this.hasInclusions = hasInclusions(projectionSpecification);
         validateProjection();
     }
 
@@ -67,7 +71,7 @@ public class ProjectStage implements AggregationStage {
                         Utils.removeSubdocumentValue(result, field);
                     }
                 } else if (projectionValue instanceof List) {
-                    List<Object> resolvedProjectionValues = ((List<Object>) projectionValue)
+                    List<Object> resolvedProjectionValues = ((List<?>) projectionValue)
                         .stream()
                         .map(value -> Expression.evaluateDocument(value, document))
                         .collect(Collectors.toList());
