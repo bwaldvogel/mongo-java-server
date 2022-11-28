@@ -45,6 +45,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.bson.BsonInt32;
@@ -65,7 +66,9 @@ import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.AdditionalAnswers;
 import org.mockito.Mockito;
@@ -1434,6 +1437,38 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThat(collection.find(json("_id: 3")).first())
             .isEqualTo(json("_id: 3, a: {b: [1, 20, 3]}"));
+    }
+
+    private static Stream<Arguments> findAndUpdate_upsert_idInQueryArguments() {
+        return Stream.of(
+            Arguments.of("_id: 'some value'", false, "_id: 'some value', value: 100"),
+            Arguments.of("'$and': [{_id: 'some value'}]", false, "_id: 'some value', value: 100"),
+            Arguments.of("'$and': [{_id: 'some value'}, {other: 123}]", false, "_id: 'some value', other: 123, value: 100"),
+            Arguments.of("'$or': [{_id: 'some value'}]", false, "_id: 'some value', value: 100"),
+            Arguments.of("'$or': [{_id: 'some value'}, {other: 123}]", true, "value: 100"),
+            Arguments.of("'$or': [{_id: 'some value', other: 123}]", false, "_id: 'some value', other: 123, value: 100"),
+            Arguments.of("'$or': [{_id: 'some value'}, {$and: [{other: 123}, {more: 'abc'}]}]", true, "value: 100"),
+            Arguments.of("'$and': [{other: 123}, {$and: [{_id: 'some value'}, {more: 'abc'}]}]", false, "_id: 'some value', other: 123, more: 'abc', value: 100")
+        );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/208
+    @ParameterizedTest
+    @MethodSource("findAndUpdate_upsert_idInQueryArguments")
+    void testFindAndUpdate_upsert_idInQuery(String query, boolean randomObjectIdExpected, String expectedDocument) throws Exception {
+        collection.findOneAndUpdate(
+            json(query),
+            json("{'$set': {value: 100}}"),
+            new FindOneAndUpdateOptions().upsert(true));
+
+        if (randomObjectIdExpected) {
+            Document document = collection.find().first();
+            assertThat(document.remove("_id")).isInstanceOf(ObjectId.class);
+            assertThat(document).isEqualTo(json(expectedDocument));
+        } else {
+            assertThat(collection.find())
+                .containsExactly(json(expectedDocument));
+        }
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/60

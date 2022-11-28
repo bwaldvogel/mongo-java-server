@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
@@ -666,12 +667,26 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
      */
     Document convertSelectorToDocument(Document selector) {
         Document document = new Document();
-        for (String key : selector.keySet()) {
-            if (key.startsWith("$")) {
+        for (Map.Entry<String, Object> entry : selector.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            if (key.equals("$and")) {
+                List<Document> andValues = (List<Document>) value;
+                for (Document andValue : andValues) {
+                    document.putAll(convertSelectorToDocument(andValue));
+                }
+                continue;
+            } else if (key.equals("$or")) {
+                List<Document> orValues = (List<Document>) value;
+                if (orValues.size() == 1) {
+                    document.putAll(convertSelectorToDocument(orValues.get(0)));
+                }
+                continue;
+            } else if (key.startsWith("$")) {
                 continue;
             }
 
-            Object value = selector.get(key);
             if (!Utils.containsQueryExpression(value)) {
                 Utils.changeSubdocumentValue(document, key, value, (AtomicReference<Integer>) null);
             }
