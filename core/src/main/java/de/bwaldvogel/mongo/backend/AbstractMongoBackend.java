@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.MongoVersion;
 import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -49,7 +50,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
-    private ServerVersion version = ServerVersion.MONGO_3_6;
+    private MongoVersion version = ServerVersion.MONGO_3_6;
 
     private final Clock clock;
     private final Instant started;
@@ -432,7 +433,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public MongoBackend version(ServerVersion version) {
+    public MongoBackend version(MongoVersion version) {
         this.version = version;
         return this;
     }
