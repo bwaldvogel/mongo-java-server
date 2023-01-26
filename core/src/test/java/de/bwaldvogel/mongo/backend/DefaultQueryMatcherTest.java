@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -62,7 +61,7 @@ class DefaultQueryMatcherTest {
 
     @Test
     void testLegalQueryWithOperatorAndWithoutOperator() throws Exception {
-        List<Document> documents = Arrays.asList(
+        List<Document> documents = List.of(
             json(""),
             json("x: 23"),
             json("x: {y: 23}"),
@@ -920,7 +919,7 @@ class DefaultQueryMatcherTest {
         assertThat(DefaultQueryMatcher.matchTypes(1, 1)).isFalse();
         assertThat(DefaultQueryMatcher.matchTypes("abc", 2)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(new Document(), 3)).isTrue();
-        assertThat(DefaultQueryMatcher.matchTypes(Arrays.asList(1, 2, 3), 4)).isTrue();
+        assertThat(DefaultQueryMatcher.matchTypes(List.of(1, 2, 3), 4)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(UUID.randomUUID(), 5)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(new BinData( new byte[] { 1, 2, 3 }), 5)).isTrue();
         assertThat(DefaultQueryMatcher.matchTypes(new ObjectId(), 7)).isTrue();

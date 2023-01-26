@@ -12,7 +12,6 @@ import java.sql.Date;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -80,7 +79,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithComplexGroupBySumPipeline() throws Exception {
         Document query = json("_id: null, n: {$sum: 1}, sumOfA: {$sum: '$a'}, sumOfB: {$sum: '$b.value'}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -96,7 +95,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithGroupByMinAndMax() throws Exception {
         Document query = json("_id: null, minA: {$min: '$a'}, maxB: {$max: '$b.value'}, maxC: {$max: '$c'}, minC: {$min: '$c'}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -113,7 +112,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithGroupByMinAndMaxOnArrayField() throws Exception {
         Document query = json("_id: null, min: {$min: '$v'}, max: {$max: '$v'}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -129,7 +128,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithGroupByMinAndMaxOnArrayFieldAndNonArrayFields() throws Exception {
         Document query = json("_id: null, min: {$min: '$v'}, max: {$max: '$v'}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -147,7 +146,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithGroupByNonExistingMinAndMax() throws Exception {
         Document query = json("_id: null, minOfA: {$min: '$doesNotExist'}, maxOfB: {$max: '$doesNotExist'}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -227,7 +226,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithUnknownGroupOperator() throws Exception {
         Document query = json("_id: null, n: {$foo: 1}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
@@ -237,7 +236,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithTooManyGroupOperators() throws Exception {
         Document query = json("_id: null, n: {$sum: 1, $max: 1}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
@@ -257,7 +256,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     void testAggregateWithMissingIdInGroupSpecification() throws Exception {
-        List<Document> pipeline = Collections.singletonList(new Document("$group", json("n: {$sum: 1}")));
+        List<Document> pipeline = List.of(new Document("$group", json("n: {$sum: 1}")));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
@@ -267,7 +266,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithGroupBySumPipeline() throws Exception {
         Document query = json("_id: null, n: {$sum: 1}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -306,7 +305,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithGroupByAvg() throws Exception {
         Document query = json("_id: null, avg: {$avg: 1}");
-        List<Document> pipeline = Collections.singletonList(new Document("$group", query));
+        List<Document> pipeline = List.of(new Document("$group", query));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -374,7 +373,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     void testAggregateWithGroupByDocuments() throws Exception {
         String groupBy = "$group: {_id: '$a', count: {$sum: 1}}";
         String sort = "$sort: {_id: 1}";
-        List<Document> pipeline = Arrays.asList(json(groupBy), json(sort));
+        List<Document> pipeline = List.of(json(groupBy), json(sort));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -936,7 +935,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     void testAggregateWithCount() throws Exception {
         Document match = json("$match: {score: {$gt: 80}}");
         Document count = json("$count: 'passing_scores'");
-        List<Document> pipeline = Arrays.asList(match, count);
+        List<Document> pipeline = List.of(match, count);
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -954,7 +953,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     void testAggregateWithFirstAndLast() throws Exception {
         Document sort = json("$sort: { item: 1, date: 1 }");
         Document group = json("$group: {_id: '$item', firstSale: { $first: '$date' }, lastSale: { $last: '$date'} }");
-        List<Document> pipeline = Arrays.asList(sort, group);
+        List<Document> pipeline = List.of(sort, group);
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -975,7 +974,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @Test
     void testAggregateWithFirstAndLast_Missing() throws Exception {
         Document group = json("$group: {_id: '$_id', first: { $first: '$field1' }, last: { $last: '$field2'} }");
-        List<Document> pipeline = Collections.singletonList(group);
+        List<Document> pipeline = List.of(group);
 
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2, field1: 'abc'"));
@@ -995,7 +994,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     void testAggregateWithGroupingAndFirstMissing() throws Exception {
         Document sort = json("$sort: {_id: 1}");
         Document group = json("$group: {_id: '$group', first: { $first: '$field1' }}");
-        List<Document> pipeline = Arrays.asList(sort, group);
+        List<Document> pipeline = List.of(sort, group);
 
         collection.insertOne(json("_id: 1, group: 1"));
         collection.insertOne(json("_id: 2, group: 1, field1: 'abc'"));
@@ -1010,7 +1009,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     void testAggregateWithGroupingAndLastMissing() throws Exception {
         Document sort = json("$sort: {_id: 1}");
         Document group = json("$group: {_id: '$group', last: { $last: '$field1' }}");
-        List<Document> pipeline = Arrays.asList(sort, group);
+        List<Document> pipeline = List.of(sort, group);
 
         collection.insertOne(json("_id: 1, group: 1, field1: 'abc'"));
         collection.insertOne(json("_id: 2, group: 1"));
@@ -1114,7 +1113,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
 
         project = json("$project: {gt1: {$gt: ['$v', 10]}, gt2: {$gt: ['$v', [10]]}}");
-        pipeline = Collections.singletonList(project);
+        pipeline = List.of(project);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactlyInAnyOrder(
@@ -1128,7 +1127,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
 
         project = json("$project: {lt1: {$lt: ['$v', 10]}, lt2: {$lt: ['$v', [10]]}}");
-        pipeline = Collections.singletonList(project);
+        pipeline = List.of(project);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactlyInAnyOrder(
@@ -1190,7 +1189,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     private void testAggregateWithUnwind(Document unwind) throws Exception {
-        List<Document> pipeline = Collections.singletonList(unwind);
+        List<Document> pipeline = List.of(unwind);
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
         collection.insertOne(json("_id: 1, item: 'ABC', sizes: ['S', 'M', 'L']"));
@@ -1321,7 +1320,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     void testAggregateWithUnwind_subdocumentArray() throws Exception {
-        List<Document> pipeline = Collections.singletonList(json("$unwind: {path: '$items.sizes'}"));
+        List<Document> pipeline = List.of(json("$unwind: {path: '$items.sizes'}"));
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
         collection.insertOne(json("_id: 1, items: [{sizes: ['S', 'M', 'L']}]"));
@@ -1593,7 +1592,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         Document illegalQuery = json("$project: {_id: 1, a: {$objectToArray: ['$value', 1]}}");
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> collection.aggregate(Collections.singletonList(illegalQuery)).first())
+            .isThrownBy(() -> collection.aggregate(List.of(illegalQuery)).first())
             .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
     }
 
@@ -2011,7 +2010,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 7000, title: 'The Odyssey', author: 'Homer', copies: 10"));
         collection.insertOne(json("_id: 7020, title: 'Iliad', author: 'Homer', copies: 10"));
 
-        List<Document> expectedDocuments = Arrays.asList(
+        List<Document> expectedDocuments = List.of(
             json("_id: 'Homer', books: ['The Odyssey', 'Iliad']"),
             json("_id: 'Dante', books: ['The Banquet', 'Divine Comedy', 'Eclogues']"));
 
@@ -2755,7 +2754,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     private static Stream<Arguments> aggregateWithToDoubleArguments_illegalValue() {
         return Stream.of(
             Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Failed to parse number 'abc' in $convert with no onError value"),
-            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to double in $convert with no onError value'")
+            Arguments.of(List.of(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to double in $convert with no onError value'")
         );
     }
 
@@ -2809,7 +2808,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             Arguments.of(123, "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from int to date in $convert with no onError value'"),
             Arguments.of("123456789", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string '123456789';"),
             Arguments.of("2020-07-13T14", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string '2020-07-13T14';"),
-            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to date in $convert with no onError value'")
+            Arguments.of(List.of(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to date in $convert with no onError value'")
         );
     }
 
@@ -2854,7 +2853,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     private static Stream<Arguments> aggregateWithToIntArguments_illegalValue() {
         return Stream.of(
             Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Failed to parse number 'abc' in $convert with no onError value"),
-            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to int in $convert with no onError value'")
+            Arguments.of(List.of(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to int in $convert with no onError value'")
         );
     }
 
@@ -2893,7 +2892,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             Arguments.of(5, true),
             Arguments.of(new ObjectId(), true),
             Arguments.of(Instant.ofEpochMilli(123456L), true),
-            Arguments.of(Arrays.asList(false, true), true),
+            Arguments.of(List.of(false, true), true),
             Arguments.of(new ArrayList<>(), true)
         );
     }
@@ -2944,7 +2943,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     private static Stream<Arguments> aggregateWithToLongArguments_illegalValue() {
         return Stream.of(
             Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Failed to parse number 'abc' in $convert with no onError value"),
-            Arguments.of(Arrays.asList(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to long in $convert with no onError value'")
+            Arguments.of(List.of(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to long in $convert with no onError value'")
         );
     }
 
@@ -2988,7 +2987,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             Arguments.of("5ab9cbfa31c2ab715d42129", "'PlanExecutor error during aggregation :: caused by :: Failed to parse objectId '5ab9cbfa31c2ab715d42129' in $convert with no onError value"),
             Arguments.of("5ab9cbfa31c2ab715d42129z", "'PlanExecutor error during aggregation :: caused by :: Failed to parse objectId '5ab9cbfa31c2ab715d42129z' in $convert with no onError value"),
             Arguments.of(123, "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from int to objectId in $convert with no onError value'"),
-            Arguments.of(Arrays.asList("5ab9cbfa31c2ab715d421290"), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to objectId in $convert with no onError value'")
+            Arguments.of(List.of("5ab9cbfa31c2ab715d421290"), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to objectId in $convert with no onError value'")
         );
     }
 
@@ -3037,7 +3036,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @ParameterizedTest
     @MethodSource("aggregateWithConvertArguments")
     void testAggregateWithConvert_literals(String given, Object expected) throws Exception {
-        List<Document> pipeline = Collections.singletonList(new Document("$project",
+        List<Document> pipeline = List.of(new Document("$project",
             new Document("value",
                 new Document("$convert", json(given)))));
 
@@ -3054,7 +3053,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         Document convertDocument = json(given);
         Object inputValue = convertDocument.put("input", "$x");
 
-        List<Document> pipeline = Collections.singletonList(new Document("$project",
+        List<Document> pipeline = List.of(new Document("$project",
             new Document("value",
                 new Document("$convert", convertDocument))));
 
@@ -3093,7 +3092,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     @ParameterizedTest
     @MethodSource("aggregateWithConvertArguments_illegalValue")
     void testAggregateWithConvert_illegalValue(String given, String expectedMessageStartingWith) throws Exception {
-        List<Document> pipeline = Collections.singletonList(new Document("$project",
+        List<Document> pipeline = List.of(new Document("$project",
             new Document("value", new Document("$convert", json(given)))));
 
         collection.insertOne(json("_id: 1"));
@@ -3105,7 +3104,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @Test
     void testAggregateWithConvert_noDocument() throws Exception {
-        List<Document> pipeline = Collections.singletonList(new Document("$project",
+        List<Document> pipeline = List.of(new Document("$project",
             new Document("value",
                 new Document("$convert", 123))));
 

@@ -3,8 +3,8 @@ package de.bwaldvogel.mongo.backend.postgresql;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.bson.Document;
@@ -59,7 +59,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
     @Override
     protected MongoBackend createBackend() throws Exception {
         PostgresqlBackend backend = new PostgresqlBackend(dataSource, clock);
-        for (String db : Arrays.asList(TEST_DATABASE_NAME, OTHER_TEST_DATABASE_NAME)) {
+        for (String db : List.of(TEST_DATABASE_NAME, OTHER_TEST_DATABASE_NAME)) {
             MongoDatabase mongoDatabase = backend.openOrCreateDatabase(db);
             mongoDatabase.drop(NoopOplog.get());
         }

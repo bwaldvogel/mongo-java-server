@@ -16,7 +16,7 @@ public class MongoReply {
     private int flags;
 
     public MongoReply(MessageHeader header, Document document, ReplyFlag... replyFlags) {
-        this(header, Collections.singletonList(document), 0, replyFlags);
+        this(header, List.of(document), 0, replyFlags);
     }
 
     public MongoReply(MessageHeader header, Iterable<? extends Document> documents, long cursorId, ReplyFlag... replyFlags) {

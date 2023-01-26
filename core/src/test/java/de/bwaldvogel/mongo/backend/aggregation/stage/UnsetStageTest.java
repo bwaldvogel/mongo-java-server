@@ -4,7 +4,6 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,7 +32,7 @@ class UnsetStageTest {
 
     @Test
     void testUnsetMultipleFields() throws Exception {
-        assertThat(unset(Arrays.asList("field1", "field2"),
+        assertThat(unset(List.of("field1", "field2"),
             json("_id: 1, field1: 'value1'"),
             json("_id: 2, field1: 'value1', field2: 'value2'"),
             json("_id: 3, field2: 'value2', field3: 'value3'"),
@@ -72,7 +71,7 @@ class UnsetStageTest {
             .withMessage("[Error 40352] Invalid $unset :: caused by :: FieldPath cannot be constructed with empty string");
 
         assertThatExceptionOfType(MongoServerError.class)
-            .isThrownBy(() -> new UnsetStage(Arrays.asList(123, 456)))
+            .isThrownBy(() -> new UnsetStage(List.of(123, 456)))
             .withMessage("[Error 31120] $unset specification must be a string or an array containing only string values");
 
         assertThatExceptionOfType(MongoServerError.class)

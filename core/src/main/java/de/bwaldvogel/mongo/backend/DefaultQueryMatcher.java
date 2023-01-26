@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -84,11 +83,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private List<String> splitKey(String key) {
-        List<String> keys = Arrays.asList(key.split("\\.", -1));
+        List<String> keys = List.of(key.split("\\.", -1));
         for (int i = 0; i < keys.size(); i++) {
             if (keys.get(i).isEmpty() && i != keys.size() - 1) {
                 log.warn("Illegal key: '{}'", key);
-                return Collections.singletonList(key);
+                return List.of(key);
             }
         }
         return keys;
@@ -190,7 +189,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private static boolean isInQuery(Document queryDocument) {
-        return queryDocument.keySet().equals(Collections.singleton(QueryOperator.IN.getValue()));
+        return queryDocument.keySet().equals(Set.of(QueryOperator.IN.getValue()));
     }
 
     private boolean checkMatchesAnyValue(Document queryValue, List<String> keys, Document document, Collection<?> value) {
@@ -409,7 +408,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     private boolean checkMatchesAnyValue(Object queryValue, Collection<?> values) {
         if (queryValue instanceof Document) {
             Document queryDocument = (Document) queryValue;
-            if (queryDocument.keySet().equals(Collections.singleton(QueryOperator.ELEM_MATCH.getValue()))) {
+            if (queryDocument.keySet().equals(Set.of(QueryOperator.ELEM_MATCH.getValue()))) {
                 queryValue = queryDocument.get(QueryOperator.ELEM_MATCH.getValue());
             }
         }

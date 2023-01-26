@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.wire;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -87,7 +88,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             MessageHeader header = createResponseHeader(query);
 
             return new MongoReply(header,
-                document != null ? Collections.singletonList(document) : Collections.emptyList(),
+                document != null ? List.of(document) : Collections.emptyList(),
                 0);
         }
 

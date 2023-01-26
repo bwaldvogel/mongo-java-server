@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -70,40 +71,40 @@ class ValueComparatorTest {
 
     @Test
     void testCompareList() throws Exception {
-        assertThat(ValueComparator.ascWithoutListHandling().compare(Arrays.asList(1, 2), Arrays.asList(1))).isGreaterThan(0);
-        assertThat(ValueComparator.ascWithoutListHandling().compare(Arrays.asList(1, 2), Arrays.asList(1, 2))).isZero();
-        assertThat(ValueComparator.ascWithoutListHandling().compare(Arrays.asList(1, 2.0), Arrays.asList(1.0, 2))).isZero();
+        assertThat(ValueComparator.ascWithoutListHandling().compare(List.of(1, 2), List.of(1))).isGreaterThan(0);
+        assertThat(ValueComparator.ascWithoutListHandling().compare(List.of(1, 2), List.of(1, 2))).isZero();
+        assertThat(ValueComparator.ascWithoutListHandling().compare(List.of(1, 2.0), List.of(1.0, 2))).isZero();
     }
 
     @Test
     void testCompareListsInAscendingOrder() throws Exception {
-        assertComparesTheSame(1, Arrays.asList(1, 2));
-        assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), "abc");
-        assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), json("a: 1"));
-        assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), true);
-        assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), new ObjectId());
+        assertComparesTheSame(1, List.of(1, 2));
+        assertFirstValueBeforeSecondValue(List.of(1, 2), "abc");
+        assertFirstValueBeforeSecondValue(List.of(1, 2), json("a: 1"));
+        assertFirstValueBeforeSecondValue(List.of(1, 2), true);
+        assertFirstValueBeforeSecondValue(List.of(1, 2), new ObjectId());
         assertComparesTheSame(Collections.emptyList(), Collections.emptyList());
-        assertComparesTheSame(Collections.singletonList(1), 1);
+        assertComparesTheSame(List.of(1), 1);
         assertComparesTheSame(null, Arrays.asList(null, 1, 2));
-        assertFirstValueBeforeSecondValue(Collections.singletonList(1), 2);
-        assertFirstValueBeforeSecondValue(1, Collections.singletonList(2));
+        assertFirstValueBeforeSecondValue(List.of(1), 2);
+        assertFirstValueBeforeSecondValue(1, List.of(2));
         assertFirstValueBeforeSecondValue(Collections.emptyList(), null);
         assertFirstValueBeforeSecondValue(Collections.emptyList(), Arrays.asList(null, 1, 2, 3));
         assertFirstValueBeforeSecondValue(Collections.emptyList(), Missing.getInstance());
 
-        assertComparesTheSame(Arrays.asList(1, 2, 3), Arrays.asList(1, 2, 3));
-        assertFirstValueBeforeSecondValue(Arrays.asList(1, 2), Arrays.asList(2, 3));
-        assertFirstValueBeforeSecondValue(Collections.emptyList(), Arrays.asList(1, 2));
-        assertFirstValueBeforeSecondValue(Missing.getInstance(), Arrays.asList(1, 2));
+        assertComparesTheSame(List.of(1, 2, 3), List.of(1, 2, 3));
+        assertFirstValueBeforeSecondValue(List.of(1, 2), List.of(2, 3));
+        assertFirstValueBeforeSecondValue(Collections.emptyList(), List.of(1, 2));
+        assertFirstValueBeforeSecondValue(Missing.getInstance(), List.of(1, 2));
         assertFirstValueBeforeSecondValue(Collections.emptyList(), Missing.getInstance());
     }
 
     @Test
     void testCompareListsInDescendingOrder() throws Exception {
-        assertThat(ValueComparator.desc().compare(Arrays.asList(2, 3), Arrays.asList(1, 2))).isLessThan(0);
+        assertThat(ValueComparator.desc().compare(List.of(2, 3), List.of(1, 2))).isLessThan(0);
 
-        assertThat(ValueComparator.desc().compare(Arrays.asList(1, "abc", 2), Collections.singletonList(3))).isLessThan(0);
-        assertThat(ValueComparator.desc().compare(Collections.singletonList(3), Arrays.asList(1, "abc", 2))).isGreaterThan(0);
+        assertThat(ValueComparator.desc().compare(List.of(1, "abc", 2), List.of(3))).isLessThan(0);
+        assertThat(ValueComparator.desc().compare(List.of(3), List.of(1, "abc", 2))).isGreaterThan(0);
     }
 
     @Test

@@ -151,7 +151,7 @@ public class ArrayFilters {
 
     private List<String> calculateKeys(Object object, List<String> pathFragments, String path) {
         if (pathFragments.isEmpty()) {
-            return Collections.singletonList(path);
+            return List.of(path);
         }
         String fragment = pathFragments.get(0);
 

@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -144,7 +143,7 @@ public class BucketStage implements AggregationStage {
 
     private List<Accumulator> getAccumulators() {
         if (output == null) {
-            return Collections.singletonList(new SumAccumulator("count", new Document("$sum", 1)));
+            return List.of(new SumAccumulator("count", new Document("$sum", 1)));
         }
         return Accumulator.parse(output).values().stream()
             .map(Supplier::get)

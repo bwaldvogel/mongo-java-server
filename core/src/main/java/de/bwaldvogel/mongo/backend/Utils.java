@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -506,7 +505,7 @@ public class Utils {
     }
 
     static Document firstBatchCursorResponse(String ns, Document... documents) {
-        return firstBatchCursorResponse(ns, Arrays.asList(documents));
+        return firstBatchCursorResponse(ns, List.of(documents));
     }
 
     static Document firstBatchCursorResponse(String ns, Iterable<Document> documents) {

@@ -4,7 +4,7 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +59,7 @@ class ProjectStageTest {
     void testProject_withFieldWithinArrayToBeEvaluated() {
         Document projection = new Document();
         projection.put("_id", 1);
-        projection.put("x", Collections.singletonList(new Document("count", "$count")));
+        projection.put("x", List.of(new Document("count", "$count")));
         assertThat(project(json("_id: 1, count: 5"), projection))
             .isEqualTo(json("_id: 1, x: [{count: 5}]"));
     }

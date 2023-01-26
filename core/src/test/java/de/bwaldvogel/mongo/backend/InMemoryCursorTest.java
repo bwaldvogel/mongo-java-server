@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,13 +16,13 @@ class InMemoryCursorTest {
 
     @Test
     void testIsEmpty() {
-        InMemoryCursor cursor = new InMemoryCursor(1L, Collections.singletonList(new Document()));
+        InMemoryCursor cursor = new InMemoryCursor(1L, List.of(new Document()));
         assertThat(cursor.isEmpty()).isFalse();
     }
 
     @Test
     void testGetCursorId() {
-        Cursor cursor = new InMemoryCursor(1L, Collections.singletonList(new Document()));
+        Cursor cursor = new InMemoryCursor(1L, List.of(new Document()));
         assertThat(cursor.getId()).isEqualTo(1);
     }
 
@@ -49,7 +48,7 @@ class InMemoryCursorTest {
 
     @Test
     void testTakeDocuments_returnsUnmodifiableList() {
-        InMemoryCursor cursor = new InMemoryCursor(123L, Arrays.asList(new Document(), new Document()));
+        InMemoryCursor cursor = new InMemoryCursor(123L, List.of(new Document(), new Document()));
         List<Document> documents = cursor.takeDocuments(5);
         assertThatExceptionOfType(UnsupportedOperationException.class)
             .isThrownBy(() -> documents.remove(0));
@@ -57,7 +56,7 @@ class InMemoryCursorTest {
 
     @Test
     void testToString() throws Exception {
-        assertThat(new InMemoryCursor(123L, Collections.singletonList(new Document())))
+        assertThat(new InMemoryCursor(123L, List.of(new Document())))
             .hasToString("InMemoryCursor(id: 123)");
     }
 

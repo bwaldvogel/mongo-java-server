@@ -137,7 +137,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         Document response = new Document();
         switch (argument) {
             case "*":
-                response.put("names", Collections.singletonList("startupWarnings"));
+                response.put("names", List.of("startupWarnings"));
                 Utils.markOkay(response);
                 break;
             case "startupWarnings":

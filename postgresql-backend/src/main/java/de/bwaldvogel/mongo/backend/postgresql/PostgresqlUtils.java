@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend.postgresql;
 import static de.bwaldvogel.mongo.backend.postgresql.JsonConverter.toJson;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -23,7 +22,7 @@ public final class PostgresqlUtils {
         if (!key.matches("^[a-zA-Z0-9_.]+$")) {
             throw new IllegalArgumentException("Illegal key: " + key);
         }
-        List<String> keys = Arrays.asList(key.split("\\."));
+        List<String> keys = List.of(key.split("\\."));
         StringBuilder sb = new StringBuilder("data");
         for (int i = 0; i < keys.size(); i++) {
             if (i == keys.size() - 1) {

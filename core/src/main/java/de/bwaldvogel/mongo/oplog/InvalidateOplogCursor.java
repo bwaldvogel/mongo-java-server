@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.oplog;
 
-import java.util.Collections;
 import java.util.List;
 
 import de.bwaldvogel.mongo.backend.AbstractCursor;
@@ -24,7 +23,7 @@ class InvalidateOplogCursor extends AbstractCursor {
         Document result = new Document()
             .append(OplogDocumentFields.ID, new Document(OplogDocumentFields.ID_DATA_KEY, position.toHexString()))
             .append("operationType", OperationType.INVALIDATE.getDescription());
-        return Collections.singletonList(result);
+        return List.of(result);
     }
 
 }

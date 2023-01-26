@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -76,7 +75,7 @@ public abstract class Index<P> {
                 .map(KeyValue::new)
                 .collect(StreamUtils.toLinkedHashSet());
         } else {
-            return Collections.singleton(new KeyValue(valuesPerKey.values()));
+            return Set.of(new KeyValue(valuesPerKey.values()));
         }
     }
 
@@ -99,7 +98,7 @@ public abstract class Index<P> {
     private static List<String> getPathToFirstCollection(Document document, String key) {
         List<String> fragments = Utils.splitPath(key);
         List<String> remainingFragments = Utils.getTail(fragments);
-        return getPathToFirstCollection(document, remainingFragments, Collections.singletonList(fragments.get(0)));
+        return getPathToFirstCollection(document, remainingFragments, List.of(fragments.get(0)));
     }
 
     private static List<String> getPathToFirstCollection(Document document, List<String> remainingFragments, List<String> path) {

@@ -1,9 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.time.Clock;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -20,7 +18,7 @@ import io.netty.channel.Channel;
 
 public class ReadOnlyProxy implements MongoBackend {
 
-    private static final Set<String> allowedCommands = new HashSet<>(Arrays.asList(
+    private static final Set<String> allowedCommands = Set.of(
         "ismaster",
         "find",
         "listdatabases",
@@ -32,7 +30,7 @@ public class ReadOnlyProxy implements MongoBackend {
         "buildinfo",
         "getlasterror",
         "getmore"
-    ));
+    );
 
     private final MongoBackend backend;
 
