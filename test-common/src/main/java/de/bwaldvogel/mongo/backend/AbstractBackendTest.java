@@ -2446,6 +2446,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(runCommand("ping").getDouble("ok")).isEqualTo(1.0);
         assertThat(runCommand(json("ping: true")).getDouble("ok")).isEqualTo(1.0);
         assertThat(runCommand(json("ping: 2.0")).getDouble("ok")).isEqualTo(1.0);
+        assertThat(getDatabase().runCommand(json("ping: true")).getDouble("ok")).isEqualTo(1.0);
     }
 
     @Test
