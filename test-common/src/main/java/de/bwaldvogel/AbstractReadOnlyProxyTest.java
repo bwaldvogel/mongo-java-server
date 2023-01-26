@@ -5,7 +5,6 @@ import static de.bwaldvogel.mongo.backend.TestUtils.jsonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.bson.Document;
@@ -166,7 +165,7 @@ public abstract class AbstractReadOnlyProxyTest {
     @Test
     void testHandleKillCursor() {
         MongoCollection<Document> collection = writeClient.getDatabase("testdb").getCollection("testcollection");
-        collection.insertMany(Arrays.asList(new Document(), new Document()));
+        collection.insertMany(List.of(new Document(), new Document()));
         MongoCursor<Document> cursor = readOnlyClient.getDatabase("testdb")
             .getCollection("testcollection").find().batchSize(1).cursor();
         assertThat(cursor.getServerCursor()).isNotNull();

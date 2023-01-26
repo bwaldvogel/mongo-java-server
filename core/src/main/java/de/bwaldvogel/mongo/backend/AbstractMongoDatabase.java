@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -777,7 +778,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     @VisibleForExternalBackends
     protected boolean isPrimaryKeyIndex(Document key) {
-        return key.keySet().equals(Collections.singleton(ID_FIELD));
+        return key.keySet().equals(Set.of(ID_FIELD));
     }
 
     @VisibleForExternalBackends
@@ -791,7 +792,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Index<P> openOrCreateIdIndex(String collectionName, String indexName, boolean ascending) {
-        return openOrCreateUniqueIndex(collectionName, indexName, Collections.singletonList(new IndexKey(ID_FIELD, ascending)), false);
+        return openOrCreateUniqueIndex(collectionName, indexName, List.of(new IndexKey(ID_FIELD, ascending)), false);
     }
 
     protected abstract Index<P> openOrCreateUniqueIndex(String collectionName, String indexName, List<IndexKey> keys, boolean sparse);
@@ -817,7 +818,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             return writeErrors;
         } catch (MongoServerError e) {
             putLastError(channel, e);
-            return Collections.singletonList(toWriteError(0, e));
+            return List.of(toWriteError(0, e));
         }
     }
 

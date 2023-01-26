@@ -1,9 +1,7 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -50,7 +48,7 @@ public enum BsonType {
     BsonType(int number, String alias, Class<?>... classes) {
         this.number = number;
         this.alias = alias;
-        this.classes = new LinkedHashSet<>(Arrays.asList(classes));
+        this.classes = Set.of(classes);
     }
 
     public static BsonType forString(String value) {

@@ -589,7 +589,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         if (nMatched == 0 && isUpsert) {
             Document newDocument = handleUpsert(updateQuery, selector, arrayFilters);
             result.put("upserted", newDocument.get(getIdField()));
-            oplog.handleInsert(getFullName(), Collections.singletonList(newDocument));
+            oplog.handleInsert(getFullName(), List.of(newDocument));
         } else {
             oplog.handleUpdate(getFullName(), selector, updateQuery, updatedIds);
         }

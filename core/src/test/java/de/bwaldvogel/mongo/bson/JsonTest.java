@@ -3,8 +3,8 @@ package de.bwaldvogel.mongo.bson;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ class JsonTest {
         assertThat(Json.toJsonValue(1.2345)).isEqualTo("1.2345");
         assertThat(Json.toJsonValue((short) 42)).isEqualTo("42");
         assertThat(Json.toJsonValue(Long.MAX_VALUE)).isEqualTo("9223372036854775807");
-        assertThat(Json.toJsonValue(Arrays.asList(1, 2, 3))).isEqualTo("[ 1, 2, 3 ]");
+        assertThat(Json.toJsonValue(List.of(1, 2, 3))).isEqualTo("[ 1, 2, 3 ]");
         assertThat(Json.toJsonValue(Collections.emptyList())).isEqualTo("[]");
         assertThat(Json.toJsonValue(Collections.emptySet())).isEqualTo("[]");
         assertThat(Json.toJsonValue(Instant.ofEpochSecond(1234567890L))).isEqualTo("\"2009-02-13T23:31:30Z\"");

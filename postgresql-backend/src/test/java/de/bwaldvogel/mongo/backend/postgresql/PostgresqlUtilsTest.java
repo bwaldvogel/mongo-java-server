@@ -4,9 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +30,7 @@ class PostgresqlUtilsTest {
         assertThat(PostgresqlUtils.toQueryValue("foobar")).isEqualTo("foobar");
         assertThat(PostgresqlUtils.toQueryValue("1.0")).isEqualTo("1.0");
         assertThat(PostgresqlUtils.toQueryValue(new LinkedHashMap<>(Collections.singletonMap("foo", "bar")))).isEqualTo("{\"foo\":\"bar\"}");
-        assertThat(PostgresqlUtils.toQueryValue(Arrays.asList("foo", "bar"))).isEqualTo("[\"foo\",\"bar\"]");
+        assertThat(PostgresqlUtils.toQueryValue(List.of("foo", "bar"))).isEqualTo("[\"foo\",\"bar\"]");
         assertThat(PostgresqlUtils.toQueryValue(new ObjectId("foobarfoobar".getBytes(StandardCharsets.UTF_8)))).isEqualTo("{\"@class\":\"de.bwaldvogel.mongo.bson.ObjectId\",\"data\":\"Zm9vYmFyZm9vYmFy\"}");
         assertThat(PostgresqlUtils.toQueryValue(new Document("key", "value"))).isEqualTo("{\"@class\":\"de.bwaldvogel.mongo.bson.Document\",\"key\":\"value\"}");
 

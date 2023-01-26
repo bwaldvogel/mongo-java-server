@@ -14,7 +14,6 @@ import static de.bwaldvogel.mongo.backend.QueryOperator.NOT;
 import static de.bwaldvogel.mongo.backend.QueryOperator.NOT_IN;
 import static de.bwaldvogel.mongo.backend.QueryOperator.SIZE;
 
-import java.util.Arrays;
 import java.util.List;
 
 import de.bwaldvogel.mongo.bson.BsonRegularExpression;
@@ -99,7 +98,7 @@ class DocumentBuilder {
     }
 
     static List<Object> list(Object... values) {
-        return Arrays.asList(values);
+        return List.of(values);
     }
 
     static Document map(QueryOperator operator, Object value) {

@@ -3,9 +3,9 @@ package de.bwaldvogel.mongo.backend;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -32,11 +32,11 @@ public class LinkedTreeSetTest {
 
         assertThat(set).containsExactly(1, "abc");
 
-        assertThat(set.retainAll(Arrays.asList("abc", "xyz"))).isTrue();
+        assertThat(set.retainAll(List.of("abc", "xyz"))).isTrue();
 
         assertThat(set).containsExactly("abc");
 
-        assertThat(set.retainAll(Arrays.asList("abc", "xyz"))).isFalse();
+        assertThat(set.retainAll(List.of("abc", "xyz"))).isFalse();
     }
 
     @Test
@@ -120,30 +120,30 @@ public class LinkedTreeSetTest {
     @Test
     void testListValues() throws Exception {
         Set<Object> set = new LinkedTreeSet<>();
-        assertThat(set.add(Arrays.asList(1, 2, 3))).isTrue();
-        assertThat(set.add(Arrays.asList(2, 3))).isTrue();
-        assertThat(set.add(Collections.singletonList(1))).isTrue();
+        assertThat(set.add(List.of(1, 2, 3))).isTrue();
+        assertThat(set.add(List.of(2, 3))).isTrue();
+        assertThat(set.add(List.of(1))).isTrue();
 
         assertThat(set).hasSize(3);
 
-        assertThat(set.remove(Arrays.asList(1, 2))).isFalse();
-        assertThat(set.remove(Arrays.asList(1, 2, 3.0))).isTrue();
+        assertThat(set.remove(List.of(1, 2))).isFalse();
+        assertThat(set.remove(List.of(1, 2, 3.0))).isTrue();
 
-        assertThat(set).containsExactlyInAnyOrder(Arrays.asList(2, 3), Arrays.asList(1));
+        assertThat(set).containsExactlyInAnyOrder(List.of(2, 3), List.of(1));
     }
 
     @Test
     void testRemoveAll() throws Exception {
         Set<Object> set = new LinkedTreeSet<>();
 
-        assertThat(set.removeAll(Arrays.asList(2, -0.0))).isFalse();
+        assertThat(set.removeAll(List.of(2, -0.0))).isFalse();
 
         set.add(1.0);
         set.add(0);
         set.add(2);
 
-        assertThat(set.removeAll(Arrays.asList(3, -0.0))).isTrue();
-        assertThat(set.removeAll(Arrays.asList(3, -0.0))).isFalse();
+        assertThat(set.removeAll(List.of(3, -0.0))).isTrue();
+        assertThat(set.removeAll(List.of(3, -0.0))).isFalse();
 
         assertThat(set).containsExactly(1.0, 2);
 
@@ -153,7 +153,7 @@ public class LinkedTreeSetTest {
         set.add(-0.0);
         set.add(2);
 
-        set.removeAll(Arrays.asList(0, 2.0));
+        set.removeAll(List.of(0, 2.0));
 
         assertThat(set).containsExactly(1.0);
     }
@@ -166,7 +166,7 @@ public class LinkedTreeSetTest {
         set.add(0);
         set.add(2);
 
-        set.retainAll(Arrays.asList(0.0, 2.0));
+        set.retainAll(List.of(0.0, 2.0));
 
         assertThat(set).containsExactly(0, 2);
     }
@@ -210,9 +210,9 @@ public class LinkedTreeSetTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/109
     @Test
     void testSizeAfterRemoveAll() throws Exception {
-        Set<Object> set = new LinkedTreeSet<>(Arrays.asList("A", "B"));
+        Set<Object> set = new LinkedTreeSet<>(List.of("A", "B"));
 
-        set.removeAll(Arrays.asList("B", "C", "D"));
+        set.removeAll(List.of("B", "C", "D"));
 
         assertThat(set).containsExactly("A");
         assertThat(set).hasSize(1);
@@ -221,9 +221,9 @@ public class LinkedTreeSetTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/109
     @Test
     void testSizeAfterRetainAll() throws Exception {
-        Set<Object> set = new LinkedTreeSet<>(Arrays.asList("A", "B", "C"));
+        Set<Object> set = new LinkedTreeSet<>(List.of("A", "B", "C"));
 
-        set.retainAll(Arrays.asList("B", "C"));
+        set.retainAll(List.of("B", "C"));
 
         assertThat(set).containsExactly("B", "C");
         assertThat(set).hasSize(2);

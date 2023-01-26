@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -134,19 +133,19 @@ class UtilsTest {
         assertThat(Utils.getFieldValueListSafe(json(""), "foo")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(json("foo: null"), "foo")).isNull();
         assertThat(Utils.getFieldValueListSafe(json("foo: 25"), "foo")).isEqualTo(25);
-        assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isEqualTo("b");
-        assertThat(Utils.getFieldValueListSafe(Arrays.asList("a", "b", "c"), "10")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(List.of("a", "b", "c"), "1")).isEqualTo("b");
+        assertThat(Utils.getFieldValueListSafe(List.of("a", "b", "c"), "10")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(Collections.emptyList(), "0")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(123, "0")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe("abc", "0")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(123, "x")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe("abc", "x")).isInstanceOf(Missing.class);
 
-        List<?> values = Arrays.asList(json("a: 1"), 2, json("a: 2"), json("b: 3"), json("a: {b: 'x'}"));
+        List<?> values = List.of(json("a: 1"), 2, json("a: 2"), json("b: 3"), json("a: {b: 'x'}"));
         assertThat(Utils.getFieldValueListSafe(values, "a"))
-            .isEqualTo(Arrays.asList(1, 2, json("b: 'x'")));
+            .isEqualTo(List.of(1, 2, json("b: 'x'")));
 
-        assertThat(Utils.getFieldValueListSafe(Arrays.asList(1, 2, 3), "a")).isInstanceOf(Missing.class);
+        assertThat(Utils.getFieldValueListSafe(List.of(1, 2, 3), "a")).isInstanceOf(Missing.class);
     }
 
     @Test
@@ -155,12 +154,12 @@ class UtilsTest {
         Document document = json("foo: 25");
         assertThat(Utils.hasFieldValueListSafe(document, "foo")).isTrue();
         assertThat(Utils.hasFieldValueListSafe(document, "bar")).isFalse();
-        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "0")).isTrue();
-        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "1")).isTrue();
-        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "2")).isTrue();
-        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "3")).isFalse();
+        assertThat(Utils.hasFieldValueListSafe(List.of("a", "b", "c"), "0")).isTrue();
+        assertThat(Utils.hasFieldValueListSafe(List.of("a", "b", "c"), "1")).isTrue();
+        assertThat(Utils.hasFieldValueListSafe(List.of("a", "b", "c"), "2")).isTrue();
+        assertThat(Utils.hasFieldValueListSafe(List.of("a", "b", "c"), "3")).isFalse();
         // https://github.com/bwaldvogel/mongo-java-server/issues/61
-        assertThat(Utils.hasFieldValueListSafe(Arrays.asList("a", "b", "c"), "foo")).isFalse();
+        assertThat(Utils.hasFieldValueListSafe(List.of("a", "b", "c"), "foo")).isFalse();
     }
 
     @Test
@@ -191,7 +190,7 @@ class UtilsTest {
         Utils.changeSubdocumentValue(document, "foo.x.1", "new-value");
         assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 'new-value', 3]}"));
 
-        Utils.changeSubdocumentValue(document, "foo.y", Arrays.asList(1, 2, 3));
+        Utils.changeSubdocumentValue(document, "foo.y", List.of(1, 2, 3));
         assertThat(document).isEqualTo(json("_id: 1, foo: {x: [1, 'new-value', 3], y: [1, 2, 3]}"));
     }
 
@@ -253,7 +252,7 @@ class UtilsTest {
         Document document = json("_id: 1, x: [{a: 1, b: 2, c: 3}, {b: 3}]");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "x.b");
-        assertThat(removedValues).isEqualTo(Arrays.asList(2, 3));
+        assertThat(removedValues).isEqualTo(List.of(2, 3));
         assertThat(document).isEqualTo(json("_id: 1, x: [{a: 1, c: 3}, {}]"));
     }
 
@@ -262,7 +261,7 @@ class UtilsTest {
         Document document = json("a: [{b: [{c: 1}, {c: 2, d: 3}, 'abc']}]");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
-        assertThat(removedValues).isEqualTo(Arrays.asList(1, 2));
+        assertThat(removedValues).isEqualTo(List.of(1, 2));
         assertThat(document).isEqualTo(json("a: [{b: [{}, {d: 3}, 'abc']}]"));
     }
 
@@ -271,7 +270,7 @@ class UtilsTest {
         Document document = json("a: {b: [{c: 1}, {c: 2, d: 3}, 'abc']}");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
-        assertThat(removedValues).isEqualTo(Arrays.asList(1, 2));
+        assertThat(removedValues).isEqualTo(List.of(1, 2));
         assertThat(document).isEqualTo(json("a: {b: [{}, {d: 3}, 'abc']}"));
     }
 
@@ -280,7 +279,7 @@ class UtilsTest {
         Document document = json("a: {b: {c: [1, 2, 3]}}");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
-        assertThat(removedValues).isEqualTo(Arrays.asList(1, 2, 3));
+        assertThat(removedValues).isEqualTo(List.of(1, 2, 3));
         assertThat(document).isEqualTo(json("a: {b: {}}"));
     }
 
@@ -332,11 +331,11 @@ class UtilsTest {
 
     @Test
     void testJoinTail() throws Exception {
-        assertThat(Utils.joinTail(Collections.singletonList("a"))).isEqualTo("");
+        assertThat(Utils.joinTail(List.of("a"))).isEqualTo("");
         assertThat(Utils.joinTail(Collections.emptyList())).isEqualTo("");
-        assertThat(Utils.joinTail(Arrays.asList("a", "b"))).isEqualTo("b");
-        assertThat(Utils.joinTail(Arrays.asList("a", "b", "c"))).isEqualTo("b.c");
-        assertThat(Utils.joinTail(Arrays.asList("a", "b", "c", "d"))).isEqualTo("b.c.d");
+        assertThat(Utils.joinTail(List.of("a", "b"))).isEqualTo("b");
+        assertThat(Utils.joinTail(List.of("a", "b", "c"))).isEqualTo("b.c");
+        assertThat(Utils.joinTail(List.of("a", "b", "c", "d"))).isEqualTo("b.c.d");
     }
 
     @Test

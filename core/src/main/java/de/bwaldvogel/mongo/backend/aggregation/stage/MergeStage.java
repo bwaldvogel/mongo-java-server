@@ -1,9 +1,6 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,13 +31,13 @@ import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
 public class MergeStage extends TerminalStage {
 
-    private static final Set<String> KNOWN_KEYS = new HashSet<>(Arrays.asList("into", "on", "let", "whenMatched", "whenNotMatched"));
-    private static final Set<Class<?>> ALLOWED_STAGES_IN_PIPELINE = new HashSet<>(Arrays.asList(
+    private static final Set<String> KNOWN_KEYS = Set.of("into", "on", "let", "whenMatched", "whenNotMatched");
+    private static final Set<Class<?>> ALLOWED_STAGES_IN_PIPELINE = Set.of(
         AddFieldsStage.class,
         ProjectStage.class,
         UnsetStage.class,
         ReplaceRootStage.class
-    ));
+    );
 
     private final Supplier<MongoCollection<?>> targetCollectionSupplier;
     private final Set<String> joinFields;
@@ -152,7 +149,7 @@ public class MergeStage extends TerminalStage {
     private Set<String> getJoinFields(Document paramsDocument) {
         Object on = paramsDocument.getOrDefault("on", "_id");
         if (on instanceof String) {
-            return Collections.singleton((String) on);
+            return Set.of((String) on);
         } else if (on instanceof Collection) {
             Collection<?> collection = (Collection<?>) on;
             if (collection.isEmpty()) {

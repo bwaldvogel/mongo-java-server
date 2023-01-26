@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,22 +22,22 @@ public class MaxAccumulatorTest {
 
     @Test
     void testAccumulateArrays() throws Exception {
-        accumulator.aggregate(Arrays.asList(10, 20, 30));
-        accumulator.aggregate(Arrays.asList(3, 40));
-        accumulator.aggregate(Arrays.asList(11, 25));
+        accumulator.aggregate(List.of(10, 20, 30));
+        accumulator.aggregate(List.of(3, 40));
+        accumulator.aggregate(List.of(11, 25));
 
         Object result = accumulator.getResult();
-        assertThat(result).isEqualTo(Arrays.asList(11, 25));
+        assertThat(result).isEqualTo(List.of(11, 25));
     }
 
     @Test
     void testAccumulateArraysAndNonArray() throws Exception {
-        accumulator.aggregate(Arrays.asList(3, 40));
-        accumulator.aggregate(Arrays.asList(10, 20, 30));
+        accumulator.aggregate(List.of(3, 40));
+        accumulator.aggregate(List.of(10, 20, 30));
         accumulator.aggregate(50);
 
         Object result = accumulator.getResult();
-        assertThat(result).isEqualTo(Arrays.asList(10, 20, 30));
+        assertThat(result).isEqualTo(List.of(10, 20, 30));
     }
 
     @Test

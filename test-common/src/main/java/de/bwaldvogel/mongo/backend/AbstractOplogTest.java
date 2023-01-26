@@ -6,13 +6,11 @@ import static com.mongodb.client.model.Updates.set;
 import static com.mongodb.client.model.Updates.unset;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static de.bwaldvogel.mongo.backend.TestUtils.toArray;
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -167,7 +165,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     @Disabled("This test represents a missing feature")
     void testSetOplogUpdateOneByIdMultipleFields() {
         collection.insertOne(json("_id: 1, b: 6"));
-        collection.updateOne(eq("_id", 1), Arrays.asList(set("a", 7), set("b", 7)));
+        collection.updateOne(eq("_id", 1), List.of(set("a", 7), set("b", 7)));
         List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
 
         Document updateOplogDocument = oplogDocuments.get(1);
@@ -185,7 +183,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     @Test
     void testSetOplogUpdateMany() {
-        collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
+        collection.insertMany(List.of(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
         collection.updateMany(eq("b", 6), set("a", 7));
 
         List<Document> oplogDocuments = toArray(getOplogCollection().find(json("op: 'u'")).sort(json("ts: 1, 'o2._id': 1")));
@@ -208,7 +206,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
 
     @Test
     void testSetOplogDeleteMany() {
-        collection.insertMany(Arrays.asList(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
+        collection.insertMany(List.of(json("_id: 1, b: 6"), json("_id: 2, b: 6")));
         collection.deleteMany(eq("b", 6));
 
         List<Document> oplogDocuments = toArray(getOplogCollection().find(json("op: 'd'")).sort(json("ts: 1, 'o._id': 1")));
@@ -235,7 +233,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
         List<Document> insert = new ArrayList<>();
         List<Document> update = new ArrayList<>();
         List<ChangeStreamDocument<Document>> changeStreamsResult = new ArrayList<>();
-        List<Bson> pipeline = singletonList(match(Filters.or(
+        List<Bson> pipeline = List.of(match(Filters.or(
             Document.parse("{'fullDocument.b': 1}")))
         );
 
@@ -263,7 +261,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
                 assertThat(updateDocument.getFullDocument().get("a")).isEqualTo(i);
                 update.add(updateDocument.getFullDocument());
 
-                changeStreamsResult.addAll(Arrays.asList(insertDocument, updateDocument));
+                changeStreamsResult.addAll(List.of(insertDocument, updateDocument));
             }
         }
 
@@ -407,7 +405,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
         insertOne(asyncCollection, json("_id: 1"));
 
         Bson filter = match(Filters.eq("fullDocument.bu", "abc"));
-        List<Bson> pipeline = singletonList(filter);
+        List<Bson> pipeline = List.of(filter);
 
         super.assertNoOpenCursors();
         TestSubscriber<ChangeStreamDocument<Document>> streamSubscriber = new TestSubscriber<>();

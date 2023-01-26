@@ -4,7 +4,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ class MemoryUniqueIndexTest {
 
     @Test
     void testGetKeyValues_multiKey_simpleCase() throws Exception {
-        Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("a", true),
             new IndexKey("b", true)
         ), false);
@@ -30,7 +30,7 @@ class MemoryUniqueIndexTest {
 
     @Test
     void testGetKeyValues_multiKey_cannotIndexParallelArrays() throws Exception {
-        Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("a", true),
             new IndexKey("b", true)
         ), false);
@@ -43,7 +43,7 @@ class MemoryUniqueIndexTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
     @Test
     void testGetKeyValues_multiKey_document_nested_objects_cannotIndexParallelArrays() throws Exception {
-        Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("stock.size", true),
             new IndexKey("stock.quantity", true)
         ), false);
@@ -56,12 +56,12 @@ class MemoryUniqueIndexTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
     @Test
     void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
-        Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("stock.size", true),
             new IndexKey("stock.quantity", true)
         ), false);
 
-        assertThat(index.getKeyValues(new Document("stock", Arrays.asList(
+        assertThat(index.getKeyValues(new Document("stock", List.of(
             new Document("size", "S").append("color", "red").append("quantity", 25),
             new Document("size", "S").append("color", "blue").append("quantity", 10),
             new Document("size", "M").append("color", "blue").append("quantity", 50)
@@ -74,14 +74,14 @@ class MemoryUniqueIndexTest {
 
     @Test
     void testGetKeyValues_multiKey_nested_objects_multiple_keys() throws Exception {
-        Index<?> index = new MemoryUniqueIndex("name", Arrays.asList(
+        Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("item", true),
             new IndexKey("stock.size", true),
             new IndexKey("stock.quantity", true)
         ), false);
 
         assertThat(index.getKeyValues(
-            new Document("stock", Arrays.asList(
+            new Document("stock", List.of(
                 new Document("size", "S").append("color", "red").append("quantity", 25),
                 new Document("size", "S").append("color", "blue").append("quantity", 10),
                 new Document("size", "M").append("color", "blue").append("quantity", 50)
