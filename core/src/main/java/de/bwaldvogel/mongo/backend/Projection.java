@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import de.bwaldvogel.mongo.bson.Document;
@@ -154,10 +155,10 @@ class Projection {
 
             if (projectionValue instanceof Document) {
                 Document projectionDocument = (Document) projectionValue;
-                if (projectionDocument.keySet().equals(Collections.singleton(QueryOperator.ELEM_MATCH.getValue()))) {
+                if (projectionDocument.keySet().equals(Set.of(QueryOperator.ELEM_MATCH.getValue()))) {
                     Document elemMatch = (Document) projectionDocument.get(QueryOperator.ELEM_MATCH.getValue());
                     projectElemMatch(newDocument, elemMatch, key, value);
-                } else if (projectionDocument.keySet().equals(Collections.singleton("$slice"))) {
+                } else if (projectionDocument.keySet().equals(Set.of("$slice"))) {
                     Object slice = projectionDocument.get("$slice");
                     projectSlice(newDocument, slice, key, value);
                 } else {
@@ -182,7 +183,7 @@ class Projection {
                 .filter(sourceObject -> sourceObject instanceof Document)
                 .filter(sourceObject -> queryMatcher.matches((Document) sourceObject, elemMatch))
                 .findFirst()
-                .ifPresent(v -> newDocument.put(key, Collections.singletonList(v)));
+                .ifPresent(v -> newDocument.put(key, List.of(v)));
         }
     }
 

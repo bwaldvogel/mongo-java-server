@@ -1,13 +1,12 @@
 package de.bwaldvogel.mongo;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import de.bwaldvogel.mongo.backend.Utils;
 
 public enum ServerVersion {
-    MONGO_3_6(Arrays.asList(3, 6, 0), 6);
+    MONGO_3_6(List.of(3, 6, 0), 6);
 
     private final List<Integer> versionArray;
     private final int wireVersion;

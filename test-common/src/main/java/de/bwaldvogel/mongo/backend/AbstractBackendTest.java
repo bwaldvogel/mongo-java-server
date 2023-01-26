@@ -280,7 +280,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         }
         MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
         cursor.next();
-        killCursors(Collections.singletonList(cursor.getServerCursor().getId()));
+        killCursors(List.of(cursor.getServerCursor().getId()));
 
         assertThatExceptionOfType(MongoCursorNotFoundException.class)
             .isThrownBy(cursor::next)
@@ -295,9 +295,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
         MongoCursor<Document> cursor = collection.find().batchSize(1).cursor();
         ServerCursor serverCursor = cursor.getServerCursor();
         String collectionName = collection.getNamespace().getCollectionName();
-        Document result = runCommand(new Document("killCursors", collectionName).append("cursors", Arrays.asList(serverCursor.getId())));
+        Document result = runCommand(new Document("killCursors", collectionName).append("cursors", List.of(serverCursor.getId())));
         assertThat(result.getDouble("ok")).isEqualTo(1.0);
-        assertThat(result.get("cursorsKilled")).isEqualTo(Arrays.asList(serverCursor.getId()));
+        assertThat(result.get("cursorsKilled")).isEqualTo(List.of(serverCursor.getId()));
         assertThat(result.get("cursorsNotFound")).isEqualTo(Collections.emptyList());
     }
 
@@ -305,10 +305,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testKillCursor_unknownCursorId() throws Exception {
         collection.insertOne(json(""));
         String collectionName = collection.getNamespace().getCollectionName();
-        Document result = runCommand(new Document("killCursors", collectionName).append("cursors", Arrays.asList(987654321L)));
+        Document result = runCommand(new Document("killCursors", collectionName).append("cursors", List.of(987654321L)));
         assertThat(result.getDouble("ok")).isEqualTo(1.0);
         assertThat(result.get("cursorsKilled")).isEqualTo(Collections.emptyList());
-        assertThat(result.get("cursorsNotFound")).isEqualTo(Arrays.asList(987654321L));
+        assertThat(result.get("cursorsNotFound")).isEqualTo(List.of(987654321L));
     }
 
     @Test
@@ -421,7 +421,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testCompoundDateIdUpserts() {
         Document query = json("_id: {$lt: {n: 'a', t: 10}, $gte: {n: 'a', t: 1}}");
 
-        List<Document> toUpsert = Arrays.asList(
+        List<Document> toUpsert = List.of(
             json("_id: {n: 'a', t: 1}"),
             json("_id: {n: 'a', t: 2}"),
             json("_id: {n: 'a', t: 3}"),
@@ -744,7 +744,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testListCollections() throws Exception {
-        List<String> collections = Arrays.asList("coll1", "coll2", "coll3");
+        List<String> collections = List.of("coll1", "coll2", "coll3");
         for (String collection : collections) {
             getCollection(collection).insertOne(json("_id: 1"));
         }
@@ -839,7 +839,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testUpdateInSystemNamespace() throws Exception {
-        for (String collectionName : Arrays.asList("system.foobar", "system.namespaces")) {
+        for (String collectionName : List.of("system.foobar", "system.namespaces")) {
             MongoCollection<Document> collection = getCollection(collectionName);
 
             assertMongoWriteException(() -> collection.updateMany(eq("some", "value"), set("field", "value")),
@@ -921,8 +921,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testDistinctArrayField() throws Exception {
         collection.insertOne(json("_id: 1, n: null"));
-        collection.insertOne(json("_id: 2").append("n", Arrays.asList(1, 2, 3)));
-        collection.insertOne(json("_id: 3").append("n", Arrays.asList(3, 4, 5)));
+        collection.insertOne(json("_id: 2").append("n", List.of(1, 2, 3)));
+        collection.insertOne(json("_id: 3").append("n", List.of(3, 4, 5)));
         collection.insertOne(json("_id: 4").append("n", 6));
 
         assertThat(collection.distinct("n", Integer.class))
@@ -1404,28 +1404,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.findOneAndUpdate(
             json("_id: 1"),
             json("$set: {'grades.$[element]': 'abc'}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 100}"))));
 
         assertThat(collection.find(json("_id: 1")).first()).isEqualTo(json("_id: 1, grades: [95, 'abc', 90, 'abc']"));
 
         collection.findOneAndUpdate(
             json("_id: 1"),
             json("$unset: {'grades.$[element]': 1}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 'abc'"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: 'abc'"))));
 
         assertThat(collection.find(json("_id: 1")).first()).isEqualTo(json("_id: 1, grades: [95, null, 90, null]"));
 
         collection.findOneAndUpdate(
             json("_id: 1"),
             json("$inc: {'grades.$[element]': 1}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 90"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: 90"))));
 
         assertThat(collection.find(json("_id: 1")).first()).isEqualTo(json("_id: 1, grades: [95, null, 91, null]"));
 
         collection.findOneAndUpdate(
             json("_id: 2"),
             json("$pull: {'values.$[element]': 2}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$type: 'array'}"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$type: 'array'}"))));
 
         assertThat(collection.find(json("_id: 2")).first())
             .isEqualTo(json("_id: 2, values: [[1, 3], 'other']"));
@@ -1433,7 +1433,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.findOneAndUpdate(
             json("_id: 3"),
             json("$mul: {'a.b.$[element]': 10}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 2"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: 2"))));
 
         assertThat(collection.find(json("_id: 3")).first())
             .isEqualTo(json("_id: 3, a: {b: [1, 20, 3]}"));
@@ -1480,7 +1480,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateMany(
             json(""),
             json("$set: {'values.$[x]': 20}"),
-            new UpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 20}")))
+            new UpdateOptions().arrayFilters(List.of(json("x: {$gt: 20}")))
         );
 
         assertThat(collection.find(json("")))
@@ -1497,7 +1497,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(json("_id: 1"),
             json("$set: {'values.$[elem].active': true}"),
-            new UpdateOptions().arrayFilters(Arrays.asList(json("'elem.name': {$in: ['A']}")))
+            new UpdateOptions().arrayFilters(List.of(json("'elem.name': {$in: ['A']}")))
         );
 
         assertThat(collection.find(json("")))
@@ -1514,7 +1514,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             json("$set: {'values.$[x]': 20}"),
             new UpdateOptions()
                 .upsert(true)
-                .arrayFilters(Arrays.asList(json("x: 0")))
+                .arrayFilters(List.of(json("x: 0")))
         );
 
         assertThat(collection.find(json("")))
@@ -1532,7 +1532,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateMany(
             json(""),
             json("$set: {'values.$[tooLow]': 10, 'values.$[tooHigh]': 40}"),
-            new UpdateOptions().arrayFilters(Arrays.asList(
+            new UpdateOptions().arrayFilters(List.of(
                 json("tooLow: {$lte: 10}"),
                 json("tooHigh: {$gt: 40}")
             ))
@@ -1560,7 +1560,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.updateMany(
             json(""),
             json("$set: {'products.$[product].charges.$[charge].amount': 10}"),
-            new UpdateOptions().arrayFilters(Arrays.asList(
+            new UpdateOptions().arrayFilters(List.of(
                 json("'product.id': 1"),
                 json("'charge.type': 'A', 'charge.min': 0, 'charge.max': 2")
             ))
@@ -1587,14 +1587,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 100}")))))
             .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'The array filter for identifier 'element' was not used in the update { $set: { grades: \"abc\" } }'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(
+                new FindOneAndUpdateOptions().arrayFilters(List.of(
                     json("element: {$gte: 100}"),
                     json("element: {$lt: 100}")
                 ))))
@@ -1604,21 +1604,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("a: {$gte: 100}, b: {$gte: 100}, c: {$gte: 10}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("a: {$gte: 100}, b: {$gte: 100}, c: {$gte: 10}")))))
             .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("")))))
             .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Cannot use an expression without a top-level field name in arrayFilters'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 100}")))))
             .withMessageStartingWith("Command failed with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply array updates to non-array element grades: \"abc\"'");
@@ -1627,7 +1627,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'$[element]': 10}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: 2")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: 2")))))
             .withMessageStartingWith("Command failed with error 2 (BadValue): " +
                 "'Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '$[element]'");
 
@@ -1635,7 +1635,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.subGrades.$[element]': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 100}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 100}")))))
             .withMessageStartingWith("Command failed with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "The path 'grades.subGrades' must exist in the document in order to apply array updates.'");
@@ -1644,7 +1644,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[some value]': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'some value': {$gte: 100}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("'some value': {$gte: 100}")))))
             .withMessageStartingWith("Command failed with error 2 (BadValue): " +
                 "'Error parsing array filter :: caused by :: " +
                 "The top-level field name must be an alphanumeric string beginning with a lowercase letter, found 'some value''");
@@ -1653,7 +1653,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'a.b.$[x]': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gte: 100}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("x: {$gte: 100}")))))
             .withMessageStartingWith("Command failed with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply array updates to non-array element b: 123'");
@@ -1662,7 +1662,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'a.b': 10, b: 12")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("'a.b': 10, b: 12")))))
             .withMessageStartingWith("Command failed with error 9 (FailedToParse): " +
                 "'Error parsing array filter :: caused by :: " +
                 "Expected a single top-level field name, found 'a' and 'b''");
@@ -1671,7 +1671,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(
+                new FindOneAndUpdateOptions().arrayFilters(List.of(
                     json("'a.b': 10"),
                     json("'a.c': 10")
                 ))))
@@ -1689,7 +1689,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'a.b.$[x].c': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 1}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("x: {$gt: 1}")))))
             .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot create field 'c' in element {1: 2}");
@@ -1698,7 +1698,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'a.b.$[x].c.d': 'abc'}"),
-                new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("x: {$gt: 1}")))))
+                new FindOneAndUpdateOptions().arrayFilters(List.of(json("x: {$gt: 1}")))))
             .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot create field 'c' in element {1: 2}");
@@ -2667,7 +2667,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         // push duplicate
         pushObj = json("$push: {field1: 'value'}");
         collection.updateOne(idObj, pushObj);
-        expected.put("field1", Arrays.asList("value", "value"));
+        expected.put("field1", List.of("value", "value"));
         assertThat(collection.find(idObj).first()).isEqualTo(expected);
     }
 
@@ -2831,16 +2831,16 @@ public abstract class AbstractBackendTest extends AbstractTest {
     public void testUpdateAddToSetEach() throws Exception {
         collection.insertOne(json("_id: 1"));
 
-        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(6, 5, 4)));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", List.of(6, 5, 4)));
         assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4]"));
 
-        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(3, 2, 1)));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", List.of(3, 2, 1)));
         assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4, 3, 2, 1]"));
 
-        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(7, 7, 9, 2)));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", List.of(7, 7, 9, 2)));
         assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4, 3, 2, 1, 7, 9]"));
 
-        collection.updateOne(json("_id: 1"), addEachToSet("a", Arrays.asList(12, 13, 12)));
+        collection.updateOne(json("_id: 1"), addEachToSet("a", List.of(12, 13, 12)));
         assertThat(collection.find()).containsExactly(json("_id: 1, a: [6, 5, 4, 3, 2, 1, 7, 9, 12, 13]"));
 
         collection.replaceOne(json("_id: 1"), json("_id: 1"));
@@ -2913,7 +2913,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(obj, pull("field", "value1"));
 
-        assertThat(collection.find(obj).first().get("field")).isEqualTo(Collections.singletonList("value2"));
+        assertThat(collection.find(obj).first().get("field")).isEqualTo(List.of("value2"));
 
         // pull with multiple fields
 
@@ -2922,8 +2922,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(obj, json("$pull: {field1: 'value2', field2: 'value3'}"));
 
-        assertThat(collection.find(obj).first().get("field1")).isEqualTo(Arrays.asList("value1", "value1"));
-        assertThat(collection.find(obj).first().get("field2")).isEqualTo(Collections.singletonList("value1"));
+        assertThat(collection.find(obj).first().get("field1")).isEqualTo(List.of("value1", "value1"));
+        assertThat(collection.find(obj).first().get("field2")).isEqualTo(List.of("value1"));
     }
 
     @Test
@@ -2968,7 +2968,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.updateOne(obj, json("$pullAll: {field1: ['value1', 'value3']}"));
 
-        assertThat(collection.find(obj).first().get("field1")).isEqualTo(Arrays.asList("value2", "value4"));
+        assertThat(collection.find(obj).first().get("field1")).isEqualTo(List.of("value2", "value4"));
 
         assertMongoWriteException(() -> collection.updateOne(obj, json("$pullAll: {field1: 'bar'}")),
             2, "BadValue", "$pullAll requires an array argument but was given a string");
@@ -3340,7 +3340,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testUpdateWithIdInMulti() {
-        collection.insertMany(Arrays.asList(json("_id: 1"), json("_id: 2")));
+        collection.insertMany(List.of(json("_id: 1"), json("_id: 2")));
         collection.updateMany(json("_id: {$in: [1, 2]}"), json("$set: {n: 1}"));
         assertThat(collection.find())
             .containsExactly(
@@ -3351,14 +3351,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testUpdateWithIdInMultiReturnModifiedDocumentCount() {
-        collection.insertMany(Arrays.asList(json("_id: 1"), json("_id: 2")));
+        collection.insertMany(List.of(json("_id: 1"), json("_id: 2")));
         UpdateResult result = collection.updateMany(json("_id: {$in: [1, 2]}"), json("$set: {n: 1}"));
         assertThat(result.getModifiedCount()).isEqualTo(2);
     }
 
     @Test
     public void testUpdateWithIdQuery() {
-        collection.insertMany(Arrays.asList(json("_id: 1"), json("_id: 2")));
+        collection.insertMany(List.of(json("_id: 1"), json("_id: 2")));
         collection.updateMany(json("_id: {$gt:1}"), json("$set: {n: 1}"));
         assertThat(collection.find())
             .containsExactly(json("_id: 1"), json("_id: 2, n: 1"));
@@ -3627,7 +3627,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/41
     @Test
     public void testBulkUpsert() throws Exception {
-        List<ReplaceOneModel<Document>> models = Arrays.asList(
+        List<ReplaceOneModel<Document>> models = List.of(
             new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 1"), new ReplaceOptions().upsert(true)),
             new ReplaceOneModel<>(Filters.eq("_id", 2), json("_id: 2, a: 1"), new ReplaceOptions().upsert(true))
         );
@@ -3643,7 +3643,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(collection.find())
             .containsExactly(json("_id: 1, a: 1"), json("_id: 2, a: 1"));
 
-        models = Arrays.asList(
+        models = List.of(
             new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 2"), new ReplaceOptions().upsert(true)),
             new ReplaceOneModel<>(Filters.eq("_id", 3), json("_id: 3, a: 2"), new ReplaceOptions().upsert(true)),
             new ReplaceOneModel<>(Filters.eq("_id", 2), json("_id: 2, a: 2"), new ReplaceOptions().upsert(true))
@@ -4585,7 +4585,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.insertOne(json("_id: 1, values: [1, 2, 2.5, 3.0, 4]"));
 
-        collection.updateOne(json("_id: 1"), pullByFilter(in("values", Arrays.asList(2.0, 3, 4L))));
+        collection.updateOne(json("_id: 1"), pullByFilter(in("values", List.of(2.0, 3, 4L))));
 
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, values: [1, 2.5]"));
     }
@@ -4626,7 +4626,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testInOperatorWithNullValue() {
-        collection.insertMany(Arrays.asList(
+        collection.insertMany(List.of(
             json("_id: 1, a: 1"),
             json("_id: 2, a: 2"),
             json("_id: 3, a: 3"),
@@ -4786,8 +4786,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
         // see https://docs.mongodb.com/manual/reference/operator/query/all/
         collection.insertOne(new Document("_id", new ObjectId("5234cc89687ea597eabee675"))
             .append("code", "xyz")
-            .append("tags", Arrays.asList("school", "book", "bag", "headphone", "appliance"))
-            .append("qty", Arrays.asList(
+            .append("tags", List.of("school", "book", "bag", "headphone", "appliance"))
+            .append("qty", List.of(
                 new Document().append("size", "S").append("num", 10).append("color", "blue"),
                 new Document().append("size", "M").append("num", 45).append("color", "blue"),
                 new Document().append("size", "L").append("num", 100).append("color", "green")
@@ -4795,8 +4795,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.insertOne(new Document("_id", new ObjectId("5234cc8a687ea597eabee676"))
             .append("code", "abc")
-            .append("tags", Arrays.asList("appliance", "school", "book"))
-            .append("qty", Arrays.asList(
+            .append("tags", List.of("appliance", "school", "book"))
+            .append("qty", List.of(
                 new Document().append("size", "6").append("num", 100).append("color", "green"),
                 new Document().append("size", "6").append("num", 50).append("color", "blue"),
                 new Document().append("size", "8").append("num", 100).append("color", "brown")
@@ -4804,8 +4804,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.insertOne(new Document("_id", new ObjectId("5234ccb7687ea597eabee677"))
             .append("code", "efg")
-            .append("tags", Arrays.asList("school", "book"))
-            .append("qty", Arrays.asList(
+            .append("tags", List.of("school", "book"))
+            .append("qty", List.of(
                 new Document().append("size", "S").append("num", 10).append("color", "blue"),
                 new Document().append("size", "M").append("num", 100).append("color", "blue"),
                 new Document().append("size", "L").append("num", 100).append("color", "green")
@@ -4813,8 +4813,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         collection.insertOne(new Document("_id", new ObjectId("52350353b2eff1353b349de9"))
             .append("code", "ijk")
-            .append("tags", Arrays.asList("electronics", "school"))
-            .append("qty", Collections.singletonList(
+            .append("tags", List.of("electronics", "school"))
+            .append("qty", List.of(
                 new Document().append("size", "M").append("num", 100).append("color", "green")
             )));
 
@@ -5868,7 +5868,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     private void removeInBulk(boolean ordered) {
         DeleteManyModel<Document> deleteOp = new DeleteManyModel<>(json("field: 'y'"));
-        BulkWriteResult result = collection.bulkWrite(Collections.singletonList(deleteOp),
+        BulkWriteResult result = collection.bulkWrite(List.of(deleteOp),
             new BulkWriteOptions().ordered(ordered));
 
         assertThat(result.getDeletedCount()).isEqualTo(3);
@@ -6117,7 +6117,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.findOneAndUpdate(
             json("_id: 1"),
             json("$inc: {'grades.$[].x.$[element]': 1}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("element: {$gte: 3}"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 3}"))));
 
         assertThat(collection.find(json("_id: 1")).first())
             .isEqualTo(json("_id: 1, grades: [{x: [1, 2, 4]}, {x: [4, 5, 6]}, {x: [1, 2, 4]}]"));
@@ -6222,7 +6222,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.findOneAndUpdate(
             json("_id: 1"),
             json("$set: {'grades.$[element].x.$[]': 'abc'}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'element.value': {$gt: 10}"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("'element.value': {$gt: 10}"))));
 
         assertThat(collection.find(json("_id: 1")).first())
             .isEqualTo(json("_id: 1, grades: [{value: 10, x: [1, 2]}, {value: 20, x: ['abc', 'abc']}]"));
@@ -6230,7 +6230,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.findOneAndUpdate(
             json("_id: 1"),
             json("$set: {'grades.0.x.$[element]': 'abc'}"),
-            new FindOneAndUpdateOptions().arrayFilters(Arrays.asList(json("'element': {$gt: 1}"))));
+            new FindOneAndUpdateOptions().arrayFilters(List.of(json("'element': {$gt: 1}"))));
 
         assertThat(collection.find(json("_id: 1")).first())
             .isEqualTo(json("_id: 1, grades: [{value: 10, x: [1, 'abc']}, {value: 20, x: ['abc', 'abc']}]"));
@@ -6534,7 +6534,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     public void testEndSessions() {
         Document result = getAdminDb().runCommand(new Document("endSessions",
-            Arrays.asList(new Document("id", UUID.randomUUID()))));
+            List.of(new Document("id", UUID.randomUUID()))));
         assertThat(result.get("ok")).isEqualTo(1.0);
     }
 

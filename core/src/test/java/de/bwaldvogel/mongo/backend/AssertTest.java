@@ -3,8 +3,8 @@ package de.bwaldvogel.mongo.backend;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -17,17 +17,17 @@ public class AssertTest {
         Assert.isEmpty(new ArrayList<>());
 
         assertThatExceptionOfType(IllegalArgumentException.class)
-            .isThrownBy(() -> Assert.isEmpty(Arrays.asList("a", "b", "c")))
+            .isThrownBy(() -> Assert.isEmpty(List.of("a", "b", "c")))
             .withMessage("Expected [a, b, c] to be empty");
 
         assertThatExceptionOfType(IllegalArgumentException.class)
-            .isThrownBy(() -> Assert.isEmpty(Arrays.asList("a", "b", "c"), () -> "some message"))
+            .isThrownBy(() -> Assert.isEmpty(List.of("a", "b", "c"), () -> "some message"))
             .withMessage("some message");
     }
 
     @Test
     void testNotEmpty() throws Exception {
-        Assert.notEmpty(Arrays.asList("a", "b", "c"));
+        Assert.notEmpty(List.of("a", "b", "c"));
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> Assert.notEmpty(Collections.emptySet()))
@@ -40,7 +40,7 @@ public class AssertTest {
 
     @Test
     void testHasSize() throws Exception {
-        Assert.hasSize(Arrays.asList("a", "b", "c"), 3);
+        Assert.hasSize(List.of("a", "b", "c"), 3);
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> Assert.hasSize(Collections.emptySet(), 1))

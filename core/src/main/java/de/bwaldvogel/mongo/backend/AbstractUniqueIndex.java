@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.backend;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -228,9 +227,9 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
 
         P position = getPosition(queriedKeyValues);
         if (position == null) {
-            return Collections.emptyList();
+            return List.of();
         }
-        return Collections.singletonList(position);
+        return List.of(position);
     }
 
     private KeyValue getQueriedKeyValues(Document query) {

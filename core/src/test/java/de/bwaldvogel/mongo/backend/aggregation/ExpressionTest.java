@@ -7,7 +7,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -61,7 +60,7 @@ class ExpressionTest {
         assertThat(Expression.evaluate(json("$add: 17"), json(""))).isEqualTo(17);
         assertThat(Expression.evaluate(json("$add: [1, null, 2]"), json(""))).isNull();
         assertThat(Expression.evaluate(new Document("$add",
-            Arrays.asList(Instant.ofEpochSecond(1000), Instant.ofEpochSecond(2000))), json("")))
+            List.of(Instant.ofEpochSecond(1000), Instant.ofEpochSecond(2000))), json("")))
             .isEqualTo(Instant.ofEpochSecond(3000));
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -282,13 +281,13 @@ class ExpressionTest {
         assertThat(Expression.evaluate(json("$concatArrays: null"), json(""))).isNull();
 
         assertThat(Expression.evaluate(json("$concatArrays: [['hello', ' '], ['world']]"), json("")))
-            .isEqualTo(Arrays.asList("hello", " ", "world"));
+            .isEqualTo(List.of("hello", " ", "world"));
 
         assertThat(Expression.evaluate(json("$concatArrays: [['hello', ' '], [['world'], 'again']]"), json("")))
-            .isEqualTo(Arrays.asList("hello", " ", Collections.singletonList("world"), "again"));
+            .isEqualTo(List.of("hello", " ", List.of("world"), "again"));
 
         assertThat(Expression.evaluate(json("$concatArrays: ['$a', '$b']"), json("a: [1, 2], b: [3, 4]")))
-            .isEqualTo(Arrays.asList(1, 2, 3, 4));
+            .isEqualTo(List.of(1, 2, 3, 4));
 
         assertThat(Expression.evaluate(json("$concatArrays: ['$a', '$b']"), json("a: [1, 2]")))
             .isNull();
@@ -675,11 +674,11 @@ class ExpressionTest {
 
     @Test
     void testEvaluateRange() throws Exception {
-        assertThat(Expression.evaluate(json("$range: [0, 5]"), json(""))).isEqualTo(Arrays.asList(0, 1, 2, 3, 4));
-        assertThat(Expression.evaluate(json("$range: [0, 10, 2]"), json(""))).isEqualTo(Arrays.asList(0, 2, 4, 6, 8));
-        assertThat(Expression.evaluate(json("$range: [0, 1.0, 2]"), json(""))).isEqualTo(Collections.singletonList(0));
+        assertThat(Expression.evaluate(json("$range: [0, 5]"), json(""))).isEqualTo(List.of(0, 1, 2, 3, 4));
+        assertThat(Expression.evaluate(json("$range: [0, 10, 2]"), json(""))).isEqualTo(List.of(0, 2, 4, 6, 8));
+        assertThat(Expression.evaluate(json("$range: [0, 1.0, 2]"), json(""))).isEqualTo(List.of(0));
         assertThat(Expression.evaluate(json("$range: [0, 0, 1]"), json(""))).isEqualTo(Collections.emptyList());
-        assertThat(Expression.evaluate(json("$range: [10, 0, -2]"), json(""))).isEqualTo(Arrays.asList(10, 8, 6, 4, 2));
+        assertThat(Expression.evaluate(json("$range: [10, 0, -2]"), json(""))).isEqualTo(List.of(10, 8, 6, 4, 2));
         assertThat(Expression.evaluate(json("$range: [0, 10, -2]"), json(""))).isEqualTo(Collections.emptyList());
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -725,13 +724,13 @@ class ExpressionTest {
         assertThat(Expression.evaluate(json("$reverseArray: '$a'"), json(""))).isNull();
 
         assertThat(Expression.evaluate(json("$reverseArray: [[1, 2, 3]]"), json("")))
-            .isEqualTo(Arrays.asList(3, 2, 1));
+            .isEqualTo(List.of(3, 2, 1));
 
         assertThat(Expression.evaluate(json("$reverseArray: '$a'"), json("a: ['foo', 'bar']")))
-            .isEqualTo(Arrays.asList("bar", "foo"));
+            .isEqualTo(List.of("bar", "foo"));
 
         assertThat(Expression.evaluate(json("$reverseArray: ['$a']"), json("a: ['foo', 'bar']")))
-            .isEqualTo(Arrays.asList("bar", "foo"));
+            .isEqualTo(List.of("bar", "foo"));
 
         assertThat(Expression.evaluate(json("$reverseArray: [[]]"), json("")))
             .isEqualTo(Collections.emptyList());
@@ -1028,38 +1027,38 @@ class ExpressionTest {
     @Test
     void testEvaluateSlice() throws Exception {
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], 1, 1]"), json("")))
-            .isEqualTo(Collections.singletonList(2));
+            .isEqualTo(List.of(2));
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], 0]"), json("")))
             .isEqualTo(Collections.emptyList());
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], 2]"), json("")))
-            .isEqualTo(Arrays.asList(1, 2));
+            .isEqualTo(List.of(1, 2));
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], 20]"), json("")))
-            .isEqualTo(Arrays.asList(1, 2, 3));
+            .isEqualTo(List.of(1, 2, 3));
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], -2]"), json("")))
-            .isEqualTo(Arrays.asList(2, 3));
+            .isEqualTo(List.of(2, 3));
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], -20]"), json("")))
-            .isEqualTo(Arrays.asList(1, 2, 3));
+            .isEqualTo(List.of(1, 2, 3));
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], 0, 10]"), json("")))
-            .isEqualTo(Arrays.asList(1, 2, 3));
+            .isEqualTo(List.of(1, 2, 3));
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], 15, 2]"), json("")))
             .isEqualTo(Collections.emptyList());
 
         assertThat(Expression.evaluate(json("$slice: [[1, 2, 3], -15, 2]"), json("")))
-            .isEqualTo(Arrays.asList(1, 2));
+            .isEqualTo(List.of(1, 2));
 
         assertThat(Expression.evaluate(json("$slice: [null, 0]"), json(""))).isNull();
 
         assertThat(Expression.evaluate(json("$slice: ['$a', 0]"), json(""))).isNull();
 
         assertThat(Expression.evaluate(json("$slice: ['$a', '$b', '$c']"), json("a: [1, 2, 3], b: 1, c: 1")))
-            .isEqualTo(Collections.singletonList(2));
+            .isEqualTo(List.of(2));
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$slice: 'abc'"), json("")))
@@ -1123,12 +1122,12 @@ class ExpressionTest {
 
         // subtract two instants
         assertThat(Expression.evaluate(new Document("$subtract",
-            Arrays.asList(Instant.ofEpochMilli(3000), Instant.ofEpochMilli(1000))), json("")))
+            List.of(Instant.ofEpochMilli(3000), Instant.ofEpochMilli(1000))), json("")))
             .isEqualTo(2000L);
 
         // subtract milliseconds from instant
         assertThat(Expression.evaluate(new Document("$subtract",
-            Arrays.asList(Instant.ofEpochMilli(3000), 1000)), json("")))
+            List.of(Instant.ofEpochMilli(3000), 1000)), json("")))
             .isEqualTo(Instant.ofEpochMilli(2000));
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -1511,23 +1510,23 @@ class ExpressionTest {
         assertThat(Expression.evaluate(json("$filter: {input: null, cond: null}"), json(""))).isNull();
 
         assertThat(Expression.evaluate(json("$filter: {input: [1, 2, 3, 4], as: 'value', cond: {$lte: ['$$value', 3]}}"), json("")))
-            .isEqualTo(Arrays.asList(1, 2, 3));
+            .isEqualTo(List.of(1, 2, 3));
 
         assertThat(Expression.evaluate(json("$filter: {input: [1, 2, 3, 4], cond: {$lte: ['$$this', 3]}}"), json("")))
-            .isEqualTo(Arrays.asList(1, 2, 3));
+            .isEqualTo(List.of(1, 2, 3));
 
         assertThat(Expression.evaluate(json("$filter: {input: [1, 2, 3, 4], cond: {$lt: ['$$this', '$$ROOT.thresh']}}"), json("thresh: 3")))
-            .isEqualTo(Arrays.asList(1, 2));
+            .isEqualTo(List.of(1, 2));
 
         assertThat(Expression.evaluate(json("$filter: {input: [1, 2, 3], cond: 1}"), json("")))
-            .isEqualTo(Arrays.asList(1, 2, 3));
+            .isEqualTo(List.of(1, 2, 3));
 
         assertThat(Expression.evaluate(json("$filter: {input: '$doesNotExist', cond: 1}"), json("")))
             .isNull();
 
         assertThat(Expression.evaluate(json("$filter: {input: '$items', as: 'item', cond: {$gte: ['$$item.price', 10]}}"),
             json("items: [{item_id: 1, price: 110}, {item_id: 2, price: 5}, {item_id: 3, price: 50}]")))
-            .isEqualTo(Arrays.asList(
+            .isEqualTo(List.of(
                 json("item_id: 1, price: 110"),
                 json("item_id: 3, price: 50")
             ));

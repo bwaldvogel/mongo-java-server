@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -43,7 +42,7 @@ class AbstractMongoDatabaseTest {
                 MongoCollection<Object> collection = (MongoCollection<Object>) Mockito.mock(MongoCollection.class);
                 when(collection.getCollectionName()).thenReturn("mockCollection");
 
-                QueryResult queryResult = new QueryResult(Collections.singletonList(new Document("_id", 1)));
+                QueryResult queryResult = new QueryResult(List.of(new Document("_id", 1)));
 
                 when(collection.handleQuery(any(QueryParameters.class))).thenReturn(queryResult);
 

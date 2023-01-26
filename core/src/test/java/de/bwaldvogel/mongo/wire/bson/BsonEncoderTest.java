@@ -2,7 +2,7 @@ package de.bwaldvogel.mongo.wire.bson;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ public class BsonEncoderTest {
         Document document = new Document();
         document.put("key1", "value");
         document.put("key2", 123.0);
-        document.put("key3", Arrays.asList(1L, 2L));
+        document.put("key3", List.of(1L, 2L));
         document.put("key4", true);
         document.put("key5", UUID.randomUUID());
         document.put("key6", new ObjectId());

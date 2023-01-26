@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.wire.bson;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -208,7 +207,7 @@ public class BsonEncoder {
 
     private static List<?> collectionToList(Object value) {
         if (value instanceof String[]) {
-            return Arrays.asList((String[]) value);
+            return List.of((String[]) value);
         } else if (value instanceof List<?>) {
             return (List<?>) value;
         } else {

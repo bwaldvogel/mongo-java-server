@@ -3,28 +3,31 @@ package de.bwaldvogel.mongo.backend;
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.bson.Document;
 
-public class DocumentComparatorTest {
+class DocumentComparatorTest {
 
     @Test
     void testCompareSingleKey() {
         DocumentComparator comparator = new DocumentComparator(json("a: 1"));
 
-        List<Document> list = Arrays.asList(
-            json("a: 10"),
-            json("a: 15"),
-            json("a: 5"),
-            json("b: 1"));
+        List<Document> list = Stream.of(
+                json("a: 10"),
+                json("a: 15"),
+                json("a: 5"),
+                json("b: 1"))
+            .sorted(comparator)
+            .collect(Collectors.toList());
 
-        list.sort(comparator);
         assertThat(list).containsExactly(
             json("b: 1"),
             json("a: 5"),
@@ -36,13 +39,13 @@ public class DocumentComparatorTest {
     void testCompareMultiKey() {
         DocumentComparator comparator = new DocumentComparator(json("a: 1, b: -1"));
 
-        List<Document> list = Arrays.asList(
+        List<Document> list = new ArrayList<>(List.of(
             json("a: 15, b: 3"),
             json("a: 15, b: 2"),
             json("a: 5"),
             json("b: 1"),
             json("b: 2"),
-            json("b: 3"));
+            json("b: 3")));
 
         Random rnd = new Random(4711);
 
