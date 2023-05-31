@@ -1379,7 +1379,8 @@ public enum Expression implements ExpressionTraits {
                     name() + " requires an expression that evaluates to a string as a second argument, found: " + describeType(delimiter));
             }
 
-            return ((String) string).split(Pattern.quote((String) delimiter));
+            String[] values = ((String) string).split(Pattern.quote((String) delimiter), -1);
+            return List.of(values);
         }
     },
 

@@ -1177,6 +1177,28 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/214
+    @Test
+    void testAggregateWithSplitAndArrayElementAt() throws Exception {
+        List<Document> pipeline = jsonList("$addFields: { pathSegments: { $split: ['$path', '/'] }}",
+            "$project: { pathSegments: 1, firstSegment: { $arrayElemAt: ['$pathSegments', 0] }}");
+
+        assertThat(collection.aggregate(pipeline)).isEmpty();
+
+        collection.insertOne(json("_id: 1, path: 'path/to/file'"));
+        collection.insertOne(json("_id: 2, path: '/path/to/file'"));
+        collection.insertOne(json("_id: 3, path: '/path/to/file/'"));
+        collection.insertOne(json("_id: 4"));
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(
+                json("_id: 1, pathSegments: ['path', 'to', 'file'], firstSegment: 'path'"),
+                json("_id: 2, pathSegments: ['', 'path', 'to', 'file'], firstSegment: ''"),
+                json("_id: 3, pathSegments: ['', 'path', 'to', 'file', ''], firstSegment: ''"),
+                json("_id: 4, pathSegments: null, firstSegment: null")
+            );
+    }
+
     @Test
     void testAggregateWithUnwind() throws Exception {
         testAggregateWithUnwind(json("$unwind: '$sizes'"));

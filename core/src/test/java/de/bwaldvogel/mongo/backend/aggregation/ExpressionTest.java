@@ -1087,8 +1087,8 @@ class ExpressionTest {
 
     @Test
     void testEvaluateSplit() throws Exception {
-        assertThat((String[]) Expression.evaluate(json("$split: ['June-15-2013', '-']"), json(""))).containsExactly("June", "15", "2013");
-        assertThat((String[]) Expression.evaluate(json("$split: ['$a', '$b']"), json("a: 'foo bar', b: ' '"))).containsExactly("foo", "bar");
+        assertThat((List<String>) Expression.evaluate(json("$split: ['June-15-2013', '-']"), json(""))).containsExactly("June", "15", "2013");
+        assertThat((List<String>) Expression.evaluate(json("$split: ['$a', '$b']"), json("a: 'foo bar', b: ' '"))).containsExactly("foo", "bar");
         assertThat(Expression.evaluate(json("$split: [null, ' ']"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$split: ['$doesNotExist', ' ']"), json(""))).isNull();
 
