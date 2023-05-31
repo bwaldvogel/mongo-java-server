@@ -243,7 +243,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private Document handleGetFreeMonitoringStatus() {
         Document response = new Document();
-        response.append("state", "undecided");
+        response.append("state", "disabled");
+        response.append("debug", Map.of("state", "undecided"));
+        response.append("message", "Free monitoring is deprecated, refer to 'debug' field for actual status");
         Utils.markOkay(response);
         return response;
     }
