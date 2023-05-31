@@ -2807,7 +2807,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             Arguments.of("abc", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string 'abc';"),
             Arguments.of(123, "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from int to date in $convert with no onError value'"),
             Arguments.of("123456789", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string '123456789';"),
-            Arguments.of("2020-07-13T14", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string '2020-07-13T14';"),
+            Arguments.of("2020-07-a", "'PlanExecutor error during aggregation :: caused by :: Error parsing date string '2020-07-a';"),
             Arguments.of(List.of(123), "'PlanExecutor error during aggregation :: caused by :: Unsupported conversion from array to date in $convert with no onError value'")
         );
     }

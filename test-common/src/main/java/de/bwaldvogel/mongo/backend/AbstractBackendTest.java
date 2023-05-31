@@ -6519,7 +6519,8 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     void testGetFreeMonitoringStatus() throws Exception {
         Document result = runCommand("getFreeMonitoringStatus");
-        assertThat(result).isEqualTo(json("ok: 1.0, state: 'undecided'"));
+        assertThat(result).isEqualTo(json("ok: 1.0, state: 'disabled', debug: {state: 'undecided'}," +
+            " message: 'Free monitoring is deprecated, refer to \\'debug\\' field for actual status'"));
     }
 
     @Test

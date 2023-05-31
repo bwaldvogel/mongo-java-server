@@ -52,7 +52,7 @@ public class RealMongoContainer implements BeforeAllCallback, AfterAllCallback {
     }
 
     static GenericContainer<?> start() {
-        GenericContainer<?> mongoContainer = new GenericContainer<>("mongo:5.0.13").withExposedPorts(27017);
+        GenericContainer<?> mongoContainer = new GenericContainer<>("mongo:5.0.18").withExposedPorts(27017);
         mongoContainer.start();
         return mongoContainer;
     }
