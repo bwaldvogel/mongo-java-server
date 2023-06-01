@@ -134,15 +134,17 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 return checkMatchesValue(queryValue, value);
             }
 
-            // handle $all
-            if (queryValue instanceof Document && ((Document) queryValue).containsKey(QueryOperator.ALL.getValue())) {
-                // clone first
-                queryValue = ((Document) queryValue).clone();
-                Object allQuery = ((Document) queryValue).remove(QueryOperator.ALL.getValue());
-                if (!checkMatchesAllDocuments(allQuery, keys, value)) {
-                    return false;
+            if (queryValue instanceof Document) {
+                Document query = (Document) queryValue;
+                if (query.containsKey(QueryOperator.ALL.getValue())) {
+                    Object allQuery = query.get(QueryOperator.ALL.getValue());
+                    return checkMatchesAllDocuments(allQuery, keys, value);
                 }
-                // continue matching the remainder of queryValue
+                if (query.containsKey(QueryOperator.NOT_IN.getValue())) {
+                    Object notInQueryValue = query.get(QueryOperator.NOT_IN.getValue());
+                    Document inQuery = new Document(QueryOperator.IN.getValue(), notInQueryValue);
+                    return !checkMatchesAnyDocument(inQuery, keys, value);
+                }
             }
 
             return checkMatchesAnyDocument(queryValue, keys, value);

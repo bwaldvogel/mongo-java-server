@@ -2296,6 +2296,53 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(json("_id: 2, tags: ['A', 'D']"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/215
+    @Test
+    void testMatchesNinFieldInArray() throws Exception {
+        collection.insertOne(json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]"));
+        collection.insertOne(json("_id: 2, tags: [{'value': 'A'}, {'value': 'B'}]"));
+        collection.insertOne(json("_id: 3, tags: [{'value': 'A'}, {'value': 'C'}]"));
+
+        assertThat(collection.find(json("'tags.value': {$nin: ['B', 'C']}")))
+            .containsExactly(json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]"));
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/7
+    @Test
+    void testMatchesNotIn() throws Exception {
+        Document document1 = json("_id: 1, code: 'c1', map: {key1: 'value 1.1', key2: ['value 2.1']}");
+        Document document2 = json("_id: 2, code: 'c1', map: {key1: 'value 1.2', key2: ['value 2.2']}");
+        Document document3 = json("_id: 3, code: 'c1', map: {key1: 'value 2.1', key2: ['value 2.1']}");
+        Document document4 = json("_id: 4, values: [1, 2, 3]");
+        Document document5 = json("_id: 5, values: null");
+
+        collection.insertMany(List.of(document1, document2, document3, document4, document5));
+
+        assertThat(collection.find(json("'map.key2': {$nin: ['value 2.2']}")))
+            .containsExactly(document1, document3, document4, document5);
+
+        assertThat(collection.find(json("'map.key2': {$not: {$in: ['value 2.2']}}")))
+            .containsExactly(document1, document3, document4, document5);
+
+        assertThat(collection.find(json("'map.key2': {$not: {$nin: ['value 2.2']}}")))
+            .containsExactly(document2);
+
+        assertThat(collection.find(json("'map.key2': {$not: {$not: {$in: ['value 2.2']}}}")))
+            .containsExactly(document2);
+
+        assertThat(collection.find(json("values: {$nin: []}")))
+            .containsExactly(document1, document2, document3, document4, document5);
+
+        assertThat(collection.find(json("values: {$nin: [1]}")))
+            .containsExactly(document1, document2, document3, document5);
+
+        assertThat(collection.find(json("values: {$nin: [1, 2]}")))
+            .containsExactly(document1, document2, document3, document5);
+
+        assertThat(collection.find(json("values: {$nin: [null]}")))
+            .containsExactly(document4);
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/96
     @Test
     public void testAndQueryWithAllAndSize() throws Exception {
