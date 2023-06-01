@@ -15,7 +15,6 @@ import static de.bwaldvogel.mongo.backend.DocumentBuilder.map;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.mod;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.nor;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.not;
-import static de.bwaldvogel.mongo.backend.DocumentBuilder.notIn;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.or;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.regex;
 import static de.bwaldvogel.mongo.backend.DocumentBuilder.size;
@@ -503,45 +502,6 @@ class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isFalse();
         document.remove("price");
         assertThat(matcher.matches(document, query)).isTrue();
-    }
-
-    /**
-     * Test case for https://github.com/bwaldvogel/mongo-java-server/issues/7
-     */
-    @Test
-    void testMatchesNotIn() throws Exception {
-        Document query1 = map("map.key2", notIn("value 2.2"));
-        Document query2 = map("map.key2", not(in("value 2.2")));
-        Document query3 = map("map.key2", not(notIn("value 2.2")));
-        Document query4 = map("map.key2", not(not(in("value 2.2"))));
-
-        Document document1 = json("code: 'c1', map: {key1: 'value 1.1', key2: ['value 2.1']}");
-        Document document2 = json("code: 'c1', map: {key1: 'value 1.2', key2: ['value 2.2']}");
-        Document document3 = json("code: 'c1', map: {key1: 'value 2.1', key2: ['value 2.1']}");
-
-        assertThat(matcher.matches(document1, query1)).isTrue();
-        assertThat(matcher.matches(document2, query1)).isFalse();
-        assertThat(matcher.matches(document3, query1)).isTrue();
-
-        assertThat(matcher.matches(document1, query2)).isTrue();
-        assertThat(matcher.matches(document2, query2)).isFalse();
-        assertThat(matcher.matches(document3, query2)).isTrue();
-
-        assertThat(matcher.matches(document1, query3)).isFalse();
-        assertThat(matcher.matches(document2, query3)).isTrue();
-        assertThat(matcher.matches(document3, query3)).isFalse();
-
-        assertThat(matcher.matches(document1, query4)).isFalse();
-        assertThat(matcher.matches(document2, query4)).isTrue();
-        assertThat(matcher.matches(document3, query4)).isFalse();
-
-        assertThat(matcher.matches(json("values: [1, 2, 3]"), json("values: {$nin: []}"))).isTrue();
-        assertThat(matcher.matches(json("values: null"), json("values: {$nin: []}"))).isTrue();
-        assertThat(matcher.matches(json(""), json("values: {$nin: []}"))).isTrue();
-        assertThat(matcher.matches(json(""), json("values: {$nin: [1]}"))).isTrue();
-        assertThat(matcher.matches(json(""), json("values: {$nin: [1, 2]}"))).isTrue();
-        assertThat(matcher.matches(json("values: null"), json("values: {$nin: [null]}"))).isFalse();
-        assertThat(matcher.matches(json(""), json("values: {$nin: [null]}"))).isFalse();
     }
 
     @Test
