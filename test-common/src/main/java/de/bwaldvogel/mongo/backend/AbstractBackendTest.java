@@ -6223,6 +6223,48 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(result).isEqualTo(json("_id: 1, a: [1, 1]"));
     }
 
+    private static Stream<Arguments> upsertWithNonMatchingFilterTestData() {
+        return Stream.of(
+            Arguments.of("$and: [{key1: {$eq: 'value1'}}, {key2: {$eq: 'value2'}}]", "dummy: 'dummy', key1: 'value1', key2: 'value2'"),
+            Arguments.of("$and: [{key1: {$eq: {sub: 'value1'}}}, {key2: {$eq: 'value2'}}]", "dummy: 'dummy', key1: {sub: 'value1'}, key2: 'value2'"),
+            Arguments.of("$and: [{key1: {$gt: 1}}, {key2: 'value2'}]", "dummy: 'dummy', key2: 'value2'"),
+            Arguments.of("$and: [{'sub.key1': {$eq: 'value1'}}, {'sub.key2': {$eq: 'value2'}}]", "dummy: 'dummy', sub: {key1: 'value1', key2: 'value2'}"),
+            Arguments.of("$and: [{'sub.key1': 'value1'}, {'sub.key2': 'value2'}]", "dummy: 'dummy', sub: {key1: 'value1', key2: 'value2'}"),
+            Arguments.of("$or: [{'sub.key1': 'value1'}, {'sub.key1': 'value1b'}]", "dummy: 'dummy'"),
+            Arguments.of("$or: [{'sub.key1': 'value1'}]", "dummy: 'dummy', sub: {key1: 'value1'}"),
+            Arguments.of("$or: [{key1: 'value1'}, {key2: 'value2'}]", "dummy: 'dummy'")
+        );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/216
+    @ParameterizedTest
+    @MethodSource("upsertWithNonMatchingFilterTestData")
+    void testUpsertAndFilterDoesNotMatch(String filter, String expectedDocument) throws Exception {
+        collection.updateOne(json(filter),
+            json("$set: {dummy: 'dummy'}"), new UpdateOptions().upsert(true));
+
+        assertThat(collection.find().projection(json("_id: 0")))
+            .containsExactly(json(expectedDocument));
+    }
+
+    private static Stream<Arguments> upsertWithIllegalFilterTestData() {
+        return Stream.of(
+            Arguments.of("$and: [{key1: 'value1'}, {key1: 'value1b'}, {key2: 'value2'}]", "cannot infer query fields to set, path 'key1' is matched twice"),
+            Arguments.of("$and: [{sub: 'value1'}, {'sub.key': 'conflict'}]", "cannot infer query fields to set, both paths 'sub.key' and 'sub' are matched"),
+            Arguments.of("$and: [{'sub.a': 'value1'}, {'sub.a.b': 'conflict'}]", "cannot infer query fields to set, both paths 'sub.a.b' and 'sub.a' are matched"),
+            Arguments.of("$and: [{'sub': 'value1'}, {'sub.a.b': 'conflict'}]", "cannot infer query fields to set, both paths 'sub.a.b' and 'sub' are matched"),
+            Arguments.of("$and: [{'sub.key1': 'value1'}, {'sub.key1': 'value1b'}]", "cannot infer query fields to set, path 'sub.key1' is matched twice")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("upsertWithIllegalFilterTestData")
+    void testUpsertWithIllegalFilter(String filter, String expectedErrorMessage) throws Exception {
+        assertMongoWriteException(() -> {
+            collection.updateOne(json(filter), json("$set: {dummy: 'dummy'}"), new UpdateOptions().upsert(true));
+        }, 54, "NotSingleValueField", expectedErrorMessage);
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/164
     @Test
     void testFindOneAndUpdateWithReturnDocumentBeforeWhenDocumentDidNotExist() throws Exception {
