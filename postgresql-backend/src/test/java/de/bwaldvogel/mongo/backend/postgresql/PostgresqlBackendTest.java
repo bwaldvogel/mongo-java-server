@@ -380,6 +380,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
     @Override
     public void testOldAndNewUuidTypes() throws Exception {
         assumeStrictTests();
+        super.testOldAndNewUuidTypes();
     }
 
     @Test
