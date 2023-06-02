@@ -27,6 +27,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
+import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.IndexBuildFailedException;
@@ -35,6 +36,7 @@ import de.bwaldvogel.mongo.exception.IndexNotFoundException;
 import de.bwaldvogel.mongo.exception.InvalidIdFieldError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
+import de.bwaldvogel.mongo.exception.PathNotViableException;
 import de.bwaldvogel.mongo.oplog.Oplog;
 
 public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
@@ -655,7 +657,6 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     private Document handleUpsert(Document updateQuery, Document selector, ArrayFilters arrayFilters) {
         Document document = convertSelectorToDocument(selector);
-
         Document newDocument = calculateUpdateDocument(document, updateQuery, arrayFilters, null, true);
         newDocument.computeIfAbsent(getIdField(), k -> deriveDocumentId(selector));
         addDocument(newDocument);
@@ -667,6 +668,11 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
      */
     Document convertSelectorToDocument(Document selector) {
         Document document = new Document();
+        convertSelectorToDocument(selector, document);
+        return document;
+    }
+
+    private void convertSelectorToDocument(Document selector, Document document) {
         for (Map.Entry<String, Object> entry : selector.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
@@ -674,24 +680,44 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             if (key.equals("$and")) {
                 List<Document> andValues = (List<Document>) value;
                 for (Document andValue : andValues) {
-                    document.putAll(convertSelectorToDocument(andValue));
+                    convertSelectorToDocument(andValue, document);
                 }
                 continue;
             } else if (key.equals("$or")) {
                 List<Document> orValues = (List<Document>) value;
                 if (orValues.size() == 1) {
-                    document.putAll(convertSelectorToDocument(orValues.get(0)));
+                    convertSelectorToDocument(orValues.get(0), document);
                 }
                 continue;
             } else if (key.startsWith("$")) {
                 continue;
+            } else if (value instanceof Document) {
+                Document documentValue = (Document) value;
+                if (documentValue.keySet().equals(Set.of("$eq"))) {
+                    changeSubdocumentValueOrThrow(document, key, documentValue.get("$eq"));
+                }
             }
 
             if (!Utils.containsQueryExpression(value)) {
-                Utils.changeSubdocumentValue(document, key, value, (AtomicReference<Integer>) null);
+                changeSubdocumentValueOrThrow(document, key, value);
             }
         }
-        return document;
+    }
+
+    private static void changeSubdocumentValueOrThrow(Document document, String key, Object value) {
+        try {
+            Object previousValue = Utils.changeSubdocumentValue(document, key, value, (AtomicReference<Integer>) null);
+            if (previousValue != null) {
+                throw new MongoServerError(ErrorCode.NotSingleValueField, "cannot infer query fields to set, path '" + key + "' is matched twice");
+            }
+        } catch (PathNotViableException e) {
+            String violatingKey = e.getField();
+            List<String> keyPathFragments = Utils.splitPath(key);
+            int indexOfViolatingKey = keyPathFragments.indexOf(violatingKey);
+            List<String> violatingKeyPathFragments = keyPathFragments.subList(0, indexOfViolatingKey);
+            String violatingKeyPath = Utils.joinPath(violatingKeyPathFragments);
+            throw new MongoServerError(ErrorCode.NotSingleValueField, "cannot infer query fields to set, both paths '" + key + "' and '" + violatingKeyPath + "' are matched");
+        }
     }
 
     @Override

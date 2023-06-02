@@ -12,6 +12,7 @@ public enum ErrorCode {
     NamespaceExists(48),
     DollarPrefixedFieldName(52),
     InvalidIdField(53),
+    NotSingleValueField(54),
     CommandNotFound(59),
     ImmutableField(66),
     InvalidOptions(72),

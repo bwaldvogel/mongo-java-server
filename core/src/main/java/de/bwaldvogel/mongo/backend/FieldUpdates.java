@@ -23,7 +23,7 @@ import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
-import de.bwaldvogel.mongo.exception.PathNotViableException;
+import de.bwaldvogel.mongo.exception.CannotTraverseElementException;
 import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
 class FieldUpdates {
@@ -430,7 +430,7 @@ class FieldUpdates {
     private void applyRenames() {
         for (Entry<String, String> entry : renames.entrySet()) {
             if (!Utils.canFullyTraverseSubkeyForRename(document, entry.getKey())) {
-                throw new PathNotViableException("cannot traverse element");
+                throw new CannotTraverseElementException();
             }
 
             Object value = Utils.removeSubdocumentValue(document, entry.getKey(), matchPos);

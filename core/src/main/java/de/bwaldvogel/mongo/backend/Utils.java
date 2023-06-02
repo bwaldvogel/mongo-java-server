@@ -324,23 +324,22 @@ public class Utils {
         result.put("ok", 1.0);
     }
 
-    private static void setListSafe(Object document, String key, String previousKey, Object obj) {
+    private static Object setListSafe(Object document, String key, String previousKey, Object obj) {
         if (document instanceof List<?>) {
             @SuppressWarnings("unchecked")
             List<Object> list = ((List<Object>) document);
             if (!isNumeric(key)) {
-                String element = new Document(previousKey, document).toString(true);
-                throw new PathNotViableException("Cannot create field '" + key + "' in element " + element);
+                throw new PathNotViableException(key, new Document(previousKey, document));
             }
             int pos = Integer.parseInt(key);
             while (list.size() <= pos) {
                 list.add(null);
             }
-            list.set(pos, obj);
+            return list.set(pos, obj);
         } else {
             @SuppressWarnings("unchecked")
             Map<String, Object> documentAsMap = (Map<String, Object>) document;
-            documentAsMap.put(key, obj);
+            return documentAsMap.put(key, obj);
         }
     }
 
@@ -399,29 +398,27 @@ public class Utils {
         changeSubdocumentValue(document, key, newValue, new AtomicReference<>());
     }
 
-    static void changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos) {
-        changeSubdocumentValue(document, key, newValue, null, matchPos);
+    static Object changeSubdocumentValue(Object document, String key, Object newValue, AtomicReference<Integer> matchPos) {
+        return changeSubdocumentValue(document, key, newValue, null, matchPos);
     }
 
-    private static void changeSubdocumentValue(Object document, String key, Object newValue, String previousKey, AtomicReference<Integer> matchPos) {
+    private static Object changeSubdocumentValue(Object document, String key, Object newValue, String previousKey, AtomicReference<Integer> matchPos) {
         List<String> pathFragments = splitPath(key);
         String mainKey = pathFragments.get(0);
         if (pathFragments.size() == 1) {
-            setListSafe(document, key, previousKey, newValue);
-            return;
+            return setListSafe(document, key, previousKey, newValue);
         }
         String subKey = getSubkey(pathFragments, matchPos);
         Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document || subObject instanceof List<?>) {
-            changeSubdocumentValue(subObject, subKey, newValue, mainKey, matchPos);
+            return changeSubdocumentValue(subObject, subKey, newValue, mainKey, matchPos);
         } else if (Missing.isNeitherNullNorMissing(subObject)) {
-            String element = new Document(mainKey, subObject).toString(true);
             String subKeyFirst = splitPath(subKey).get(0);
-            throw new PathNotViableException("Cannot create field '" + subKeyFirst + "' in element " + element);
+            throw new PathNotViableException(subKeyFirst, new Document(mainKey, subObject));
         } else {
             Document obj = new Document();
             changeSubdocumentValue(obj, subKey, newValue, mainKey, matchPos);
-            setListSafe(document, mainKey, previousKey, obj);
+            return setListSafe(document, mainKey, previousKey, obj);
         }
     }
 
