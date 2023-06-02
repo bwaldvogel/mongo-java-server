@@ -136,7 +136,6 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     @Override
     public void testResetError() throws Exception {
         // Note: No longer implemented since MongoDB 5: "Command failed with error 59 (CommandNotFound): 'no such command: 'reseterror'"
-
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("reseterror: 1")))
             .withMessageStartingWith("Command failed with error 59 (CommandNotFound): 'no such command: 'reseterror'");
