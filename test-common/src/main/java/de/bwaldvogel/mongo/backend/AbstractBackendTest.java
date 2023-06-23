@@ -2307,6 +2307,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .containsExactly(json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]"));
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/220
+    @Test
+    void testMatchesNeFieldInArray() throws Exception {
+        collection.insertOne(json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]"));
+        collection.insertOne(json("_id: 2, tags: [{'value': 'A'}, {'value': 'B'}]"));
+        collection.insertOne(json("_id: 3, tags: [{'value': 'A'}, {'value': 'C'}]"));
+
+        assertThat(collection.find(json("'tags.value': {$ne: 'B'}")))
+            .containsExactly(
+            	json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]"),
+            	json("_id: 3, tags: [{'value': 'A'}, {'value': 'C'}]"));
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/7
     @Test
     void testMatchesNotIn() throws Exception {

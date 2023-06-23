@@ -140,6 +140,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
                     Object allQuery = query.get(QueryOperator.ALL.getValue());
                     return checkMatchesAllDocuments(allQuery, keys, value);
                 }
+                if (query.containsKey(QueryOperator.NOT_EQUALS.getValue())) {
+                    Object notEqualQuery = query.get(QueryOperator.NOT_EQUALS.getValue());
+                    return !checkMatchesAnyDocument(notEqualQuery, keys, value);
+                }
                 if (query.containsKey(QueryOperator.NOT_IN.getValue())) {
                     Object notInQueryValue = query.get(QueryOperator.NOT_IN.getValue());
                     Document inQuery = new Document(QueryOperator.IN.getValue(), notInQueryValue);

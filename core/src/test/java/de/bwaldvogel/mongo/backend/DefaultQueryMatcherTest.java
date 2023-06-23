@@ -347,6 +347,18 @@ class DefaultQueryMatcherTest {
         assertThat(matcher.matches(document, query)).isTrue();
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/220
+    @Test
+    void testMatchesNeFieldInArray() throws Exception {
+    	Document query = json("'tags.value': {$ne: 'B'}");
+
+    	Document document = json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]");
+        assertThat(matcher.matches(document, query)).isTrue();
+
+        document = json("_id: 1, tags: [{'value': 'B'}, {'value': 'A'}]");
+        assertThat(matcher.matches(document, query)).isFalse();
+    }
+
     // http://docs.mongodb.org/v3.0/reference/operator/query/eq/#op._S_eq
     @Test
     void testMatchesEqual() throws Exception {
