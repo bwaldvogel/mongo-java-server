@@ -25,7 +25,7 @@ Add the following Maven dependency to your project:
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server</artifactId>
-    <version>1.43.0</version>
+    <version>1.44.0</version>
 </dependency>
 ```
 
@@ -142,7 +142,7 @@ can either be in-memory or on-disk.
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server-h2-backend</artifactId>
-    <version>1.43.0</version>
+    <version>1.44.0</version>
 </dependency>
 ```
 
@@ -169,7 +169,7 @@ Postgres and each MongoDB collection is stored as a table.
 <dependency>
     <groupId>de.bwaldvogel</groupId>
     <artifactId>mongo-java-server-postgresql-backend</artifactId>
-    <version>1.43.0</version>
+    <version>1.44.0</version>
 </dependency>
 ```
 
