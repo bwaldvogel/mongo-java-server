@@ -3,9 +3,7 @@ package de.bwaldvogel.mongo;
 import java.util.Collections;
 import java.util.List;
 
-import de.bwaldvogel.mongo.backend.Utils;
-
-public enum ServerVersion {
+public enum ServerVersion implements MongoVersion {
     MONGO_3_6(List.of(3, 6, 0), 6);
 
     private final List<Integer> versionArray;
@@ -18,10 +16,6 @@ public enum ServerVersion {
 
     public List<Integer> getVersionArray() {
         return Collections.unmodifiableList(versionArray);
-    }
-
-    public String toVersionString() {
-        return Utils.join(versionArray, ".");
     }
 
     public int getWireVersion() {

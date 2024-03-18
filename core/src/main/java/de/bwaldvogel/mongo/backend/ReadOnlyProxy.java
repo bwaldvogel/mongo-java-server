@@ -7,7 +7,7 @@ import java.util.Set;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.MongoDatabase;
-import de.bwaldvogel.mongo.ServerVersion;
+import de.bwaldvogel.mongo.MongoVersion;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -104,7 +104,7 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public MongoBackend version(ServerVersion version) {
+    public MongoBackend version(MongoVersion version) {
         throw new ReadOnlyException("not supported");
     }
 

@@ -38,6 +38,6 @@ public interface MongoBackend {
 
     MongoDatabase resolveDatabase(String database);
 
-    MongoBackend version(ServerVersion version);
+    MongoBackend version(MongoVersion version);
 
 }
