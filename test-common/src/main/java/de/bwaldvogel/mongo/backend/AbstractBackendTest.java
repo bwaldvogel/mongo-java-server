@@ -2468,7 +2468,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testServerStatus() throws Exception {
-        Document serverStatus = runCommand("serverStatus");
+        verifyServerStatus(runCommand("serverStatus"));
+        verifyServerStatus(getDatabase().runCommand(json("serverStatus:1")));
+    }
+
+    private void verifyServerStatus(Document serverStatus) {
         assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
         assertThat(serverStatus.get("uptime")).isInstanceOf(Number.class);
         assertThat(serverStatus.get("uptimeMillis")).isInstanceOf(Long.class);

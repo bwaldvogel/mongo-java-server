@@ -198,8 +198,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleGetCmdLineOpts();
         } else if (command.equalsIgnoreCase("getFreeMonitoringStatus")) {
             return handleGetFreeMonitoringStatus();
-        } else if (command.equalsIgnoreCase("serverStatus")) {
-            return getServerStatus();
         } else if (command.equalsIgnoreCase("endSessions")) {
             log.debug("endSessions on admin database");
             return successResponse();
@@ -332,6 +330,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             return handleKillCursors(query);
         } else if (command.equalsIgnoreCase("ping")) {
             return successResponse();
+        } else if (command.equalsIgnoreCase("serverStatus")) {
+            return getServerStatus();
         } else if (databaseName.equals(ADMIN_DB_NAME)) {
             return handleAdminCommand(command, query);
         }
