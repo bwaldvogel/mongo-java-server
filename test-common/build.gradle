@@ -16,7 +16,7 @@ dependencies {
     api "org.mockito:mockito-core:latest.release"
     api "org.mockito:mockito-junit-jupiter:latest.release"
 
-    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: '[1.3.0, 1.4.0)'
+    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
 
     testImplementation "org.testcontainers:testcontainers:latest.release"
 }
