@@ -3689,6 +3689,17 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isInstanceOf(ObjectId.class);
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/227
+    @Test
+    void testReplaceWithEmptyDocument() throws Exception {
+        collection.insertOne(json("_id: 'myId', value: 'test'"));
+
+        collection.replaceOne(json("_id: 'myId'"), json(""));
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 'myId'"));
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/41
     @Test
     void testBulkUpsert() throws Exception {

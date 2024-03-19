@@ -345,14 +345,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             newDocument.put(getIdField(), oldDocument.get(getIdField()));
         }
 
-        if (numStartsWithDollar == update.keySet().size()) {
+        if (numStartsWithDollar == 0) {
+            applyUpdate(newDocument, update);
+        } else if (numStartsWithDollar == update.keySet().size()) {
             validateUpdateQuery(update);
             oldDocument.cloneInto(newDocument);
             for (String key : update.keySet()) {
                 modifyField(newDocument, key, update, arrayFilters, matchPos, isUpsert);
             }
-        } else if (numStartsWithDollar == 0) {
-            applyUpdate(newDocument, update);
         } else {
             throw new MongoServerException("illegal update: " + update);
         }
