@@ -1,10 +1,10 @@
 # This is a Gradle generated file for dependency locking.
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
-ch.qos.logback:logback-classic:1.3.14=aggregateCodeCoverageReportResults
 ch.qos.logback:logback-classic:1.3.5=allCodeCoverageReportClassDirectories
-ch.qos.logback:logback-core:1.3.14=aggregateCodeCoverageReportResults
+ch.qos.logback:logback-classic:1.5.3=aggregateCodeCoverageReportResults
 ch.qos.logback:logback-core:1.3.5=allCodeCoverageReportClassDirectories
+ch.qos.logback:logback-core:1.5.3=aggregateCodeCoverageReportResults
 com.fasterxml.jackson.core:jackson-annotations:2.14.1=allCodeCoverageReportClassDirectories
 com.fasterxml.jackson.core:jackson-annotations:2.17.0=aggregateCodeCoverageReportResults
 com.fasterxml.jackson.core:jackson-core:2.14.1=allCodeCoverageReportClassDirectories
