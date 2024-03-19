@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend.h2;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,13 +80,9 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
     @Override
     protected long getStorageSize() {
-        FileStore fileStore = mvStore.getFileStore();
+        FileStore<?> fileStore = mvStore.getFileStore();
         if (fileStore != null) {
-            try {
-                return fileStore.getFile().size();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to calculate filestore size", e);
-            }
+            return fileStore.size();
         } else {
             return 0;
         }
