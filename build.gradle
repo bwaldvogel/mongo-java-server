@@ -160,7 +160,7 @@ configure(allprojects.findAll {it.name != 'mongo-java-server-examples'}) {
 }
 
 wrapper {
-    gradleVersion = "8.1.1"
+    gradleVersion = "8.6"
     distributionType = Wrapper.DistributionType.ALL
 }
 
