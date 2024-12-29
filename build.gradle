@@ -21,7 +21,10 @@ allprojects {
 
     group = 'de.bwaldvogel'
 
-    sourceCompatibility = '11'
+    java {
+        sourceCompatibility = '11'
+        targetCompatibility = '11'
+    }
 
     compileJava.options.encoding = 'UTF-8'
 
@@ -139,7 +142,7 @@ configure(allprojects.findAll {it.name != 'mongo-java-server-examples'}) {
         }
         repositories {
             maven {
-                url isReleaseVersion ? 'https://oss.sonatype.org/service/local/staging/deploy/maven2' : 'https://oss.sonatype.org/content/repositories/snapshots/'
+                url = isReleaseVersion ? 'https://oss.sonatype.org/service/local/staging/deploy/maven2' : 'https://oss.sonatype.org/content/repositories/snapshots/'
                 credentials {
                     username = project.hasProperty('nexusUsername') ? project.property('nexusUsername') : System.getenv('NEXUS_USERNAME')
                     password = project.hasProperty('nexusPassword') ? project.property('nexusPassword') : System.getenv('NEXUS_PASSWORD')
@@ -160,7 +163,7 @@ configure(allprojects.findAll {it.name != 'mongo-java-server-examples'}) {
 }
 
 wrapper {
-    gradleVersion = "8.6"
+    gradleVersion = "8.12"
     distributionType = Wrapper.DistributionType.ALL
 }
 
