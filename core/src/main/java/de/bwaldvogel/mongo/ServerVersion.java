@@ -14,10 +14,12 @@ public enum ServerVersion implements MongoVersion {
         this.wireVersion = wireVersion;
     }
 
+    @Override
     public List<Integer> getVersionArray() {
         return Collections.unmodifiableList(versionArray);
     }
 
+    @Override
     public int getWireVersion() {
         return wireVersion;
     }
