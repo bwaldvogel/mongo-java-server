@@ -1,5 +1,3 @@
-version: '2.1'
-
 services:
   mongodb:
     image: mongo:5.0.18
