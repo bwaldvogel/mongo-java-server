@@ -50,7 +50,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
-    private MongoVersion version = ServerVersion.MONGO_3_6;
+    private MongoVersion version = ServerVersion.MONGO_4_0;
 
     private final Clock clock;
     private final Instant started;
