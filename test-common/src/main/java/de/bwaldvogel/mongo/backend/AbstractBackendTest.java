@@ -3484,6 +3484,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/232
+    @Test
+    void testUpdateArrayMatch_ObjectId() throws Exception {
+        collection.insertOne(json("_id: 1")
+            .append("myArray", List.of(new Document("_id", new ObjectId(123, 456)))));
+
+        collection.updateOne(
+            and(eq("_id", 1), eq("myArray._id", new ObjectId(123, 456))),
+            set("myArray.$.name", "new name")
+        );
+
+        assertThat(collection.find())
+            .containsExactly(json("_id: 1")
+                .append("myArray", List.of(
+                    new Document("_id", new ObjectId(123, 456))
+                        .append("name", "new name")
+                )));
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/32
     @Test
     void testUpdateWithNotAndSizeOperator() throws Exception {
