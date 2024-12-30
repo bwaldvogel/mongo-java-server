@@ -3490,10 +3490,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
         collection.insertOne(json("_id: 1")
             .append("myArray", List.of(new Document("_id", new ObjectId(123, 456)))));
 
-        collection.updateOne(
+        UpdateResult updateResult = collection.updateOne(
             and(eq("_id", 1), eq("myArray._id", new ObjectId(123, 456))),
             set("myArray.$.name", "new name")
         );
+
+        assertThat(updateResult.getMatchedCount()).isEqualTo(1);
+        assertThat(updateResult.getModifiedCount()).isEqualTo(1);
+        assertThat(updateResult.getUpsertedId()).isNull();
 
         assertThat(collection.find())
             .containsExactly(json("_id: 1")
