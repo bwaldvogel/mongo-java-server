@@ -29,7 +29,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    protected void setUpBackend() throws Exception {
+    protected void setUpBackend() {
         connectionString = realMongoContainer.getConnectionString();
     }
 
@@ -41,7 +41,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    protected MongoBackend createBackend() throws Exception {
+    protected MongoBackend createBackend() {
         throw new UnsupportedOperationException();
     }
 
@@ -51,70 +51,70 @@ public class RealMongoBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testListDatabaseNames() throws Exception {
+    public void testListDatabaseNames() {
         assumeStrictMode();
         super.testListDatabaseNames();
     }
 
     @Test
     @Override
-    public void testCurrentOperations() throws Exception {
+    public void testCurrentOperations() {
         assumeStrictMode();
         super.testCurrentOperations();
     }
 
     @Test
     @Override
-    public void testInsertInSystemNamespace() throws Exception {
+    public void testInsertInSystemNamespace() {
         assumeStrictMode();
         super.testInsertInSystemNamespace();
     }
 
     @Test
     @Override
-    public void testQuerySystemNamespace() throws Exception {
+    public void testQuerySystemNamespace() {
         assumeStrictMode();
         super.testQuerySystemNamespace();
     }
 
     @Test
     @Override
-    public void testSystemNamespaces() throws Exception {
+    public void testSystemNamespaces() {
         assumeStrictMode();
         super.testSystemNamespaces();
     }
 
     @Test
     @Override
-    public void testUpdateInSystemNamespace() throws Exception {
+    public void testUpdateInSystemNamespace() {
         assumeStrictMode();
         super.testUpdateInSystemNamespace();
     }
 
     @Test
     @Override
-    public void testGetLogStartupWarnings() throws Exception {
+    public void testGetLogStartupWarnings() {
         assumeStrictMode();
         super.testGetLogStartupWarnings();
     }
 
     @Test
     @Override
-    public void testReservedCollectionNames() throws Exception {
+    public void testReservedCollectionNames() {
         assumeStrictMode();
         super.testReservedCollectionNames();
     }
 
     @Test
     @Override
-    public void testQueryWithSubdocumentIndex() throws Exception {
+    public void testQueryWithSubdocumentIndex() {
         assumeStrictMode();
         super.testQueryWithSubdocumentIndex();
     }
 
     @Test
     @Override
-    public void testServerStatus() throws Exception {
+    public void testServerStatus() {
         verifyServerStatus(runCommand("serverStatus"));
         verifyServerStatus(db.runCommand(json("serverStatus:1")));
     }
@@ -138,7 +138,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testResetError() throws Exception {
+    public void testResetError() {
         // Note: No longer implemented since MongoDB 5: "Command failed with error 59 (CommandNotFound): 'no such command: 'reseterror'"
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("reseterror: 1")))
@@ -147,7 +147,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testCommandThatTriggersAnInternalException() throws Exception {
+    public void testCommandThatTriggersAnInternalException() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("triggerInternalException: 1")))
             .withMessageStartingWith("Command failed with error 59 (CommandNotFound): 'no such command: 'triggerInternalException'");

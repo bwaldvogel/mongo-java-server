@@ -57,7 +57,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    protected MongoBackend createBackend() throws Exception {
+    protected MongoBackend createBackend() {
         PostgresqlBackend backend = new PostgresqlBackend(dataSource, clock);
         for (String db : List.of(TEST_DATABASE_NAME, OTHER_TEST_DATABASE_NAME)) {
             MongoDatabase mongoDatabase = backend.openOrCreateDatabase(db);
@@ -68,63 +68,63 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testCompoundSparseUniqueIndex() throws Exception {
+    public void testCompoundSparseUniqueIndex() {
         assumeStrictTests();
         super.testCompoundSparseUniqueIndex();
     }
 
     @Test
     @Override
-    public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() throws Exception {
+    public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() {
         assumeStrictTests();
         super.testCompoundSparseUniqueIndexOnEmbeddedDocuments();
     }
 
     @Test
     @Override
-    public void testSparseUniqueIndexOnEmbeddedDocument() throws Exception {
+    public void testSparseUniqueIndexOnEmbeddedDocument() {
         assumeStrictTests();
         super.testSparseUniqueIndexOnEmbeddedDocument();
     }
 
     @Test
     @Override
-    public void testSecondarySparseUniqueIndex() throws Exception {
+    public void testSecondarySparseUniqueIndex() {
         assumeStrictTests();
         super.testSecondarySparseUniqueIndex();
     }
 
     @Test
     @Override
-    public void testUniqueIndexWithDeepDocuments() throws Exception {
+    public void testUniqueIndexWithDeepDocuments() {
         assumeStrictTests();
         super.testUniqueIndexWithDeepDocuments();
     }
 
     @Test
     @Override
-    public void testOrderByEmbeddedDocument() throws Exception {
+    public void testOrderByEmbeddedDocument() {
         assumeStrictTests();
         super.testOrderByEmbeddedDocument();
     }
 
     @Test
     @Override
-    public void testOrderByMissingAndNull() throws Exception {
+    public void testOrderByMissingAndNull() {
         assumeStrictTests();
         super.testOrderByMissingAndNull();
     }
 
     @Test
     @Override
-    public void testSortDocuments() throws Exception {
+    public void testSortDocuments() {
         assumeStrictTests();
         super.testSortDocuments();
     }
 
     @Test
     @Override
-    public void testFindAndOrderByWithListValues() throws Exception {
+    public void testFindAndOrderByWithListValues() {
         assumeStrictTests();
         super.testFindAndOrderByWithListValues();
     }
@@ -138,98 +138,98 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testInsertQueryAndSortBinaryTypes() throws Exception {
+    public void testInsertQueryAndSortBinaryTypes() {
         assumeStrictTests();
         super.testInsertQueryAndSortBinaryTypes();
     }
 
     @Test
     @Override
-    public void testUuidAsId() throws Exception {
+    public void testUuidAsId() {
         assumeStrictTests();
         super.testUuidAsId();
     }
 
     @Test
     @Override
-    public void testTypeMatching() throws Exception {
+    public void testTypeMatching() {
         assumeStrictTests();
         super.testTypeMatching();
     }
 
     @Test
     @Override
-    public void testDecimal128() throws Exception {
+    public void testDecimal128() {
         assumeStrictTests();
         super.testDecimal128();
     }
 
     @Test
     @Override
-    public void testDecimal128_Inc() throws Exception {
+    public void testDecimal128_Inc() {
         assumeStrictTests();
         super.testDecimal128_Inc();
     }
 
     @Test
     @Override
-    public void testArrayNe() throws Exception {
+    public void testArrayNe() {
         assumeStrictTests();
         super.testArrayNe();
     }
 
     @Test
     @Override
-    public void testRegExQuery() throws Exception {
+    public void testRegExQuery() {
         assumeStrictTests();
         super.testRegExQuery();
     }
 
     @Test
     @Override
-    public void testInsertAndFindJavaScriptContent() throws Exception {
+    public void testInsertAndFindJavaScriptContent() {
         assumeStrictTests();
         super.testInsertAndFindJavaScriptContent();
     }
 
     @Test
     @Override
-    public void testMultikeyIndex_simpleArrayValues() throws Exception {
+    public void testMultikeyIndex_simpleArrayValues() {
         assumeStrictTests();
         super.testMultikeyIndex_simpleArrayValues();
     }
 
     @Test
     @Override
-    public void testCompoundMultikeyIndex_simpleArrayValues() throws Exception {
+    public void testCompoundMultikeyIndex_simpleArrayValues() {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_simpleArrayValues();
     }
 
     @Test
     @Override
-    public void testCompoundMultikeyIndex_documents() throws Exception {
+    public void testCompoundMultikeyIndex_documents() {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_documents();
     }
 
     @Test
     @Override
-    public void testCompoundMultikeyIndex_multiple_document_keys() throws Exception {
+    public void testCompoundMultikeyIndex_multiple_document_keys() {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_multiple_document_keys();
     }
 
     @Test
     @Override
-    public void testCompoundMultikeyIndex_deepDocuments() throws Exception {
+    public void testCompoundMultikeyIndex_deepDocuments() {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_deepDocuments();
     }
 
     @Test
     @Override
-    public void testCompoundMultikeyIndex_threeKeys() throws Exception {
+    public void testCompoundMultikeyIndex_threeKeys() {
         assumeStrictTests();
         super.testCompoundMultikeyIndex_threeKeys();
     }
@@ -243,7 +243,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testAddUniqueIndexOnExistingDocuments_violatingUniqueness() throws Exception {
+    public void testAddUniqueIndexOnExistingDocuments_violatingUniqueness() {
         collection.insertOne(json("_id: 1, value: 'a'"));
         collection.insertOne(json("_id: 2, value: 'b'"));
         collection.insertOne(json("_id: 3, value: 'c'"));
@@ -265,7 +265,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testUniqueIndexOnArrayField() throws Exception {
+    public void testUniqueIndexOnArrayField() {
         if (isStrictTestsEnabled()) {
             super.testUniqueIndexOnArrayField();
         } else {
@@ -307,7 +307,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testUniqueIndexOnArrayField_updates() throws Exception {
+    public void testUniqueIndexOnArrayField_updates() {
         if (isStrictTestsEnabled()) {
             super.testUniqueIndexOnArrayField_updates();
         } else {
@@ -344,7 +344,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testUniqueIndexOnArrayFieldInSubdocument() throws Exception {
+    public void testUniqueIndexOnArrayFieldInSubdocument() {
         if (isStrictTestsEnabled()) {
             super.testUniqueIndexOnArrayFieldInSubdocument();
         } else {
@@ -371,20 +371,20 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
+    public void testGetKeyValues_multiKey_document_nested_objects() {
         assumeStrictTests();
         super.testGetKeyValues_multiKey_document_nested_objects();
     }
 
     @Test
     @Override
-    public void testOldAndNewUuidTypes() throws Exception {
+    public void testOldAndNewUuidTypes() {
         assumeStrictTests();
         super.testOldAndNewUuidTypes();
     }
 
     @Test
-    void testUuidDuplicate() throws Exception {
+    void testUuidDuplicate() {
         Document document1 = new Document("_id", UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
 
         collection.insertOne(document1);
@@ -406,21 +406,21 @@ class PostgresqlBackendTest extends AbstractBackendTest {
 
     @Test
     @Override
-    public void testUpdatePushSlice() throws Exception {
+    public void testUpdatePushSlice() {
         assumeStrictTests();
         super.testUpdatePushSlice();
     }
 
     @Test
     @Override
-    public void testUpdatePushSortAndSlice() throws Exception {
+    public void testUpdatePushSortAndSlice() {
         assumeStrictTests();
         super.testUpdatePushSortAndSlice();
     }
 
     @Test
     @Override
-    public void testMinMaxKeyRangeQuery() throws Exception {
+    public void testMinMaxKeyRangeQuery() {
         assumeStrictTests();
         super.testMinMaxKeyRangeQuery();
     }

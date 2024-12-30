@@ -137,7 +137,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testSimpleInsert() throws Exception {
+    void testSimpleInsert() {
         collection.insertOne(json("_id: 1"));
     }
 
@@ -288,7 +288,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testKillCursor() throws Exception {
+    void testKillCursor() {
         for (int i = 0; i < 20; i++) {
             collection.insertOne(json(""));
         }
@@ -302,7 +302,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testKillCursor_unknownCursorId() throws Exception {
+    void testKillCursor_unknownCursorId() {
         collection.insertOne(json(""));
         String collectionName = collection.getNamespace().getCollectionName();
         Document result = runCommand(new Document("killCursors", collectionName).append("cursors", List.of(987654321L)));
@@ -312,13 +312,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testSimpleInsertDelete() throws Exception {
+    void testSimpleInsertDelete() {
         collection.insertOne(json("_id: 1"));
         collection.deleteOne(json("_id: 1"));
     }
 
     @Test
-    void testCreateCollection() throws Exception {
+    void testCreateCollection() {
         String newCollectionName = "some-collection";
         assertThat(db.listCollectionNames()).doesNotContain(newCollectionName);
         db.createCollection(newCollectionName, new CreateCollectionOptions());
@@ -326,7 +326,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testCreateCappedCollection_invalidOptions() throws Exception {
+    void testCreateCappedCollection_invalidOptions() {
         String newCollectionName = "some-collection";
         assertThat(db.listCollectionNames()).doesNotContain(newCollectionName);
 
@@ -336,7 +336,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testCreateCollectionAlreadyExists() throws Exception {
+    void testCreateCollectionAlreadyExists() {
         db.createCollection("some-collection", new CreateCollectionOptions());
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -345,7 +345,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUnsupportedModifier() throws Exception {
+    void testUnsupportedModifier() {
         collection.insertOne(json(""));
         assertMongoWriteException(() -> collection.updateOne(json(""), json("$foo: {}")),
             9, "FailedToParse", "Unknown modifier: $foo. Expected a valid update modifier or pipeline-style update specified as an array");
@@ -375,7 +375,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testCollectionStats_newCollection() throws Exception {
+    void testCollectionStats_newCollection() {
         Document stats = getCollStats();
         assertThat(stats.getDouble("ok")).isEqualTo(1.0);
         assertThat(stats.getInteger("count")).isEqualTo(0);
@@ -386,7 +386,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testCollectionStats() throws Exception {
+    void testCollectionStats() {
         collection.insertOne(json(""));
         collection.insertOne(json("abc: 'foo'"));
 
@@ -403,7 +403,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testGetLogStartupWarnings() throws Exception {
+    public void testGetLogStartupWarnings() {
         Document startupWarnings = runCommand(json("getLog: 'startupWarnings'"));
         assertThat(startupWarnings.getDouble("ok")).isEqualTo(1.0);
         assertThat(startupWarnings.get("totalLinesWritten")).isInstanceOf(Number.class);
@@ -411,7 +411,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testGetLogWhichDoesNotExist() throws Exception {
+    void testGetLogWhichDoesNotExist() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand(json("getLog: 'illegal'")))
             .withMessageStartingWith("Command failed with error -1: 'no RamLog named: illegal'");
@@ -509,7 +509,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testCountDocuments() throws Exception {
+    void testCountDocuments() {
         assertThat(collection.countDocuments()).isZero();
     }
 
@@ -522,7 +522,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testEstimatedDocumentCount() throws Exception {
+    void testEstimatedDocumentCount() {
         assertThat(collection.estimatedDocumentCount()).isEqualTo(0);
         collection.insertOne(json("n:1"));
         collection.insertOne(json("n:2"));
@@ -584,7 +584,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDropAndRecreateIndex() throws Exception {
+    void testDropAndRecreateIndex() {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));
         collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
@@ -633,7 +633,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDropIndexes() throws Exception {
+    void testDropIndexes() {
         collection.insertOne(json("_id: 1, c: 10"));
 
         collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
@@ -658,7 +658,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/184
     @Test
-    void testDropIndex_string() throws Exception {
+    void testDropIndex_string() {
         collection.insertOne(json("_id: 1, c: 10"));
 
         String indexName = collection.createIndex(new Document("c", 1), new IndexOptions().unique(true));
@@ -678,7 +678,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/184
     @Test
-    void testDropIndex_null() throws Exception {
+    void testDropIndex_null() {
         collection.insertOne(json("_id: 1, c: 10"));
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -688,7 +688,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/171
     @Test
-    void testDropIndexes_twoIndexesWithTheSameKey() throws Exception {
+    void testDropIndexes_twoIndexesWithTheSameKey() {
         collection.insertOne(json("_id: 1, c: 10"));
 
         MongoCollection<Document> otherCollection = getCollection("other");
@@ -724,14 +724,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCurrentOperations() throws Exception {
+    public void testCurrentOperations() {
         Document currentOperations = getAdminDb().getCollection("$cmd.sys.inprog").find().first();
         assertThat(currentOperations).isNotNull();
         assertThat(currentOperations.get("inprog")).isInstanceOf(List.class);
     }
 
     @Test
-    void testListCollectionsEmpty() throws Exception {
+    void testListCollectionsEmpty() {
         Document result = db.runCommand(json("listCollections: 1"));
         assertThat(result.getDouble("ok")).isEqualTo(1.0);
         Document cursor = (Document) result.get("cursor");
@@ -743,7 +743,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testListCollections() throws Exception {
+    void testListCollections() {
         List<String> collections = List.of("coll1", "coll2", "coll3");
         for (String collection : collections) {
             getCollection(collection).insertOne(json("_id: 1"));
@@ -777,7 +777,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testGetCollectionNames() throws Exception {
+    void testGetCollectionNames() {
         getCollection("foo").insertOne(json(""));
         getCollection("bar").insertOne(json(""));
 
@@ -786,7 +786,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testSystemNamespaces() throws Exception {
+    public void testSystemNamespaces() {
         getCollection("foo").insertOne(json(""));
         getCollection("bar").insertOne(json(""));
 
@@ -798,7 +798,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDatabaseStats() throws Exception {
+    void testDatabaseStats() {
         Document stats = db.runCommand(new Document("dbStats", 1).append("scale", 1));
         assertThat(stats.getDouble("ok")).isEqualTo(1.0);
         assertThat(stats.getInteger("objects")).isZero();
@@ -827,7 +827,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDeleteInSystemNamespace() throws Exception {
+    void testDeleteInSystemNamespace() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> getCollection("system.foobar").deleteOne(json("")))
             .withMessageStartingWith("Command failed with error 73 (InvalidNamespace): 'Invalid system namespace: testdb.system.foobar'");
@@ -838,7 +838,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUpdateInSystemNamespace() throws Exception {
+    public void testUpdateInSystemNamespace() {
         for (String collectionName : List.of("system.foobar", "system.namespaces")) {
             MongoCollection<Document> collection = getCollection(collectionName);
 
@@ -872,7 +872,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/44
     @Test
-    void testDistinctUuids_legacy() throws Exception {
+    void testDistinctUuids_legacy() {
         MongoClientSettings legacyUuidSettings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
             .uuidRepresentation(UuidRepresentation.JAVA_LEGACY)
@@ -899,7 +899,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDistinctUuids() throws Exception {
+    void testDistinctUuids() {
         collection.insertOne(json("_id: 1, n: null"));
         collection.insertOne(json("_id: 2").append("n", new UUID(0, 1)));
         collection.insertOne(json("_id: 3").append("n", new UUID(1, 0)));
@@ -919,7 +919,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/70
     @Test
-    void testDistinctArrayField() throws Exception {
+    void testDistinctArrayField() {
         collection.insertOne(json("_id: 1, n: null"));
         collection.insertOne(json("_id: 2").append("n", List.of(1, 2, 3)));
         collection.insertOne(json("_id: 3").append("n", List.of(3, 4, 5)));
@@ -930,7 +930,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDistinct_documentArray() throws Exception {
+    void testDistinct_documentArray() {
         collection.insertOne(json("_id: 1, n: null"));
         collection.insertOne(json("_id: 2, n: [{item: 1}, {item: 2}]"));
         collection.insertOne(json("_id: 3, n: {item: 3}"));
@@ -943,14 +943,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/178
     @Test
-    void testDistinct_missingCollection() throws Exception {
+    void testDistinct_missingCollection() {
         MongoCollection<Document> missingCollection = db.getCollection("does-not-exist");
 
         assertThat(missingCollection.distinct("x", Integer.class)).isEmpty();
     }
 
     @Test
-    public void testInsertQueryAndSortBinaryTypes() throws Exception {
+    public void testInsertQueryAndSortBinaryTypes() {
         byte[] highBytes = new byte[16];
         Arrays.fill(highBytes, (byte) 0xFF);
 
@@ -993,7 +993,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUuidAsId() throws Exception {
+    public void testUuidAsId() {
         collection.insertOne(new Document("_id", new UUID(0, 1)));
         collection.insertOne(new Document("_id", new UUID(0, 2)));
         collection.insertOne(new Document("_id", new UUID(999999, 128)));
@@ -1016,7 +1016,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testTypeMatching() throws Exception {
+    public void testTypeMatching() {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 'abc'"));
         collection.insertOne(json("a: {b: {c: 123}}"));
@@ -1077,7 +1077,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDropCollection() throws Exception {
+    void testDropCollection() {
         collection.createIndex(new Document("n", 1));
         collection.createIndex(new Document("b", 1));
 
@@ -1098,7 +1098,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDropCollectionAlsoDropsFromDB() throws Exception {
+    void testDropCollectionAlsoDropsFromDB() {
         collection.insertOne(json(""));
         collection.drop();
         assertThat(collection.countDocuments()).isZero();
@@ -1106,14 +1106,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDropDatabaseAlsoDropsCollectionData() throws Exception {
+    void testDropDatabaseAlsoDropsCollectionData() {
         collection.insertOne(json(""));
         db.drop();
         assertThat(collection.countDocuments()).isZero();
     }
 
     @Test
-    void testDropDatabaseDropsAllData() throws Exception {
+    void testDropDatabaseDropsAllData() {
         collection.insertOne(json("_id: 1"));
         MongoCollection<Document> collection2 = getCollection("testcoll2");
         collection2.insertOne(json("_id: 1"));
@@ -1130,7 +1130,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/136
     @Test
-    void testDropEmptyDatabase() throws Exception {
+    void testDropEmptyDatabase() {
         String emptyDatabaseName = "empty-db";
         MongoDatabase database = syncClient.getDatabase(emptyDatabaseName);
         database.drop();
@@ -1139,7 +1139,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/107
     @Test
-    void testDropDatabaseAfterAddingIndexMultipleTimes() throws Exception {
+    void testDropDatabaseAfterAddingIndexMultipleTimes() {
         collection.insertOne(json("_id: 1, a: 10"));
         for (int i = 0; i < 3; i++) {
             collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
@@ -1149,7 +1149,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/107
     @Test
-    void testAddIndexAgainWithDifferentOptions() throws Exception {
+    void testAddIndexAgainWithDifferentOptions() {
         collection.insertOne(json("_id: 1, a: 10"));
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
 
@@ -1206,7 +1206,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindAndModifyCommandEmpty() throws Exception {
+    void testFindAndModifyCommandEmpty() {
         Document cmd = new Document("findandmodify", getCollectionName());
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -1215,7 +1215,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindAndModifyCommandIllegalOp() throws Exception {
+    void testFindAndModifyCommandIllegalOp() {
         collection.insertOne(json("_id: 1"));
 
         Document cmd = new Document("findAndModify", getCollectionName());
@@ -1232,7 +1232,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindAndModifyCommandUpdate() throws Exception {
+    void testFindAndModifyCommandUpdate() {
         collection.insertOne(json("_id: 1"));
 
         Document cmd = new Document("findAndModify", getCollectionName());
@@ -1248,7 +1248,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/75
     @Test
-    void testFindAndModifyCommand_UpdateSameFields() throws Exception {
+    void testFindAndModifyCommand_UpdateSameFields() {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -1258,7 +1258,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/75
     @Test
-    void testFindAndModifyCommand_UpdateFieldAndItsSubfield() throws Exception {
+    void testFindAndModifyCommand_UpdateFieldAndItsSubfield() {
         collection.insertOne(json("_id: 1, a: {b: {c: 1}}"));
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -1271,7 +1271,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindOneAndUpdateError() throws Exception {
+    void testFindOneAndUpdateError() {
         collection.insertOne(json("_id: 1, a: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -1282,7 +1282,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindOneAndUpdateFields() throws Exception {
+    void testFindOneAndUpdateFields() {
         collection.insertOne(json("_id: 1, a: 1"));
         Document result = collection.findOneAndUpdate(json("_id: 1"), json("$inc: {a: 1}"),
             new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER));
@@ -1291,7 +1291,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFineOneAndUpdateNotFound() throws Exception {
+    void testFineOneAndUpdateNotFound() {
         collection.insertOne(json("_id: 1, a: 1"));
         Document result = collection.findOneAndUpdate(json("_id: 2"), new Document("$inc", json("a: 1")));
 
@@ -1360,7 +1360,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindOneAndUpdateSorted() throws Exception {
+    void testFindOneAndUpdateSorted() {
         collection.insertOne(json("_id: 1, a: 15"));
         collection.insertOne(json("_id: 2, a: 10"));
         collection.insertOne(json("_id: 3, a: 20"));
@@ -1455,7 +1455,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/208
     @ParameterizedTest
     @MethodSource("findAndUpdate_upsert_idInQueryArguments")
-    void testFindAndUpdate_upsert_idInQuery(String query, boolean randomObjectIdExpected, String expectedDocument) throws Exception {
+    void testFindAndUpdate_upsert_idInQuery(String query, boolean randomObjectIdExpected, String expectedDocument) {
         collection.findOneAndUpdate(
             json(query),
             json("{'$set': {value: 100}}"),
@@ -1492,7 +1492,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/60
     @Test
-    void testUpdateOneWithArrayFilter() throws Exception {
+    void testUpdateOneWithArrayFilter() {
         collection.insertOne(json("_id: 1, values: [{name: 'A', active: false}, {name: 'B', active: false}]"));
 
         collection.updateOne(json("_id: 1"),
@@ -1525,7 +1525,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/60
     @Test
-    void testUpdateWithMultipleArrayFilters() throws Exception {
+    void testUpdateWithMultipleArrayFilters() {
         collection.insertOne(json("_id: 1, values: [9, 102, 90, 150]"));
         collection.insertOne(json("_id: 2, values: [1, 2, 30, 50]"));
 
@@ -1547,7 +1547,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/86
     @Test
-    void testUpdateWithMultipleComplexArrayFilters() throws Exception {
+    void testUpdateWithMultipleComplexArrayFilters() {
         collection.insertOne(json("_id: 1, products: [" +
             "{id: 1, charges: [" +
             "{type: 'A', min: 0, max: 1}, " +
@@ -1857,7 +1857,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFullUpdateWithSameId() throws Exception {
+    void testFullUpdateWithSameId() {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2, b: 5"));
         collection.insertOne(json("_id: 3"));
@@ -1878,7 +1878,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testNullId() throws Exception {
+    void testNullId() {
         collection.insertOne(json("_id: null, name: 'test'"));
         Document result = collection.find(json("name: 'test'")).first();
         assertThat(result).isNotNull();
@@ -1914,7 +1914,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInQuery_Arrays() throws Exception {
+    void testInQuery_Arrays() {
         collection.insertOne(json("_id: 1, v: [1, 2, 3]"));
         collection.insertOne(json("_id: 2, v: [1, 2]"));
         collection.insertOne(json("_id: 3, v: 50"));
@@ -1960,21 +1960,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testIllegalCommand() throws Exception {
+    void testIllegalCommand() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("foo: 1")))
             .withMessageStartingWith("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
     }
 
     @Test
-    public void testCommandThatTriggersAnInternalException() throws Exception {
+    public void testCommandThatTriggersAnInternalException() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("triggerInternalException: 1")))
             .withMessageStartingWith("Command failed with error -1: 'Unknown error: For testing purposes'");
     }
 
     @Test
-    void testInsert() throws Exception {
+    void testInsert() {
         assertThat(collection.countDocuments()).isEqualTo(0);
 
         for (int i = 0; i < 3; i++) {
@@ -1993,7 +1993,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertDuplicate() throws Exception {
+    void testInsertDuplicate() {
         assertThat(collection.countDocuments()).isEqualTo(0);
 
         collection.insertOne(json("_id: 1"));
@@ -2029,7 +2029,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertQuery() throws Exception {
+    void testInsertQuery() {
         assertThat(collection.countDocuments()).isEqualTo(0);
 
         Document insertedObject = json("_id: 1");
@@ -2044,7 +2044,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertRemove() throws Exception {
+    void testInsertRemove() {
         for (int i = 0; i < 10; i++) {
             collection.insertOne(json("_id: 1"));
             assertThat(collection.countDocuments()).isEqualTo(1);
@@ -2060,7 +2060,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testInsertInSystemNamespace() throws Exception {
+    public void testInsertInSystemNamespace() {
         assertMongoWriteException(() -> getCollection("system.foobar").insertOne(json("")),
             16459, "attempt to insert in system namespace");
 
@@ -2069,7 +2069,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testListDatabaseNames() throws Exception {
+    public void testListDatabaseNames() {
         assertThat(listDatabaseNames()).isEmpty();
         collection.insertOne(json(""));
         assertThat(listDatabaseNames()).containsExactly(db.getName());
@@ -2082,14 +2082,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQuery() throws Exception {
+    void testQuery() {
         Document obj = collection.find(json("_id: 1")).first();
         assertThat(obj).isNull();
         assertThat(collection.countDocuments()).isEqualTo(0);
     }
 
     @Test
-    void testQueryAll() throws Exception {
+    void testQueryAll() {
         List<Document> inserted = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             Document obj = new Document("_id", i);
@@ -2103,7 +2103,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryCount() throws Exception {
+    void testQueryCount() {
         for (int i = 0; i < 100; i++) {
             collection.insertOne(json(""));
         }
@@ -2116,7 +2116,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryLimitEmptyQuery() throws Exception {
+    void testQueryLimitEmptyQuery() {
         for (int i = 0; i < 5; i++) {
             collection.insertOne(json(""));
         }
@@ -2126,7 +2126,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryLimitSimpleQuery() throws Exception {
+    void testQueryLimitSimpleQuery() {
         for (int i = 0; i < 5; i++) {
             collection.insertOne(json("a: 1"));
         }
@@ -2136,14 +2136,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryNull() throws Exception {
+    void testQueryNull() {
         Document object = json("_id: 1");
         collection.insertOne(object);
         assertThat(collection.find(json("foo: null")).first()).isEqualTo(object);
     }
 
     @Test
-    void testQuerySkipLimitEmptyQuery() throws Exception {
+    void testQuerySkipLimitEmptyQuery() {
         assertThat(collection.countDocuments(json(""), new CountOptions().skip(3))).isEqualTo(0);
 
         for (int i = 0; i < 10; i++) {
@@ -2156,7 +2156,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQuerySkipLimitSimpleQuery() throws Exception {
+    void testQuerySkipLimitSimpleQuery() {
         assertThat(collection.countDocuments(json("a: 1"), new CountOptions().skip(3))).isEqualTo(0);
 
         for (int i = 0; i < 10; i++) {
@@ -2169,7 +2169,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQuerySort() throws Exception {
+    void testQuerySort() {
         Random random = new Random(4711);
         for (int i = 0; i < 10; i++) {
             collection.insertOne(new Document("_id", Double.valueOf(random.nextDouble())));
@@ -2185,7 +2185,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithFieldSelector() throws Exception {
+    void testQueryWithFieldSelector() {
         collection.insertOne(json("foo: 'bar'"));
         collection.insertOne(json("foo: null"));
 
@@ -2203,7 +2203,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithDotNotationFieldSelector() throws Exception {
+    void testQueryWithDotNotationFieldSelector() {
         collection.insertOne(json("_id: 1, index: false, foo: {a: 'a1', b: 0}"));
         collection.insertOne(json("_id: 2, foo: {a: null, b: null}"));
         Document obj = collection.find(json("_id: 1")).projection(json("'foo.a': 1, 'foo.b': 1")).first();
@@ -2240,7 +2240,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithDotNotationFieldSelector_Array() throws Exception {
+    void testQueryWithDotNotationFieldSelector_Array() {
         collection.insertOne(json("_id: 1, values: [1, 2, {x: 100, y: 10}, {x: 200}]"));
 
         Document obj = collection.find(json("_id: 1")).projection(json("'values.0': 1, 'values.x': 1")).first();
@@ -2254,7 +2254,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithDocumentAsFieldSelection() throws Exception {
+    void testQueryWithDocumentAsFieldSelection() {
         collection.insertOne(json("_id: 1"));
 
         assertThat(collection.find(json("_id: 1")).projection(json("values: {x: 1}")).first())
@@ -2265,7 +2265,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testQuerySystemNamespace() throws Exception {
+    public void testQuerySystemNamespace() {
         assertThat(getCollection("system.foobar").find().first()).isNull();
         assertThat(db.listCollectionNames()).isEmpty();
 
@@ -2276,7 +2276,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryAllExpression() throws Exception {
+    void testQueryAllExpression() {
         collection.insertOne(json("a: [{x: 1}, {x: 2}]"));
         collection.insertOne(json("a: [{x: 2}, {x: 3}]"));
 
@@ -2286,7 +2286,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/36
     @Test
-    void testAndQueryWithAllAndNin() throws Exception {
+    void testAndQueryWithAllAndNin() {
         collection.insertOne(json("_id: 1, tags: ['A', 'B']"));
         collection.insertOne(json("_id: 2, tags: ['A', 'D']"));
         collection.insertOne(json("_id: 3, tags: ['A', 'C']"));
@@ -2298,7 +2298,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/215
     @Test
-    void testMatchesNinFieldInArray() throws Exception {
+    void testMatchesNinFieldInArray() {
         collection.insertOne(json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]"));
         collection.insertOne(json("_id: 2, tags: [{'value': 'A'}, {'value': 'B'}]"));
         collection.insertOne(json("_id: 3, tags: [{'value': 'A'}, {'value': 'C'}]"));
@@ -2309,7 +2309,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/220
     @Test
-    void testMatchesNeFieldInArray() throws Exception {
+    void testMatchesNeFieldInArray() {
         collection.insertOne(json("_id: 1, tags: [{'value': 'A'}, {'value': 'D'}]"));
         collection.insertOne(json("_id: 2, tags: [{'value': 'A'}, {'value': 'B'}]"));
         collection.insertOne(json("_id: 3, tags: [{'value': 'A'}, {'value': 'C'}]"));
@@ -2322,7 +2322,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/7
     @Test
-    void testMatchesNotIn() throws Exception {
+    void testMatchesNotIn() {
         Document document1 = json("_id: 1, code: 'c1', map: {key1: 'value 1.1', key2: ['value 2.1']}");
         Document document2 = json("_id: 2, code: 'c1', map: {key1: 'value 1.2', key2: ['value 2.2']}");
         Document document3 = json("_id: 3, code: 'c1', map: {key1: 'value 2.1', key2: ['value 2.1']}");
@@ -2358,7 +2358,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/96
     @Test
-    void testAndQueryWithAllAndSize() throws Exception {
+    void testAndQueryWithAllAndSize() {
         collection.insertOne(json("_id: 1, list: ['A', 'B']"));
         collection.insertOne(json("_id: 2, list: ['A', 'B', 'C']"));
 
@@ -2371,7 +2371,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/36
     @Test
-    void testMatchesAllWithEmptyCollection() throws Exception {
+    void testMatchesAllWithEmptyCollection() {
         collection.insertOne(json("_id: 1, text: 'TextA', tags: []"));
         collection.insertOne(json("_id: 2, text: 'TextB', tags: []"));
         collection.insertOne(json("_id: 3, text: 'TextA', tags: ['A']"));
@@ -2380,7 +2380,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testQueryWithSubdocumentIndex() throws Exception {
+    public void testQueryWithSubdocumentIndex() {
         collection.createIndex(json("action: {actionId: 1}"), new IndexOptions().unique(true));
 
         collection.insertOne(json("action: {actionId: 1}, value: 'a'"));
@@ -2396,7 +2396,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see https://github.com/bwaldvogel/mongo-java-server/issues/12
     @Test
-    void testQueryBinaryData() throws Exception {
+    void testQueryBinaryData() {
         byte[] firstBytes = new byte[] { 0x01, 0x02, 0x03 };
         byte[] secondBytes = new byte[] { 0x03, 0x02, 0x01 };
 
@@ -2430,7 +2430,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testRemoveSingle() throws Exception {
+    void testRemoveSingle() {
         Document obj = new Document("_id", ObjectId.get());
         collection.insertOne(obj);
         collection.deleteOne(obj);
@@ -2449,7 +2449,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testReservedCollectionNames() throws Exception {
+    public void testReservedCollectionNames() {
         assertMongoWriteException(() -> getCollection("foo$bar").insertOne(json("")),
             10093, "cannot insert into reserved $ collection");
 
@@ -2467,7 +2467,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testServerStatus() throws Exception {
+    public void testServerStatus() {
         verifyServerStatus(runCommand("serverStatus"));
         verifyServerStatus(getDatabase().runCommand(json("serverStatus:1")));
     }
@@ -2484,7 +2484,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testServerStatusWithOpenCursors() throws Exception {
+    void testServerStatusWithOpenCursors() {
         for (int i = 0; i < 20; i++) {
             collection.insertOne(new Document("_id", i + 1));
         }
@@ -2506,7 +2506,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testPing() throws Exception {
+    void testPing() {
         assertThat(runCommand("ping").getDouble("ok")).isEqualTo(1.0);
         assertThat(runCommand(json("ping: true")).getDouble("ok")).isEqualTo(1.0);
         assertThat(runCommand(json("ping: 2.0")).getDouble("ok")).isEqualTo(1.0);
@@ -2514,14 +2514,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testReplSetGetStatus() throws Exception {
+    void testReplSetGetStatus() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand("replSetGetStatus"))
             .withMessageStartingWith("Command failed with error 76 (NoReplicationEnabled): 'not running with --replSet'");
     }
 
     @Test
-    void testWhatsMyUri() throws Exception {
+    void testWhatsMyUri() {
         for (String dbName : new String[] { ADMIN_DB_NAME, "local", "test" }) {
             Document result = syncClient.getDatabase(dbName).runCommand(new Document("whatsmyuri", 1));
             assertThat(result.get("you")).isNotNull();
@@ -2530,7 +2530,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testSortDocuments() throws Exception {
+    public void testSortDocuments() {
         collection.insertOne(json("_id: 1, a: {b: 1}"));
         collection.insertOne(json("_id: 2, a: {b: 2}"));
         collection.insertOne(json("_id: 3, a: 3"));
@@ -2606,7 +2606,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdate() throws Exception {
+    void testUpdate() {
         Document object = json("_id: 1");
         Document newObject = json("_id: 1, foo: 'bar'");
 
@@ -2618,7 +2618,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateNothing() throws Exception {
+    void testUpdateNothing() {
         Document object = json("_id: 1");
         UpdateResult result = collection.replaceOne(object, object);
         assertThat(result.getModifiedCount()).isEqualTo(0);
@@ -2627,7 +2627,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateBlank() throws Exception {
+    void testUpdateBlank() {
         Document document = json("'': 1, _id: 2, a: 3, b: 4");
         collection.insertOne(document);
 
@@ -2636,21 +2636,21 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateEmptyPositional() throws Exception {
+    void testUpdateEmptyPositional() {
         collection.insertOne(json(""));
         assertMongoWriteException(() -> collection.updateOne(json(""), json("$set: {'a.$.b': 1}")),
             2, "BadValue", "The positional operator did not find the match needed from the query.");
     }
 
     @Test
-    void testUpdateMultiplePositional() throws Exception {
+    void testUpdateMultiplePositional() {
         collection.insertOne(json("a: {b: {c: 1}}"));
         assertMongoWriteException(() -> collection.updateOne(json("'a.b.c': 1"), json("$set: {'a.$.b.$.c': 1}")),
             2, "BadValue", "Too many positional (i.e. '$') elements found in path 'a.$.b.$.c'");
     }
 
     @Test
-    void testUpdateIllegalFieldName() throws Exception {
+    void testUpdateIllegalFieldName() {
         // Disallow $ in field names - SERVER-3730
 
         collection.insertOne(json("x: 1"));
@@ -2674,7 +2674,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateSubdocument() throws Exception {
+    void testUpdateSubdocument() {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> collection.updateOne(json(""), json("'a.b.c': 123")))
             .withMessage("All update operators must start with '$', but 'a.b.c' does not");
@@ -2682,7 +2682,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @ParameterizedTest
     @ValueSource(strings = { "a.", "a..", "a.b", "a.b.", "a.....111" })
-    void testInsertWithSpecialFieldNames(String specialFieldName) throws Exception {
+    void testInsertWithSpecialFieldNames(String specialFieldName) {
         Document document = json("_id: 1").append(specialFieldName, 1);
 
         collection.insertOne(document);
@@ -2709,7 +2709,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePush() throws Exception {
+    void testUpdatePush() {
         Document idObj = json("_id: 1");
         collection.insertOne(idObj);
         collection.updateOne(idObj, json("$push: {'field.subfield.subsubfield': 'value'}"));
@@ -2737,7 +2737,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testPushDollarFieldName() throws Exception {
+    void testPushDollarFieldName() {
         collection.insertOne(json("_id: 1"));
 
         collection.updateOne(json(""), json("$push: {value: {$position: 1}}"));
@@ -2747,7 +2747,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePushEach() throws Exception {
+    void testUpdatePushEach() {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2, value: [0]"));
 
@@ -2761,7 +2761,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUpdatePushSlice() throws Exception {
+    public void testUpdatePushSlice() {
         collection.insertOne(json("_id: 1"));
 
         collection.updateOne(json(""), json("$push: {value: {$each: ['a', 'b', 'c'], $slice: 4}}"));
@@ -2773,7 +2773,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/166
     @Test
-    void testUpdatePushWithNegativeAndZeroSlice() throws Exception {
+    void testUpdatePushWithNegativeAndZeroSlice() {
         collection.insertOne(json("_id: 1"));
 
         collection.updateOne(json(""), json("$push: {value: {$each: ['a', 'b', 'c'], $slice: -2}}"));
@@ -2793,7 +2793,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePushSort() throws Exception {
+    void testUpdatePushSort() {
         collection.insertOne(json("_id: 1"));
 
         collection.updateOne(json(""), json("$push: {value: {$each: [1, 5, 6, 3], $sort: -1}}"));
@@ -2804,7 +2804,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUpdatePushSortAndSlice() throws Exception {
+    public void testUpdatePushSortAndSlice() {
         collection.insertOne(json("_id: 1, quizzes: [{wk: 2, score: 9}, {wk: 1, score: 10}]"));
 
         collection.updateOne(json(""), json("$push: {quizzes: {" +
@@ -2823,7 +2823,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePushPosition() throws Exception {
+    void testUpdatePushPosition() {
         collection.insertOne(json("_id: 1, value: [1, 2]"));
 
         collection.updateOne(json(""), json("$push: {value: {$each: [3, 4], $position: 10}}"));
@@ -2837,7 +2837,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePushEach_unknownModifier() throws Exception {
+    void testUpdatePushEach_unknownModifier() {
         collection.insertOne(json("_id: 1"));
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$push: {value: {$each: [1, 2, 3], $illegal: 1}}")),
@@ -2845,7 +2845,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePushEach_illegalOptions() throws Exception {
+    void testUpdatePushEach_illegalOptions() {
         collection.insertOne(json("_id: 1"));
 
         assertMongoWriteException(() -> collection.updateOne(json(""), json("$push: {value: {$each: [1, 2, 3], $slice: 'abc'}}")),
@@ -2859,7 +2859,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePushAll() throws Exception {
+    void testUpdatePushAll() {
         collection.insertOne(json("_id: 1"));
 
         assertMongoWriteException(() -> collection.updateOne(json(""), json("$pushAll: {field: 'value'}")),
@@ -2867,7 +2867,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateAddToSet() throws Exception {
+    void testUpdateAddToSet() {
         Document idObj = json("_id: 1");
         collection.insertOne(idObj);
         collection.updateOne(idObj, json("$addToSet: {'field.subfield.subsubfield': 'value'}"));
@@ -2893,7 +2893,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateAddToSetEach() throws Exception {
+    void testUpdateAddToSetEach() {
         collection.insertOne(json("_id: 1"));
 
         collection.updateOne(json("_id: 1"), addEachToSet("a", List.of(6, 5, 4)));
@@ -2915,7 +2915,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateAddToSetEach_unknownModifier() throws Exception {
+    void testUpdateAddToSetEach_unknownModifier() {
         collection.insertOne(json("_id: 1"));
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$addToSet: {value: {$each: [1, 2, 3], $slice: 2}}")),
@@ -2941,7 +2941,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateDatasize() throws Exception {
+    void testUpdateDatasize() {
         Document obj = json("_id: 1, a: {x: [1, 2, 3]}");
         collection.insertOne(obj);
         Number oldSize = getCollStats().getInteger("size");
@@ -2958,7 +2958,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePull() throws Exception {
+    void testUpdatePull() {
         Document obj = json("_id: 1");
         collection.insertOne(obj);
 
@@ -3022,7 +3022,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePullAll() throws Exception {
+    void testUpdatePullAll() {
         Document obj = json("_id: 1");
         collection.insertOne(obj);
         collection.updateOne(obj, json("$set: {field: 'value'}"));
@@ -3040,7 +3040,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePullAll_Documents() throws Exception {
+    void testUpdatePullAll_Documents() {
         collection.insertOne(json("_id: 1, persons: [{id: 1}, {id: 2}, {id: 5}, {id: 5}, {id: 1}, {id: 0}]"));
 
         collection.updateOne(json("_id: 1"), json("$pullAll: {persons: [{id: 0.0}, {id: 5}]}"));
@@ -3050,7 +3050,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateSet() throws Exception {
+    void testUpdateSet() {
         Document object = json("_id: 1");
 
         collection.insertOne(object);
@@ -3096,7 +3096,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateSet_arrayOfDocuments() throws Exception {
+    void testUpdateSet_arrayOfDocuments() {
         collection.insertOne(json("_id: 1, foo: [{bar: 1}, {bar: 2}]"));
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$set: {'foo.bar': 3}")),
@@ -3104,7 +3104,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateSetOnInsert() throws Exception {
+    void testUpdateSetOnInsert() {
         Document object = json("_id: 1");
         collection.updateOne(object, json("$set: {b: 3}, $setOnInsert: {a: 3}"), new UpdateOptions().upsert(true));
         assertThat(collection.find().first()).isEqualTo(json("_id: 1, b: 3, a: 3"));
@@ -3114,7 +3114,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateSetWithArrayIndices() throws Exception {
+    void testUpdateSetWithArrayIndices() {
 
         // SERVER-181
 
@@ -3133,7 +3133,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateUnsetWithArrayIndices() throws Exception {
+    void testUpdateUnsetWithArrayIndices() {
 
         // SERVER-273
 
@@ -3149,7 +3149,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateMax() throws Exception {
+    void testUpdateMax() {
         Document object = json("_id: 1");
 
         collection.insertOne(object);
@@ -3177,7 +3177,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateMin() throws Exception {
+    void testUpdateMin() {
         Document object = json("_id: 1");
 
         collection.insertOne(object);
@@ -3208,7 +3208,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateMinMaxWithLists() throws Exception {
+    void testUpdateMinMaxWithLists() {
         collection.insertOne(json("_id: 1, a: [1, 2], b: [3, 4]"));
         collection.insertOne(json("_id: 2"));
         collection.insertOne(json("_id: 3, a: null, b: null"));
@@ -3240,7 +3240,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see http://docs.mongodb.org/manual/reference/operator/update/max
     @Test
-    void testUpdateMaxCompareNumbers() throws Exception {
+    void testUpdateMaxCompareNumbers() {
         Document object = json("_id: 1, highScore: 800, lowScore: 200");
 
         collection.insertOne(object);
@@ -3254,7 +3254,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see http://docs.mongodb.org/manual/reference/operator/update/max
     @Test
-    void testUpdateMaxCompareDates() throws Exception {
+    void testUpdateMaxCompareDates() {
         Document object = new Document("_id", 1).append("desc", "crafts")
             .append("dateEntered", instant("2013-10-01T05:00:00Z"))
             .append("dateExpired", instant("2013-10-01T16:38:16Z"));
@@ -3278,7 +3278,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see http://docs.mongodb.org/manual/reference/operator/update/min
     @Test
-    void testUpdateMinCompareNumbers() throws Exception {
+    void testUpdateMinCompareNumbers() {
         Document object = json("_id: 1, highScore: 800, lowScore: 200");
 
         collection.insertOne(object);
@@ -3292,7 +3292,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see http://docs.mongodb.org/manual/reference/operator/update/min
     @Test
-    void testUpdateMinCompareDates() throws Exception {
+    void testUpdateMinCompareDates() {
         Document object = new Document("_id", 1).append("desc", "crafts")
             .append("dateEntered", instant("2013-10-01T05:00:00Z"))
             .append("dateExpired", instant("2013-10-01T16:38:16Z"));
@@ -3315,7 +3315,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdatePop() throws Exception {
+    void testUpdatePop() {
         Document object = json("_id: 1");
 
         collection.insertOne(object);
@@ -3342,7 +3342,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateUnset() throws Exception {
+    void testUpdateUnset() {
         Document obj = json("_id: 1, a: 1, b: null, c: 'value'");
         collection.insertOne(obj);
         assertMongoWriteException(() -> collection.updateOne(obj, json("$unset: {_id: ''}")),
@@ -3376,7 +3376,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateMulti() throws Exception {
+    void testUpdateMulti() {
         collection.insertOne(json("a: 1"));
         collection.insertOne(json("a: 1"));
         UpdateResult result = collection.updateOne(json("a: 1"), json("$set: {b: 2}"));
@@ -3392,7 +3392,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateIllegalInt() throws Exception {
+    void testUpdateIllegalInt() {
         collection.insertOne(json("_id: 1, a: {x: 1}"));
 
         assertMongoWriteException(() -> collection.updateOne(json("_id: 1"), json("$inc: {a: 1}")),
@@ -3438,7 +3438,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateArrayMatch() throws Exception {
+    void testUpdateArrayMatch() {
 
         collection.insertOne(json("_id: 1, a: [{x: 1, y: 1}, {x: 2, y: 2}, {x: 3, y: 3}]"));
 
@@ -3455,7 +3455,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/85
     @Test
-    void testUpdateArrayMatch_MultipleFields() throws Exception {
+    void testUpdateArrayMatch_MultipleFields() {
         collection.insertOne(json("_id: 1, a: [{x: 1, y: 1}, {x: 2, y: 2}, {x: 3, y: 3}]"));
 
         collection.updateOne(json("'a.x': 2"),
@@ -3467,7 +3467,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/113
     @Test
-    void testUpdateArrayMatch_updateMany() throws Exception {
+    void testUpdateArrayMatch_updateMany() {
         collection.insertOne(json("_id: 1, grades: [{id: 1, value: 90}]"));
         collection.insertOne(json("_id: 2, grades: [{id: 1, value: 85}, {id: 2, value: 80}, {id: 3, value: 80}]"));
         collection.insertOne(json("_id: 3, grades: [{id: 1, value: 50}, {id: 1, value: 80}]"));
@@ -3486,7 +3486,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/232
     @Test
-    void testUpdateArrayMatch_ObjectId() throws Exception {
+    void testUpdateArrayMatch_ObjectId() {
         collection.insertOne(json("_id: 1")
             .append("myArray", List.of(new Document("_id", new ObjectId(123, 456)))));
 
@@ -3505,7 +3505,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/32
     @Test
-    void testUpdateWithNotAndSizeOperator() throws Exception {
+    void testUpdateWithNotAndSizeOperator() {
         collection.insertOne(json("_id: 1, array: ['a', 'b']"));
         collection.insertOne(json("_id: 2, array: ['b']"));
         collection.insertOne(json("_id: 3, array: ['a']"));
@@ -3521,7 +3521,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testMultiUpdateArrayMatch() throws Exception {
+    void testMultiUpdateArrayMatch() {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2, x: [1, 2, 3]"));
         collection.insertOne(json("_id: 3, x: 99"));
@@ -3553,7 +3553,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpsertFieldOrder() throws Exception {
+    void testUpsertFieldOrder() {
         collection.updateOne(json("'x.y': 2"), json("$inc: {a: 7}"), new UpdateOptions().upsert(true));
         Document obj = collection.find().first();
         obj.remove("_id");
@@ -3613,7 +3613,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpsertWithIdIn() throws Exception {
+    void testUpsertWithIdIn() {
         Document query = json("_id: {$in: [1]}");
         Document update = json("$push: {n: {_id: 2 ,u : 3}}, $inc: {c: 4}");
         Document expected = json("_id: 1, n: [{_id: 2 ,u : 3}], c: 4");
@@ -3630,7 +3630,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/62
     @Test
-    void testUpsertWithId() throws Exception {
+    void testUpsertWithId() {
         Document query = json("somekey: 'somevalue'");
         Document update = json("$set: { _id: 'someid', somekey: 'some value' }");
 
@@ -3645,7 +3645,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/62
     @Test
-    void testUpsertWithId_duplicateKey() throws Exception {
+    void testUpsertWithId_duplicateKey() {
         collection.insertOne(json("_id: 'someid', somekey: 'other value'"));
 
         Document query = json("somekey: 'some value'");
@@ -3657,7 +3657,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/93
     @Test
-    void testReplaceOneWithId() throws Exception {
+    void testReplaceOneWithId() {
         collection.replaceOne(json("_id: 1"), json("_id: 1, value: 'abc'"), new ReplaceOptions().upsert(true));
 
         assertThat(collection.find())
@@ -3677,7 +3677,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/154
     @Test
-    void testReplaceOneWithIdAndRevision() throws Exception {
+    void testReplaceOneWithIdAndRevision() {
         collection.insertOne(json("_id: 1, revision: 1"));
         collection.createIndex(json("revision: 1"));
 
@@ -3697,7 +3697,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testReplaceOneUpsertsWithGeneratedId() throws Exception {
+    void testReplaceOneUpsertsWithGeneratedId() {
         collection.replaceOne(json("value: 'abc'"), json("value: 'abc'"), new ReplaceOptions().upsert(true));
 
         assertThat(collection.find())
@@ -3710,7 +3710,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/227
     @Test
-    void testReplaceWithEmptyDocument() throws Exception {
+    void testReplaceWithEmptyDocument() {
         collection.insertOne(json("_id: 'myId', value: 'test'"));
 
         collection.replaceOne(json("_id: 'myId'"), json(""));
@@ -3721,7 +3721,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/41
     @Test
-    void testBulkUpsert() throws Exception {
+    void testBulkUpsert() {
         List<ReplaceOneModel<Document>> models = List.of(
             new ReplaceOneModel<>(Filters.eq("_id", 1), json("_id: 1, a: 1"), new ReplaceOptions().upsert(true)),
             new ReplaceOneModel<>(Filters.eq("_id", 2), json("_id: 2, a: 1"), new ReplaceOptions().upsert(true))
@@ -3761,7 +3761,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateWithMultiplyOperator() throws Exception {
+    void testUpdateWithMultiplyOperator() {
         Document object = json("_id: 1");
 
         collection.insertOne(object);
@@ -3774,7 +3774,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateWithIllegalMultiplyFails() throws Exception {
+    void testUpdateWithIllegalMultiplyFails() {
         Document object = json("_id: 1, foo: 'x', bar: 1");
 
         collection.insertOne(object);
@@ -3790,7 +3790,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testIsMaster() throws Exception {
+    void testIsMaster() {
         Document isMaster = runCommand("isMaster");
         assertThat(isMaster.getBoolean("ismaster")).isTrue();
         assertThat(isMaster.getDate("localTime")).isInstanceOf(Date.class);
@@ -3830,7 +3830,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertWithIllegalId() throws Exception {
+    void testInsertWithIllegalId() {
         assertMongoWriteException(() -> collection.insertOne(json("_id: [1, 2, 3]")),
             53, "InvalidIdField", "The '_id' value cannot be of type array");
     }
@@ -3854,7 +3854,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertBinaryData() throws Exception {
+    void testInsertBinaryData() {
         collection.insertOne(new Document("test", new byte[] { 0x01, 0x02, 0x03 }));
     }
 
@@ -3884,7 +3884,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUniqueIndexWithDeepDocuments() throws Exception {
+    public void testUniqueIndexWithDeepDocuments() {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -3915,7 +3915,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see https://github.com/bwaldvogel/mongo-java-server/issues/39
     @Test
-    void testSecondaryUniqueIndexUpdate() throws Exception {
+    void testSecondaryUniqueIndexUpdate() {
         collection.createIndex(json("text: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1, text: 'abc'"));
@@ -3945,7 +3945,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see https://github.com/bwaldvogel/mongo-java-server/issues/39
     @Test
-    public void testSecondarySparseUniqueIndex() throws Exception {
+    public void testSecondarySparseUniqueIndex() {
         collection.createIndex(json("text: 1"), new IndexOptions().unique(true).sparse(true));
 
         collection.insertOne(json("_id: 1, text: 'abc'"));
@@ -3975,7 +3975,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // see https://github.com/bwaldvogel/mongo-java-server/issues/39
     @Test
-    public void testCompoundSparseUniqueIndex() throws Exception {
+    public void testCompoundSparseUniqueIndex() {
         collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true).sparse(true));
 
         collection.insertOne(json("_id: 1, a: 10, b: 20"));
@@ -4002,7 +4002,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() throws Exception {
+    public void testCompoundSparseUniqueIndexOnEmbeddedDocuments() {
         collection.createIndex(json("'a.x': 1, 'b.x': 1"), new IndexOptions().unique(true).sparse(true));
 
         collection.insertOne(json("_id: 1, a: 10, b: 20"));
@@ -4037,7 +4037,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/90
     @Test
-    void testUpdateWithSparseUniqueIndex() throws Exception {
+    void testUpdateWithSparseUniqueIndex() {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true).sparse(true));
 
         collection.insertOne(json("_id: 1"));
@@ -4054,7 +4054,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testSparseUniqueIndexOnEmbeddedDocument() throws Exception {
+    public void testSparseUniqueIndexOnEmbeddedDocument() {
         collection.createIndex(json("'a.b.c': 1"), new IndexOptions().unique(true).sparse(true));
 
         collection.insertOne(json("a: 1"));
@@ -4089,7 +4089,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/201
     @Test
-    public void testUniqueIndexOnArrayField() throws Exception {
+    public void testUniqueIndexOnArrayField() {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1, a: ['val1', 'val2']"));
@@ -4129,7 +4129,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUniqueIndexOnArrayField_updates() throws Exception {
+    public void testUniqueIndexOnArrayField_updates() {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1, a: ['val1', 'val2']"));
@@ -4157,7 +4157,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testUniqueIndexOnArrayFieldInSubdocument() throws Exception {
+    public void testUniqueIndexOnArrayFieldInSubdocument() {
         collection.createIndex(json("'a.b': 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1, a: {b: ['val1', 'val2']}"));
@@ -4299,7 +4299,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/83
     @Test
-    void testAddUniqueIndexOnExistingDocuments() throws Exception {
+    void testAddUniqueIndexOnExistingDocuments() {
         collection.insertOne(json("_id: 1, value: 'a'"));
         collection.insertOne(json("_id: 2, value: 'b'"));
         collection.insertOne(json("_id: 3, value: 'c'"));
@@ -4313,7 +4313,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testAddUniqueIndexOnExistingDocuments_violatingUniqueness() throws Exception {
+    public void testAddUniqueIndexOnExistingDocuments_violatingUniqueness() {
         collection.insertOne(json("_id: 1, value: 'a'"));
         collection.insertOne(json("_id: 2, value: 'b'"));
         collection.insertOne(json("_id: 3, value: 'c'"));
@@ -4333,14 +4333,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testCursorOptionNoTimeout() throws Exception {
+    void testCursorOptionNoTimeout() {
         try (MongoCursor<Document> cursor = collection.find().noCursorTimeout(true).iterator()) {
             assertThat(cursor.hasNext()).isFalse();
         }
     }
 
     @Test
-    void testBulkInsert() throws Exception {
+    void testBulkInsert() {
         List<WriteModel<Document>> inserts = new ArrayList<>();
         inserts.add(new InsertOneModel<>(json("_id: 1")));
         inserts.add(new InsertOneModel<>(json("_id: 2")));
@@ -4351,7 +4351,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testLargeBulkInsert() throws Exception {
+    void testLargeBulkInsert() {
         List<WriteModel<Document>> inserts = new ArrayList<>();
         for (int i = 0; i < 1000; i++) {
             inserts.add(new InsertOneModel<>(new Document("_id", i + 1)
@@ -4363,7 +4363,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testBulkInsert_withDuplicate() throws Exception {
+    void testBulkInsert_withDuplicate() {
         collection.insertOne(json("_id: 2"));
 
         List<WriteModel<Document>> inserts = new ArrayList<>();
@@ -4384,7 +4384,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/142
     @Test
-    void testBulkInsert_unordered_withDuplicate() throws Exception {
+    void testBulkInsert_unordered_withDuplicate() {
         List<WriteModel<Document>> inserts = new ArrayList<>();
         inserts.add(new InsertOneModel<>(json("_id: 1")));
         inserts.add(new InsertOneModel<>(json("_id: 2")));
@@ -4409,12 +4409,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testBulkUpdateOrdered() throws Exception {
+    void testBulkUpdateOrdered() {
         testBulkUpdate(true);
     }
 
     @Test
-    void testBulkUpdateUnordered() throws Exception {
+    void testBulkUpdateUnordered() {
         testBulkUpdate(false);
     }
 
@@ -4425,7 +4425,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateCurrentDateIllegalTypeSpecification() throws Exception {
+    void testUpdateCurrentDateIllegalTypeSpecification() {
         Document object = json("_id: 1");
 
         collection.insertOne(object);
@@ -4446,7 +4446,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateCurrentDate() throws Exception {
+    void testUpdateCurrentDate() {
         Document object = json("_id: 1");
         collection.insertOne(object);
 
@@ -4464,7 +4464,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testRenameField() throws Exception {
+    void testRenameField() {
         Document object = json("_id: 1, foo: 'x', bar: 'y'");
         collection.insertOne(object);
 
@@ -4500,7 +4500,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testRenameFieldIllegalValue() throws Exception {
+    void testRenameFieldIllegalValue() {
         Document object = json("_id: 1, foo: 'x', bar: 'y'");
         collection.insertOne(object);
 
@@ -4521,7 +4521,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testRenameCollection() throws Exception {
+    void testRenameCollection() {
         collection.insertOne(json("_id: 1, a: 10"));
         collection.insertOne(json("_id: 2, a: 20"));
         collection.insertOne(json("_id: 3, a: 30"));
@@ -4546,7 +4546,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testRenameCollection_targetAlreadyExists() throws Exception {
+    void testRenameCollection_targetAlreadyExists() {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
         collection.insertOne(json("_id: 3"));
@@ -4566,7 +4566,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testRenameCollection_dropTarget() throws Exception {
+    void testRenameCollection_dropTarget() {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
         collection.insertOne(json("_id: 3"));
@@ -4591,12 +4591,12 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testListIndexes_empty() throws Exception {
+    void testListIndexes_empty() {
         assertThat(collection.listIndexes()).isEmpty();
     }
 
     @Test
-    void testListIndexes() throws Exception {
+    void testListIndexes() {
         collection.insertOne(json("_id: 1"));
         MongoCollection<Document> other = db.getCollection("other");
         other.insertOne(json("_id: 1"));
@@ -4696,7 +4696,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindAndOfOrs() throws Exception {
+    void testFindAndOfOrs() {
         collection.insertOne(new Document("_id", 1).append("published", true).append("startDate", instant("2015-03-01T13:20:05Z")));
         collection.insertOne(new Document("_id", 2).append("published", true).append("expiration", instant("2020-12-31T18:00:00Z")));
         collection.insertOne(new Document("_id", 3).append("published", true));
@@ -4739,7 +4739,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithReference() throws Exception {
+    void testQueryWithReference() {
         collection.insertOne(json("_id: 1"));
         String collectionName = getCollectionName();
         collection.insertOne(new Document("_id", 2).append("ref", new DBRef(collectionName, 1)));
@@ -4750,7 +4750,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithIllegalReference() throws Exception {
+    void testQueryWithIllegalReference() {
         collection.insertOne(json("_id: 1"));
         String collectionName = getCollectionName();
         collection.insertOne(new Document("_id", 2).append("ref", new DBRef(collectionName, 1)));
@@ -4762,7 +4762,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testAndOrNorWithEmptyArray() throws Exception {
+    void testAndOrNorWithEmptyArray() {
         collection.insertOne(json(""));
 
         assertThatExceptionOfType(MongoQueryException.class)
@@ -4779,7 +4779,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertLargeDocument() throws Exception {
+    void testInsertLargeDocument() {
         insertAndFindLargeDocument(100, 1);
         insertAndFindLargeDocument(1000, 2);
         insertAndFindLargeDocument(10000, 3);
@@ -4877,7 +4877,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testAllQuery() throws Exception {
+    void testAllQuery() {
         // see https://docs.mongodb.com/manual/reference/operator/query/all/
         collection.insertOne(new Document("_id", new ObjectId("5234cc89687ea597eabee675"))
             .append("code", "xyz")
@@ -4919,7 +4919,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testMatchesElementQuery() throws Exception {
+    void testMatchesElementQuery() {
         collection.insertOne(json("_id: 1, results: [82, 85, 88]"));
         collection.insertOne(json("_id: 2, results: [75, 88, 89]"));
 
@@ -4928,7 +4928,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testMatchesElementInEmbeddedDocuments() throws Exception {
+    void testMatchesElementInEmbeddedDocuments() {
         collection.insertOne(json("_id: 1, results: [{product: 'abc', score: 10}, {product: 'xyz', score: 5}]"));
         collection.insertOne(json("_id: 2, results: [{product: 'abc', score:  9}, {product: 'xyz', score: 7}]"));
         collection.insertOne(json("_id: 3, results: [{product: 'abc', score:  7}, {product: 'xyz', score: 8}]"));
@@ -4948,7 +4948,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/42
     @Test
-    void testElemMatchWithExpression() throws Exception {
+    void testElemMatchWithExpression() {
         collection.insertOne(json("_id: 1, languages: [{key: 'C'}, {key: 'Java'}]"));
         collection.insertOne(json("_id: 2, languages: [{key: 'Python'}]"));
         collection.insertOne(json("_id: 3, languages: [{key: 'C++'}, {key: 'C'}]"));
@@ -4972,7 +4972,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/97
     @Test
-    void testElemMatchAndAllQuery() throws Exception {
+    void testElemMatchAndAllQuery() {
         collection.insertOne(json("_id: 1, list: [{aa: 'bb'}, {cc: 'dd'}]"));
         collection.insertOne(json("_id: 2, list: [{aa: 'bb'}, {cc: 'ee'}]"));
         collection.insertOne(json("_id: 3, list: [{cc: 'dd'}]"));
@@ -5072,7 +5072,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/104
     @Test
-    void testQueryWithProjection_elemMatchAndPositionalOperator() throws Exception {
+    void testQueryWithProjection_elemMatchAndPositionalOperator() {
         collection.insertOne(json("_id: 1, states: [{state: 'A', key: 'abc'}, {state: 'B', key: 'efg'}]"));
         collection.insertOne(json("_id: 2, states: [{state: 'B', key: 'abc'}, {state: 'B', key: 'efg'}]"));
 
@@ -5082,7 +5082,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testProjectionWithExclusion() throws Exception {
+    void testProjectionWithExclusion() {
         collection.insertOne(json("_id: 1, states: [{state: 'A', key: 'abc'}, {state: 'B', key: 'efg'}]"));
         collection.insertOne(json("_id: 2, states: [{state: 'B', key: 'abc'}, {state: 'B', key: 'efg'}]"));
 
@@ -5103,7 +5103,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testProjectionWithSlice() throws Exception {
+    void testProjectionWithSlice() {
         collection.insertOne(json("_id: 1, values: ['a', 'b', 'c', 'd', 'e']"));
         collection.insertOne(json("_id: 2, values: 'xyz'"));
 
@@ -5154,7 +5154,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testMatchesNullOrMissing() throws Exception {
+    void testMatchesNullOrMissing() {
         collection.insertOne(json("_id: 1, x: null"));
         collection.insertOne(json("_id: 2"));
         collection.insertOne(json("_id: 3, x: 123"));
@@ -5167,7 +5167,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testIllegalElementMatchQuery() throws Exception {
+    void testIllegalElementMatchQuery() {
         collection.insertOne(json("_id: 1, results: [ 82, 85, 88 ]"));
 
         assertThatExceptionOfType(MongoQueryException.class)
@@ -5180,7 +5180,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithOperatorAndWithoutOperator() throws Exception {
+    void testQueryWithOperatorAndWithoutOperator() {
         collection.insertOne(json("_id: 1, x: {y: 23}"));
         collection.insertOne(json("_id: 2, x: 9"));
         collection.insertOne(json("_id: 3, x: 100"));
@@ -5195,7 +5195,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithComment() throws Exception {
+    void testQueryWithComment() {
         collection.insertOne(json("_id: 1, x: 2"));
         collection.insertOne(json("_id: 2, x: 3"));
         collection.insertOne(json("_id: 3, x: 4"));
@@ -5206,7 +5206,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testValidate() throws Exception {
+    void testValidate() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(new Document("validate", getCollectionName())))
             .withMessageStartingWith("Command failed with error 26 (NamespaceNotFound): " +
@@ -5223,7 +5223,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testGetLastError() throws Exception {
+    void testGetLastError() {
         collection.insertOne(json("_id: 1"));
 
         Document actual = db.runCommand(json("getlasterror: 1"));
@@ -5244,7 +5244,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testResetError() throws Exception {
+    public void testResetError() {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoWriteException.class)
@@ -5259,7 +5259,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testIllegalTopLevelOperator() throws Exception {
+    void testIllegalTopLevelOperator() {
         Document query = json("$illegalOperator: 1");
 
         collection.insertOne(json("_id: 1"));
@@ -5272,7 +5272,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testExprQuery() throws Exception {
+    void testExprQuery() {
         Document query = json("$expr: {$gt: ['$spent', '$budget']}");
 
         assertThat(collection.find(query)).isEmpty();
@@ -5298,7 +5298,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testExprQuery_IllegalFieldPath() throws Exception {
+    void testExprQuery_IllegalFieldPath() {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoQueryException.class)
@@ -5315,7 +5315,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryEmbeddedDocument() throws Exception {
+    void testQueryEmbeddedDocument() {
         collection.insertOne(json("_id: 1, b: null"));
         collection.insertOne(json("_id: 2, b: {c: null}"));
         collection.insertOne(json("_id: 3, b: {c: 123}"));
@@ -5360,7 +5360,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithEquivalentEmbeddedDocument() throws Exception {
+    void testQueryWithEquivalentEmbeddedDocument() {
         collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));
         collection.insertOne(json("_id:  2, a: {b: 1, c: 0.0}"));
         collection.insertOne(json("_id:  3, a: {b: 1.0, c: 0.0}"));
@@ -5388,7 +5388,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testOrderByMissingAndNull() throws Exception {
+    public void testOrderByMissingAndNull() {
         collection.insertOne(json("_id:  1, a: null"));
         collection.insertOne(json("_id:  2"));
         collection.insertOne(json("_id:  3, a: {b: 1}"));
@@ -5406,7 +5406,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testOrderByEmbeddedDocument() throws Exception {
+    public void testOrderByEmbeddedDocument() {
         collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));
         collection.insertOne(json("_id:  2, a: {b: 1, c: 0.0}"));
         collection.insertOne(json("_id:  3, a: {b: 1, c: null}"));
@@ -5448,7 +5448,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindByListValue() throws Exception {
+    void testFindByListValue() {
         collection.insertOne(json("_id: 1, a: [2, 1]"));
         collection.insertOne(json("_id: 2, a: [2, 1.0]"));
         collection.insertOne(json("_id: 3, a: [1, 2]"));
@@ -5469,7 +5469,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testFindAndOrderByWithListValues() throws Exception {
+    public void testFindAndOrderByWithListValues() {
         collection.insertOne(json("_id:  1, a: []"));
         collection.insertOne(json("_id:  2, a: null"));
         collection.insertOne(json("_id:  3, a: [2, 1]"));
@@ -5549,7 +5549,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testDistinctEmbeddedDocument() throws Exception {
+    void testDistinctEmbeddedDocument() {
         collection.insertOne(json("_id:  1, a: {b: 1, c: 0}"));
         collection.insertOne(json("_id:  2, a: {b: null}"));
         collection.insertOne(json("_id:  3, a: {b: 1, c: null}"));
@@ -5583,7 +5583,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testEmptyArrayQuery() throws Exception {
+    void testEmptyArrayQuery() {
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoQueryException.class)
@@ -5592,7 +5592,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testFindAllReferences() throws Exception {
+    void testFindAllReferences() {
         collection.insertOne(new Document("_id", 1).append("ref", new DBRef("coll1", 1)));
         collection.insertOne(new Document("_id", 2).append("ref", new DBRef("coll1", 2)));
         collection.insertOne(new Document("_id", 3).append("ref", new DBRef("coll2", 1)));
@@ -5605,7 +5605,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertAndQueryNegativeZero() throws Exception {
+    void testInsertAndQueryNegativeZero() {
         collection.insertOne(json("_id: 1, value: -0.0"));
         collection.insertOne(json("_id: 2, value: 0.0"));
         collection.insertOne(json("_id: 3, value: -0.0"));
@@ -5625,7 +5625,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUniqueIndexWithNegativeZero() throws Exception {
+    void testUniqueIndexWithNegativeZero() {
         collection.createIndex(json("value: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1, value: -0.0"));
@@ -5642,7 +5642,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/45
     @Test
-    public void testDecimal128() throws Exception {
+    public void testDecimal128() {
         collection.insertOne(json("_id: {'$numberDecimal': '1'}"));
         collection.insertOne(json("_id: {'$numberDecimal': '2'}"));
         collection.insertOne(json("_id: {'$numberDecimal': '3.0'}"));
@@ -5664,7 +5664,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/112
     @Test
-    public void testDecimal128_Inc() throws Exception {
+    public void testDecimal128_Inc() {
         collection.insertOne(json("_id: 1, value: {'$numberDecimal': '1'}"));
         collection.insertOne(json("_id: 2, value: {'$numberDecimal': '2'}"));
         collection.insertOne(json("_id: 3, value: {'$numberDecimal': '3.0'}"));
@@ -5693,7 +5693,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/45
     @Test
-    public void testArrayNe() throws Exception {
+    public void testArrayNe() {
         collection.insertOne(json("_id: 'a', values: [-1]"));
         collection.insertOne(json("_id: 'b', values: [0]"));
         collection.insertOne(json("_id: 'c', values: 1.0"));
@@ -5733,7 +5733,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/48
     @Test
-    void testExistsQuery() throws Exception {
+    void testExistsQuery() {
         collection.insertOne(json("_id: 1, a: {b: 1}"));
         collection.insertOne(json("_id: 2, a: null"));
         collection.insertOne(json("_id: 3, a: {b: null}"));
@@ -5764,7 +5764,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testExistsQueryWithArray() throws Exception {
+    void testExistsQueryWithArray() {
         collection.insertOne(json("_id: 1, a: {b: 1}"));
         collection.insertOne(json("_id: 2, a: ['X', 'Y', 'Z']"));
         collection.insertOne(json("_id: 3, a: [[1, 2], [3, 4]]"));
@@ -5805,7 +5805,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/53
     @Test
-    void testExistsQueryWithTrailingDot() throws Exception {
+    void testExistsQueryWithTrailingDot() {
         collection.insertOne(json("_id: 1, a: {b: 1}"));
         collection.insertOne(json("_id: 2, a: ['X', 'Y', 'Z']"));
         collection.insertOne(json("_id: 3, a: [[1, 2], [3, 4]]"));
@@ -5867,7 +5867,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/56
     @Test
-    public void testRegExQuery() throws Exception {
+    public void testRegExQuery() {
         collection.insertOne(json("_id: 'one', name: 'karl'"));
         collection.insertOne(json("_id: 'two', name: 'Karl'"));
         collection.insertOne(json("_id: 'Three', name: 'KARL'"));
@@ -5901,7 +5901,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/67
     @Test
-    public void testInsertAndFindJavaScriptContent() throws Exception {
+    public void testInsertAndFindJavaScriptContent() {
         collection.insertOne(new Document("_id", 1).append("data", new BsonJavaScript("int i = 0")));
 
         assertThat(collection.find(json("_id: 1")).first())
@@ -5988,7 +5988,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/76
     @Test
-    void testInsertWithoutId() throws Exception {
+    void testInsertWithoutId() {
         DocumentCodec documentCodec = Mockito.spy(new DocumentCodec());
         Mockito.doAnswer(AdditionalAnswers.returnsFirstArg()).when(documentCodec).generateIdIfAbsentFromDocument(Mockito.any());
 
@@ -6010,7 +6010,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testMultikeyIndex_simpleArrayValues() throws Exception {
+    public void testMultikeyIndex_simpleArrayValues() {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -6059,7 +6059,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCompoundMultikeyIndex_simpleArrayValues() throws Exception {
+    public void testCompoundMultikeyIndex_simpleArrayValues() {
         collection.createIndex(json("a: 1, b: 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -6088,7 +6088,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCompoundMultikeyIndex_threeKeys() throws Exception {
+    public void testCompoundMultikeyIndex_threeKeys() {
         collection.createIndex(json("b: 1, a: 1, c: 1"), new IndexOptions().unique(true));
 
         assertMongoWriteException(() -> collection.insertOne(json("b: [1, 2, 3], a: ['abc'], c: ['x', 'y']")),
@@ -6097,7 +6097,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/69
     @Test
-    public void testCompoundMultikeyIndex_documents() throws Exception {
+    public void testCompoundMultikeyIndex_documents() {
         collection.createIndex(json("item: 1, 'stock.size': 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -6122,7 +6122,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCompoundMultikeyIndex_multiple_document_keys() throws Exception {
+    public void testCompoundMultikeyIndex_multiple_document_keys() {
         collection.createIndex(json("item: 1, 'stock.size': 1, 'stock.color': 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -6145,7 +6145,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testCompoundMultikeyIndex_deepDocuments() throws Exception {
+    public void testCompoundMultikeyIndex_deepDocuments() {
         collection.createIndex(json("'a.b.c': 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("_id: 1"));
@@ -6263,7 +6263,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/82
     @Test
-    void testUpsertWithPositionalAll() throws Exception {
+    void testUpsertWithPositionalAll() {
         Document result = collection.findOneAndUpdate(json("_id: 1, a: [5, 8]"), json("$set: {'a.$[]': 1}"),
             new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.AFTER));
 
@@ -6286,7 +6286,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/216
     @ParameterizedTest
     @MethodSource("upsertWithNonMatchingFilterTestData")
-    void testUpsertAndFilterDoesNotMatch(String filter, String expectedDocument) throws Exception {
+    void testUpsertAndFilterDoesNotMatch(String filter, String expectedDocument) {
         collection.updateOne(json(filter),
             json("$set: {dummy: 'dummy'}"), new UpdateOptions().upsert(true));
 
@@ -6306,7 +6306,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @ParameterizedTest
     @MethodSource("upsertWithIllegalFilterTestData")
-    void testUpsertWithIllegalFilter(String filter, String expectedErrorMessage) throws Exception {
+    void testUpsertWithIllegalFilter(String filter, String expectedErrorMessage) {
         assertMongoWriteException(() -> {
             collection.updateOne(json(filter), json("$set: {dummy: 'dummy'}"), new UpdateOptions().upsert(true));
         }, 54, "NotSingleValueField", expectedErrorMessage);
@@ -6314,7 +6314,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/164
     @Test
-    void testFindOneAndUpdateWithReturnDocumentBeforeWhenDocumentDidNotExist() throws Exception {
+    void testFindOneAndUpdateWithReturnDocumentBeforeWhenDocumentDidNotExist() {
         Document result = collection.findOneAndUpdate(json("_id: 1, a: [5, 8]"), json("$set: {'a.$[]': 1}"),
             new FindOneAndUpdateOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
 
@@ -6323,7 +6323,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/164
     @Test
-    void testFindOneAndReplaceWithReturnDocumentBeforeWhenDocumentDidNotExist() throws Exception {
+    void testFindOneAndReplaceWithReturnDocumentBeforeWhenDocumentDidNotExist() {
         Document result = collection.findOneAndReplace(json("_id: 1"), json("_id: 1, a: [5, 8]"),
             new FindOneAndReplaceOptions().upsert(true).returnDocument(ReturnDocument.BEFORE));
 
@@ -6332,7 +6332,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/164
     @Test
-    void testFindOneAndUpdateWithReturnDocumentBeforeWhenDocumentExists() throws Exception {
+    void testFindOneAndUpdateWithReturnDocumentBeforeWhenDocumentExists() {
         collection.insertOne(json("_id: 1, a: [5, 8]"));
 
         Document result = collection.findOneAndUpdate(json("_id: 1, a: [5, 8]"), json("$set: {'a.$[]': 1}"),
@@ -6343,7 +6343,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/164
     @Test
-    void testFindOneAndReplaceWithReturnDocumentBeforeWhenDocumentExists() throws Exception {
+    void testFindOneAndReplaceWithReturnDocumentBeforeWhenDocumentExists() {
         collection.insertOne(json("_id: 1, a: [5, 8]"));
 
         Document result = collection.findOneAndReplace(json("_id: 1"), json("_id: 1, a: [3, 3]"),
@@ -6353,7 +6353,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testUpdateWithMultipleArrayFiltersInOnePath() throws Exception {
+    void testUpdateWithMultipleArrayFiltersInOnePath() {
         collection.insertOne(json("_id: 1, grades: [{value: 10, x: [1, 2]}, {value: 20, x: [3, 4]}]"));
 
         collection.findOneAndUpdate(
@@ -6427,7 +6427,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
     @Test
-    public void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
+    public void testGetKeyValues_multiKey_document_nested_objects() {
         collection.createIndex(json("'stock.size': 1, 'stock.quantity': 1"), new IndexOptions().unique(true));
 
         collection.insertOne(json("stock: [{size: 'S', quantity: 10}]"));
@@ -6458,7 +6458,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testComparisons() throws Exception {
+    void testComparisons() {
         collection.insertOne(json("_id: 1, a: 'x'"));
         collection.insertOne(json("_id: 2, a: 10"));
         collection.insertOne(json("_id: 3, a: 1"));
@@ -6554,7 +6554,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/140
     @Test
-    public void testMinMaxKeyRangeQuery() throws Exception {
+    public void testMinMaxKeyRangeQuery() {
         collection.insertOne(json("_id: {id1: 10, id2: 20}"));
         collection.insertOne(json("_id: {id1: 20, id2: 50}"));
         collection.insertOne(json("_id: {id1: 10, id2: 100}"));
@@ -6580,7 +6580,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    public void testOldAndNewUuidTypes() throws Exception {
+    public void testOldAndNewUuidTypes() {
         Document document1 = new Document("_id", UUID.fromString("5542cbb9-7833-96a2-b456-f13b6ae1bc80"));
 
         MongoClientSettings legacyUuidSettings = MongoClientSettings.builder()
@@ -6615,7 +6615,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @ParameterizedTest
     @EnumSource(UuidRepresentation.class)
-    void testUuidRepresentations(UuidRepresentation uuidRepresentation) throws Exception {
+    void testUuidRepresentations(UuidRepresentation uuidRepresentation) {
         assumeTrue(uuidRepresentation != UuidRepresentation.UNSPECIFIED);
         MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
@@ -6633,34 +6633,34 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testConnectionStatus() throws Exception {
+    void testConnectionStatus() {
         Document result = runCommand("connectionStatus");
         assertThat(result).isEqualTo(json("ok: 1.0, authInfo: {authenticatedUsers: [], authenticatedUserRoles: []}"));
     }
 
     @Test
-    void testHostInfo() throws Exception {
+    void testHostInfo() {
         Document result = runCommand("hostInfo");
         assertThat(result.get("ok")).isEqualTo(1.0);
         assertThat(result).containsKeys("os", "system", "extra");
     }
 
     @Test
-    void testGetCmdLineOpts() throws Exception {
+    void testGetCmdLineOpts() {
         Document result = runCommand("getCmdLineOpts");
         assertThat(result.get("ok")).isEqualTo(1.0);
         assertThat(result).containsOnlyKeys("ok", "argv", "parsed");
     }
 
     @Test
-    void testGetFreeMonitoringStatus() throws Exception {
+    void testGetFreeMonitoringStatus() {
         Document result = runCommand("getFreeMonitoringStatus");
         assertThat(result).isEqualTo(json("ok: 1.0, state: 'disabled', debug: {state: 'undecided'}," +
             " message: 'Free monitoring is deprecated, refer to \\'debug\\' field for actual status'"));
     }
 
     @Test
-    void testUpdateWithDollarFieldNames() throws Exception {
+    void testUpdateWithDollarFieldNames() {
         collection.insertOne(json("_id: 1"));
 
         collection.updateOne(json("_id: 1"), json("$set: {x: {$expr: {$add: ['$_id', 10]}}}"));
@@ -6695,7 +6695,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testQueryWithLargeLongValue() throws Exception {
+    void testQueryWithLargeLongValue() {
         collection.insertOne(new Document("_id", 223372036854775806L).append("name", "item 1"));
         collection.insertOne(new Document("_id", 223372036854775807L).append("name", "item 2"));
         collection.insertOne(new Document("_id", 223372036854775808L).append("name", "item 3"));
@@ -6769,7 +6769,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/197
     @Test
-    void testFindDocumentByNestedByArray() throws Exception {
+    void testFindDocumentByNestedByArray() {
         Document document1 = new Document("_id", new Binary(new byte[] { 0x20, 0x21, 0x22 }));
         Document document2 = new Document("_id", new Binary(new byte[] { 0x21, 0x22, 0x23 }));
 
@@ -6784,7 +6784,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
-    void testInsertDuplicate_byteArray() throws Exception {
+    void testInsertDuplicate_byteArray() {
         Document document = new Document("_id", new Binary(new byte[] { 0x20, 0x21, 0x22 }));
 
         collection.insertOne(document);
