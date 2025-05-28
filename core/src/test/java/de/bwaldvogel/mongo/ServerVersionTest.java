@@ -10,6 +10,7 @@ class ServerVersionTest {
     void testToVersionString() throws Exception {
         assertThat(ServerVersion.MONGO_3_6.toVersionString()).isEqualTo("3.6.0");
         assertThat(ServerVersion.MONGO_4_0.toVersionString()).isEqualTo("4.0.0");
+        assertThat(ServerVersion.MONGO_5_0.toVersionString()).isEqualTo("5.0.0");
     }
 
 }
