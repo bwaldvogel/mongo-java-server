@@ -17,7 +17,7 @@ allprojects {
     apply plugin: 'java-library'
     apply plugin: 'jacoco'
 
-    version = '1.47.0'
+    version = '1.48.0-SNAPSHOT'
 
     group = 'de.bwaldvogel'
 
