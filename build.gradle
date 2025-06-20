@@ -22,8 +22,8 @@ allprojects {
     group = 'de.bwaldvogel'
 
     java {
-        sourceCompatibility = '11'
-        targetCompatibility = '11'
+        sourceCompatibility = '17'
+        targetCompatibility = '17'
     }
 
     compileJava.options.encoding = 'UTF-8'
