@@ -62,8 +62,7 @@ public class UnwindStage implements AggregationStage {
                 } else {
                     return streamWithoutIndex();
                 }
-            } else if (values instanceof Collection) {
-                Collection<?> collection = (Collection<?>) values;
+            } else if (values instanceof Collection<?> collection) {
                 if (collection.isEmpty() && preserveNullAndEmptyArrays) {
                     Document documentClone = document.cloneDeeply();
                     Utils.removeSubdocumentValue(documentClone, path);

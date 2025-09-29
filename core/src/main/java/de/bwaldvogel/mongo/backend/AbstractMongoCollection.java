@@ -691,8 +691,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
                 continue;
             } else if (key.startsWith("$")) {
                 continue;
-            } else if (value instanceof Document) {
-                Document documentValue = (Document) value;
+            } else if (value instanceof Document documentValue) {
                 if (documentValue.keySet().equals(Set.of("$eq"))) {
                     changeSubdocumentValueOrThrow(document, key, documentValue.get("$eq"));
                 }

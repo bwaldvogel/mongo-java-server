@@ -111,11 +111,9 @@ public class MergeStage extends TerminalStage {
                                                                             MongoDatabase database,
                                                                             Document paramsDocument) {
         Object into = paramsDocument.get("into");
-        if (into instanceof String) {
-            String collectionName = (String) into;
+        if (into instanceof String collectionName) {
             return () -> resolveOrCreateCollection(database, collectionName);
-        } else if (into instanceof Document) {
-            Document intoDocument = (Document) into;
+        } else if (into instanceof Document intoDocument) {
             for (String intoKey : intoDocument.keySet()) {
                 if (!intoKey.equals("db") && !intoKey.equals("coll")) {
                     throw new MongoServerError(40415, "BSON field 'into." + intoKey + "' is an unknown field.");
@@ -150,8 +148,7 @@ public class MergeStage extends TerminalStage {
         Object on = paramsDocument.getOrDefault("on", "_id");
         if (on instanceof String) {
             return Set.of((String) on);
-        } else if (on instanceof Collection) {
-            Collection<?> collection = (Collection<?>) on;
+        } else if (on instanceof Collection<?> collection) {
             if (collection.isEmpty()) {
                 throw new MongoServerError(51187, "If explicitly specifying $merge 'on', must include at least one field");
             }
@@ -179,8 +176,7 @@ public class MergeStage extends TerminalStage {
             } catch (IllegalArgumentException e) {
                 throw new BadValueException("Enumeration value '" + whenMatched + "' for field 'whenMatched' is not a valid value.");
             }
-        } else if (whenMatched instanceof Collection) {
-            Collection<?> pipeline = (Collection<?>) whenMatched;
+        } else if (whenMatched instanceof Collection<?> pipeline) {
             for (Object pipelineElement : pipeline) {
                 if (!(pipelineElement instanceof Document)) {
                     throw new TypeMismatchException("Each element of the 'pipeline' array must be an object");

@@ -134,9 +134,7 @@ public class ValueComparator implements Comparator<Object> {
             return ((ObjectId) value1).compareTo((ObjectId) value2);
         }
 
-        if (value1 instanceof Decimal128 && value2 instanceof Decimal128) {
-            Decimal128 decimal1 = (Decimal128) value1;
-            Decimal128 decimal2 = (Decimal128) value2;
+        if (value1 instanceof Decimal128 decimal1 && value2 instanceof Decimal128 decimal2) {
             return decimal1.compareTo(decimal2);
         }
 

@@ -865,8 +865,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Document error = new Document();
         error.put("index", index);
         error.put("errmsg", e.getMessageWithoutErrorCode());
-        if (e instanceof MongoServerError) {
-            MongoServerError err = (MongoServerError) e;
+        if (e instanceof MongoServerError err) {
             error.put("code", Integer.valueOf(err.getCode()));
             error.putIfNotNull("codeName", err.getCodeName());
         }
@@ -876,8 +875,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private Document toError(Channel channel, MongoServerException ex) {
         Document error = new Document();
         error.put("err", ex.getMessageWithoutErrorCode());
-        if (ex instanceof MongoServerError) {
-            MongoServerError err = (MongoServerError) ex;
+        if (ex instanceof MongoServerError err) {
             error.put("code", Integer.valueOf(err.getCode()));
             error.putIfNotNull("codeName", err.getCodeName());
         }

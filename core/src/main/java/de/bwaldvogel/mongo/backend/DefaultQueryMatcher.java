@@ -59,8 +59,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 QueryOperator queryOperator = QueryOperator.fromValue(operator);
                 if (queryOperator == QueryOperator.TYPE) {
                     Object value = queryObject.get(operator);
-                    if (value instanceof Collection) {
-                        Collection<?> values = (Collection<?>) value;
+                    if (value instanceof Collection<?> values) {
                         if (values.isEmpty()) {
                             throw new FailedToParseException(key + " must match at least one type");
                         }
@@ -134,8 +133,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 return checkMatchesValue(queryValue, value);
             }
 
-            if (queryValue instanceof Document) {
-                Document query = (Document) queryValue;
+            if (queryValue instanceof Document query) {
                 if (query.containsKey(QueryOperator.ALL.getValue())) {
                     Object allQuery = query.get(QueryOperator.ALL.getValue());
                     return checkMatchesAllDocuments(allQuery, keys, value);
@@ -171,10 +169,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return checkMatchesValue(queryValue, Missing.getInstance());
         }
 
-        if (documentValue instanceof Collection<?>) {
-            Collection<?> documentValues = (Collection<?>) documentValue;
-            if (queryValue instanceof Document) {
-                Document queryDocument = (Document) queryValue;
+        if (documentValue instanceof Collection<?> documentValues) {
+            if (queryValue instanceof Document queryDocument) {
                 boolean matches = checkMatchesAnyValue(queryDocument, keys, document, documentValues);
                 if (matches) {
                     return true;
@@ -338,9 +334,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
         }
 
-        if (queryValue instanceof Document) {
-            Document queryObject = (Document) queryValue;
-
+        if (queryValue instanceof Document queryObject) {
             if (queryObject.keySet().equals(Constants.REFERENCE_KEYS)) {
                 if (value instanceof Document) {
                     return matches((Document) value, queryObject);
@@ -412,8 +406,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkMatchesAnyValue(Object queryValue, Collection<?> values) {
-        if (queryValue instanceof Document) {
-            Document queryDocument = (Document) queryValue;
+        if (queryValue instanceof Document queryDocument) {
             if (queryDocument.keySet().equals(Set.of(QueryOperator.ELEM_MATCH.getValue()))) {
                 queryValue = queryDocument.get(QueryOperator.ELEM_MATCH.getValue());
             }
@@ -445,13 +438,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
             case IN:
                 Collection<?> queriedObjects = (Collection<?>) expressionValue;
                 for (Object o : queriedObjects) {
-                    if (o instanceof BsonRegularExpression && value instanceof String) {
-                        BsonRegularExpression pattern = (BsonRegularExpression) o;
-                        if (pattern.matcher((String) value).find()) {
+                    if (o instanceof BsonRegularExpression pattern && value instanceof String strValue) {
+                        if (pattern.matcher(strValue).find()) {
                             return true;
                         }
-                    } else if (value instanceof Collection && !(o instanceof Collection)) {
-                        Collection<?> values = (Collection<?>) value;
+                    } else if (value instanceof Collection<?> values && !(o instanceof Collection)) {
                         return values.stream().anyMatch(v -> Utils.nullAwareEquals(o, v));
                     } else if (Utils.nullAwareEquals(o, value)) {
                         return true;
@@ -533,8 +524,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             return matchTypes(value, BsonType.forString((String) expressionValue));
         } else if (expressionValue instanceof Number) {
             return matchTypes(value, BsonType.forNumber((Number) expressionValue));
-        } else if (expressionValue instanceof Collection) {
-            Collection<?> values = (Collection<?>) expressionValue;
+        } else if (expressionValue instanceof Collection<?> values) {
             for (Object type : values) {
                 if (matchTypes(value, type)) {
                     return true;

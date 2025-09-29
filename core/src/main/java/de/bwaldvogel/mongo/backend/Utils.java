@@ -60,8 +60,7 @@ public class Utils {
         Object subObject = getFieldValueListSafe(document, mainKey);
         if (subObject instanceof Document) {
             return getSubdocumentValue((Document) subObject, subKey, handleCollections);
-        } else if (handleCollections && subObject instanceof Collection) {
-            Collection<?> values = (Collection<?>) subObject;
+        } else if (handleCollections && subObject instanceof Collection<?> values) {
             List<Object> result = new ArrayList<>();
             for (Object o : values) {
                 if (o instanceof Document) {
@@ -125,8 +124,7 @@ public class Utils {
                 result.put(entry.getKey(), normalizeValue(entry.getValue()));
             }
             return result;
-        } else if (value instanceof Collection<?>) {
-            Collection<?> collection = (Collection<?>) value;
+        } else if (value instanceof Collection<?> collection) {
             return collection.stream()
                 .map(Utils::normalizeValue)
                 .collect(Collectors.toList());
@@ -212,8 +210,7 @@ public class Utils {
             throw new IllegalArgumentException("illegal field: " + field);
         }
 
-        if (value instanceof List<?>) {
-            List<?> list = (List<?>) value;
+        if (value instanceof List<?> list) {
             if (isNumeric(field)) {
                 int pos = Integer.parseInt(field);
                 if (pos >= 0 && pos < list.size()) {
@@ -236,8 +233,7 @@ public class Utils {
                 }
                 return values;
             }
-        } else if (value instanceof Document) {
-            Document document = (Document) value;
+        } else if (value instanceof Document document) {
             return document.getOrMissing(field);
         } else {
             return Missing.getInstance();
@@ -305,10 +301,9 @@ public class Utils {
             throw new IllegalArgumentException("illegal field: " + field);
         }
 
-        if (document instanceof List<?>) {
+        if (document instanceof List<?> list) {
             if (isNumeric(field)) {
                 int pos = Integer.parseInt(field);
-                List<?> list = (List<?>) document;
                 return (pos >= 0 && pos < list.size());
             } else {
                 return false;
@@ -344,14 +339,12 @@ public class Utils {
     }
 
     private static Object removeListSafe(Object value, String key) {
-        if (value instanceof Document) {
-            Document document = (Document) value;
+        if (value instanceof Document document) {
             if (document.containsKey(key)) {
                 return document.remove(key);
             }
             return Missing.getInstance();
-        } else if (value instanceof List<?>) {
-            List<?> values = ((List<?>) value);
+        } else if (value instanceof List<?> values) {
             if (isNumeric(key)) {
                 int pos = Integer.parseInt(key);
                 if (values.size() > pos) {
@@ -367,8 +360,7 @@ public class Utils {
                         if (!(removedValue instanceof Missing)) {
                             removedValues.add(removedValue);
                         }
-                    } else if (subValue instanceof List) {
-                        List<?> subValueList = (List<?>) subValue;
+                    } else if (subValue instanceof List<?> subValueList) {
                         for (Object subValueListValue : subValueList) {
                             Object removedValue = removeListSafe(subValueListValue, key);
                             if (!(removedValue instanceof Missing)) {
@@ -427,8 +419,7 @@ public class Utils {
     }
 
     private static void validateFieldNames(Object value, String path) {
-        if (value instanceof Document) {
-            Document document = (Document) value;
+        if (value instanceof Document document) {
             for (Entry<String, Object> entry : document.entrySet()) {
                 String key = entry.getKey();
                 String nextPath = path != null ? path + "." + key : key;
@@ -436,8 +427,7 @@ public class Utils {
                     throw new DollarPrefixedFieldNameException("The dollar ($) prefixed field '" + key + "' in '" + nextPath + "' is not allowed in the context of an update's replacement document. Consider using an aggregation pipeline with $replaceWith.");
                 }
             }
-        } else if (value instanceof Collection<?>) {
-            Collection<?> values = (Collection<?>) value;
+        } else if (value instanceof Collection<?> values) {
             for (Object object : values) {
                 validateFieldNames(object, path + ".");
             }

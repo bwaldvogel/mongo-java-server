@@ -68,8 +68,7 @@ public final class CollectionUtils {
     }
 
     static <T> T getElementAtPosition(Iterable<T> iterable, int pos) {
-        if (iterable instanceof List) {
-            List<T> list = (List<T>) iterable;
+        if (iterable instanceof List<T> list) {
             return list.get(pos);
         } else {
             Iterator<T> iterator = iterable.iterator();

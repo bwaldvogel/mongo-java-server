@@ -112,8 +112,7 @@ interface ExpressionTraits {
 
     default ZonedDateTime getZonedDateTime(Object value, Document document) {
         ZoneId timezone = ZoneId.systemDefault();
-        if (value instanceof Document) {
-            Document valueAsDocument = (Document) value;
+        if (value instanceof Document valueAsDocument) {
             if (!valueAsDocument.containsKey("date")) {
                 throw new MongoServerError(40539, "missing 'date' argument to " + name() + ", provided: " + value);
             }

@@ -76,8 +76,7 @@ public enum Expression implements ExpressionTraits {
                     throw new MongoServerError(16554,
                         name() + " only supports numeric or date types, not " + describeType(number));
                 }
-                if (number instanceof Instant) {
-                    Instant instant = (Instant) number;
+                if (number instanceof Instant instant) {
                     number = instant.toEpochMilli();
                     returnDate = true;
                 }
@@ -179,8 +178,7 @@ public enum Expression implements ExpressionTraits {
             }
             Document result = new Document();
             for (Object keyValueObject : (Collection<?>) values) {
-                if (keyValueObject instanceof List) {
-                    List<?> keyValue = (List<?>) keyValueObject;
+                if (keyValueObject instanceof List<?> keyValue) {
                     if (keyValue.size() != 2) {
                         throw new FailedToOptimizePipelineError(40397, name() + " requires an array of size 2 arrays,found array of size: " + keyValue.size());
                     }
@@ -191,8 +189,7 @@ public enum Expression implements ExpressionTraits {
                     String key = (String) keyObject;
                     Object value = keyValue.get(1);
                     result.put(key, value);
-                } else if (keyValueObject instanceof Document) {
-                    Document keyValue = (Document) keyValueObject;
+                } else if (keyValueObject instanceof Document keyValue) {
                     if (keyValue.size() != 2) {
                         throw new FailedToOptimizePipelineError(40392, name() + " requires an object keys of 'k' and 'v'. Found incorrect number of keys:" + keyValue.size());
                     }
@@ -300,8 +297,7 @@ public enum Expression implements ExpressionTraits {
             final Object thenExpression;
             final Object elseExpression;
 
-            if (expressionValue.size() == 1 && CollectionUtils.getSingleElement(expressionValue) instanceof Document) {
-                Document condDocument = (Document) CollectionUtils.getSingleElement(expressionValue);
+            if (expressionValue.size() == 1 && CollectionUtils.getSingleElement(expressionValue) instanceof Document condDocument) {
                 List<String> requiredKeys = asList("if", "then", "else");
                 for (String requiredKey : requiredKeys) {
                     if (!condDocument.containsKey(requiredKey)) {
@@ -1528,8 +1524,7 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number) {
-                Number number = (Number) value;
+            } else if (value instanceof Number number) {
                 return number.doubleValue() != 0.0;
             } else if (value instanceof Boolean) {
                 return (Boolean) value;
@@ -1553,8 +1548,7 @@ public enum Expression implements ExpressionTraits {
                 return Instant.ofEpochMilli(number.longValue());
             } else if (value instanceof Instant) {
                 return (Instant) value;
-            } else if (value instanceof String) {
-                String dateString = (String) value;
+            } else if (value instanceof String dateString) {
                 try {
                     return Instant.parse(dateString);
                 } catch (DateTimeParseException e1) {
@@ -1587,17 +1581,13 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number) {
-                Number number = (Number) value;
+            } else if (value instanceof Number number) {
                 return number.doubleValue();
-            } else if (value instanceof Boolean) {
-                Boolean booleanValue = (Boolean) value;
+            } else if (value instanceof Boolean booleanValue) {
                 return booleanValue.booleanValue() ? 1.0 : 0.0;
-            } else if (value instanceof Instant) {
-                Instant instant = (Instant) value;
+            } else if (value instanceof Instant instant) {
                 return (double) instant.toEpochMilli();
-            } else if (value instanceof String) {
-                String string = (String) value;
+            } else if (value instanceof String string) {
                 try {
                     return Double.valueOf(string);
                 } catch (NumberFormatException e) {
@@ -1616,14 +1606,11 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number) {
-                Number number = (Number) value;
+            } else if (value instanceof Number number) {
                 return number.intValue();
-            } else if (value instanceof Boolean) {
-                Boolean booleanValue = (Boolean) value;
+            } else if (value instanceof Boolean booleanValue) {
                 return booleanValue.booleanValue() ? 1 : 0;
-            } else if (value instanceof String) {
-                String string = (String) value;
+            } else if (value instanceof String string) {
                 try {
                     return Integer.valueOf(string);
                 } catch (NumberFormatException e) {
@@ -1642,17 +1629,13 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number) {
-                Number number = (Number) value;
+            } else if (value instanceof Number number) {
                 return number.longValue();
-            } else if (value instanceof Boolean) {
-                Boolean booleanValue = (Boolean) value;
+            } else if (value instanceof Boolean booleanValue) {
                 return booleanValue.booleanValue() ? 1L : 0L;
-            } else if (value instanceof Instant) {
-                Instant instant = (Instant) value;
+            } else if (value instanceof Instant instant) {
                 return instant.toEpochMilli();
-            } else if (value instanceof String) {
-                String string = (String) value;
+            } else if (value instanceof String string) {
                 try {
                     return Long.valueOf(string);
                 } catch (NumberFormatException e) {
@@ -1678,8 +1661,7 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof String) {
-                String string = (String) value;
+            } else if (value instanceof String string) {
                 try {
                     return new ObjectId(string);
                 } catch (RuntimeException e) {
@@ -1750,8 +1732,7 @@ public enum Expression implements ExpressionTraits {
 
     public static Object evaluateDocument(Object documentWithExpression, Document document) {
         Object evaluatedValue = evaluate(documentWithExpression, document);
-        if (evaluatedValue instanceof Document) {
-            Document projectedDocument = (Document) evaluatedValue;
+        if (evaluatedValue instanceof Document projectedDocument) {
             Document result = new Document();
             for (Entry<String, Object> entry : projectedDocument.entrySet()) {
                 String field = entry.getKey();
@@ -1792,8 +1773,7 @@ public enum Expression implements ExpressionTraits {
                     }
                 }
 
-                if (variableValue instanceof String) {
-                    String variableValueString = (String) variableValue;
+                if (variableValue instanceof String variableValueString) {
                     if (variableValueString.startsWith("$")) {
                         variableValue = evaluate(variableValue, document);
                     }

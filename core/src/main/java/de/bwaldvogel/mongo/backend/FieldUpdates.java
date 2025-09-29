@@ -140,8 +140,7 @@ class FieldUpdates {
         Integer slice = null;
         Comparator<Object> comparator = null;
         int position = existingValue.size();
-        if (changeValue instanceof Document && ((Document) changeValue).containsKey("$each")) {
-            Document pushDocument = (Document) changeValue;
+        if (changeValue instanceof Document pushDocument && pushDocument.containsKey("$each")) {
             for (Entry<String, Object> entry : pushDocument.entrySet()) {
                 String modifier = entry.getKey();
                 switch (modifier) {
@@ -228,8 +227,7 @@ class FieldUpdates {
                 "Cannot apply $addToSet to non-array field. Field named '" + key + "' has non-array type " + describeType(value)));
 
         Collection<Object> pushValues = new ArrayList<>();
-        if (changeValue instanceof Document && ((Document) changeValue).keySet().iterator().next().equals("$each")) {
-            Document addToSetDocument = (Document) changeValue;
+        if (changeValue instanceof Document addToSetDocument && addToSetDocument.keySet().iterator().next().equals("$each")) {
             for (String modifier : addToSetDocument.keySet()) {
                 if (!modifier.equals("$each")) {
                     throw new BadValueException("Found unexpected fields after $each in $addToSet: " + addToSetDocument.toString(true, "{ ", " }"));

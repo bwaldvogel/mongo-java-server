@@ -108,8 +108,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
         Document obj = new Document();
         obj.put("$err", exception.getMessageWithoutErrorCode());
         obj.put("errmsg", exception.getMessageWithoutErrorCode());
-        if (exception instanceof MongoServerError) {
-            MongoServerError error = (MongoServerError) exception;
+        if (exception instanceof MongoServerError error) {
             obj.put("code", error.getCode());
             obj.putIfNotNull("codeName", error.getCodeName());
         }

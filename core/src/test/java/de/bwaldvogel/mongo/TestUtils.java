@@ -34,8 +34,7 @@ public class TestUtils {
             Map<String, Object> mapValue = (Map<String, Object>) value;
             return toDocument(mapValue);
         }
-        if (value instanceof Collection<?>) {
-            Collection<?> collection = (Collection<?>) value;
+        if (value instanceof Collection<?> collection) {
             return collection.stream()
                 .map(TestUtils::convertValue)
                 .collect(Collectors.toList());
