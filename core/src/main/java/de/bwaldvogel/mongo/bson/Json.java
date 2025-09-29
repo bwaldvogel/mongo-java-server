@@ -34,16 +34,13 @@ public final class Json {
         if (value instanceof String) {
             return "\"" + escapeJson((String) value) + "\"";
         }
-        if (value instanceof Document) {
-            Document document = (Document) value;
+        if (value instanceof Document document) {
             return document.toString(compactKey, jsonPrefix, jsonSuffix);
         }
-        if (value instanceof Instant) {
-            Instant instant = (Instant) value;
+        if (value instanceof Instant instant) {
             return toJsonValue(instant.toString());
         }
-        if (value instanceof Collection) {
-            Collection<?> collection = (Collection<?>) value;
+        if (value instanceof Collection<?> collection) {
             if (collection.isEmpty()) {
                 return "[]";
             }
@@ -51,20 +48,17 @@ public final class Json {
                 .map(v -> toJsonValue(v, compactKey, "{ ", " }"))
                 .collect(Collectors.joining(", ", "[ ", " ]"));
         }
-        if (value instanceof ObjectId) {
-            ObjectId objectId = (ObjectId) value;
+        if (value instanceof ObjectId objectId) {
             return objectId.getHexData();
         }
-        if (value instanceof BinData) {
-            BinData binData = (BinData) value;
+        if (value instanceof BinData binData) {
             return "BinData(0, " + toHex(binData.getData()) + ")";
         }
         if (value instanceof LegacyUUID) {
             UUID uuid = ((LegacyUUID) value).getUuid();
             return "BinData(3, " + toHex(uuid) + ")";
         }
-        if (value instanceof UUID) {
-            UUID uuid = (UUID) value;
+        if (value instanceof UUID uuid) {
             return "UUID(\"" + uuid + "\")";
         }
         return toJsonValue(value.toString());

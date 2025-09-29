@@ -202,11 +202,10 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                     }
                 }
                 return positions;
-            } else if (queriedValue instanceof Document) {
+            } else if (queriedValue instanceof Document keyObj) {
                 if (isCompoundIndex()) {
                     throw new UnsupportedOperationException("Not yet implemented");
                 }
-                Document keyObj = (Document) queriedValue;
                 if (Utils.containsQueryExpression(keyObj)) {
                     String expression = CollectionUtils.getSingleElement(keyObj.keySet(),
                         () -> new UnsupportedOperationException("illegal query key: " + queriedKeyValues));
@@ -215,8 +214,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                         return getPositionsForExpression(keyObj, expression);
                     }
                 }
-            } else if (queriedValue instanceof Collection) {
-                Collection<?> values = (Collection<?>) queriedValue;
+            } else if (queriedValue instanceof Collection<?> values) {
                 return values.stream()
                     .map(KeyValue::new)
                     .map(this::getPosition)

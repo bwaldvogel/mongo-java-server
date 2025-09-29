@@ -113,8 +113,7 @@ class Projection {
             if (object instanceof Document) {
                 Document newsubDocument = (Document) newDocument.computeIfAbsent(mainKey, k -> new Document());
                 projectField((Document) object, newsubDocument, subKey, projectionValue);
-            } else if (object instanceof List) {
-                List<?> values = (List<?>) object;
+            } else if (object instanceof List<?> values) {
                 List<Object> newprojectedValues = (List<Object>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
 
                 if ("$".equals(subKey) && !values.isEmpty()) {
@@ -153,8 +152,7 @@ class Projection {
         } else {
             Object value = document.getOrMissing(key);
 
-            if (projectionValue instanceof Document) {
-                Document projectionDocument = (Document) projectionValue;
+            if (projectionValue instanceof Document projectionDocument) {
                 if (projectionDocument.keySet().equals(Set.of(QueryOperator.ELEM_MATCH.getValue()))) {
                     Document elemMatch = (Document) projectionDocument.get(QueryOperator.ELEM_MATCH.getValue());
                     projectElemMatch(newDocument, elemMatch, key, value);
@@ -202,8 +200,7 @@ class Projection {
             } else {
                 toIndex = num;
             }
-        } else if (slice instanceof List) {
-            List<?> sliceParams = (List<?>) slice;
+        } else if (slice instanceof List<?> sliceParams) {
             if (sliceParams.size() != 2) {
                 throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: int");
             }
