@@ -43,6 +43,7 @@ import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.NumericUtils;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
+import de.bwaldvogel.mongo.bson.Decimal128;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.BadValueException;
@@ -769,6 +770,17 @@ public enum Expression implements ExpressionTraits {
         Object apply(List<?> expressionValue, Document document) {
             Object value = requireSingleValue(expressionValue);
             return (value instanceof List);
+        }
+    },
+
+    $isNumber {
+        @Override
+        Boolean apply(List<?> expressionValue, Document document) {
+            Object value = requireSingleValue(expressionValue);
+            return (value instanceof Integer ||
+                value instanceof Decimal128 ||
+                value instanceof Double ||
+                value instanceof Long);
         }
     },
 
