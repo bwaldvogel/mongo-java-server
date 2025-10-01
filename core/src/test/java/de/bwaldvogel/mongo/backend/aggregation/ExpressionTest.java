@@ -1782,6 +1782,18 @@ class ExpressionTest {
     }
 
     @Test
+    void testEvaluateIsNumber() throws Exception {
+        assertThat(Expression.evaluate(json("$isNumber: ['hello']"), json(""))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$isNumber: 'pi'}"), json(""))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$isNumber: null"), json(""))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$isNumber: '$value'"), json("value: 'a'"))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$isNumber: '$value'"), json("value: ['abc']"))).isEqualTo(false);
+        assertThat(Expression.evaluate(json("$isNumber: '$value'"), json("value: 1"))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$isNumber: '$value'"), json("value: 2.0"))).isEqualTo(true);
+        assertThat(Expression.evaluate(json("$isNumber: '$value'"), json("value: 3.141592653589793"))).isEqualTo(true);
+    }
+
+    @Test
     void testEvaluateLiteral() throws Exception {
         assertThat(Expression.evaluate(json("$literal: {$add: [2, 3]}"), json(""))).isEqualTo(json("$add: [2, 3]"));
         assertThat(Expression.evaluate(json("$literal: {$literal: 1}"), json(""))).isEqualTo(json("$literal: 1"));
