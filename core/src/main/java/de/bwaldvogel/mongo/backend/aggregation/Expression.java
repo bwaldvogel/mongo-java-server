@@ -388,33 +388,16 @@ public enum Expression implements ExpressionTraits {
 
         private Object convert(Object inputValue, BsonType bsonType, Document document, Document convertDocument) {
             try {
-                switch (bsonType) {
-                    case DOUBLE:
-                        return $toDouble.apply(inputValue, document);
-                    case STRING:
-                        return $toString.apply(inputValue, document);
-                    case OBJECT_ID:
-                        return $toObjectId.apply(inputValue, document);
-                    case BOOL:
-                        return $toBool.apply(inputValue, document);
-                    case DATE:
-                        return $toDate.apply(inputValue, document);
-                    case INT:
-                        return $toInt.apply(inputValue, document);
-                    case LONG:
-                        return $toLong.apply(inputValue, document);
-                    case OBJECT:
-                    case ARRAY:
-                    case BIN_DATA:
-                    case NULL:
-                    case REGEX:
-                    case TIMESTAMP:
-                    case DECIMAL128:
-                    case MIN_KEY:
-                    case MAX_KEY:
-                    default:
-                        throw new UnsupportedOperationException("Unsupported conversion to type " + bsonType);
-                }
+                return switch (bsonType) {
+                    case DOUBLE -> $toDouble.apply(inputValue, document);
+                    case STRING -> $toString.apply(inputValue, document);
+                    case OBJECT_ID -> $toObjectId.apply(inputValue, document);
+                    case BOOL -> $toBool.apply(inputValue, document);
+                    case DATE -> $toDate.apply(inputValue, document);
+                    case INT -> $toInt.apply(inputValue, document);
+                    case LONG -> $toLong.apply(inputValue, document);
+                    default -> throw new UnsupportedOperationException("Unsupported conversion to type " + bsonType);
+                };
             } catch (MongoServerError e) {
                 if (e.hasCode(ErrorCode.ConversionFailure)) {
                     if (convertDocument.containsKey("onError")) {
