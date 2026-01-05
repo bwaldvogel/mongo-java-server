@@ -284,10 +284,10 @@ public enum Expression implements ExpressionTraits {
         Object apply(Object expressionValue, Document document) {
             // document values need to be evaluated lazily
             List<Object> values = new ArrayList<>();
-            if (!(expressionValue instanceof Collection)) {
-                values.add(expressionValue);
+            if (expressionValue instanceof Collection<?> collectionValue) {
+                values.addAll(collectionValue);
             } else {
-                values.addAll(((Collection<?>) expressionValue));
+                values.add(expressionValue);
             }
             return apply(values, document);
         }
@@ -370,10 +370,10 @@ public enum Expression implements ExpressionTraits {
 
         private BsonType getBsonType(Object to) {
             try {
-                if (to instanceof String) {
-                    return BsonType.forString((String) to);
-                } else if (to instanceof Integer) {
-                    return BsonType.forNumber((Integer) to);
+                if (to instanceof String toString) {
+                    return BsonType.forString(toString);
+                } else if (to instanceof Integer toNumber) {
+                    return BsonType.forNumber(toNumber);
                 } else if (to instanceof Number) {
                     throw new IllegalArgumentException("In $convert, numeric 'to' argument is not an integer");
                 } else {
@@ -1396,29 +1396,29 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
-            Object one = parameters.getFirst();
-            Object other = parameters.getSecond();
+            Object first = parameters.getFirst();
+            Object second = parameters.getSecond();
 
-            if (isNullOrMissing(one) || isNullOrMissing(other)) {
+            if (isNullOrMissing(first) || isNullOrMissing(second)) {
                 return null;
             }
 
-            if (one instanceof Number && other instanceof Number) {
-                return NumericUtils.subtractNumbers((Number) one, (Number) other);
+            if (first instanceof Number firstNumber && second instanceof Number secondNumber) {
+                return NumericUtils.subtractNumbers(firstNumber, secondNumber);
             }
 
-            if (one instanceof Instant) {
+            if (first instanceof Instant firstInstant) {
                 // subtract two instants (returns the difference in milliseconds)
-                if (other instanceof Instant) {
-                    return ((Instant) one).toEpochMilli() - ((Instant) other).toEpochMilli();
+                if (second instanceof Instant secondInstant) {
+                    return firstInstant.toEpochMilli() - secondInstant.toEpochMilli();
                 }
                 // subtract milliseconds from instant
-                if (other instanceof Number) {
-                    return Instant.ofEpochMilli(((Instant) one).toEpochMilli() - ((Number) other).longValue());
+                if (second instanceof Number secondNumber) {
+                    return Instant.ofEpochMilli(firstInstant.toEpochMilli() - secondNumber.longValue());
                 }
             }
 
-            throw new MongoServerError(16556, "cant " + name() + " a " + describeType(one) + " from a " + describeType(other));
+            throw new MongoServerError(16556, "cant " + name() + " a " + describeType(first) + " from a " + describeType(second));
         }
     },
 
@@ -1433,8 +1433,8 @@ public enum Expression implements ExpressionTraits {
             }
             Number sum = 0;
             for (Object value : expressionValue) {
-                if (value instanceof Number) {
-                    sum = NumericUtils.addNumbers(sum, (Number) value);
+                if (value instanceof Number number) {
+                    sum = NumericUtils.addNumbers(sum, number);
                 }
             }
             return sum;
@@ -1761,11 +1761,11 @@ public enum Expression implements ExpressionTraits {
     }
 
     static Object evaluate(Object expression, Document document) {
-        if (expression instanceof String && ((String) expression).startsWith("$")) {
+        if (expression instanceof String expressionString && expressionString.startsWith("$")) {
             if (KEYWORD_EXPRESSIONS.contains(expression)) {
                 return expression;
             }
-            String value = ((String) expression).substring(1);
+            String value = expressionString.substring(1);
             if (value.startsWith("$")) {
                 final String variableName;
                 if (value.contains(".")) {
@@ -1799,8 +1799,8 @@ public enum Expression implements ExpressionTraits {
                 }
             }
             return Utils.getSubdocumentValueCollectionAware(document, value);
-        } else if (expression instanceof Document) {
-            return evaluateDocumentExpression((Document) expression, document);
+        } else if (expression instanceof Document expressionDoc) {
+            return evaluateDocumentExpression(expressionDoc, document);
         } else {
             return expression;
         }

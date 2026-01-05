@@ -93,18 +93,20 @@ public class MergeStage extends TerminalStage {
         Object let = paramsDocument.get("let");
         if (let == null) {
             return new Document("$new", "$$ROOT");
-        } else if (!(let instanceof Document)) {
-            throw new TypeMismatchException("BSON field '$merge.let' is the wrong type '" + Utils.describeType(let) + "', expected type 'object'");
-        } else {
-            Map<String, Object> variables = new LinkedHashMap<>();
-            for (Map.Entry<String, Object> entry : ((Document) let).entrySet()) {
-                if (entry.getKey().equals("new") && !entry.getValue().equals("$$ROOT")) {
-                    throw new MongoServerError(51273, "'let' may not define a value for the reserved 'new' variable other than '$$ROOT'");
-                }
-                variables.put("$" + entry.getKey(), entry.getValue());
-            }
-            return variables;
         }
+
+        if (!(let instanceof Document)) {
+            throw new TypeMismatchException("BSON field '$merge.let' is the wrong type '" + Utils.describeType(let) + "', expected type 'object'");
+        }
+
+        Map<String, Object> variables = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : ((Document) let).entrySet()) {
+            if (entry.getKey().equals("new") && !entry.getValue().equals("$$ROOT")) {
+                throw new MongoServerError(51273, "'let' may not define a value for the reserved 'new' variable other than '$$ROOT'");
+            }
+            variables.put("$" + entry.getKey(), entry.getValue());
+        }
+        return variables;
     }
 
     private static Supplier<MongoCollection<?>> getTargetCollectionSupplier(DatabaseResolver databaseResolver,
@@ -146,9 +148,10 @@ public class MergeStage extends TerminalStage {
 
     private Set<String> getJoinFields(Document paramsDocument) {
         Object on = paramsDocument.getOrDefault("on", "_id");
-        if (on instanceof String) {
-            return Set.of((String) on);
-        } else if (on instanceof Collection<?> collection) {
+        if (on instanceof String string) {
+            return Set.of(string);
+        }
+        if (on instanceof Collection<?> collection) {
             if (collection.isEmpty()) {
                 throw new MongoServerError(51187, "If explicitly specifying $merge 'on', must include at least one field");
             }
@@ -170,9 +173,9 @@ public class MergeStage extends TerminalStage {
 
     private WhenMatched getWhenMatched(Document paramsDocument) {
         Object whenMatched = paramsDocument.getOrDefault("whenMatched", WhenMatched.merge.name());
-        if (whenMatched instanceof String) {
+        if (whenMatched instanceof String matched) {
             try {
-                return WhenMatched.valueOf((String) whenMatched);
+                return WhenMatched.valueOf(matched);
             } catch (IllegalArgumentException e) {
                 throw new BadValueException("Enumeration value '" + whenMatched + "' for field 'whenMatched' is not a valid value.");
             }

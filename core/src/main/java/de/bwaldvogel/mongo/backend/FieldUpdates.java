@@ -158,19 +158,19 @@ class FieldUpdates {
                         break;
                     case "$sort":
                         Object sortValue = Utils.normalizeValue(entry.getValue());
-                        if (sortValue instanceof Number) {
-                            Number sortOrder = Utils.normalizeNumber((Number) sortValue);
+                        if (sortValue instanceof Number sortNumber) {
+                            Number sortOrder = Utils.normalizeNumber(sortNumber);
                             if (sortOrder.equals(1)) {
                                 comparator = ValueComparator.asc();
                             } else if (sortOrder.equals(-1)) {
                                 comparator = ValueComparator.desc();
                             }
-                        } else if (sortValue instanceof Document) {
+                        } else if (sortValue instanceof Document sortDocument) {
                             ValueComparator valueComparator = ValueComparator.asc();
-                            DocumentComparator documentComparator = new DocumentComparator((Document) sortValue);
+                            DocumentComparator documentComparator = new DocumentComparator(sortDocument);
                             comparator = (o1, o2) -> {
-                                if (o1 instanceof Document && o2 instanceof Document) {
-                                    return documentComparator.compare((Document) o1, (Document) o2);
+                                if (o1 instanceof Document doc1 && o2 instanceof Document doc2) {
+                                    return documentComparator.compare(doc1, doc2);
                                 } else if (o1 instanceof Document || o2 instanceof Document) {
                                     return valueComparator.compare(o1, o2);
                                 } else {

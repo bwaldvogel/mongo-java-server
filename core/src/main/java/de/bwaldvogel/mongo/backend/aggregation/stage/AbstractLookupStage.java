@@ -22,8 +22,8 @@ abstract class AbstractLookupStage implements AggregationStage {
         if (value == null) {
             throw new FailedToParseException("missing '" + name + "' option to " + name() + " stage specification: " + configuration);
         }
-        if (value instanceof String) {
-            return (String) value;
+        if (value instanceof String string) {
+            return string;
         }
         throw new FailedToParseException("'" + name + "' option to " + name() + " must be a string, but was type " + Utils.describeType(value));
     }
@@ -33,8 +33,8 @@ abstract class AbstractLookupStage implements AggregationStage {
         if (value == null) {
             return new Document();
         }
-        if (value instanceof Document) {
-            return (Document) value;
+        if (value instanceof Document document) {
+            return document;
         }
         throw new FailedToParseException(name() + " argument '" + name + ": " + Json.toJsonValue(value) + "' must be an object, is type " + Utils.describeType(value));
     }
