@@ -284,7 +284,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCursorNotFoundException.class)
             .isThrownBy(cursor::next)
-            .withMessageMatching("Command failed with error 43 \\(CursorNotFound\\): 'Cursor id \\d+ does not exist'.+");
+            .withMessageMatching("Command execution failed on MongoDB server with error 43 \\(CursorNotFound\\): 'Cursor id \\d+ does not exist'.+");
     }
 
     @Test
@@ -332,7 +332,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions().capped(true)))
-            .withMessageStartingWith("Command failed with error 72 (InvalidOptions): 'the 'size' field is required when 'capped' is true'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 72 (InvalidOptions): 'the 'size' field is required when 'capped' is true'");
     }
 
     @Test
@@ -341,7 +341,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions()))
-            .withMessageStartingWith("Command failed with error 48 (NamespaceExists): 'Collection already exists. NS: testdb.some-collection'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 48 (NamespaceExists): 'Collection already exists. NS: testdb.some-collection'");
     }
 
     @Test
@@ -414,7 +414,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testGetLogWhichDoesNotExist() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand(json("getLog: 'illegal'")))
-            .withMessageStartingWith("Command failed with error -1: 'no RamLog named: illegal'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error -1: 'no RamLog named: illegal'");
     }
 
     @Test
@@ -595,7 +595,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.dropIndex(new Document("n", 1)))
-            .withMessageStartingWith("Command failed with error 27 (IndexNotFound): 'can't find index with key: { n: 1 }'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 27 (IndexNotFound): 'can't find index with key: { n: 1 }'");
 
         assertMongoWriteException(() -> collection.insertOne(json("_id: 2, c: 10")),
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: c_1 dup key: { c: 10 }");
@@ -604,7 +604,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.dropIndex(new Document("c", 1)))
-            .withMessageStartingWith("Command failed with error 27 (IndexNotFound): 'can't find index with key: { c: 1 }'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 27 (IndexNotFound): 'can't find index with key: { c: 1 }'");
 
         assertThat(collection.listIndexes())
             .containsExactlyInAnyOrder(
@@ -673,7 +673,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.dropIndex(indexName))
-            .withMessageStartingWith("Command failed with error 27 (IndexNotFound): 'index not found with name [c_1]'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 27 (IndexNotFound): 'index not found with name [c_1]'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/184
@@ -830,11 +830,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testDeleteInSystemNamespace() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> getCollection("system.foobar").deleteOne(json("")))
-            .withMessageStartingWith("Command failed with error 73 (InvalidNamespace): 'Invalid system namespace: testdb.system.foobar'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 73 (InvalidNamespace): 'Invalid system namespace: testdb.system.foobar'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> getCollection("system.namespaces").deleteOne(json("")))
-            .withMessageStartingWith("Command failed with error 73 (InvalidNamespace): 'Invalid system namespace: testdb.system.namespaces'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 73 (InvalidNamespace): 'Invalid system namespace: testdb.system.namespaces'");
     }
 
     @Test
@@ -1039,25 +1039,25 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: []}")).first())
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'n must match at least one type'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'n must match at least one type'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("'a.b.c': {$type: []}")).first())
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'a.b.c must match at least one type'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'a.b.c must match at least one type'");
 
         assertThat(collection.find(json("a: {b: {$type: []}}"))).isEmpty();
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: 'abc'}")).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): 'Unknown type name alias: abc'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): 'Unknown type name alias: abc'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("n: {$type: null}")).first())
-            .withMessageStartingWith("Command failed with error 14 (TypeMismatch): 'type must be represented as a number or a string'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 14 (TypeMismatch): 'type must be represented as a number or a string'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: {$type: 16.3}")).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): 'Invalid numerical type code: 16.3'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): 'Invalid numerical type code: 16.3'");
     }
 
     @Test
@@ -1155,7 +1155,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.createIndex(json("a: 1"), new IndexOptions().unique(true).sparse(true)))
-            .withMessageStartingWith("Command failed with error 86 (IndexKeySpecsConflict): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 86 (IndexKeySpecsConflict): " +
                 "'An existing index has the same name as the requested index. " +
                 "When index names are not specified, they are auto generated and can cause conflicts. " +
                 "Please refer to our documentation. " +
@@ -1211,7 +1211,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(cmd))
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Either an update or remove=true must be specified'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'Either an update or remove=true must be specified'");
     }
 
     @Test
@@ -1226,7 +1226,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(cmd))
-            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 66 (ImmutableField): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Performing an update on the path '_id' would modify the immutable field '_id'");
     }
@@ -1253,7 +1253,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$inc: {x: 0, a: 1}, $set: {a: 2}")))
-            .withMessageStartingWith("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a' would create a conflict at 'a'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 40 (ConflictingUpdateOperators): 'Updating the path 'a' would create a conflict at 'a'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/75
@@ -1263,11 +1263,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'x': 1, 'a.b': {c: 1}}, $inc: {'a.b.c': 1}")))
-            .withMessageStartingWith("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b.c' would create a conflict at 'a.b'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b.c' would create a conflict at 'a.b'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'x': 1, 'a.b.c': 1}, $unset: {'a.b': 1}")))
-            .withMessageStartingWith("Command failed with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b' would create a conflict at 'a.b'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 40 (ConflictingUpdateOperators): 'Updating the path 'a.b' would create a conflict at 'a.b'");
     }
 
     @Test
@@ -1276,7 +1276,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$inc: {_id: 1}")))
-            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 66 (ImmutableField): " +
                 "'Plan executor error during findAndModify :: caused by ::" +
                 " Performing an update on the path '_id' would modify the immutable field '_id'");
     }
@@ -1588,7 +1588,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 100}")))))
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'The array filter for identifier 'element' was not used in the update { $set: { grades: \"abc\" } }'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'The array filter for identifier 'element' was not used in the update { $set: { grades: \"abc\" } }'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
@@ -1598,28 +1598,28 @@ public abstract class AbstractBackendTest extends AbstractTest {
                     json("element: {$gte: 100}"),
                     json("element: {$lt: 100}")
                 ))))
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Found multiple array filters with the same top-level field name element'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'Found multiple array filters with the same top-level field name element'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("a: {$gte: 100}, b: {$gte: 100}, c: {$gte: 10}")))))
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'Error parsing array filter :: caused by :: Expected a single top-level field name, found 'a' and 'b'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("")))))
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Cannot use an expression without a top-level field name in arrayFilters'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'Cannot use an expression without a top-level field name in arrayFilters'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$set: {'grades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 100}")))))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply array updates to non-array element grades: \"abc\"'");
 
@@ -1628,7 +1628,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'$[element]': 10}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: 2")))))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Cannot have array filter identifier (i.e. '$[<id>]') element in the first position in path '$[element]'");
 
         assertThatExceptionOfType(MongoCommandException.class)
@@ -1636,7 +1636,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'grades.subGrades.$[element]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("element: {$gte: 100}")))))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "The path 'grades.subGrades' must exist in the document in order to apply array updates.'");
 
@@ -1645,7 +1645,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'grades.$[some value]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("'some value': {$gte: 100}")))))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Error parsing array filter :: caused by :: " +
                 "The top-level field name must be an alphanumeric string beginning with a lowercase letter, found 'some value''");
 
@@ -1654,7 +1654,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'a.b.$[x]': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("x: {$gte: 100}")))))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply array updates to non-array element b: 123'");
 
@@ -1663,7 +1663,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'grades': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("'a.b': 10, b: 12")))))
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): " +
                 "'Error parsing array filter :: caused by :: " +
                 "Expected a single top-level field name, found 'a' and 'b''");
 
@@ -1675,7 +1675,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                     json("'a.b': 10"),
                     json("'a.c': 10")
                 ))))
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): " +
                 "'Found multiple array filters with the same top-level field name a'");
     }
 
@@ -1690,7 +1690,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'a.b.$[x].c': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("x: {$gt: 1}")))))
-            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28 (PathNotViable): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot create field 'c' in element {1: 2}");
 
@@ -1699,7 +1699,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
                 json("_id: 1"),
                 json("$set: {'a.b.$[x].c.d': 'abc'}"),
                 new FindOneAndUpdateOptions().arrayFilters(List.of(json("x: {$gt: 1}")))))
-            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28 (PathNotViable): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot create field 'c' in element {1: 2}");
 
@@ -1707,7 +1707,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 2"),
                 json("$set: {'a.b.$[].c.$[]': 'abc'}")))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply array updates to non-array element c: 1");
 
@@ -1715,7 +1715,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 3"),
                 json("$set: {'a.b.$[].0.c': 'abc'}")))
-            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28 (PathNotViable): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot create field 'c' in element {0: [ 1, 2 ]}");
 
@@ -1723,7 +1723,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 3"),
                 json("$set: {'a.b.$[].0.$[].c': 'abc'}")))
-            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28 (PathNotViable): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot create field 'c' in element {0: 1}");
     }
@@ -1963,14 +1963,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testIllegalCommand() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("foo: 1")))
-            .withMessageStartingWith("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 59 (CommandNotFound): 'no such command: 'foo'");
     }
 
     @Test
     public void testCommandThatTriggersAnInternalException() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("triggerInternalException: 1")))
-            .withMessageStartingWith("Command failed with error -1: 'Unknown error: For testing purposes'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error -1: 'Unknown error: For testing purposes'");
     }
 
     @Test
@@ -2223,14 +2223,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("'foo..': 1")).first())
-            .withMessageStartingWith("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         obj = collection.find(json("_id: 2")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c.d': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 2, foo: {b: null}"));
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 2")).projection(json("'foo.a.b': 1, 'foo.b': 1, 'foo.c': 1, 'foo.c.d': 1")).first())
-            .withMessageStartingWith("Command failed with error 31249 (Location31249): 'Path collision at foo.c.d remaining portion c.d'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 31249 (Location31249): 'Path collision at foo.c.d remaining portion c.d'");
 
         obj = collection.find(json("_id: 2")).projection(json("'foo.a': 1")).first();
         assertThat(obj).isEqualTo(json("_id: 2, foo: {a: null}"));
@@ -2517,7 +2517,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testReplSetGetStatus() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand("replSetGetStatus"))
-            .withMessageStartingWith("Command failed with error 76 (NoReplicationEnabled): 'not running with --replSet'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 76 (NoReplicationEnabled): 'not running with --replSet'");
     }
 
     @Test
@@ -4560,7 +4560,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.renameCollection(new MongoNamespace(db.getName(), "other-collection-name")))
-            .withMessageStartingWith("Command failed with error 48 (NamespaceExists): 'target namespace exists'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 48 (NamespaceExists): 'target namespace exists'");
 
         assertThat(db.listCollectionNames())
             .containsExactlyInAnyOrder(getCollectionName(), "other-collection-name");
@@ -4655,7 +4655,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(new Document()).projection(json("visits: 0, eid: 1")).first())
-            .withMessageStartingWith("Command failed with error 31253 (Location31253): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 31253 (Location31253): " +
                 "'Cannot do inclusion on field eid in exclusion projection'");
     }
 
@@ -4762,7 +4762,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("ref: {$ref: 'coll'}")).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): 'unknown operator: $ref'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): 'unknown operator: $ref'");
     }
 
     @Test
@@ -4771,15 +4771,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(and()).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(nor()).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(or()).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): '$and/$or/$nor must be a nonempty array'");
     }
 
     @Test
@@ -5125,32 +5125,32 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['a', 'b']}")).first())
-            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28724 (Location28724): " +
                 "'First argument to $slice must be an array, but is of type: string'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: ['xyz', 2]}")).first())
-            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28724 (Location28724): " +
                 "'First argument to $slice must be an array, but is of type: string'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 0]}")).first())
-            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28724 (Location28724): " +
                 "'First argument to $slice must be an array, but is of type: int'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 'xyz']}")).first())
-            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28724 (Location28724): " +
                 "'First argument to $slice must be an array, but is of type: int'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: [1, 2, 3]}")).first())
-            .withMessageStartingWith("Command failed with error 28724 (Location28724): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28724 (Location28724): " +
                 "'First argument to $slice must be an array, but is of type: int'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("_id: 1")).projection(json("values: {$slice: 'abc'}")).first())
-            .withMessageStartingWith("Command failed with error 28667 (Location28667): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28667 (Location28667): " +
                 "'Invalid $slice syntax. The given syntax { $slice: \"abc\" } did not match the find() syntax because :: " +
                 "Location31273: $slice only supports numbers and [skip, limit] arrays :: " +
                 "The given syntax did not match the expression $slice syntax. :: caused by :: " +
@@ -5176,11 +5176,11 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: [ 85 ]}")).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): '$elemMatch needs an Object'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("results: {$elemMatch: 1}")).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): '$elemMatch needs an Object'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): '$elemMatch needs an Object'");
     }
 
     @Test
@@ -5191,7 +5191,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("x: {$lt: 10, y: 23}")).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): 'unknown operator: y'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): 'unknown operator: y'");
 
         assertThat(collection.find(json("x: {y: 23, $lt: 10}"))).isEmpty();
         assertThat(collection.find(json("x: {y: {$lt: 100, z: 23}}"))).isEmpty();
@@ -5213,7 +5213,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testValidate() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(new Document("validate", getCollectionName())))
-            .withMessageStartingWith("Command failed with error 26 (NamespaceNotFound): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 26 (NamespaceNotFound): " +
                 "'Collection 'testdb.testcoll' does not exist to validate.'");
 
         collection.insertOne(json("_id: 1"));
@@ -5270,7 +5270,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(query).first())
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'unknown top level operator: $illegalOperator. " +
                 "If you have a field name that starts with a '$' symbol, consider using $getField or $setField.'");
     }
@@ -5307,15 +5307,15 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a.', 10]}")).first())
-            .withMessageStartingWith("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$.a', 10]}")).first())
-            .withMessageStartingWith("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
 
         assertThatExceptionOfType(MongoQueryException.class)
             .isThrownBy(() -> collection.find(json("$expr: {$eq: ['$a..1', 10]}")).first())
-            .withMessageStartingWith("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
@@ -6248,19 +6248,19 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'a.$[]': 'abc'}")))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply array updates to non-array element a: { b: [ 1, 2, 3 ] }");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 2"), json("$set: {'a.b.$[]': 'abc'}")))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply array updates to non-array element b: 5");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 1"), json("$set: {'a.b.$[].c': 'abc'}")))
-            .withMessageStartingWith("Command failed with error 28 (PathNotViable): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28 (PathNotViable): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "Cannot create field 'c' in element {0: 1}");
     }
@@ -6399,7 +6399,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.findOneAndUpdate(json("_id: 3"), json("$inc: {'grades.$[].c.$[]': 1}")))
-            .withMessageStartingWith("Command failed with error 2 (BadValue): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 2 (BadValue): " +
                 "'Plan executor error during findAndModify :: caused by :: " +
                 "The path 'grades.2.c' must exist in the document in order to apply array updates.");
     }
@@ -6424,7 +6424,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.findOneAndUpdate(
                 json("_id: 1"),
                 json("$inc: {'grades.$[].$[]': 1}")))
-            .withMessageStartingWith("Command failed with error 14 (TypeMismatch): '" +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 14 (TypeMismatch): '" +
                 "Plan executor error during findAndModify :: caused by :: " +
                 "Cannot apply $inc to a value of non-numeric type. {_id: 1} has the field '0' of non-numeric type array");
     }
