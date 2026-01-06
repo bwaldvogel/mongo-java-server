@@ -46,7 +46,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40324 (Location40324): 'Unrecognized pipeline stage name: '$unknown'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40324 (Location40324): 'Unrecognized pipeline stage name: '$unknown'");
     }
 
     @Test
@@ -55,25 +55,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40323 (Location40323): 'A pipeline stage specification object must contain exactly one field.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40323 (Location40323): 'A pipeline stage specification object must contain exactly one field.'");
     }
 
     @Test
     void testAggregateWithMissingCursor() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', pipeline: [{$match: {}}]")))
-            .withMessageContaining("Command failed with error 9 (FailedToParse): 'The 'cursor' option is required, except for aggregate with the explain argument'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 9 (FailedToParse): 'The 'cursor' option is required, except for aggregate with the explain argument'");
     }
 
     @Test
     void testAggregateWithIllegalPipeline() throws Exception {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', cursor: {}, pipeline: 123")))
-            .withMessageContaining("Command failed with error 14 (TypeMismatch): ''pipeline' option must be specified as an array'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 14 (TypeMismatch): ''pipeline' option must be specified as an array'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> db.runCommand(json("aggregate: 'collection', cursor: {}, pipeline: [1, 2, 3]")))
-            .withMessageContaining("Command failed with error 14 (TypeMismatch): 'Each element of the 'pipeline' array must be an object");
+            .withMessageContaining("Command execution failed on MongoDB server with error 14 (TypeMismatch): 'Each element of the 'pipeline' array must be an object");
     }
 
     @Test
@@ -230,7 +230,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 15952 (Location15952): 'unknown group operator '$foo''");
+            .withMessageContaining("Command execution failed on MongoDB server with error 15952 (Location15952): 'unknown group operator '$foo''");
     }
 
     @Test
@@ -240,7 +240,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40238 (Location40238): 'The field 'n' must specify one accumulator'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40238 (Location40238): 'The field 'n' must specify one accumulator'");
     }
 
     @Test
@@ -260,7 +260,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 15955 (Location15955): 'a group specification must include an _id'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 15955 (Location15955): 'a group specification must include an _id'");
     }
 
     @Test
@@ -408,11 +408,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$group: {_id: '$a.'}")).first())
-            .withMessageContaining("Command failed with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40353 (Location40353): 'FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$group: {_id: '$a..1'}")).first())
-            .withMessageContaining("Command failed with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 15998 (Location15998): 'FieldPath field names may not be empty strings.'");
     }
 
     @Test
@@ -632,16 +632,16 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     private static Stream<Arguments> aggregateWithProjectionArguments() {
         return Stream.of(
             Arguments.of("$project: {'x.b': 1, 'x.c': 1, 'x.d': 0, y: 0}",
-                "Command failed with error 31254 (Location31254): 'Invalid $project :: caused by :: Cannot do exclusion on field x.d in inclusion projection'"),
+                "Command execution failed on MongoDB server with error 31254 (Location31254): 'Invalid $project :: caused by :: Cannot do exclusion on field x.d in inclusion projection'"),
 
             Arguments.of("$project: {_id: 0, v: '$x.1.'}",
-                "Command failed with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'"),
+                "Command execution failed on MongoDB server with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'"),
 
             Arguments.of("$project: {_id: 0, v: '$x..1'}",
-                "Command failed with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'"),
+                "Command execution failed on MongoDB server with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'"),
 
             Arguments.of("$project: 'abc'",
-                "Command failed with error 15969 (Location15969): '$project specification must be an object'")
+                "Command execution failed on MongoDB server with error 15969 (Location15969): '$project specification must be an object'")
         );
     }
 
@@ -717,13 +717,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {len: {$strLenCP: '$x'}}")).first())
-            .withMessageContaining("Command failed with error 34471 (Location34471): " +
+            .withMessageContaining("Command execution failed on MongoDB server with error 34471 (Location34471): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$strLenCP requires a string argument, found: missing'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {len: {$strLenCP: '$b'}}")).first())
-            .withMessageContaining("Command failed with error 34471 (Location34471): " +
+            .withMessageContaining("Command execution failed on MongoDB server with error 34471 (Location34471): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$strLenCP requires a string argument, found: int'");
     }
@@ -748,27 +748,27 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: 'abc'}}")).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $substrBytes takes exactly 3 arguments. 1 were passed in.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $substrBytes takes exactly 3 arguments. 1 were passed in.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: ['abc', 'abc', 3]}}")).first())
-            .withMessageContaining("Command failed with error 16034 (Location16034): 'Failed to optimize pipeline :: caused by :: $substrBytes:  starting index must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command execution failed on MongoDB server with error 16034 (Location16034): 'Failed to optimize pipeline :: caused by :: $substrBytes:  starting index must be a numeric type (is BSON type string)");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substr: ['abc', 3, 'abc']}}")).first())
-            .withMessageContaining("Command failed with error 16035 (Location16035): 'Failed to optimize pipeline :: caused by :: $substrBytes:  length must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command execution failed on MongoDB server with error 16035 (Location16035): 'Failed to optimize pipeline :: caused by :: $substrBytes:  length must be a numeric type (is BSON type string)");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: 'abc'}}")).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $substrCP takes exactly 3 arguments. 1 were passed in.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $substrCP takes exactly 3 arguments. 1 were passed in.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: ['abc', 'abc', 3]}}")).first())
-            .withMessageContaining("Command failed with error 34450 (Location34450): 'Failed to optimize pipeline :: caused by :: $substrCP: starting index must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command execution failed on MongoDB server with error 34450 (Location34450): 'Failed to optimize pipeline :: caused by :: $substrCP: starting index must be a numeric type (is BSON type string)");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {x: {$substrCP: ['abc', 3, 'abc']}}")).first())
-            .withMessageContaining("Command failed with error 34452 (Location34452): 'Failed to optimize pipeline :: caused by :: $substrCP: length must be a numeric type (is BSON type string)");
+            .withMessageContaining("Command execution failed on MongoDB server with error 34452 (Location34452): 'Failed to optimize pipeline :: caused by :: $substrCP: length must be a numeric type (is BSON type string)");
     }
 
     @Test
@@ -1041,7 +1041,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 17276 (Location17276): 'Invalid $project :: caused by :: Use of undefined variable: UNDEFINED'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 17276 (Location17276): 'Invalid $project :: caused by :: Use of undefined variable: UNDEFINED'");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/31
@@ -1063,11 +1063,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: '$$ROOT.a.'}")).first())
-            .withMessageContaining("Command failed with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40353 (Location40353): 'Invalid $project :: caused by :: FieldPath must not end with a '.'.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: '$$ROOT.a..1'}")).first())
-            .withMessageContaining("Command failed with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 15998 (Location15998): 'Invalid $project :: caused by :: FieldPath field names may not be empty strings.'");
     }
 
     @Test
@@ -1409,13 +1409,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     void testAggregateWithIllegalLookupStage() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$lookup: {from: 'coll', let: 'abc', pipeline: [], as: 'data'}")).first())
-            .withMessageContaining("Command failed with error 9 (FailedToParse): '$lookup argument 'let: \"abc\"' must be an object, is type string'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 9 (FailedToParse): '$lookup argument 'let: \"abc\"' must be an object, is type string'");
 
         collection.insertOne(json("_id: 1"));
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$lookup: {from: 'coll', let: {}, pipeline: 'abc', as: 'data'}")).first())
-            .withMessageContaining("Command failed with error 14 (TypeMismatch): ''pipeline' option must be specified as an array'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 14 (TypeMismatch): ''pipeline' option must be specified as an array'");
     }
 
     @Test
@@ -1503,7 +1503,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40228 (Location40228): " +
+            .withMessageContaining("Command execution failed on MongoDB server with error 40228 (Location40228): " +
                 "'PlanExecutor error during aggregation :: caused by :: 'newRoot' expression must evaluate to an object, but resulting value was: 10." +
                 " Type of resulting value: 'int'.")
             .withMessageContaining("a: {b: 10}");
@@ -1603,7 +1603,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 40390 (Location40390): 'PlanExecutor error during aggregation :: caused by :: $objectToArray requires a document input, found: int'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40390 (Location40390): 'PlanExecutor error during aggregation :: caused by :: $objectToArray requires a document input, found: int'");
 
         collection.replaceOne(json("_id: 1"), json("_id: 1, value: {a: 1, b: 'foo', c: {x: 10}}"));
 
@@ -1615,7 +1615,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         Document illegalQuery = json("$project: {_id: 1, a: {$objectToArray: ['$value', 1]}}");
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(List.of(illegalQuery)).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $objectToArray takes exactly 1 arguments. 2 were passed in.'");
     }
 
     @Test
@@ -1636,35 +1636,35 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: 'illegal-type'}}")).first())
-            .withMessageContaining("Command failed with error 40386 (Location40386): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array input, found: string'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40386 (Location40386): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array input, found: string'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: []}}")).first())
-            .withMessageContaining("Command failed with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $arrayToObject takes exactly 1 arguments. 0 were passed in.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 16020 (Location16020): 'Invalid $project :: caused by :: Expression $arrayToObject takes exactly 1 arguments. 0 were passed in.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [['foo']]}}}}")).first())
-            .withMessageContaining("Command failed with error 40397 (Location40397): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of size 2 arrays,found array of size: 1'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40397 (Location40397): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of size 2 arrays,found array of size: 1'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [123, 456]}}}}")).first())
-            .withMessageContaining("Command failed with error 40398 (Location40398): 'Failed to optimize pipeline :: caused by :: Unrecognised input type format for $arrayToObject: int'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40398 (Location40398): 'Failed to optimize pipeline :: caused by :: Unrecognised input type format for $arrayToObject: int'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [[123, 456]]}}}}")).first())
-            .withMessageContaining("Command failed with error 40395 (Location40395): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40395 (Location40395): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an array of key-value pairs, where the key must be of type string. Found key type: int'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{}]}}}}")).first())
-            .withMessageContaining("Command failed with error 40392 (Location40392): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40392 (Location40392): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object keys of 'k' and 'v'. Found incorrect number of keys:0'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 123, v: 'value'}]}}}}")).first())
-            .withMessageContaining("Command failed with error 40394 (Location40394): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40394 (Location40394): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: int'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: {_id: 1, x: {$arrayToObject: {$literal: [{k: 'key', z: 'value'}]}}}}")).first())
-            .withMessageContaining("Command failed with error 40393 (Location40393): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: \"value\"}'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40393 (Location40393): 'Failed to optimize pipeline :: caused by :: $arrayToObject requires an object with keys 'k' and 'v'. Missing either or both keys from: {k: \"key\", z: \"value\"}'");
     }
 
     @Test
@@ -1809,47 +1809,47 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [100, 200, 400]}")).first())
-            .withMessageContaining("Command failed with error 40066 (Location40066): 'PlanExecutor error during aggregation :: caused by :: $switch could not find a matching branch for an input, and no default was specified.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40066 (Location40066): 'PlanExecutor error during aggregation :: caused by :: $switch could not find a matching branch for an input, and no default was specified.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, 400], default: 200}")).first())
-            .withMessageContaining("Command failed with error 40199 (Location40199): 'The $bucket 'default' field must be less than the lowest boundary or greater than or equal to the highest boundary.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40199 (Location40199): 'The $bucket 'default' field must be less than the lowest boundary or greater than or equal to the highest boundary.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, 400, 200]}")).first())
-            .withMessageContaining("Command failed with error 40194 (Location40194): 'The 'boundaries' option to $bucket must be sorted, but elements 1 and 2 are not in ascending order (400 is not less than 200).'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40194 (Location40194): 'The 'boundaries' option to $bucket must be sorted, but elements 1 and 2 are not in ascending order (400 is not less than 200).'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, 400], output: 'a'}")).first())
-            .withMessageContaining("Command failed with error 40196 (Location40196): 'The $bucket 'output' field must be an object, but found type: string.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40196 (Location40196): 'The $bucket 'output' field must be an object, but found type: string.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0]}")).first())
-            .withMessageContaining("Command failed with error 40192 (Location40192): 'The $bucket 'boundaries' field must have at least 2 values, but found 1 value(s).'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40192 (Location40192): 'The $bucket 'boundaries' field must have at least 2 values, but found 1 value(s).'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: 'abc'}")).first())
-            .withMessageContaining("Command failed with error 40200 (Location40200): 'The $bucket 'boundaries' field must be an array, but found type: string.");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40200 (Location40200): 'The $bucket 'boundaries' field must be an array, but found type: string.");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: [1, 2], boundaries: 'abc'}")).first())
-            .withMessageContaining("Command failed with error 40202 (Location40202): 'The $bucket 'groupBy' field must be defined as a $-prefixed path or an expression, but found: [ 1, 2 ].'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40202 (Location40202): 'The $bucket 'groupBy' field must be defined as a $-prefixed path or an expression, but found: [ 1, 2 ].'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id'}")).first())
-            .withMessageContaining("Command failed with error 40198 (Location40198): '$bucket requires 'groupBy' and 'boundaries' to be specified.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40198 (Location40198): '$bucket requires 'groupBy' and 'boundaries' to be specified.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {}")).first())
-            .withMessageContaining("Command failed with error 40198 (Location40198): '$bucket requires 'groupBy' and 'boundaries' to be specified.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40198 (Location40198): '$bucket requires 'groupBy' and 'boundaries' to be specified.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: ['abc', 123]}")).first())
-            .withMessageContaining("Command failed with error 40193 (Location40193): 'All values in the the 'boundaries' option to $bucket must have the same type. Found conflicting types string and int.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40193 (Location40193): 'All values in the the 'boundaries' option to $bucket must have the same type. Found conflicting types string and int.'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$bucket: {groupBy: '$_id', boundaries: [0, null]}")).first())
-            .withMessageContaining("Command failed with error 40193 (Location40193): 'All values in the the 'boundaries' option to $bucket must have the same type. Found conflicting types int and null.'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40193 (Location40193): 'All values in the the 'boundaries' option to $bucket must have the same type. Found conflicting types int and null.'");
     }
 
     @Test
@@ -1987,15 +1987,15 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$unset: [123]")).first())
-            .withMessageStartingWith("Command failed with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$unset: ['']")).first())
-            .withMessageStartingWith("Command failed with error 40352 (Location40352): 'Invalid $unset :: caused by :: FieldPath cannot be constructed with empty string'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 40352 (Location40352): 'Invalid $unset :: caused by :: FieldPath cannot be constructed with empty string'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$unset: ['field1', 123]")).first())
-            .withMessageStartingWith("Command failed with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 31120 (Location31120): '$unset specification must be a string or an array containing only string values'");
     }
 
     @Test
@@ -2065,11 +2065,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 'some$collection'")).first())
-            .withMessageContaining("Command failed with error 20 (IllegalOperation): 'PlanExecutor error during aggregation :: caused by :: error with target namespace: Invalid collection name: some$collection'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 20 (IllegalOperation): 'PlanExecutor error during aggregation :: caused by :: error with target namespace: Invalid collection name: some$collection'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$out : 'one'", "$out : 'other'")).first())
-            .withMessageContaining("Command failed with error 40601 (Location40601): '$out can only be the final stage in the pipeline'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 40601 (Location40601): '$out can only be the final stage in the pipeline'");
     }
 
     // Testing the official example from https://www.mongodb.com/docs/manual/reference/operator/aggregation/merge/ (2022-11-22)
@@ -2321,7 +2321,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', whenMatched: 'fail' }")).first())
-            .withMessageStartingWith("Command failed with error 11000 (DuplicateKey): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 11000 (DuplicateKey): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "E11000 duplicate key error collection: testdb.other index: _id_ dup key: { _id: 1 }'");
     }
@@ -2336,7 +2336,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', whenNotMatched: 'fail' }")).first())
-            .withMessageStartingWith("Command failed with error 13113 (MergeStageNoMatchingDocument): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 13113 (MergeStageNoMatchingDocument): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$merge could not find a matching document in the target collection for at least one document in the source collection'");
     }
@@ -2425,7 +2425,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', on: 'name' }")).first())
-            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 66 (ImmutableField): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$merge failed to update the matching document, did you attempt to modify the _id or the shard key? :: caused by :: " +
                 "Performing an update on the path '_id' would modify the immutable field '_id''");
@@ -2451,7 +2451,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', on: 'name', whenMatched: 'replace' }")).first())
-            .withMessageStartingWith("Command failed with error 66 (ImmutableField): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 66 (ImmutableField): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
                 "$merge failed to update the matching document, did you attempt to modify the _id or the shard key? :: caused by :: " +
                 "After applying the update, the (immutable) field '_id' was found to have been altered to _id: 1'");
@@ -2463,7 +2463,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', on: 'xyz' }")).first())
-            .withMessageStartingWith("Command failed with error 51183 (Location51183): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 51183 (Location51183): " +
                 "'Cannot find index to verify that join fields will be unique'");
     }
 
@@ -2474,7 +2474,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: '" + collection.getNamespace().getCollectionName() + "', on: 'xyz' }")).first())
-            .withMessageStartingWith("Command failed with error 51183 (Location51183): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 51183 (Location51183): " +
                 "'Cannot find index to verify that join fields will be unique'");
     }
 
@@ -2552,13 +2552,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "Cannot return a cursor when the value for $merge stage is not a string or a document"),
 
             Arguments.of("$merge: { otherParam: 1 }", MongoCommandException.class,
-                "Command failed with error 40415 (Location40415): 'BSON field '$merge.otherParam' is an unknown field.'"),
+                "Command execution failed on MongoDB server with error 40415 (Location40415): 'BSON field '$merge.otherParam' is an unknown field.'"),
 
             Arguments.of("$merge: { into: {} }", BsonInvalidOperationException.class,
                 "Document does not contain key coll"),
 
             Arguments.of("$merge: { into: { coll: 'abc', other: 1} }", MongoCommandException.class,
-                "Command failed with error 40415 (Location40415): 'BSON field 'into.other' is an unknown field.'"),
+                "Command execution failed on MongoDB server with error 40415 (Location40415): 'BSON field 'into.other' is an unknown field.'"),
 
             Arguments.of("$merge: { into: { coll: 1} }", BsonInvalidOperationException.class,
                 "Value expected to be of type STRING is of unexpected type INT32"),
@@ -2567,49 +2567,49 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "Value expected to be of type STRING is of unexpected type INT32"),
 
             Arguments.of("$merge: { into: 'abc', on: 1 }", MongoCommandException.class,
-                "Command failed with error 51186 (Location51186): '$merge 'on' field  must be either a string or an array of strings, but found int'"),
+                "Command execution failed on MongoDB server with error 51186 (Location51186): '$merge 'on' field  must be either a string or an array of strings, but found int'"),
 
             Arguments.of("$merge: { into: 'abc', on: [1, 2, 3] }", MongoCommandException.class,
-                "Command failed with error 51134 (Location51134): '$merge 'on' array elements must be strings, but found int'"),
+                "Command execution failed on MongoDB server with error 51134 (Location51134): '$merge 'on' array elements must be strings, but found int'"),
 
             Arguments.of("$merge: { into: 'abc', let: 1 }", MongoCommandException.class,
-                "Command failed with error 14 (TypeMismatch): 'BSON field '$merge.let' is the wrong type 'int', expected type 'object''"),
+                "Command execution failed on MongoDB server with error 14 (TypeMismatch): 'BSON field '$merge.let' is the wrong type 'int', expected type 'object''"),
 
             Arguments.of("$merge: { into: 'abc', let: [] }", MongoCommandException.class,
-                "Command failed with error 14 (TypeMismatch): 'BSON field '$merge.let' is the wrong type 'array', expected type 'object''"),
+                "Command execution failed on MongoDB server with error 14 (TypeMismatch): 'BSON field '$merge.let' is the wrong type 'array', expected type 'object''"),
 
             Arguments.of("$merge: { into: 'abc', let: {} }", MongoCommandException.class,
-                "Command failed with error 51199 (Location51199): 'Cannot use 'let' variables with 'whenMatched: merge' mode'"),
+                "Command execution failed on MongoDB server with error 51199 (Location51199): 'Cannot use 'let' variables with 'whenMatched: merge' mode'"),
 
             Arguments.of("$merge: { into: 'abc', let: {new: 1}, whenMatched: [] }", MongoCommandException.class,
-                "Command failed with error 51273 (Location51273): ''let' may not define a value for the reserved 'new' variable other than '$$ROOT''"),
+                "Command execution failed on MongoDB server with error 51273 (Location51273): ''let' may not define a value for the reserved 'new' variable other than '$$ROOT''"),
 
             Arguments.of("$merge: { into: 'abc', on: ['a', 'b', 'a'] }", MongoCommandException.class,
-                "Command failed with error 31465 (Location31465): 'Found a duplicate field 'a''"),
+                "Command execution failed on MongoDB server with error 31465 (Location31465): 'Found a duplicate field 'a''"),
 
             Arguments.of("$merge: { into: 'abc', on: [] }", MongoCommandException.class,
-                "Command failed with error 51187 (Location51187): 'If explicitly specifying $merge 'on', must include at least one field'"),
+                "Command execution failed on MongoDB server with error 51187 (Location51187): 'If explicitly specifying $merge 'on', must include at least one field'"),
 
             Arguments.of("$merge: { into: 'abc', whenMatched: 1 }", MongoCommandException.class,
-                "Command failed with error 51191 (Location51191): '$merge 'whenMatched' field  must be either a string or an array, but found int'"),
+                "Command execution failed on MongoDB server with error 51191 (Location51191): '$merge 'whenMatched' field  must be either a string or an array, but found int'"),
 
             Arguments.of("$merge: { into: 'abc', whenMatched: 'other' }", MongoCommandException.class,
-                "Command failed with error 2 (BadValue): 'Enumeration value 'other' for field 'whenMatched' is not a valid value.'"),
+                "Command execution failed on MongoDB server with error 2 (BadValue): 'Enumeration value 'other' for field 'whenMatched' is not a valid value.'"),
 
             Arguments.of("$merge: { into: 'abc', whenMatched: ['a', 'b'] }", MongoCommandException.class,
-                "Command failed with error 14 (TypeMismatch): 'Each element of the 'pipeline' array must be an object'"),
+                "Command execution failed on MongoDB server with error 14 (TypeMismatch): 'Each element of the 'pipeline' array must be an object'"),
 
             Arguments.of("$merge: { into: 'abc', whenMatched: [{$sort: {a: 1}}] }", MongoCommandException.class,
-                "Command failed with error 72 (InvalidOptions): 'PlanExecutor error during aggregation :: caused by :: $sort is not allowed to be used within an update'"),
+                "Command execution failed on MongoDB server with error 72 (InvalidOptions): 'PlanExecutor error during aggregation :: caused by :: $sort is not allowed to be used within an update'"),
 
             Arguments.of("$merge: { into: 'abc', whenNotMatched: 1 }", MongoCommandException.class,
-                "Command failed with error 14 (TypeMismatch): 'BSON field '$merge.whenNotMatched' is the wrong type 'int', expected type 'string''"),
+                "Command execution failed on MongoDB server with error 14 (TypeMismatch): 'BSON field '$merge.whenNotMatched' is the wrong type 'int', expected type 'string''"),
 
             Arguments.of("$merge: { into: 'abc', whenNotMatched: 'other' }", MongoCommandException.class,
-                "Command failed with error 2 (BadValue): 'Enumeration value 'other' for field '$merge.whenNotMatched' is not a valid value.'"),
+                "Command execution failed on MongoDB server with error 2 (BadValue): 'Enumeration value 'other' for field '$merge.whenNotMatched' is not a valid value.'"),
 
             Arguments.of("$merge: { into: 1 }", MongoCommandException.class,
-                "Command failed with error 51178 (Location51178): '$merge 'into' field  must be either a string or an object, but found int'")
+                "Command execution failed on MongoDB server with error 51178 (Location51178): '$merge 'into' field  must be either a string or an object, but found int'")
         );
     }
 
@@ -2632,7 +2632,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "$merge: { into: 'other' }",
                 "$project : { _id: 0 }"
             )).first())
-            .withMessageStartingWith("Command failed with error 40601 (Location40601): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 40601 (Location40601): " +
                 "'$merge can only be the final stage in the pipeline'");
     }
 
@@ -2682,17 +2682,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: { r: {$rand: {a: 1}}}")).first())
-            .withMessageStartingWith("Command failed with error 3040501 (Location3040501): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 3040501 (Location3040501): " +
                 "'Invalid $project :: caused by :: $rand does not currently accept arguments'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: { r: {$rand: [{}, {}]}}")).first())
-            .withMessageStartingWith("Command failed with error 3040501 (Location3040501): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 3040501 (Location3040501): " +
                 "'Invalid $project :: caused by :: $rand does not currently accept arguments'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$project: { r: {$rand: null}}")).first())
-            .withMessageStartingWith("Command failed with error 10065 (Location10065): " +
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 10065 (Location10065): " +
                 "'Invalid $project :: caused by :: invalid parameter: expected an object ($rand)'");
 
         assertThat(collection.aggregate(jsonList("$project: { r: {$rand: []}}")))
@@ -2740,7 +2740,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error -1: '$geoNear is not yet implemented. See https://github.com/bwaldvogel/mongo-java-server/issues/138'");
+            .withMessageContaining("Command execution failed on MongoDB server with error -1: '$geoNear is not yet implemented. See https://github.com/bwaldvogel/mongo-java-server/issues/138'");
     }
 
     private static Stream<Arguments> aggregateWithToDoubleArguments() {
@@ -2789,7 +2789,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
+            .withMessageContaining("Command execution failed on MongoDB server with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Stream<Arguments> aggregateWithToDateArguments() {
@@ -2843,7 +2843,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
+            .withMessageContaining("Command execution failed on MongoDB server with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Stream<Arguments> aggregateWithToIntArguments() {
@@ -2888,7 +2888,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
+            .withMessageContaining("Command execution failed on MongoDB server with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Stream<Arguments> aggregateWithToBoolArguments() {
@@ -2978,7 +2978,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
+            .withMessageContaining("Command execution failed on MongoDB server with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Stream<Arguments> aggregateWithToObjectIdArguments() {
@@ -3022,7 +3022,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error 241 (ConversionFailure): " + expectedMessagePart);
+            .withMessageContaining("Command execution failed on MongoDB server with error 241 (ConversionFailure): " + expectedMessagePart);
     }
 
     private static Stream<Arguments> aggregateWithConvertArguments() {
@@ -3089,25 +3089,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     private static Stream<Arguments> aggregateWithConvertArguments_illegalValue() {
         return Stream.of(
             Arguments.of("input: 123, to: 'unknown'",
-                "Command failed with error 2 (BadValue): 'Failed to optimize pipeline :: caused by :: Unknown type name: unknown'"),
+                "Command execution failed on MongoDB server with error 2 (BadValue): 'Failed to optimize pipeline :: caused by :: Unknown type name: unknown'"),
 
             Arguments.of("input: 123, to: 12.5",
-                "Command failed with error 9 (FailedToParse): 'Failed to optimize pipeline :: caused by :: In $convert, numeric 'to' argument is not an integer'"),
+                "Command execution failed on MongoDB server with error 9 (FailedToParse): 'Failed to optimize pipeline :: caused by :: In $convert, numeric 'to' argument is not an integer'"),
 
             Arguments.of("input: 123, to: [1, 2]",
-                "Command failed with error 9 (FailedToParse): 'Failed to optimize pipeline :: caused by :: $convert's 'to' argument must be a string or number, but is array'"),
+                "Command execution failed on MongoDB server with error 9 (FailedToParse): 'Failed to optimize pipeline :: caused by :: $convert's 'to' argument must be a string or number, but is array'"),
 
             Arguments.of("x: 123",
-                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert found an unknown argument: x'"),
+                "Command execution failed on MongoDB server with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert found an unknown argument: x'"),
 
             Arguments.of("to: 'int'",
-                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: Missing 'input' parameter to $convert'"),
+                "Command execution failed on MongoDB server with error 9 (FailedToParse): 'Invalid $project :: caused by :: Missing 'input' parameter to $convert'"),
 
             Arguments.of("input: 123, onError: 123",
-                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: Missing 'to' parameter to $convert'"),
+                "Command execution failed on MongoDB server with error 9 (FailedToParse): 'Invalid $project :: caused by :: Missing 'to' parameter to $convert'"),
 
             Arguments.of("input: 123, to: 'int', onElse: 123",
-                "Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert found an unknown argument: onElse'")
+                "Command execution failed on MongoDB server with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert found an unknown argument: onElse'")
         );
     }
 
@@ -3134,7 +3134,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageStartingWith("Command failed with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert expects an object of named arguments but found: int'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 9 (FailedToParse): 'Invalid $project :: caused by :: $convert expects an object of named arguments but found: int'");
     }
 
     @Test
@@ -3169,31 +3169,31 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$sample: 3}")).first())
-            .withMessageStartingWith("Command failed with error 28745 (Location28745): 'the $sample stage specification must be an object'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28745 (Location28745): 'the $sample stage specification must be an object'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$sample: [1, 2]}")).first())
-            .withMessageStartingWith("Command failed with error 28745 (Location28745): 'the $sample stage specification must be an object'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28745 (Location28745): 'the $sample stage specification must be an object'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: 'a' }}")).first())
-            .withMessageStartingWith("Command failed with error 28746 (Location28746): 'size argument to $sample must be a number'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28746 (Location28746): 'size argument to $sample must be a number'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: null }}")).first())
-            .withMessageStartingWith("Command failed with error 28746 (Location28746): 'size argument to $sample must be a number'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28746 (Location28746): 'size argument to $sample must be a number'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: -1 }}")).first())
-            .withMessageStartingWith("Command failed with error 28747 (Location28747): 'size argument to $sample must not be negative'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28747 (Location28747): 'size argument to $sample must not be negative'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$sample: { size: 1, bla: 2}}")).first())
-            .withMessageStartingWith("Command failed with error 28748 (Location28748): 'unrecognized option to $sample: bla'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28748 (Location28748): 'unrecognized option to $sample: bla'");
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(jsonList("$sample: {}}")).first())
-            .withMessageStartingWith("Command failed with error 28749 (Location28749): '$sample stage must specify a size'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 28749 (Location28749): '$sample stage must specify a size'");
     }
 
     private static Function<Document, Document> withSortedStringList(String key) {

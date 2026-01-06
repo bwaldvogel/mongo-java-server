@@ -91,11 +91,11 @@ public abstract class AbstractReadOnlyProxyTest {
     void testIllegalCommand() throws Exception {
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> readOnlyClient.getDatabase("testdb").runCommand(json("foo:1")))
-            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 59 (CommandNotFound): 'no such command: 'foo'");
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> readOnlyClient.getDatabase("bar").runCommand(json("foo:1")))
-            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'foo'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 59 (CommandNotFound): 'no such command: 'foo'");
     }
 
     @Test
@@ -133,7 +133,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> collection.replaceOne(object, newObject))
-            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'update'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 59 (CommandNotFound): 'no such command: 'update'");
     }
 
     @Test
@@ -142,7 +142,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> collection.updateMany(json("{}"), Updates.set("foo", "bar"), new UpdateOptions().upsert(true)))
-            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'update'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 59 (CommandNotFound): 'no such command: 'update'");
     }
 
     @Test
@@ -159,7 +159,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(collection::drop)
-            .withMessageContaining("Command failed with error 59 (CommandNotFound): 'no such command: 'drop'");
+            .withMessageContaining("Command execution failed on MongoDB server with error 59 (CommandNotFound): 'no such command: 'drop'");
     }
 
     @Test
@@ -193,7 +193,7 @@ public abstract class AbstractReadOnlyProxyTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Command failed with error -1: 'Aggregation contains a modifying stage and is therefore not allowed in read-only mode'");
+            .withMessageContaining("Command execution failed on MongoDB server with error -1: 'Aggregation contains a modifying stage and is therefore not allowed in read-only mode'");
     }
 
 }
