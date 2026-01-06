@@ -58,13 +58,13 @@ public class Utils {
         String subKey = joinTail(pathFragments);
         Assert.doesNotStartWith(subKey, "$.");
         Object subObject = getFieldValueListSafe(document, mainKey);
-        if (subObject instanceof Document) {
-            return getSubdocumentValue((Document) subObject, subKey, handleCollections);
+        if (subObject instanceof Document subDocument) {
+            return getSubdocumentValue(subDocument, subKey, handleCollections);
         } else if (handleCollections && subObject instanceof Collection<?> values) {
             List<Object> result = new ArrayList<>();
             for (Object o : values) {
-                if (o instanceof Document) {
-                    Object subdocumentValue = getSubdocumentValue((Document) o, subKey, handleCollections);
+                if (o instanceof Document doc) {
+                    Object subdocumentValue = getSubdocumentValue(doc, subKey, handleCollections);
                     if (subdocumentValue instanceof Collection) {
                         result.addAll((Collection<?>) subdocumentValue);
                     } else {
@@ -93,12 +93,12 @@ public class Utils {
             return false;
         }
 
-        if (value instanceof Boolean) {
-            return ((Boolean) value).booleanValue();
+        if (value instanceof Boolean bool) {
+            return bool.booleanValue();
         }
 
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue() != 0.0;
+        if (value instanceof Number number) {
+            return number.doubleValue() != 0.0;
         }
 
         return true;
@@ -110,8 +110,8 @@ public class Utils {
         }
         if (value instanceof Long && cannotBeRepresentedAsDouble((Long) value)) {
             return value;
-        } else if (value instanceof Number) {
-            double doubleValue = ((Number) value).doubleValue();
+        } else if (value instanceof Number number) {
+            double doubleValue = number.doubleValue();
             if (doubleValue == -0.0) {
                 doubleValue = 0.0;
             }
@@ -221,8 +221,8 @@ public class Utils {
             } else {
                 List<Object> values = new ArrayList<>();
                 for (Object subValue : list) {
-                    if (subValue instanceof Document) {
-                        Object subDocumentValue = ((Document) subValue).getOrMissing(field);
+                    if (subValue instanceof Document subDocument) {
+                        Object subDocumentValue = subDocument.getOrMissing(field);
                         if (!(subDocumentValue instanceof Missing)) {
                             values.add(subDocumentValue);
                         }
@@ -308,8 +308,8 @@ public class Utils {
             } else {
                 return false;
             }
-        } else if (document instanceof Document) {
-            return ((Document) document).containsKey(field);
+        } else if (document instanceof Document doc) {
+            return doc.containsKey(field);
         }
 
         throw new IllegalArgumentException("illegal document: " + document);

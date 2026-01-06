@@ -336,8 +336,8 @@ public class DefaultQueryMatcher implements QueryMatcher {
 
         if (queryValue instanceof Document queryObject) {
             if (queryObject.keySet().equals(Constants.REFERENCE_KEYS)) {
-                if (value instanceof Document) {
-                    return matches((Document) value, queryObject);
+                if (value instanceof Document documentValue) {
+                    return matches(documentValue, queryObject);
                 } else {
                     return false;
                 }
@@ -520,10 +520,10 @@ public class DefaultQueryMatcher implements QueryMatcher {
                 .map(BsonType::getAlias)
                 .collect(Collectors.toList());
             return matchTypes(value, types);
-        } else if (expressionValue instanceof String) {
-            return matchTypes(value, BsonType.forString((String) expressionValue));
-        } else if (expressionValue instanceof Number) {
-            return matchTypes(value, BsonType.forNumber((Number) expressionValue));
+        } else if (expressionValue instanceof String stringValue) {
+            return matchTypes(value, BsonType.forString(stringValue));
+        } else if (expressionValue instanceof Number numberValue) {
+            return matchTypes(value, BsonType.forNumber(numberValue));
         } else if (expressionValue instanceof Collection<?> values) {
             for (Object type : values) {
                 if (matchTypes(value, type)) {

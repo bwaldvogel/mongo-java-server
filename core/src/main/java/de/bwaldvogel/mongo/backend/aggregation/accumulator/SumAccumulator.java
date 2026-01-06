@@ -12,8 +12,8 @@ public class SumAccumulator extends Accumulator {
 
     @Override
     public void aggregate(Object value) {
-        if (value instanceof Number) {
-            sum = NumericUtils.addNumbers(sum, (Number) value);
+        if (value instanceof Number number) {
+            sum = NumericUtils.addNumbers(sum, number);
         }
     }
 

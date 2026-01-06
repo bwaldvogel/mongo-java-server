@@ -65,8 +65,8 @@ public class GraphLookupStage extends AbstractLookupStage {
         if (value == null) {
             return null;
         }
-        if (value instanceof Integer) {
-            return (Integer) value;
+        if (value instanceof Integer integer) {
+            return integer;
         }
         throw new FailedToParseException("'" + name + "' option to \" + stageName + \" must be a integer, but was type " + Utils.describeType(value));
     }
@@ -76,8 +76,8 @@ public class GraphLookupStage extends AbstractLookupStage {
         if (value == null) {
             return null;
         }
-        if (value instanceof String) {
-            return (String) value;
+        if (value instanceof String string) {
+            return string;
         }
         throw new FailedToParseException("'" + name + "' option to \" + stageName + \" must be a string, but was type " + Utils.describeType(value));
     }
@@ -113,8 +113,8 @@ public class GraphLookupStage extends AbstractLookupStage {
             return linked;
         }
 
-        if (value instanceof List) {
-            return ((List<?>) value).stream()
+        if (value instanceof List<?> list) {
+            return list.stream()
                 .flatMap(item -> findLinkedDocuments(depth + 1, linked, item).stream())
                 .collect(toList());
         }

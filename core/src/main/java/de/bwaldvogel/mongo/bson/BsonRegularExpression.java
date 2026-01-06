@@ -46,8 +46,8 @@ public class BsonRegularExpression implements Bson {
     }
 
     public static boolean isRegularExpression(Object object) {
-        if (object instanceof Document) {
-            return ((Document) object).containsKey(REGEX);
+        if (object instanceof Document document) {
+            return document.containsKey(REGEX);
         } else {
             return object instanceof BsonRegularExpression;
         }

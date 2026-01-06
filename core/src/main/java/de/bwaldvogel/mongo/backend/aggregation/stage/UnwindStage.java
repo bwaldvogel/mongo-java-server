@@ -24,8 +24,7 @@ public class UnwindStage implements AggregationStage {
         }
 
         final String fieldPath;
-        if (input instanceof Document) {
-            Document inputDocument = (Document) input;
+        if (input instanceof Document inputDocument) {
             if (!inputDocument.containsKey("path")) {
                 throw new MongoServerError(28812, "no path specified to $unwind stage");
             }

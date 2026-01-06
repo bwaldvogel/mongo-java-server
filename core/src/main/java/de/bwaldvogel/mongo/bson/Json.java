@@ -31,8 +31,8 @@ public final class Json {
         if (value instanceof Boolean) {
             return value.toString();
         }
-        if (value instanceof String) {
-            return "\"" + escapeJson((String) value) + "\"";
+        if (value instanceof String string) {
+            return "\"" + escapeJson(string) + "\"";
         }
         if (value instanceof Document document) {
             return document.toString(compactKey, jsonPrefix, jsonSuffix);
@@ -54,8 +54,8 @@ public final class Json {
         if (value instanceof BinData binData) {
             return "BinData(0, " + toHex(binData.getData()) + ")";
         }
-        if (value instanceof LegacyUUID) {
-            UUID uuid = ((LegacyUUID) value).getUuid();
+        if (value instanceof LegacyUUID legacyUUID) {
+            UUID uuid = legacyUUID.getUuid();
             return "BinData(3, " + toHex(uuid) + ")";
         }
         if (value instanceof UUID uuid) {

@@ -55,11 +55,11 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ClientRequest object) {
-        if (object instanceof MongoQuery) {
-            MongoReply mongoReply = handleQuery((MongoQuery) object);
+        if (object instanceof MongoQuery mongoQuery) {
+            MongoReply mongoReply = handleQuery(mongoQuery);
             ctx.channel().writeAndFlush(mongoReply);
-        } else if (object instanceof MongoMessage) {
-            MongoMessage response = handleMessage((MongoMessage) object);
+        } else if (object instanceof MongoMessage mongoMessage) {
+            MongoMessage response = handleMessage(mongoMessage);
             ctx.channel().writeAndFlush(response);
         } else {
             throw new MongoServerException("unknown message: " + object);

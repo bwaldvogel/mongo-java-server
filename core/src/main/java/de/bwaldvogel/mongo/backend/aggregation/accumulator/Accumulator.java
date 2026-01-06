@@ -33,24 +33,16 @@ public abstract class Accumulator {
             });
             String groupOperator = aggregation.getKey();
             Object expression = aggregation.getValue();
-            if (groupOperator.equals("$sum")) {
-                accumulators.put(field, () -> new SumAccumulator(field, expression));
-            } else if (groupOperator.equals("$min")) {
-                accumulators.put(field, () -> new MinAccumulator(field, expression));
-            } else if (groupOperator.equals("$max")) {
-                accumulators.put(field, () -> new MaxAccumulator(field, expression));
-            } else if (groupOperator.equals("$avg")) {
-                accumulators.put(field, () -> new AvgAccumulator(field, expression));
-            } else if (groupOperator.equals("$addToSet")) {
-                accumulators.put(field, () -> new AddToSetAccumulator(field, expression));
-            } else if (groupOperator.equals("$push")) {
-                accumulators.put(field, () -> new PushAccumulator(field, expression));
-            } else if (groupOperator.equals("$first")) {
-                accumulators.put(field, () -> new FirstAccumulator(field, expression));
-            } else if (groupOperator.equals("$last")) {
-                accumulators.put(field, () -> new LastAccumulator(field, expression));
-            } else {
-                throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
+            switch (groupOperator) {
+                case "$sum" -> accumulators.put(field, () -> new SumAccumulator(field, expression));
+                case "$min" -> accumulators.put(field, () -> new MinAccumulator(field, expression));
+                case "$max" -> accumulators.put(field, () -> new MaxAccumulator(field, expression));
+                case "$avg" -> accumulators.put(field, () -> new AvgAccumulator(field, expression));
+                case "$addToSet" -> accumulators.put(field, () -> new AddToSetAccumulator(field, expression));
+                case "$push" -> accumulators.put(field, () -> new PushAccumulator(field, expression));
+                case "$first" -> accumulators.put(field, () -> new FirstAccumulator(field, expression));
+                case "$last" -> accumulators.put(field, () -> new LastAccumulator(field, expression));
+                default -> throw new MongoServerError(15952, "unknown group operator '" + groupOperator + "'");
             }
         }
         return accumulators;

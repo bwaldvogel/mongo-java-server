@@ -40,18 +40,12 @@ public enum OperationType {
     }
 
     String getDescription() {
-        switch (this) {
-            case DELETE:
-                return "delete";
-            case INSERT:
-                return "insert";
-            case UPDATE:
-                return "update";
-            case COMMAND:
-                return "command";
-            case INVALIDATE:
-                return "invalidate";
-        }
-        return null;
+        return switch (this) {
+            case DELETE -> "delete";
+            case INSERT -> "insert";
+            case UPDATE -> "update";
+            case COMMAND -> "command";
+            case INVALIDATE -> "invalidate";
+        };
     }
 }
