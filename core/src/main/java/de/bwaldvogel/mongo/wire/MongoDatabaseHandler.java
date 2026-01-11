@@ -26,7 +26,7 @@ import io.netty.channel.group.ChannelGroup;
 
 public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequest> {
 
-    private static final Logger log = LoggerFactory.getLogger(MongoWireProtocolHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(MongoDatabaseHandler.class);
 
     private final AtomicInteger idSequence = new AtomicInteger();
     private final MongoBackend mongoBackend;
