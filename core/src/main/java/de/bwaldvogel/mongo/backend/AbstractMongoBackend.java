@@ -223,10 +223,12 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         response.append("system", new Document()
             .append("currentTime", Instant.now())
             .append("hostname", Utils.getHostName())
+            .append("cpuArch", System.getProperty("os.arch"))
         );
         response.append("extra", new Document()
             .append("versionString", osName + " " + osVersion)
-            .append("kernelVersion", osVersion));
+            .append("kernelVersion", osVersion)
+            .append("physicalCores", Runtime.getRuntime().availableProcessors()));
         Utils.markOkay(response);
         return response;
     }
