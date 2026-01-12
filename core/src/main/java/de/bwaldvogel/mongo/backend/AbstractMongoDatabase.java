@@ -94,18 +94,18 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return getClass().getSimpleName() + "(" + getDatabaseName() + ")";
     }
 
-    private Document commandError(Channel channel, String command, Document query) {
+    private Document commandError(Channel channel, DatabaseCommand command, Document query) {
         // getlasterror must not clear the last error
-        if (command.equalsIgnoreCase("getlasterror")) {
-            return commandGetLastError(channel, command, query);
-        } else if (command.equalsIgnoreCase("reseterror")) {
+        if (command.getCommand() == Command.GET_LAST_ERROR) {
+            return commandGetLastError(channel, command.getQueryValue(), query);
+        } else if (command.getCommand() == Command.RESET_ERROR) {
             return commandResetError(channel);
         }
         return null;
     }
 
     @Override
-    public Document handleCommand(Channel channel, String command, Document query, DatabaseResolver databaseResolver, Oplog oplog) {
+    public Document handleCommand(Channel channel, DatabaseCommand command, Document query, DatabaseResolver databaseResolver, Oplog oplog) {
         Document commandErrorDocument = commandError(channel, command, query);
         if (commandErrorDocument != null) {
             return commandErrorDocument;
@@ -113,72 +113,60 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         clearLastStatus(channel);
 
-        if (command.equalsIgnoreCase("find")) {
-            return commandFind(command, query);
-        } else if (command.equalsIgnoreCase("insert")) {
-            return commandInsert(channel, command, query, oplog);
-        } else if (command.equalsIgnoreCase("update")) {
-            return commandUpdate(channel, command, query, oplog);
-        } else if (command.equalsIgnoreCase("delete")) {
-            return commandDelete(channel, command, query, oplog);
-        } else if (command.equalsIgnoreCase("create")) {
-            return commandCreate(command, query);
-        } else if (command.equalsIgnoreCase("createIndexes")) {
-            String collectionName = (String) query.get(command);
-            return commandCreateIndexes(query, collectionName);
-        } else if (command.equalsIgnoreCase("count")) {
-            return commandCount(command, query);
-        } else if (command.equalsIgnoreCase("aggregate")) {
-            return commandAggregate(command, query, databaseResolver, oplog);
-        } else if (command.equalsIgnoreCase("distinct")) {
-            MongoCollection<P> collection = resolveCollection(command, query);
-            if (collection == null) {
-                Document response = new Document("values", Collections.emptyList());
-                Utils.markOkay(response);
-                return response;
-            } else {
-                return collection.handleDistinct(query);
+        final String commandName = command.getQueryValue();
+        return switch (command.getCommand()) {
+            case FIND -> commandFind(commandName, query);
+            case INSERT -> commandInsert(channel, commandName, query, oplog);
+            case UPDATE -> commandUpdate(channel, commandName, query, oplog);
+            case DELETE -> commandDelete(channel, commandName, query, oplog);
+            case CREATE -> commandCreate(commandName, query);
+            case CREATE_INDEXES -> commandCreateIndexes(query, query.get(commandName).toString());
+            case COUNT -> commandCount(commandName, query);
+            case AGGREGATE -> commandAggregate(commandName, query, databaseResolver, oplog);
+            case DISTINCT -> {
+                MongoCollection<P> collection = resolveCollection(commandName, query);
+                if (collection == null) {
+                    Document response = new Document("values", Collections.emptyList());
+                    Utils.markOkay(response);
+                    yield response;
+                } else {
+                    yield collection.handleDistinct(query);
+                }
             }
-        } else if (command.equalsIgnoreCase("drop")) {
-            return commandDrop(query, oplog);
-        } else if (command.equalsIgnoreCase("dropIndexes")) {
-            return commandDropIndexes(query);
-        } else if (command.equalsIgnoreCase("dbstats")) {
-            return commandDatabaseStats();
-        } else if (command.equalsIgnoreCase("collstats")) {
-            MongoCollection<P> collection = resolveCollection(command, query);
-            if (collection == null) {
-                Document emptyStats = new Document()
-                    .append("count", 0)
-                    .append("size", 0);
-                Utils.markOkay(emptyStats);
-                return emptyStats;
-            } else {
-                return collection.getStats();
+            case DROP -> commandDrop(commandName, query, oplog);
+            case DROP_INDEXES -> commandDropIndexes(commandName, query);
+            case DB_STATS -> commandDatabaseStats();
+            case COLL_STATS -> {
+                MongoCollection<P> collection = resolveCollection(commandName, query);
+                if (collection == null) {
+                    Document emptyStats = new Document()
+                        .append("count", 0)
+                        .append("size", 0);
+                    Utils.markOkay(emptyStats);
+                    yield emptyStats;
+                } else {
+                    yield collection.getStats();
+                }
             }
-        } else if (command.equalsIgnoreCase("validate")) {
-            MongoCollection<P> collection = resolveCollection(command, query);
-            if (collection == null) {
-                String collectionName = query.get(command).toString();
-                String fullCollectionName = getDatabaseName() + "." + collectionName;
-                throw new MongoServerError(26, "NamespaceNotFound", "Collection '" + fullCollectionName + "' does not exist to validate.");
+            case VALIDATE -> {
+                MongoCollection<P> collection = resolveCollection(commandName, query);
+                if (collection == null) {
+                    String collectionName = query.get(commandName).toString();
+                    String fullCollectionName = getDatabaseName() + "." + collectionName;
+                    throw new MongoServerError(26, "NamespaceNotFound", "Collection '" + fullCollectionName + "' does not exist to validate.");
+                }
+                yield collection.validate();
             }
-            return collection.validate();
-        } else if (command.equalsIgnoreCase("findAndModify")) {
-            String collectionName = query.get(command).toString();
-            MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-            return collection.findAndModify(query);
-        } else if (command.equalsIgnoreCase("listCollections")) {
-            return listCollections();
-        } else if (command.equalsIgnoreCase("listIndexes")) {
-            String collectionName = query.get(command).toString();
-            return listIndexes(collectionName);
-        } else if (command.equals("triggerInternalException")) {
-            throw new NullPointerException("For testing purposes");
-        } else {
-            log.error("unknown query: {}", query);
-        }
-        throw new NoSuchCommandException(command);
+            case FIND_AND_MODIFY -> {
+                String collectionName = query.get(commandName).toString();
+                MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
+                yield collection.findAndModify(query);
+            }
+            case LIST_COLLECTIONS -> listCollections();
+            case LIST_INDEXES -> listIndexes(query.get(commandName).toString());
+            case TRIGGER_INTERNAL_EXCEPTION -> throw new NullPointerException("For testing purposes");
+            default -> throw new NoSuchCommandException(command.getQueryValue());
+        };
     }
 
     private Document listCollections() {
@@ -244,7 +232,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandFind(String command, Document query) {
-        String collectionName = (String) query.get(command);
+        String collectionName = query.get(command).toString();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
             return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), Collections.emptyList());
@@ -412,8 +400,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandDropIndexes(Document query) {
-        String collectionName = (String) query.get("dropIndexes");
+    private Document commandDropIndexes(String command, Document query) {
+        String collectionName = query.get(command).toString();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection != null) {
             dropIndexes(collection, query);
@@ -517,8 +505,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     protected abstract long getStorageSize();
 
-    private Document commandDrop(Document query, Oplog oplog) {
-        String collectionName = query.get("drop").toString();
+    private Document commandDrop(String command, Document query, Oplog oplog) {
+        String collectionName = query.get(command).toString();
 
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {

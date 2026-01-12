@@ -58,7 +58,7 @@ class AbstractMongoBackendTest {
         Channel channel = Mockito.mock(Channel.class);
         when(channel.remoteAddress()).thenReturn(new InetSocketAddress("127.0.1.254", 27017));
 
-        Document response = backend.handleCommand(channel, null, "whatsmyuri", null);
+        Document response = backend.handleCommand(channel, null, DatabaseCommand.of(Command.WHATS_MY_URI), null);
         assertThat(response).isNotNull();
         assertThat(response.get("ok")).isEqualTo(1.0);
         assertThat(response.get("you")).isEqualTo("127.0.1.254:27017");
@@ -68,7 +68,7 @@ class AbstractMongoBackendTest {
     void testHandleAdminCommand() {
         Channel channel = Mockito.mock(Channel.class);
 
-        Document response = backend.handleCommand(channel, ADMIN_DB_NAME, "ping", null);
+        Document response = backend.handleCommand(channel, ADMIN_DB_NAME, DatabaseCommand.of(Command.PING), null);
         assertThat(response).isNotNull();
         assertThat(response.get("ok")).isEqualTo(1.0);
     }
@@ -77,7 +77,7 @@ class AbstractMongoBackendTest {
     void testMongoDatabaseHandleCommand() {
         Channel channel = Mockito.mock(Channel.class);
 
-        Document response = backend.handleCommand(channel, "mockDatabase", "find", null);
+        Document response = backend.handleCommand(channel, "mockDatabase", DatabaseCommand.of(Command.FIND), null);
         assertThat(response).isNotNull();
         assertThat(response.get("ok")).isEqualTo(1.0);
         assertThat(response.get("message")).isEqualTo("fakeResponse");
