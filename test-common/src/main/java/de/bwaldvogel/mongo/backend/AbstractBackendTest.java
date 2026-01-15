@@ -6647,6 +6647,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document result = runCommand("hostInfo");
         assertThat(result.get("ok")).isEqualTo(1.0);
         assertThat(result).containsKeys("os", "system", "extra");
+        assertThat(result.get("system", Document.class)).containsKeys("currentTime", "hostname", "numCores", "cpuArch");
     }
 
     @Test
