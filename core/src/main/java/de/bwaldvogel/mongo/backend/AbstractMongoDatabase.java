@@ -434,16 +434,25 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                     dropIndex(collection, indexDocument);
                 }
             }
-        } else if (index instanceof String) {
-            dropIndex(collection, new Document("name", index));
         } else {
-            Document indexKeys = (Document) index;
-            Document indexQuery = new Document("key", indexKeys).append("ns", collection.getFullName());
+            Document indexQuery = new Document("ns", collection.getFullName());
+            if (index instanceof String indexName) {
+                indexQuery.append("name", indexName);
+            } else {
+                indexQuery.append("key", (Document) index);
+            }
             Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
-                () -> new IndexNotFoundException(indexKeys));
+                () -> createIndexNotFoundException(index));
             int numDeleted = dropIndex(collection, indexToDrop);
             Assert.equals(numDeleted, 1, () -> "Expected one deleted document");
         }
+    }
+
+    private static IndexNotFoundException createIndexNotFoundException(Object index) {
+        if (index instanceof String indexName) {
+            return new IndexNotFoundException("index not found with name [" + indexName + "]");
+        }
+        return new IndexNotFoundException((Document) index);
     }
 
     private int dropIndex(MongoCollection<P> collection, Document indexDescription) {
