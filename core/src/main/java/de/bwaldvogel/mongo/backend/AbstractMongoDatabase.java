@@ -428,7 +428,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Assert.notNull(index, () -> "Index name must not be null");
         MongoCollection<P> indexCollection = indexes.get();
         if (Objects.equals(index, "*")) {
-            for (Document indexDocument : indexCollection.queryAll()) {
+            Document nsQuery = new Document("ns", collection.getFullName());
+            for (Document indexDocument : indexCollection.handleQuery(nsQuery)) {
                 Document indexKeys = (Document) indexDocument.get("key");
                 if (!isPrimaryKeyIndex(indexKeys)) {
                     dropIndex(collection, indexDocument);
