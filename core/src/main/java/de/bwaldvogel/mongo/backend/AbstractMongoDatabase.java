@@ -427,8 +427,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Object index = query.get("index");
         Assert.notNull(index, () -> "Index name must not be null");
         MongoCollection<P> indexCollection = indexes.get();
+        Document nsQuery = new Document("ns", collection.getFullName());
         if (Objects.equals(index, "*")) {
-            Document nsQuery = new Document("ns", collection.getFullName());
             for (Document indexDocument : indexCollection.handleQuery(nsQuery)) {
                 Document indexKeys = (Document) indexDocument.get("key");
                 if (!isPrimaryKeyIndex(indexKeys)) {
@@ -436,13 +436,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 }
             }
         } else {
-            Document indexQuery = new Document("ns", collection.getFullName());
             if (index instanceof String indexName) {
-                indexQuery.append("name", indexName);
+                nsQuery.append("name", indexName);
             } else {
-                indexQuery.append("key", (Document) index);
+                nsQuery.append("key", (Document) index);
             }
-            Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
+            Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(nsQuery),
                 () -> createIndexNotFoundException(index));
             int numDeleted = dropIndex(collection, indexToDrop);
             Assert.equals(numDeleted, 1, () -> "Expected one deleted document");
