@@ -123,45 +123,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             case CREATE_INDEXES -> commandCreateIndexes(query, query.get(commandName).toString());
             case COUNT -> commandCount(commandName, query);
             case AGGREGATE -> commandAggregate(commandName, query, databaseResolver, oplog);
-            case DISTINCT -> {
-                MongoCollection<P> collection = resolveCollection(commandName, query);
-                if (collection == null) {
-                    Document response = new Document("values", Collections.emptyList());
-                    Utils.markOkay(response);
-                    yield response;
-                } else {
-                    yield collection.handleDistinct(query);
-                }
-            }
+            case DISTINCT -> commandDistinct(query, commandName);
             case DROP -> commandDrop(commandName, query, oplog);
             case DROP_INDEXES -> commandDropIndexes(commandName, query);
             case DB_STATS -> commandDatabaseStats();
-            case COLL_STATS -> {
-                MongoCollection<P> collection = resolveCollection(commandName, query);
-                if (collection == null) {
-                    Document emptyStats = new Document()
-                        .append("count", 0)
-                        .append("size", 0);
-                    Utils.markOkay(emptyStats);
-                    yield emptyStats;
-                } else {
-                    yield collection.getStats();
-                }
-            }
-            case VALIDATE -> {
-                MongoCollection<P> collection = resolveCollection(commandName, query);
-                if (collection == null) {
-                    String collectionName = query.get(commandName).toString();
-                    String fullCollectionName = getDatabaseName() + "." + collectionName;
-                    throw new MongoServerError(26, "NamespaceNotFound", "Collection '" + fullCollectionName + "' does not exist to validate.");
-                }
-                yield collection.validate();
-            }
-            case FIND_AND_MODIFY -> {
-                String collectionName = query.get(commandName).toString();
-                MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
-                yield collection.findAndModify(query);
-            }
+            case COLL_STATS -> commandCollStats(query, commandName);
+            case VALIDATE -> commandValidate(query, commandName);
+            case FIND_AND_MODIFY -> findAndModify(query, commandName);
             case LIST_COLLECTIONS -> listCollections();
             case LIST_INDEXES -> listIndexes(query.get(commandName).toString());
             case TRIGGER_INTERNAL_EXCEPTION -> throw new NullPointerException("For testing purposes");
@@ -501,6 +469,35 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
+    private Document commandCollStats(Document query, String commandName) {
+        MongoCollection<P> collection = resolveCollection(commandName, query);
+        if (collection == null) {
+            Document emptyStats = new Document()
+                .append("count", 0)
+                .append("size", 0);
+            Utils.markOkay(emptyStats);
+            return emptyStats;
+        } else {
+            return collection.getStats();
+        }
+    }
+
+    private Document commandValidate(Document query, String commandName) {
+        MongoCollection<P> collection = resolveCollection(commandName, query);
+        if (collection == null) {
+            String collectionName = query.get(commandName).toString();
+            String fullCollectionName = getDatabaseName() + "." + collectionName;
+            throw new MongoServerError(26, "NamespaceNotFound", "Collection '" + fullCollectionName + "' does not exist to validate.");
+        }
+        return collection.validate();
+    }
+
+    private Document findAndModify(Document query, String commandName) {
+        String collectionName = query.get(commandName).toString();
+        MongoCollection<P> collection = resolveOrCreateCollection(collectionName);
+        return collection.findAndModify(query);
+    }
+
     protected abstract long getFileSize();
 
     protected abstract long getStorageSize();
@@ -609,6 +606,17 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         Aggregation aggregation = getAggregation(pipeline, query, databaseResolver, collection, oplog);
         return Utils.firstBatchCursorResponse(getFullCollectionNamespace(collectionName), aggregation.computeResult());
+    }
+
+    private Document commandDistinct(Document query, String commandName) {
+        MongoCollection<P> collection = resolveCollection(commandName, query);
+        if (collection == null) {
+            Document response = new Document("values", Collections.emptyList());
+            Utils.markOkay(response);
+            return response;
+        } else {
+            return collection.handleDistinct(query);
+        }
     }
 
     private Aggregation getAggregation(List<Document> pipeline, Document query, DatabaseResolver databaseResolver,
