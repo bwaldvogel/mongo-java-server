@@ -152,46 +152,29 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     private Document handleAdminCommand(DatabaseCommand command, Document query) {
-        switch (command.getCommand()) {
-            case LIST_DATABASES: {
-                return handleListDatabases();
-            }
-            case FIND: {
-                return handleFind(command, query);
-            }
-            case REPL_SET_GET_STATUS: {
-                throw new NoReplicationEnabledException();
-            }
-            case GET_LOG: {
+        return switch (command.getCommand()) {
+            case LIST_DATABASES -> handleListDatabases();
+            case FIND -> handleFind(command, query);
+            case REPL_SET_GET_STATUS -> throw new NoReplicationEnabledException();
+            case GET_LOG -> {
                 final Object argument = query.get(command.getQueryValue());
-                return getLog(argument == null ? null : argument.toString());
+                yield getLog(argument == null ? null : argument.toString());
             }
-            case RENAME_COLLECTION: {
-                return handleRenameCollection(command.getQueryValue(), query);
-            }
-            case GET_LAST_ERROR: {
+            case RENAME_COLLECTION -> handleRenameCollection(command.getQueryValue(), query);
+            case GET_LAST_ERROR -> {
                 log.debug("getLastError on admin database");
-                return successResponse();
+                yield successResponse();
             }
-            case CONNECTION_STATUS: {
-                return handleConnectionStatus();
-            }
-            case HOST_INFO: {
-                return handleHostInfo();
-            }
-            case GET_CMD_LINE_OPTS: {
-                return handleGetCmdLineOpts();
-            }
-            case GET_FREE_MONITORING_STATUS: {
-                return handleGetFreeMonitoringStatus();
-            }
-            case END_SESSIONS: {
+            case CONNECTION_STATUS -> handleConnectionStatus();
+            case HOST_INFO -> handleHostInfo();
+            case GET_CMD_LINE_OPTS -> handleGetCmdLineOpts();
+            case GET_FREE_MONITORING_STATUS -> handleGetFreeMonitoringStatus();
+            case END_SESSIONS -> {
                 log.debug("endSessions on admin database");
-                return successResponse();
+                yield successResponse();
             }
-            default:
-                throw new NoSuchCommandException(command.getQueryValue());
-        }
+            default -> throw new NoSuchCommandException(command.getQueryValue());
+        };
     }
 
     private Document handleListDatabases() {
