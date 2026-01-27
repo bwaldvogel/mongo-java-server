@@ -1424,6 +1424,85 @@ public enum Expression implements ExpressionTraits {
         }
     },
 
+    $switch {
+        @Override
+        Object apply(Object expressionValue, Document document) {
+            Document switchDocument = requireDocument(expressionValue, 40060);
+
+            // Validate that 'branches' field exists
+            if (!switchDocument.containsKey("branches")) {
+                throw new MongoServerError(40061, "Missing 'branches' parameter to " + name());
+            }
+
+            // Validate unsupported parameters
+            List<String> supportedKeys = asList("branches", "default");
+            for (String key : switchDocument.keySet()) {
+                if (!supportedKeys.contains(key)) {
+                    throw new MongoServerError(40067, "Unrecognized parameter to " + name() + ": " + key);
+                }
+            }
+
+            // Get and validate branches
+            Object branchesValue = switchDocument.get("branches");
+            if (!(branchesValue instanceof Collection<?>)) {
+                throw new MongoServerError(40061, name() + " expected an array for 'branches', found: " + describeType(branchesValue));
+            }
+
+            Collection<?> branches = (Collection<?>) branchesValue;
+            if (branches.isEmpty()) {
+                throw new MongoServerError(40060, name() + " requires at least one branch");
+            }
+
+            // Evaluate each branch
+            for (Object branchValue : branches) {
+                if (!(branchValue instanceof Document)) {
+                    throw new MongoServerError(40062, name() + " expected each branch to be an object, found: " + describeType(branchValue));
+                }
+
+                Document branch = (Document) branchValue;
+
+                // Validate branch has required fields
+                if (!branch.containsKey("case")) {
+                    throw new MongoServerError(40064, name() + " requires each branch have a 'case' expression");
+                }
+                if (!branch.containsKey("then")) {
+                    throw new MongoServerError(40065, name() + " requires each branch have a 'then' expression");
+                }
+
+                // Validate branch has no extra fields
+                for (String key : branch.keySet()) {
+                    if (!asList("case", "then").contains(key)) {
+                        throw new MongoServerError(40063, name() + " found an unknown argument to a branch: " + key);
+                    }
+                }
+
+                // Evaluate the case expression
+                Object caseExpression = branch.get("case");
+                Object caseResult = evaluate(caseExpression, document);
+
+                // If case is true, evaluate and return the then expression
+                if (Utils.isTrue(caseResult)) {
+                    Object thenExpression = branch.get("then");
+                    return evaluate(thenExpression, document);
+                }
+            }
+
+            // No case matched, check for default
+            if (switchDocument.containsKey("default")) {
+                Object defaultExpression = switchDocument.get("default");
+                return evaluate(defaultExpression, document);
+            }
+
+            // No case matched and no default provided
+            throw new MongoServerError(40066, name() + " could not find a matching branch for an input, and no default was specified.");
+        }
+
+        @Override
+        Object apply(List<?> expressionValue, Document document) {
+            throw new UnsupportedOperationException("must not be invoked");
+        }
+    },
+
     $sqrt {
         @Override
         Object apply(List<?> expressionValue, Document document) {
