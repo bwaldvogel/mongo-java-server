@@ -1431,14 +1431,14 @@ public enum Expression implements ExpressionTraits {
 
             // Validate that 'branches' field exists
             if (!switchDocument.containsKey("branches")) {
-                throw new MongoServerError(40061, "Missing 'branches' parameter to " + name());
+                throw new MongoServerError(40068, name() + " requires at least one branch");
             }
 
             // Validate unsupported parameters
             List<String> supportedKeys = asList("branches", "default");
             for (String key : switchDocument.keySet()) {
                 if (!supportedKeys.contains(key)) {
-                    throw new MongoServerError(40067, "Unrecognized parameter to " + name() + ": " + key);
+                    throw new MongoServerError(40067, name() + " found an unknown argument: " + key);
                 }
             }
 

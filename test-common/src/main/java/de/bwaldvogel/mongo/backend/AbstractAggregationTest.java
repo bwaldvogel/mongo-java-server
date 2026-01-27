@@ -2830,7 +2830,28 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
-            .withMessageContaining("Missing 'branches' parameter to $switch");
+            .withMessageContaining("$switch requires at least one branch");
+    }
+
+    @Test
+    void testAggregateWithSwitchEmptyBranches() throws Exception {
+        collection.insertOne(json("_id: 1, value: 100"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              result: {
+                $switch: {
+                  branches: [
+                  ],
+                  default: 'none'
+                }
+              }
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("$switch requires at least one branch");
     }
 
     @Test
@@ -2853,6 +2874,28 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
             .withMessageContaining("$switch requires each branch have a 'then' expression");
+    }
+
+    @Test
+    void testAggregateWithSwitchInvalidArgument() throws Exception {
+        collection.insertOne(json("_id: 1, value: 100"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              result: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ['$value', 100] }, then: 'one hundred' }
+                  ],
+                  default_value: 'none'
+                }
+              }
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("$switch found an unknown argument: default_value");
     }
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/138
