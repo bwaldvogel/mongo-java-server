@@ -2714,6 +2714,84 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsOnly(json("_id: 1"));
     }
 
+    @Test
+    void dotNotationProjection() {
+        collection.insertOne(json("""
+            _id: 1,
+            companyName: 'Walt Disney',
+            buildingNumber: 500,
+            streetName: 'South Buena Vista Street',
+            city: 'Burbank',
+            state: 'California',
+            zipCode: 91502
+            """));
+
+        assertThat(collection.aggregate(jsonList("""
+            $project: {
+                Name: "$companyName",
+                "Address.City": "$city",
+                "Address.ZipCode": "$zipCode",
+                "Address.StreetName": "$streetName",
+                "Address.BuildingNumber": "$buildingNumber",
+            }
+            """)))
+            .containsExactly(json("""
+                _id: 1,
+                Name: 'Walt Disney',
+                Address: {
+                   City: 'Burbank',
+                   ZipCode: 91502,
+                   StreetName: 'South Buena Vista Street',
+                   BuildingNumber: 500
+                }
+                """));
+    }
+
+    @Test
+    void dotNotationProjectionDeepNesting() {
+        collection.insertOne(json("""
+            _id: 1,
+            companyName: 'Acme Corp',
+            country: 'USA',
+            state: 'California',
+            city: 'San Francisco',
+            street: 'Market Street',
+            buildingNumber: 123,
+            floor: 5,
+            unit: 'A'
+            """));
+
+        assertThat(collection.aggregate(jsonList("""
+            $project: {
+                Company: "$companyName",
+                "Location.Country": "$country",
+                "Location.Address.State": "$state",
+                "Location.Address.City": "$city",
+                "Location.Address.Details.Street": "$street",
+                "Location.Address.Details.BuildingNumber": "$buildingNumber",
+                "Location.Address.Details.Floor": "$floor",
+                "Location.Address.Details.Unit": "$unit"
+            }
+            """)))
+            .containsExactly(json("""
+                _id: 1,
+                Company: 'Acme Corp',
+                Location: {
+                   Country: 'USA',
+                   Address: {
+                      State: 'California',
+                      City: 'San Francisco',
+                      Details: {
+                         Street: 'Market Street',
+                         BuildingNumber: 123,
+                         Floor: 5,
+                         Unit: 'A'
+                      }
+                   }
+                }
+                """));
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/191
     @Test
     void testProjectWithCondition() throws Exception {

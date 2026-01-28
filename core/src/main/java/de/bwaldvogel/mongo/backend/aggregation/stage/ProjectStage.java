@@ -75,13 +75,13 @@ public class ProjectStage implements AggregationStage {
                         .stream()
                         .map(value -> Expression.evaluateDocument(value, document))
                         .collect(Collectors.toList());
-                    result.put(field, resolvedProjectionValues);
+                    Utils.changeSubdocumentValue(result, field, resolvedProjectionValues);
                 } else if (projectionValue == null) {
-                    result.put(field, null);
+                    Utils.changeSubdocumentValue(result, field, null);
                 } else {
                     Object value = Expression.evaluateDocument(projectionValue, document);
                     if (!(value instanceof Missing)) {
-                        result.put(field, value);
+                        Utils.changeSubdocumentValue(result, field, value);
                     }
                 }
             }
