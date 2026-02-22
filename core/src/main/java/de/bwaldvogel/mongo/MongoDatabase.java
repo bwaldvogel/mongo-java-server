@@ -1,6 +1,7 @@
 package de.bwaldvogel.mongo;
 
 import de.bwaldvogel.mongo.backend.CollectionOptions;
+import de.bwaldvogel.mongo.backend.DatabaseCommand;
 import de.bwaldvogel.mongo.backend.DatabaseResolver;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
@@ -14,7 +15,7 @@ public interface MongoDatabase {
 
     void handleClose(Channel channel);
 
-    Document handleCommand(Channel channel, String command, Document query, DatabaseResolver databaseResolver, Oplog oplog);
+    Document handleCommand(Channel channel, DatabaseCommand command, Document query, DatabaseResolver databaseResolver, Oplog oplog);
 
     QueryResult handleQuery(MongoQuery query);
 

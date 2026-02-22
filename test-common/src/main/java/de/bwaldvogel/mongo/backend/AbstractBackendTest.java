@@ -2544,7 +2544,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     public void testServerStatus() {
-        verifyServerStatus(runCommand("serverStatus"));
+        verifyServerStatus(runCommand(Command.SERVER_STATUS));
         verifyServerStatus(getDatabase().runCommand(json("serverStatus:1")));
     }
 
@@ -2568,7 +2568,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         try (MongoCursor<Document> cursor1 = collection.find().batchSize(10).cursor();
              MongoCursor<Document> cursor2 = collection.find().batchSize(10).cursor()) {
             log.debug("Opened {} and {}", cursor1.getServerCursor(), cursor2.getServerCursor());
-            Document serverStatus = runCommand("serverStatus");
+            Document serverStatus = runCommand(Command.SERVER_STATUS);
             assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
 
             Document metrics = serverStatus.get("metrics", Document.class);
@@ -2583,7 +2583,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     void testPing() {
-        assertThat(runCommand("ping").getDouble("ok")).isEqualTo(1.0);
+        assertThat(runCommand(Command.PING).getDouble("ok")).isEqualTo(1.0);
         assertThat(runCommand(json("ping: true")).getDouble("ok")).isEqualTo(1.0);
         assertThat(runCommand(json("ping: 2.0")).getDouble("ok")).isEqualTo(1.0);
         assertThat(getDatabase().runCommand(json("ping: true")).getDouble("ok")).isEqualTo(1.0);
@@ -2592,7 +2592,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     void testReplSetGetStatus() {
         assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> runCommand("replSetGetStatus"))
+            .isThrownBy(() -> runCommand(Command.REPL_SET_GET_STATUS))
             .withMessageStartingWith("Command execution failed on MongoDB server with error 76 (NoReplicationEnabled): 'not running with --replSet'");
     }
 
@@ -3871,7 +3871,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     void testIsMaster() {
-        Document isMaster = runCommand("isMaster");
+        Document isMaster = runCommand(Command.IS_MASTER);
         assertThat(isMaster.getBoolean("ismaster")).isTrue();
         assertThat(isMaster.getDate("localTime")).isInstanceOf(Date.class);
         Integer maxBsonObjectSize = isMaster.getInteger("maxBsonObjectSize");
@@ -5306,7 +5306,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testGetLastError() {
         collection.insertOne(json("_id: 1"));
 
-        Document actual = db.runCommand(json("getlasterror: 1"));
+        Document actual = db.runCommand(json("getLastError: 1"));
         assertThat(actual.get("n")).isEqualTo(0);
         assertThat(actual).containsKey("err");
         assertThat(actual.get("err")).isNull();
@@ -5316,7 +5316,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
             .withMessageContaining("E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1.0 }");
 
-        Document lastError = db.runCommand(json("getlasterror: 1"));
+        Document lastError = db.runCommand(json("getLastError: 1"));
         assertThat(lastError.get("code")).isEqualTo(11000);
         assertThat(lastError.getString("err")).contains("duplicate key");
         assertThat(lastError.getString("codeName")).isEqualTo("DuplicateKey");
@@ -5331,10 +5331,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .isThrownBy(() -> collection.insertOne(json("_id: 1.0")))
             .withMessageContaining("duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1.0 }");
 
-        assertThat(db.runCommand(json("reseterror: 1")))
+        assertThat(db.runCommand(json("resetError: 1")))
             .isEqualTo(json("ok: 1.0"));
 
-        assertThat(db.runCommand(json("getlasterror: 1")))
+        assertThat(db.runCommand(json("getLastError: 1")))
             .containsAllEntriesOf(json("err: null, n: 0, ok: 1.0"));
     }
 
@@ -6714,13 +6714,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     void testConnectionStatus() {
-        Document result = runCommand("connectionStatus");
+        Document result = runCommand(Command.CONNECTION_STATUS);
         assertThat(result).isEqualTo(json("ok: 1.0, authInfo: {authenticatedUsers: [], authenticatedUserRoles: []}"));
     }
 
     @Test
     void testHostInfo() {
-        Document result = runCommand("hostInfo");
+        Document result = runCommand(Command.HOST_INFO);
         assertThat(result.get("ok")).isEqualTo(1.0);
         assertThat(result).containsKeys("os", "system", "extra");
         assertThat(result.get("system", Document.class)).containsKeys("currentTime", "hostname", "numCores", "cpuArch");
@@ -6728,14 +6728,14 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
     @Test
     void testGetCmdLineOpts() {
-        Document result = runCommand("getCmdLineOpts");
+        Document result = runCommand(Command.GET_CMD_LINE_OPTS);
         assertThat(result.get("ok")).isEqualTo(1.0);
         assertThat(result).containsOnlyKeys("ok", "argv", "parsed");
     }
 
     @Test
     void testGetFreeMonitoringStatus() {
-        Document result = runCommand("getFreeMonitoringStatus");
+        Document result = runCommand(Command.GET_FREE_MONITORING_STATUS);
         assertThat(result).isEqualTo(json("ok: 1.0, state: 'disabled', debug: {state: 'undecided'}," +
             " message: 'Free monitoring is deprecated, refer to \\'debug\\' field for actual status'"));
     }

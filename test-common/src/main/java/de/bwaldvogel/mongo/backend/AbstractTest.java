@@ -200,8 +200,8 @@ public abstract class AbstractTest {
         return databaseNames;
     }
 
-    protected Document runCommand(String commandName) {
-        return runCommand(new Document(commandName, 1));
+    protected Document runCommand(Command commandName) {
+        return runCommand(new Document(commandName.getName(), 1));
     }
 
     protected Document runCommand(Document command) {
@@ -213,7 +213,7 @@ public abstract class AbstractTest {
     }
 
     protected long getNumberOfOpenCursors() {
-        Document serverStatus = runCommand("serverStatus");
+        Document serverStatus = runCommand(Command.SERVER_STATUS);
         assertThat(serverStatus.getDouble("ok")).isEqualTo(1);
         Document metrics = serverStatus.get("metrics", Document.class);
         Document cursorMetrics = metrics.get("cursor", Document.class);

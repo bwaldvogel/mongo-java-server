@@ -7,6 +7,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.bwaldvogel.mongo.backend.Command;
+
+import de.bwaldvogel.mongo.backend.DatabaseCommand;
+
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -31,7 +35,7 @@ class MongoDatabaseHandlerTest {
 
         handler.handleCommand(query);
 
-        verify(backend).handleCommand(channel, "dbName", "count", subQueryDoc);
+        verify(backend).handleCommand(channel, "dbName", DatabaseCommand.of(Command.COUNT), subQueryDoc);
     }
 
     @Test
@@ -46,7 +50,7 @@ class MongoDatabaseHandlerTest {
 
         handler.handleCommand(query);
 
-        verify(backend).handleCommand(channel, "dbName", "count", queryDoc);
+        verify(backend).handleCommand(channel, "dbName", DatabaseCommand.of(Command.COUNT), queryDoc);
     }
 
     @Test
