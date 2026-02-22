@@ -723,6 +723,82 @@ public abstract class AbstractBackendTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/246
+    @Test
+    void testDropIndexes_string_twoIndexesWithTheSameKey() {
+        collection.insertOne(json("_id: 1, c: 10"));
+
+        MongoCollection<Document> otherCollection = getCollection("other");
+        otherCollection.insertOne(json("_id: 1, c: 10"));
+
+        String indexName = collection.createIndex(new Document("c", 1));
+        otherCollection.createIndex(new Document("c", 1));
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
+            );
+
+        assertThat(otherCollection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
+            );
+
+        collection.dropIndex(indexName);
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2)
+            );
+
+        assertThat(otherCollection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
+            );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/247
+    @Test
+    void testDropIndexes_all() {
+        collection.insertOne(json("_id: 1, c: 10, d:1"));
+
+        MongoCollection<Document> otherCollection = getCollection("other");
+        otherCollection.insertOne(json("_id: 1, c: 10"));
+
+        collection.createIndex(new Document("c", 1));
+        collection.createIndex(new Document("d", 1));
+        otherCollection.createIndex(new Document("c", 1));
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2),
+                json("key: {d: 1}").append("name", "d_1").append("v", 2)
+            );
+
+        assertThat(otherCollection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
+            );
+
+        collection.dropIndex("*");
+
+        assertThat(collection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2)
+            );
+
+        assertThat(otherCollection.listIndexes())
+            .containsExactlyInAnyOrder(
+                json("key: {_id: 1}").append("name", "_id_").append("v", 2),
+                json("key: {c: 1}").append("name", "c_1").append("v", 2)
+            );
+    }
+
     @Test
     public void testCurrentOperations() {
         Document currentOperations = getAdminDb().getCollection("$cmd.sys.inprog").find().first();

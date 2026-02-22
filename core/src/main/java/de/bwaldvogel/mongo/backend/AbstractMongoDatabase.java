@@ -427,23 +427,32 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Object index = query.get("index");
         Assert.notNull(index, () -> "Index name must not be null");
         MongoCollection<P> indexCollection = indexes.get();
+        Document nsQuery = new Document("ns", collection.getFullName());
         if (Objects.equals(index, "*")) {
-            for (Document indexDocument : indexCollection.queryAll()) {
+            for (Document indexDocument : indexCollection.handleQuery(nsQuery)) {
                 Document indexKeys = (Document) indexDocument.get("key");
                 if (!isPrimaryKeyIndex(indexKeys)) {
                     dropIndex(collection, indexDocument);
                 }
             }
-        } else if (index instanceof String) {
-            dropIndex(collection, new Document("name", index));
         } else {
-            Document indexKeys = (Document) index;
-            Document indexQuery = new Document("key", indexKeys).append("ns", collection.getFullName());
-            Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(indexQuery),
-                () -> new IndexNotFoundException(indexKeys));
+            if (index instanceof String indexName) {
+                nsQuery.append("name", indexName);
+            } else {
+                nsQuery.append("key", (Document) index);
+            }
+            Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(nsQuery),
+                () -> createIndexNotFoundException(index));
             int numDeleted = dropIndex(collection, indexToDrop);
             Assert.equals(numDeleted, 1, () -> "Expected one deleted document");
         }
+    }
+
+    private static IndexNotFoundException createIndexNotFoundException(Object index) {
+        if (index instanceof String indexName) {
+            return new IndexNotFoundException("index not found with name [" + indexName + "]");
+        }
+        return new IndexNotFoundException((Document) index);
     }
 
     private int dropIndex(MongoCollection<P> collection, Document indexDescription) {
