@@ -2733,6 +2733,171 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    void testAggregateWithSwitch() throws Exception {
+        collection.insertOne(json("_id: 1, name: 'Dave', qty: 1"));
+        collection.insertOne(json("_id: 2, name: 'Carol', qty: 5"));
+        collection.insertOne(json("_id: 3, name: 'Bob', qty: 10"));
+        collection.insertOne(json("_id: 4, name: 'Alice', qty: 20"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              name: 1,
+              qtyDiscount: {
+                $switch: {
+                  branches: [
+                    { case: { $gte: ['$qty', 10] }, then: 0.15 },
+                    { case: { $gte: ['$qty', 5] }, then: 0.10 },
+                    { case: { $gte: ['$qty', 1] }, then: 0.05 }
+                  ],
+                  default: 0
+                }
+              }
+            }
+            """);
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, name: 'Dave', qtyDiscount: 0.05"),
+                json("_id: 2, name: 'Carol', qtyDiscount: 0.10"),
+                json("_id: 3, name: 'Bob', qtyDiscount: 0.15"),
+                json("_id: 4, name: 'Alice', qtyDiscount: 0.15")
+            );
+    }
+
+    @Test
+    void testAggregateWithSwitchDefault() throws Exception {
+        collection.insertOne(json("_id: 1, status: 'active'"));
+        collection.insertOne(json("_id: 2, status: 'inactive'"));
+        collection.insertOne(json("_id: 3, status: 'unknown'"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              statusCode: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ['$status', 'active'] }, then: 1 },
+                    { case: { $eq: ['$status', 'inactive'] }, then: 0 }
+                  ],
+                  default: -1
+                }
+              }
+            }
+            """);
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactlyInAnyOrder(
+                json("_id: 1, statusCode: 1"),
+                json("_id: 2, statusCode: 0"),
+                json("_id: 3, statusCode: -1")
+            );
+    }
+
+    @Test
+    void testAggregateWithSwitchMissingDefault() throws Exception {
+        collection.insertOne(json("_id: 1, value: 100"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              result: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ['$value', 50] }, then: 'fifty' }
+                  ]
+                }
+              }
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("$switch could not find a matching branch for an input, and no default was specified");
+    }
+
+    @Test
+    void testAggregateWithSwitchMissingBranches() throws Exception {
+        collection.insertOne(json("_id: 1, value: 100"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              result: {
+                $switch: {
+                  default: 'none'
+                }
+              }
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("$switch requires at least one branch");
+    }
+
+    @Test
+    void testAggregateWithSwitchEmptyBranches() throws Exception {
+        collection.insertOne(json("_id: 1, value: 100"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              result: {
+                $switch: {
+                  branches: [
+                  ],
+                  default: 'none'
+                }
+              }
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("$switch requires at least one branch");
+    }
+
+    @Test
+    void testAggregateWithSwitchInvalidBranch() throws Exception {
+        collection.insertOne(json("_id: 1, value: 100"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              result: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ['$value', 100] } }
+                  ],
+                  default: 'none'
+                }
+              }
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("$switch requires each branch have a 'then' expression");
+    }
+
+    @Test
+    void testAggregateWithSwitchInvalidArgument() throws Exception {
+        collection.insertOne(json("_id: 1, value: 100"));
+
+        List<Document> pipeline = jsonList("""
+            $project: {
+              result: {
+                $switch: {
+                  branches: [
+                    { case: { $eq: ['$value', 100] }, then: 'one hundred' }
+                  ],
+                  default_value: 'none'
+                }
+              }
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("$switch found an unknown argument: default_value");
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/138
     @Test
     public void testAggregateWithGeoNear() throws Exception {
