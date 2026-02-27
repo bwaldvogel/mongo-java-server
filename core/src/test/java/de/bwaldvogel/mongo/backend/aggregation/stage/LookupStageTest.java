@@ -148,6 +148,22 @@ public class LookupStageTest extends AbstractLookupStageTest {
         );
     }
 
+    @Test
+    public void testLookupWithNestedFieldArray() throws Exception {
+        prepareAuthorsCollectionMock();
+
+        LookupStage lookupStage = buildLookupStage("from: 'authors', 'localField': 'author.id', foreignField: '_id', as: 'author'");
+        configureAuthorsCollection("_id: 3", "_id: 3, name: 'Uncle Bob'");
+        configureAuthorsCollection("_id: 4", "_id: 4, name: 'Aunt Bobby'");
+        Document document = json("title: 'Clean Code', author: [{ id: 3 }, {id: 4}]");
+
+        Stream<Document> result = lookupStage.apply(Stream.of(document));
+
+        assertThat(result).containsExactly(
+            json("title: 'Clean Code', author: { id: 3 }, author: [{_id: 3, name: 'Uncle Bob'}, {_id: 4, name: 'Aunt Bobby'}]")
+        );
+    }
+
     private LookupStage buildLookupStage(String jsonDocument) {
         return new LookupStage(json(jsonDocument), database);
     }

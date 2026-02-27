@@ -48,7 +48,7 @@ public class LookupStage extends AbstractLookupStage {
     }
 
     private Document resolveRemoteField(Document document) {
-        Object value = Utils.getSubdocumentValue(document, localField);
+        Object value = Utils.getSubdocumentValueCollectionAware(document, localField);
         List<Document> documents = lookupValue(value);
         Document result = document.clone();
         result.put(as, documents);
