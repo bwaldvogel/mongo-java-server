@@ -1485,6 +1485,93 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
+    void testLookupPersonWithSubscription() {
+        MongoCollection<Document> personCollection = db.getCollection("Person");
+        MongoCollection<Document> subscriptionCollection = db.getCollection("Subscription");
+
+        personCollection.insertOne(json("""
+              "_id": 666,
+              "personId": 666,
+              "Relation": [
+                {
+                  "organizationId": "org1",
+                  "active": true
+                },
+                {
+                  "organizationId": "org3",
+                  "active": false
+                }
+              ]
+            """));
+
+        subscriptionCollection.insertOne(json("""
+              "_id": 123,
+              "organizationId": "org1",
+              "Subscription": [
+                {
+                  "Id": 1,
+                  "Name": "Netflix"
+                },
+                {
+                  "Id": 12,
+                  "Name": "Disney+"
+                }
+              ]
+            """));
+        subscriptionCollection.insertOne(json("""
+              "_id": 456,
+              "organizationId": "org2",
+              "Subscription": [
+                {
+                  "Id": 2,
+                  "Name": "HBO Max"
+                },
+                {
+                  "Id": 11,
+                  "Name": "SkyShowtime"
+                }
+              ]
+            """));
+
+        List<Document> pipeline = jsonList(
+            "$match: { 'personId': 666 }",
+            "$lookup: {from: 'Subscription', localField: 'Relation.organizationId', foreignField: 'organizationId', as: 'Subscriptions'}"
+        );
+
+        assertThat(personCollection.aggregate(pipeline))
+            .containsExactly(json("""
+                  "_id": 666,
+                  "personId": 666,
+                  "Relation": [
+                    {
+                      "organizationId": "org1",
+                      "active": true
+                    },
+                    {
+                      "organizationId": "org3",
+                      "active": false
+                    }
+                  ],
+                  "Subscriptions": [
+                    {
+                      "_id": 123,
+                      "organizationId": "org1",
+                      "Subscription": [
+                        {
+                          "Id": 1,
+                          "Name": "Netflix"
+                        },
+                        {
+                          "Id": 12,
+                          "Name": "Disney+"
+                        }
+                      ]
+                    }
+                  ]
+                """));
+    }
+
+    @Test
     void testAggregateWithReplaceRoot() {
         List<Document> pipeline = jsonList("$replaceRoot: { newRoot: '$a.b' }");
 
