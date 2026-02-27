@@ -189,6 +189,15 @@ public class Aggregation {
     }
 
     private List<Document> runStages() {
+        // Only apply index optimization if there are no variables to inject
+        // Variables need to be added to documents before $match can evaluate them
+        if (!hasVariables()) {
+            return stages.stream()
+                .filter(stage -> stage instanceof MatchStage)
+                .findFirst()
+                .map(match -> runStages(collection.handleQueryAsStream(((MatchStage) match).getQuery())))
+                .orElseGet(() -> runStages(collection.queryAllAsStream()));
+        }
         return runStages(collection.queryAllAsStream());
     }
 

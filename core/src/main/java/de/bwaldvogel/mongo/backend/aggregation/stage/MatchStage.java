@@ -24,4 +24,8 @@ public class MatchStage implements AggregationStage {
     public Stream<Document> apply(Stream<Document> stream) {
         return stream.filter(document -> queryMatcher.matches(document, query));
     }
+
+    public Document getQuery() {
+        return query;
+    }
 }
