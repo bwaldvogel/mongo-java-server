@@ -142,6 +142,11 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             flags.add(MessageFlag.CHECKSUM_PRESENT);
         }
 
+        if (MessageFlag.MORE_TO_COME.isSet(flagBits)) {
+            flagBits = MessageFlag.MORE_TO_COME.removeFrom(flagBits);
+            flags.add(MessageFlag.MORE_TO_COME);
+        }
+
         if (flagBits != 0) {
             throw new UnsupportedOperationException("flags=" + flagBits + " not yet supported");
         }
@@ -179,7 +184,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             Assert.isNull(old);
         }
 
-        return new MongoMessage(channel, header, body);
+        return new MongoMessage(channel, header, body, flags.contains(MessageFlag.MORE_TO_COME));
     }
 
     private void decodeKindDocumentSequence(ByteBuf buffer, Document documentSequence) {

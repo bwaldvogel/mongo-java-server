@@ -60,6 +60,11 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             ctx.channel().writeAndFlush(mongoReply);
         } else if (object instanceof MongoMessage mongoMessage) {
             MongoMessage response = handleMessage(mongoMessage);
+            if (mongoMessage.isMoreToCome()) {
+                // the client does not read a reply, so sending one would desynchronize the connection
+                log.debug("not replying to {} with moreToCome set", mongoMessage);
+                return;
+            }
             ctx.channel().writeAndFlush(response);
         } else {
             throw new MongoServerException("unknown message: " + object);

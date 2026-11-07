@@ -10,10 +10,16 @@ public class MongoMessage extends ClientRequest {
 
     private final Document document;
     private final int flags = 0;
+    private final boolean moreToCome;
 
     public MongoMessage(Channel channel, MessageHeader header, Document document) {
+        this(channel, header, document, false);
+    }
+
+    public MongoMessage(Channel channel, MessageHeader header, Document document, boolean moreToCome) {
         super(channel, header, null);
         this.document = document;
+        this.moreToCome = moreToCome;
     }
 
     public Document getDocument() {
@@ -22,6 +28,13 @@ public class MongoMessage extends ClientRequest {
 
     public int getFlags() {
         return flags;
+    }
+
+    /**
+     * Whether the client set the moreToCome flag: it does not wait for a reply, as for an unacknowledged (w=0) write.
+     */
+    public boolean isMoreToCome() {
+        return moreToCome;
     }
 
     @Override

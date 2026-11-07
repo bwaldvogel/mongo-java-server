@@ -4,6 +4,7 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,6 +16,7 @@ import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 
 class MongoDatabaseHandlerTest {
 
@@ -71,4 +73,36 @@ class MongoDatabaseHandlerTest {
         assertThat(responseMessageDoc.get("errmsg")).isEqualTo("Unknown error: unexpected");
         assertThat(responseMessageDoc.get("ok")).isEqualTo(0);
     }
+
+    @Test
+    void testMessageWithMoreToComeIsHandledWithoutReply() throws Exception {
+        MongoBackend backend = mock(MongoBackend.class);
+        Channel channel = mock(Channel.class);
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
+        MongoMessage requestMessage = new MongoMessage(channel, new MessageHeader(0, 0), json("insert: 'coll'"), true);
+
+        handler.channelRead0(ctx, requestMessage);
+
+        verify(backend).handleMessage(requestMessage);
+        verify(channel, never()).writeAndFlush(any());
+    }
+
+    @Test
+    void testMessageWithoutMoreToComeIsReplied() throws Exception {
+        MongoBackend backend = mock(MongoBackend.class);
+        Channel channel = mock(Channel.class);
+        ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
+        when(ctx.channel()).thenReturn(channel);
+
+        MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
+        MongoMessage requestMessage = new MongoMessage(channel, new MessageHeader(0, 0), json("insert: 'coll'"));
+
+        handler.channelRead0(ctx, requestMessage);
+
+        verify(channel).writeAndFlush(any(MongoMessage.class));
+    }
+
 }
