@@ -1,3 +1,5 @@
+rootProject.name = 'mongo-java-server'
+
 include 'core'
 include 'memory-backend'
 include 'h2-backend'
