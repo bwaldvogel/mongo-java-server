@@ -8,7 +8,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.github.johnrengelman.shadow' version 'latest.release'
+    id 'com.gradleup.shadow' version '9.6.1'
     id 'org.sonarqube' version 'latest.release'
     id 'jacoco-report-aggregation'
 }
@@ -26,7 +26,9 @@ allprojects {
         targetCompatibility = '17'
     }
 
-    compileJava.options.encoding = 'UTF-8'
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
 
     repositories {
         mavenCentral()
@@ -47,7 +49,7 @@ allprojects {
 
 subprojects {
     dependencies {
-        implementation group: 'org.slf4j', name: 'slf4j-api', version: 'latest.release'
+        implementation 'org.slf4j:slf4j-api:latest.release'
 
         testImplementation platform('org.junit:junit-bom:latest.release')
 
@@ -56,9 +58,9 @@ subprojects {
         testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-        testImplementation group: 'org.assertj', name: 'assertj-core', version: 'latest.release'
-        testRuntimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
-        testRuntimeOnly group: 'org.slf4j', name: 'jcl-over-slf4j', version: 'latest.release'
+        testImplementation 'org.assertj:assertj-core:latest.release'
+        testRuntimeOnly 'ch.qos.logback:logback-classic:latest.release'
+        testRuntimeOnly 'org.slf4j:jcl-over-slf4j:latest.release'
     }
 
     test {
@@ -103,7 +105,7 @@ configure(allprojects.findAll {it.name != 'mongo-java-server-examples'}) {
                 artifactId = project.name
                 version = project.version
                 pom {
-                    name = title
+                    name = rootProject.title
                     description = 'Fake implementation of MongoDB in Java that speaks the wire protocol'
                     url = 'https://github.com/bwaldvogel/mongo-java-server'
                     inceptionYear = '2012'
@@ -146,7 +148,7 @@ configure(allprojects.findAll {it.name != 'mongo-java-server-examples'}) {
         }
         repositories {
             maven {
-                url = isReleaseVersion ? 'https://oss.sonatype.org/service/local/staging/deploy/maven2' : 'https://oss.sonatype.org/content/repositories/snapshots/'
+                url = rootProject.isReleaseVersion ? 'https://oss.sonatype.org/service/local/staging/deploy/maven2' : 'https://oss.sonatype.org/content/repositories/snapshots/'
                 credentials {
                     username = project.hasProperty('nexusUsername') ? project.property('nexusUsername') : System.getenv('NEXUS_USERNAME')
                     password = project.hasProperty('nexusPassword') ? project.property('nexusPassword') : System.getenv('NEXUS_PASSWORD')
@@ -161,14 +163,15 @@ configure(allprojects.findAll {it.name != 'mongo-java-server-examples'}) {
     }
 
     tasks.withType(Sign) {
-        onlyIf { isReleaseVersion }
+        onlyIf { rootProject.isReleaseVersion }
     }
 
 }
 
 wrapper {
-    gradleVersion = "9.2.1"
-    distributionType = Wrapper.DistributionType.ALL
+    gradleVersion = "9.9.1"
+    distributionType = Wrapper.DistributionType.BIN
+    distributionSha256Sum = "d8a18a7a841dd5df825d35a685fad6f2d7f12ac0c280e57b67c27b4a520ba228"
 }
 
 javadoc {
@@ -179,7 +182,9 @@ dependencies {
     api project(':mongo-java-server-core')
     api project(':mongo-java-server-memory-backend')
 
-    jacocoAggregation subprojects
+    subprojects.each {
+        jacocoAggregation project(it.path)
+    }
 }
 
 tasks.named('check') {

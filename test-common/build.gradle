@@ -14,11 +14,11 @@ dependencies {
     api 'org.junit.jupiter:junit-jupiter-api'
     api 'org.junit.jupiter:junit-jupiter-params'
 
-    api group: 'org.assertj', name: 'assertj-core', version: 'latest.release'
+    api 'org.assertj:assertj-core:latest.release'
     api "org.mockito:mockito-core:latest.release"
     api "org.mockito:mockito-junit-jupiter:latest.release"
 
-    runtimeOnly group: 'ch.qos.logback', name: 'logback-classic', version: 'latest.release'
+    runtimeOnly 'ch.qos.logback:logback-classic:latest.release'
 
     testImplementation "org.testcontainers:testcontainers:latest.release"
 }
