@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      jackson:
+        patterns: [ "com.fasterxml.jackson*" ]
+      junit:
+        patterns: [ "org.junit*" ]
+      logging:
+        patterns: [ "org.slf4j*", "ch.qos.logback*" ]
+      mockito:
+        patterns: [ "org.mockito*" ]
+      mongodb:
+        patterns: [ "org.mongodb*" ]
+      netty:
+        patterns: [ "io.netty*" ]
+      spring:
+        patterns: [ "org.springframework*" ]
+      testcontainers:
+        patterns: [ "org.testcontainers*" ]
+    ignore:
+      # the legacy 3.x driver is used on purpose to test compatibility with old clients
+      - dependency-name: "org.mongodb:mongo-java-driver"
+        update-types: [ "version-update:semver-major" ]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
