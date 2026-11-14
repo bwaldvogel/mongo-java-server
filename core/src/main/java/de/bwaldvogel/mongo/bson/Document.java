@@ -159,11 +159,11 @@ public final class Document implements Map<String, Object>, Bson {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof Document)) {
+        if (!(o instanceof Document other)) {
             return false;
         }
         List<String> keys = new ArrayList<>(keySet());
-        List<String> otherKeys = new ArrayList<>(((Document) o).keySet());
+        List<String> otherKeys = new ArrayList<>(other.keySet());
         if (!keys.equals(otherKeys)) {
             return false;
         }

@@ -44,13 +44,12 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private void validateQueryValue(Object queryValue, String key) {
-        if (!(queryValue instanceof Document)) {
+        if (!(queryValue instanceof Document queryObject)) {
             return;
         }
         if (BsonRegularExpression.isRegularExpression(queryValue)) {
             return;
         }
-        Document queryObject = (Document) queryValue;
         if (!queryObject.keySet().isEmpty() && queryObject.keySet().iterator().next().startsWith("$")) {
             for (String operator : queryObject.keySet()) {
                 if (Constants.REFERENCE_KEYS.contains(operator)) {

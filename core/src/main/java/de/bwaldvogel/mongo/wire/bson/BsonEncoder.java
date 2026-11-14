@@ -64,150 +64,124 @@ public class BsonEncoder {
 
     public static void encodeValue(byte type, Object value, ByteBuf buffer) {
         switch (type) {
-            case BsonConstants.TYPE_DOUBLE:
+            case BsonConstants.TYPE_DOUBLE ->
                 buffer.writeLongLE(Double.doubleToRawLongBits(((Double) value).doubleValue()));
-                break;
-            case BsonConstants.TYPE_UTF8_STRING:
-                encodeString(value.toString(), buffer);
-                break;
-            case BsonConstants.TYPE_EMBEDDED_DOCUMENT:
+            case BsonConstants.TYPE_UTF8_STRING -> encodeString(value.toString(), buffer);
+            case BsonConstants.TYPE_EMBEDDED_DOCUMENT -> {
                 @SuppressWarnings("unchecked")
                 Map<String, ?> valueAsMap = (Map<String, ?>) value;
                 encodeDocument(valueAsMap, buffer);
-                break;
-            case BsonConstants.TYPE_ARRAY:
+            }
+            case BsonConstants.TYPE_ARRAY -> {
                 Document document = new Document();
                 List<?> array = collectionToList(value);
                 for (int i = 0; i < array.size(); i++) {
                     document.put(String.valueOf(i), array.get(i));
                 }
                 encodeDocument(document, buffer);
-                break;
-            case BsonConstants.TYPE_DATA:
-                if (value instanceof BinData) {
-                    byte[] data = ((BinData) value).getData();
-                    buffer.writeIntLE(data.length);
-                    buffer.writeByte(BsonConstants.BINARY_SUBTYPE_GENERIC);
-                    buffer.writeBytes(data);
-                } else if (value instanceof UUID || value instanceof LegacyUUID) {
-                    buffer.writeIntLE(BsonConstants.LENGTH_UUID);
-
-                    final UUID uuid;
-                    if (value instanceof LegacyUUID) {
-                        buffer.writeByte(BsonConstants.BINARY_SUBTYPE_OLD_UUID);
-                        uuid = ((LegacyUUID) value).getUuid();
-                        buffer.writeLongLE(uuid.getMostSignificantBits());
-                        buffer.writeLongLE(uuid.getLeastSignificantBits());
-                    } else {
+            }
+            case BsonConstants.TYPE_DATA -> {
+                switch (value) {
+                    case BinData binData -> {
+                        byte[] data = binData.getData();
+                        buffer.writeIntLE(data.length);
+                        buffer.writeByte(BsonConstants.BINARY_SUBTYPE_GENERIC);
+                        buffer.writeBytes(data);
+                    }
+                    case UUID uuid -> {
+                        buffer.writeIntLE(BsonConstants.LENGTH_UUID);
                         buffer.writeByte(BsonConstants.BINARY_SUBTYPE_UUID);
-                        uuid = (UUID) value;
                         buffer.writeLong(uuid.getMostSignificantBits());
                         buffer.writeLong(uuid.getLeastSignificantBits());
                     }
-                } else {
-                    throw new IllegalArgumentException("Unknown data: " + value.getClass());
+                    case LegacyUUID legacyUUID -> {
+                        UUID uuid = legacyUUID.getUuid();
+                        buffer.writeIntLE(BsonConstants.LENGTH_UUID);
+                        buffer.writeByte(BsonConstants.BINARY_SUBTYPE_OLD_UUID);
+                        buffer.writeLongLE(uuid.getMostSignificantBits());
+                        buffer.writeLongLE(uuid.getLeastSignificantBits());
+                    }
+                    default -> throw new IllegalArgumentException("Unknown data: " + value.getClass());
                 }
-                break;
-            case BsonConstants.TYPE_OBJECT_ID:
+            }
+            case BsonConstants.TYPE_OBJECT_ID -> {
                 byte[] bytes = ((ObjectId) value).toByteArray();
                 if (bytes.length != BsonConstants.LENGTH_OBJECTID) {
                     throw new IllegalArgumentException("Illegal ObjectId: " + value);
                 }
                 buffer.writeBytes(bytes);
-                break;
-            case BsonConstants.TYPE_BOOLEAN:
+            }
+            case BsonConstants.TYPE_BOOLEAN -> {
                 if (((Boolean) value).booleanValue()) {
                     buffer.writeByte(BsonConstants.BOOLEAN_VALUE_TRUE);
                 } else {
                     buffer.writeByte(BsonConstants.BOOLEAN_VALUE_FALSE);
                 }
-                break;
-            case BsonConstants.TYPE_UTC_DATETIME:
+            }
+            case BsonConstants.TYPE_UTC_DATETIME -> {
                 Instant instant = (Instant) value;
                 buffer.writeLongLE(instant.toEpochMilli());
-                break;
-            case BsonConstants.TYPE_REGEX:
+            }
+            case BsonConstants.TYPE_REGEX -> {
                 BsonRegularExpression pattern = (BsonRegularExpression) value;
                 encodeCString(pattern.getPattern(), buffer);
                 encodeCString(pattern.getOptions(), buffer);
-                break;
-            case BsonConstants.TYPE_INT32:
-                buffer.writeIntLE(((Integer) value).intValue());
-                break;
-            case BsonConstants.TYPE_TIMESTAMP:
+            }
+            case BsonConstants.TYPE_INT32 -> buffer.writeIntLE(((Integer) value).intValue());
+            case BsonConstants.TYPE_TIMESTAMP -> {
                 BsonTimestamp timestamp = (BsonTimestamp) value;
                 buffer.writeLongLE(timestamp.getValue());
-                break;
-            case BsonConstants.TYPE_INT64:
-                buffer.writeLongLE(((Long) value).longValue());
-                break;
-            case BsonConstants.TYPE_DECIMAL128:
+            }
+            case BsonConstants.TYPE_INT64 -> buffer.writeLongLE(((Long) value).longValue());
+            case BsonConstants.TYPE_DECIMAL128 -> {
                 Decimal128 decimal128 = (Decimal128) value;
                 buffer.writeLongLE(decimal128.getLow());
                 buffer.writeLongLE(decimal128.getHigh());
-                break;
-            case BsonConstants.TYPE_MAX_KEY:
-            case BsonConstants.TYPE_MIN_KEY:
-            case BsonConstants.TYPE_UNDEFINED:
-            case BsonConstants.TYPE_NULL:
+            }
+            case BsonConstants.TYPE_MAX_KEY, BsonConstants.TYPE_MIN_KEY,
+                 BsonConstants.TYPE_UNDEFINED, BsonConstants.TYPE_NULL -> {
                 // empty
-                break;
-            case BsonConstants.TYPE_JAVASCRIPT_CODE:
+            }
+            case BsonConstants.TYPE_JAVASCRIPT_CODE -> {
                 BsonJavaScript javaScript = (BsonJavaScript) value;
                 encodeString(javaScript.getCode(), buffer);
-                break;
-            case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
+            }
+            case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE ->
                 throw new IllegalArgumentException("unhandled type: " + value.getClass());
-            default:
-                throw new IllegalArgumentException("unknown type: " + value.getClass());
+            default -> throw new IllegalArgumentException("unknown type: " + value.getClass());
         }
     }
 
     public static byte determineType(Object value) {
-        if (value == null) {
-            return BsonConstants.TYPE_NULL;
-        } else if (value instanceof Map) {
-            return BsonConstants.TYPE_EMBEDDED_DOCUMENT;
-        } else if (value instanceof ObjectId) {
-            return BsonConstants.TYPE_OBJECT_ID;
-        } else if (value instanceof Integer) {
-            return BsonConstants.TYPE_INT32;
-        } else if (value instanceof Long) {
-            return BsonConstants.TYPE_INT64;
-        } else if (value instanceof Decimal128) {
-            return BsonConstants.TYPE_DECIMAL128;
-        } else if (value instanceof Double) {
-            return BsonConstants.TYPE_DOUBLE;
-        } else if (value instanceof String) {
-            return BsonConstants.TYPE_UTF8_STRING;
-        } else if (value instanceof Boolean) {
-            return BsonConstants.TYPE_BOOLEAN;
-        } else if (value instanceof BinData || value instanceof UUID || value instanceof LegacyUUID) {
-            return BsonConstants.TYPE_DATA;
-        } else if (value instanceof Collection<?>) {
-            return BsonConstants.TYPE_ARRAY;
-        } else if (value instanceof Instant) {
-            return BsonConstants.TYPE_UTC_DATETIME;
-        } else if (value instanceof BsonTimestamp) {
-            return BsonConstants.TYPE_TIMESTAMP;
-        } else if (value instanceof BsonRegularExpression) {
-            return BsonConstants.TYPE_REGEX;
-        } else if (value instanceof MaxKey) {
-            return BsonConstants.TYPE_MAX_KEY;
-        } else if (value instanceof MinKey) {
-            return BsonConstants.TYPE_MIN_KEY;
-        } else if (value instanceof BsonJavaScript) {
-            return BsonConstants.TYPE_JAVASCRIPT_CODE;
-        } else if (value instanceof Missing) {
-            throw new IllegalArgumentException("Unexpected missing value. This must not happen. Please report a bug.");
-        } else {
-            throw new IllegalArgumentException("Unknown type: " + value.getClass());
-        }
+        return switch (value) {
+            case null -> BsonConstants.TYPE_NULL;
+            case Map<?, ?> map -> BsonConstants.TYPE_EMBEDDED_DOCUMENT;
+            case ObjectId objectId -> BsonConstants.TYPE_OBJECT_ID;
+            case Integer integer -> BsonConstants.TYPE_INT32;
+            case Long longValue -> BsonConstants.TYPE_INT64;
+            case Decimal128 decimal128 -> BsonConstants.TYPE_DECIMAL128;
+            case Double doubleValue -> BsonConstants.TYPE_DOUBLE;
+            case String string -> BsonConstants.TYPE_UTF8_STRING;
+            case Boolean booleanValue -> BsonConstants.TYPE_BOOLEAN;
+            case BinData binData -> BsonConstants.TYPE_DATA;
+            case UUID uuid -> BsonConstants.TYPE_DATA;
+            case LegacyUUID legacyUUID -> BsonConstants.TYPE_DATA;
+            case Collection<?> collection -> BsonConstants.TYPE_ARRAY;
+            case Instant instant -> BsonConstants.TYPE_UTC_DATETIME;
+            case BsonTimestamp timestamp -> BsonConstants.TYPE_TIMESTAMP;
+            case BsonRegularExpression pattern -> BsonConstants.TYPE_REGEX;
+            case MaxKey maxKey -> BsonConstants.TYPE_MAX_KEY;
+            case MinKey minKey -> BsonConstants.TYPE_MIN_KEY;
+            case BsonJavaScript javaScript -> BsonConstants.TYPE_JAVASCRIPT_CODE;
+            case Missing missing -> throw new IllegalArgumentException(
+                "Unexpected missing value. This must not happen. Please report a bug.");
+            default -> throw new IllegalArgumentException("Unknown type: " + value.getClass());
+        };
     }
 
     private static List<?> collectionToList(Object value) {
-        if (value instanceof List<?>) {
-            return (List<?>) value;
+        if (value instanceof List<?> list) {
+            return list;
         } else {
             return new ArrayList<>((Collection<?>) value);
         }
