@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
+import de.bwaldvogel.mongo.backend.Missing;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -59,10 +60,15 @@ public class LookupStage extends AbstractLookupStage {
         if (collection == null) {
             return Collections.emptyList();
         }
-        if (value instanceof List) {
-            return ((List<?>) value).stream()
-                .flatMap(item -> lookupValue(item).stream())
+        if (value instanceof List<?> values) {
+            // Missing array branches do not contribute a join key. Only fall back to null
+            // when the entire path yields no values, including for an empty array.
+            List<?> lookupValues = values.stream()
+                .filter(item -> !(item instanceof Missing))
                 .collect(toList());
+            value = lookupValues.isEmpty() ? null : new Document("$in", lookupValues);
+        } else if (value instanceof Missing) {
+            value = null;
         }
         Document query = new Document(foreignField, value);
         return collection.handleQueryAsStream(query).collect(toList());

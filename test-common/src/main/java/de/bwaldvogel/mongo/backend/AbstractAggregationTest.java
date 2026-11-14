@@ -1386,6 +1386,57 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    private static Stream<Arguments> aggregateWithLookupLocalArrayValuesArguments() {
+        List<Document> matchingAuthors = jsonList("_id: 1, key: 3");
+        List<Document> nullAuthors = jsonList("_id: 2, key: null", "_id: 3");
+        List<Document> allAuthors = jsonList("_id: 1, key: 3", "_id: 2, key: null", "_id: 3");
+
+        return Stream.of(
+            Arguments.of("author.id", "author: [{id: 3}]", matchingAuthors),
+            Arguments.of("author.id", "author: [{id: 3}, {id: 3}]", matchingAuthors),
+            Arguments.of("author.id", "author: []", nullAuthors),
+            Arguments.of("author.id", "author: [{id: []}]", nullAuthors),
+            Arguments.of("author.id", "author: [{id: 3}, {}]", matchingAuthors),
+            Arguments.of("author.id", "author: [{}, {}]", nullAuthors),
+            Arguments.of("author.id", "author: [{id: 3}, {id: null}]", allAuthors),
+            Arguments.of("author.id", "author: [{id: [3, 3]}, {}]", matchingAuthors),
+            Arguments.of("author.id", "author: [{id: 99}, {}]", List.of()),
+            Arguments.of("author.id", "author: [3, {id: 3}]", matchingAuthors),
+            Arguments.of("author.id", "author: {}", nullAuthors),
+            Arguments.of("author.id", "other: 3", nullAuthors),
+            Arguments.of("authorIds", "authorIds: [3, 3]", matchingAuthors),
+            Arguments.of("authorIds", "authorIds: []", nullAuthors),
+            Arguments.of("authorIds", "authorIds: [3, null]", allAuthors)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("aggregateWithLookupLocalArrayValuesArguments")
+    void testAggregateWithLookupLocalArrayValues(String localField, String input, List<Document> expectedMatches) {
+        MongoCollection<Document> authorsCollection = db.getCollection("authors");
+        authorsCollection.insertMany(jsonList("_id: 1, key: 3", "_id: 2, key: null", "_id: 3"));
+        collection.insertOne(json(input).append("_id", 1));
+
+        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: '" + localField +
+            "', foreignField: 'key', as: 'matches'}");
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(json(input).append("_id", 1).append("matches", expectedMatches));
+    }
+
+    @Test
+    void testAggregateWithLookupMatchingMultipleLocalValues() {
+        MongoCollection<Document> authorsCollection = db.getCollection("authors");
+        authorsCollection.insertOne(json("_id: 1, keys: [3, 4]"));
+        collection.insertOne(json("_id: 1, author: [{id: 3}, {id: 4}]"));
+
+        List<Document> pipeline = jsonList(
+            "$lookup: {from: 'authors', localField: 'author.id', foreignField: 'keys', as: 'matches'}");
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(json("_id: 1, author: [{id: 3}, {id: 4}], matches: [{_id: 1, keys: [3, 4]}]"));
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/231
     @Test
     void testAggregateWithLookupNestedForeignArrayField() {
@@ -1508,85 +1559,33 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         MongoCollection<Document> personCollection = db.getCollection("Person");
         MongoCollection<Document> subscriptionCollection = db.getCollection("Subscription");
 
-        personCollection.insertOne(json("""
-              "_id": 666,
-              "personId": 666,
-              "Relation": [
-                {
-                  "organizationId": "org1",
-                  "active": true
-                },
-                {
-                  "organizationId": "org3",
-                  "active": false
-                }
-              ]
-            """));
+        personCollection.insertOne(json("_id: 666, personId: 666, Relation: [" +
+            "{organizationId: 'org1', active: true}, {organizationId: 'org3', active: false}]"));
 
-        subscriptionCollection.insertOne(json("""
-              "_id": 123,
-              "organizationId": "org1",
-              "Subscription": [
-                {
-                  "Id": 1,
-                  "Name": "Netflix"
-                },
-                {
-                  "Id": 12,
-                  "Name": "Disney+"
-                }
-              ]
-            """));
-        subscriptionCollection.insertOne(json("""
-              "_id": 456,
-              "organizationId": "org2",
-              "Subscription": [
-                {
-                  "Id": 2,
-                  "Name": "HBO Max"
-                },
-                {
-                  "Id": 11,
-                  "Name": "SkyShowtime"
-                }
-              ]
-            """));
+        subscriptionCollection.insertOne(json("_id: 123, organizationId: 'org1', Subscription: [" +
+            "{Id: 1, Name: 'Netflix'}, {Id: 12, Name: 'Disney+'}]"));
+        subscriptionCollection.insertOne(json("_id: 456, organizationId: 'org2', Subscription: [" +
+            "{Id: 2, Name: 'HBO Max'}, {Id: 11, Name: 'SkyShowtime'}]"));
 
         List<Document> pipeline = jsonList(
-            "$match: { 'personId': 666 }",
+            "$match: {personId: 666}",
             "$lookup: {from: 'Subscription', localField: 'Relation.organizationId', foreignField: 'organizationId', as: 'Subscriptions'}"
         );
 
         assertThat(personCollection.aggregate(pipeline))
             .containsExactly(json("""
-                  "_id": 666,
-                  "personId": 666,
-                  "Relation": [
-                    {
-                      "organizationId": "org1",
-                      "active": true
-                    },
-                    {
-                      "organizationId": "org3",
-                      "active": false
-                    }
-                  ],
-                  "Subscriptions": [
-                    {
-                      "_id": 123,
-                      "organizationId": "org1",
-                      "Subscription": [
-                        {
-                          "Id": 1,
-                          "Name": "Netflix"
-                        },
-                        {
-                          "Id": 12,
-                          "Name": "Disney+"
-                        }
-                      ]
-                    }
-                  ]
+                _id: 666, personId: 666,
+                Relation: [
+                    {organizationId: 'org1', active: true},
+                    {organizationId: 'org3', active: false}
+                ],
+                Subscriptions: [{
+                    _id: 123, organizationId: 'org1',
+                    Subscription: [
+                        {Id: 1, Name: 'Netflix'},
+                        {Id: 12, Name: 'Disney+'}
+                    ]
+                }]
                 """));
     }
 
