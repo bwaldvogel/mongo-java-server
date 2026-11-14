@@ -82,7 +82,7 @@ public class MergeStage extends TerminalStage {
         whenNotMatched = getWhenNotMatched(paramsDocument);
 
         if (whenMatched == null) {
-            Collection<Document> pipeline = (Collection<Document>) paramsDocument.get("whenMatched");
+            Collection<?> pipeline = (Collection<?>) paramsDocument.get("whenMatched");
             whenMatchedPipeline = Aggregation.fromPipeline(pipeline, databaseResolver, database, null, null);
         } else if (paramsDocument.containsKey("let")) {
             throw new MongoServerError(51199, "Cannot use 'let' variables with 'whenMatched: " + whenMatched + "' mode");

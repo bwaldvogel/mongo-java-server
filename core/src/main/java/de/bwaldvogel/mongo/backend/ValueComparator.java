@@ -233,8 +233,8 @@ public class ValueComparator implements Comparator<Object> {
     }
 
     private Object getListValueForComparison(Object value) {
-        if (value instanceof Collection) {
-            List<Object> values = new ArrayList<>((Collection<Object>) value);
+        if (value instanceof Collection<?> collection) {
+            List<?> values = new ArrayList<>(collection);
             if (values.isEmpty()) {
                 return Missing.getInstance();
             }

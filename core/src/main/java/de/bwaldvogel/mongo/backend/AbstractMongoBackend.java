@@ -372,10 +372,11 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     protected Document handleKillCursors(Document query) {
-        List<Long> cursorIds = (List<Long>) query.get("cursors");
+        List<?> cursorIds = (List<?>) query.get("cursors");
         List<Long> cursorsKilled = new ArrayList<>();
         List<Long> cursorsNotFound = new ArrayList<>();
-        for (Long cursorId : cursorIds) {
+        for (Object cursorIdValue : cursorIds) {
+            Long cursorId = (Long) cursorIdValue;
             if (cursorRegistry.remove(cursorId)) {
                 log.info("Killed cursor {}", cursorId);
                 cursorsKilled.add(cursorId);
@@ -472,9 +473,9 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     protected Oplog createOplog() {
         MongoDatabase localDatabase = resolveDatabase("local");
-        MongoCollection<Document> collection = (MongoCollection<Document>) localDatabase.resolveCollection(OPLOG_COLLECTION_NAME, false);
+        MongoCollection<?> collection = localDatabase.resolveCollection(OPLOG_COLLECTION_NAME, false);
         if (collection == null) {
-            collection = (MongoCollection<Document>) localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME);
+            collection = localDatabase.createCollectionOrThrowIfExists(OPLOG_COLLECTION_NAME);
         }
         return new CollectionBackedOplog(this, collection, cursorRegistry);
     }

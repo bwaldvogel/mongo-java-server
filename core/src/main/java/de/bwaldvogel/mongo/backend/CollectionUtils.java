@@ -37,22 +37,22 @@ public final class CollectionUtils {
         return value;
     }
 
-    static <T> List<List<T>> multiplyWithOtherElements(Collection<T> allValues, Collection<? extends Collection<T>> collectionValues) {
+    static List<List<Object>> multiplyWithOtherElements(Collection<?> allValues, Collection<? extends Collection<?>> collectionValues) {
         int collectionValueSize = CollectionUtils.getElementAtPosition(collectionValues, 0).size();
-        for (Collection<T> collectionValue : collectionValues) {
+        for (Collection<?> collectionValue : collectionValues) {
             Assert.isTrue(allValues.contains(collectionValue), () -> "Expected " + collectionValue + " to be part of " + allValues);
             Assert.isTrue(collectionValue.size() == collectionValueSize, () -> "Expected " + collectionValue + " to be size " + collectionValueSize);
         }
 
-        List<List<T>> result = new ArrayList<>(collectionValueSize);
+        List<List<Object>> result = new ArrayList<>(collectionValueSize);
         for (int i = 0; i < collectionValueSize; i++) {
-            List<T> newValues = new ArrayList();
+            List<Object> newValues = new ArrayList<>();
 
             for (Object value : allValues) {
                 if (collectionValues.contains(value)) {
-                    newValues.add(CollectionUtils.getElementAtPosition((Collection<T>) value, i));
+                    newValues.add(CollectionUtils.getElementAtPosition((Collection<?>) value, i));
                 } else {
-                    newValues.add((T) value);
+                    newValues.add(value);
                 }
             }
 
