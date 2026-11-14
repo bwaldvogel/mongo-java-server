@@ -181,6 +181,10 @@ public class MongoServer {
             workerGroup.terminationFuture().syncUninterruptibly();
         }
 
+        // A client that connected while the event loops were shutting down can still be in the group, but its event
+        // loop has terminated and would never complete closing it. A later shutdownNow() must not wait for that.
+        channelGroup = null;
+
         backend.close();
 
         log.info("completed shutdown of {}", this);
