@@ -66,11 +66,13 @@ class ProjectionTest {
 
     @Test
     void testProjectIn() {
-        Document document = json("_id: 1, students: [" +
-            "{name: 'john', school: 'A', age: 10}, " +
-            "{name: 'jess', school: 'B', age: 12}, " +
-            "{name: 'jeff', school: 'A', age: 12}" +
-            "]");
+        Document document = json("""
+            _id: 1, students: [
+                {name: 'john', school: 'A', age: 10},
+                {name: 'jess', school: 'B', age: 12},
+                {name: 'jeff', school: 'A', age: 12}
+            ]
+            """);
 
         assertThat(projectDocument(document, json("_id: 1, \"students.name\": 1")))
             .isEqualTo(json("_id:1, students: [{name: 'john'}, {name: 'jess'}, {name: 'jeff'}]"));
@@ -83,11 +85,13 @@ class ProjectionTest {
 
     @Test
     void testProjectOut() {
-        Document document = json("_id: 1, students: [" +
-            "{name: 'john', school: 'A', age: 10}, " +
-            "{name: 'jess', school: 'B', age: 12}, " +
-            "{name: 'jeff', school: 'A', age: 12}" +
-            "]");
+        Document document = json("""
+            _id: 1, students: [
+                {name: 'john', school: 'A', age: 10},
+                {name: 'jess', school: 'B', age: 12},
+                {name: 'jeff', school: 'A', age: 12}
+            ]
+            """);
 
         assertThat(projectDocument(document, json("\"students.school\": 0,  \"students.age\": 0")))
             .isEqualTo(json("_id:1, students: [{name: 'john'}, {name: 'jess'}, {name: 'jeff'}]"));
@@ -141,11 +145,13 @@ class ProjectionTest {
 
     @Test
     void testProjectListValuesWithPositionalOperator() throws Exception {
-        Document document = json("_id: 1, students: [" +
-            "{name: 'john', school: 'A', age: 10}, " +
-            "{name: 'jess', school: 'B', age: 12}, " +
-            "{name: 'jeff', school: 'A', age: 12}" +
-            "]");
+        Document document = json("""
+            _id: 1, students: [
+                {name: 'john', school: 'A', age: 10},
+                {name: 'jess', school: 'B', age: 12},
+                {name: 'jeff', school: 'A', age: 12}
+            ]
+            """);
 
         assertThat(projectDocument(document, json("'students.$': 1"), "_id"))
             .isEqualTo(json("_id: 1, students: [{name: 'john', school: 'A', age: 10}]"));
@@ -156,11 +162,13 @@ class ProjectionTest {
 
     @Test
     void testProjectWithElemMatch() throws Exception {
-        Document document = json("_id: 1, students: [" +
-            "{name: 'john', school: 'A', age: 10}, " +
-            "{name: 'jess', school: 'B', age: 12}, " +
-            "{name: 'jeff', school: 'A', age: 12}" +
-            "]");
+        Document document = json("""
+            _id: 1, students: [
+                {name: 'john', school: 'A', age: 10},
+                {name: 'jess', school: 'B', age: 12},
+                {name: 'jeff', school: 'A', age: 12}
+            ]
+            """);
 
         assertThat(projectDocument(document, json("students: {$elemMatch: {school: 'B'}}"), "_id"))
             .isEqualTo(json("_id: 1, students: [{name: 'jess', school: 'B', age: 12}]"));

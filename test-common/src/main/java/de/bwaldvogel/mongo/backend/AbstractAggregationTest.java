@@ -497,15 +497,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/111
     @Test
     void testAggregateWithAddToSetAndMissingValue() throws Exception {
-        List<Document> pipeline = jsonList("$group: {\n" +
-            "    _id: '$_id', \n" +
-            "    sources: {\n" +
-            "        $addToSet: {\n" +
-            "            key: '$content.key',\n" +
-            "            missing: '$content.missing'\n" +
-            "        }\n" +
-            "    }\n" +
-            "}");
+        List<Document> pipeline = jsonList("""
+            $group: {
+                _id: '$_id',
+                sources: {
+                    $addToSet: {
+                        key: '$content.key',
+                        missing: '$content.missing'
+                    }
+                }
+            }
+            """);
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -1519,20 +1521,24 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         MongoCollection<Document> ordersCollection = db.getCollection("orders");
         MongoCollection<Document> warehousesCollection = db.getCollection("warehouses");
 
-        List<Document> pipeline = jsonList("$lookup: {from: 'warehouses'," +
-            " let: { order_item: '$item', order_qty: '$ordered' }," +
-            " pipeline: [{$match:\n" +
-            "                 {$expr:\n" +
-            "                    {$and:\n" +
-            "                       [\n" +
-            "                         {$eq: ['$stock_item',  '$$order_item']},\n" +
-            "                         {$gte: ['$instock', '$$order_qty']}\n" +
-            "                       ]\n" +
-            "                    }\n" +
-            "                 }\n" +
-            "              },\n" +
-            "              {$project: {stock_item: 0, _id: 0}}]," +
-            " as: 'stockdata'}");
+        List<Document> pipeline = jsonList("""
+            $lookup: {
+                from: 'warehouses',
+                let: {order_item: '$item', order_qty: '$ordered'},
+                pipeline: [
+                    {$match: {
+                        $expr: {
+                            $and: [
+                                {$eq: ['$stock_item', '$$order_item']},
+                                {$gte: ['$instock', '$$order_qty']}
+                            ]
+                        }
+                    }},
+                    {$project: {stock_item: 0, _id: 0}}
+                ],
+                as: 'stockdata'
+            }
+            """);
 
         assertThat(ordersCollection.aggregate(pipeline)).isEmpty();
 
@@ -1787,12 +1793,16 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .containsExactly(json("_id: 1, res: 'abc'"));
 
         Utils.changeSubdocumentValue(pipeline.get(0), "$project.res",
-            json("$reduce: {input: [1, 2, 3, 4]," +
-                " initialValue: { sum: 5, product: 2 }," +
-                " in: {\n" +
-                "     sum: {$add: ['$$value.sum', '$$this']},\n" +
-                "     product: {$multiply: ['$$value.product', '$$this']}\n" +
-                " }}"));
+            json("""
+                $reduce: {
+                    input: [1, 2, 3, 4],
+                    initialValue: {sum: 5, product: 2},
+                    in: {
+                        sum: {$add: ['$$value.sum', '$$this']},
+                        product: {$multiply: ['$$value.product', '$$this']}
+                    }
+                }
+                """));
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(json("_id: 1, res: {sum: 15, product: 48}"));
@@ -1808,28 +1818,30 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 6, name: 'Claire'"));
 
         List<Document> pipeline = jsonList("$match: {hobbies: {$gt: []}}",
-            "$project: {\n" +
-                "  name: 1,\n" +
-                "  bio: {\n" +
-                "    $reduce: {\n" +
-                "      input: '$hobbies',\n" +
-                "      initialValue: 'My hobbies include:',\n" +
-                "      in: {\n" +
-                "        $concat: [\n" +
-                "          '$$value',\n" +
-                "          {\n" +
-                "            $cond: {\n" +
-                "              if: { $eq: ['$$value', 'My hobbies include:']},\n" +
-                "              then: ' ',\n" +
-                "              else: ', '\n" +
-                "            }\n" +
-                "          },\n" +
-                "          '$$this'\n" +
-                "        ]\n" +
-                "      }\n" +
-                "    }\n" +
-                "  }\n" +
-                "}");
+            """
+                $project: {
+                  name: 1,
+                  bio: {
+                    $reduce: {
+                      input: '$hobbies',
+                      initialValue: 'My hobbies include:',
+                      in: {
+                        $concat: [
+                          '$$value',
+                          {
+                            $cond: {
+                              if: { $eq: ['$$value', 'My hobbies include:']},
+                              then: ' ',
+                              else: ', '
+                            }
+                          },
+                          '$$this'
+                        ]
+                      }
+                    }
+                  }
+                }
+                """);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
@@ -1852,15 +1864,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 7, title: 'The Scream', artist: 'Munch', year: 1893"));
         collection.insertOne(json("_id: 8, title: 'Blue Flower', artist: 'O’Keefe', year: 1918, price: 118.42"));
 
-        List<Document> pipeline = jsonList("$bucket: {\n" +
-            "  groupBy: '$price',\n" +
-            "  boundaries: [0, 200, 400],\n" +
-            "  default: 'Other',\n" +
-            "  output: {\n" +
-            "    count: { $sum: 1 },\n" +
-            "    titles: { $push: '$title' }\n" +
-            "  }\n" +
-            "}");
+        List<Document> pipeline = jsonList("""
+            $bucket: {
+              groupBy: '$price',
+              boundaries: [0, 200, 400],
+              default: 'Other',
+              output: {
+                count: { $sum: 1 },
+                titles: { $push: '$title' }
+              }
+            }
+            """);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
@@ -1870,11 +1884,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
 
         List<Document> pipelineWithoutDefault = jsonList("$match: {price: {$lt: 400}}",
-            "$bucket: {\n" +
-                "  groupBy: '$price',\n" +
-                "  boundaries: [0, 200, 400],\n" +
-                "  output: {count: { $sum: 1 }}\n" +
-                "}");
+            """
+                $bucket: {
+                  groupBy: '$price',
+                  boundaries: [0, 200, 400],
+                  output: {count: { $sum: 1 }}
+                }
+                """);
 
         assertThat(collection.aggregate(pipelineWithoutDefault))
             .containsExactly(
@@ -1883,10 +1899,11 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
 
         List<Document> pipelineWithoutOutput = jsonList("$match: {price: {$lt: 400}}",
-            "$bucket: {\n" +
-                "  groupBy: '$price',\n" +
-                "  boundaries: [0, 200.0, 400]" +
-                "}");
+            """
+                $bucket: {
+                  groupBy: '$price',
+                  boundaries: [0, 200.0, 400]}
+                """);
 
         assertThat(collection.aggregate(pipelineWithoutOutput))
             .containsExactly(
@@ -1894,11 +1911,12 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 json("_id: 200.0, count: 2")
             );
 
-        List<Document> pipelineWithAlphabeticBoundaries = jsonList("$bucket: {\n" +
-            "  groupBy: {$toLower: '$artist'},\n" +
-            "  boundaries: ['a', 'd', 'g', 'j'],\n" +
-            "  default: null" +
-            "}");
+        List<Document> pipelineWithAlphabeticBoundaries = jsonList("""
+            $bucket: {
+              groupBy: {$toLower: '$artist'},
+              boundaries: ['a', 'd', 'g', 'j'],
+              default: null}
+            """);
 
         assertThat(collection.aggregate(pipelineWithAlphabeticBoundaries))
             .containsExactly(
@@ -1968,26 +1986,28 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         collection.insertOne(json("_id: 7, title: 'The Scream', tags: ['Expressionism', 'painting', 'oil']"));
         collection.insertOne(json("_id: 8, title: 'Blue Flower', price: 118.42, tags: ['abstract', 'painting']"));
 
-        List<Document> pipeline = jsonList("$facet: {\n" +
-            "  'categorizedByTags': [\n" +
-            "    { $unwind: '$tags' },\n" +
-            "    { $sortByCount: '$tags' }\n" +
-            "  ],\n" +
-            "  'categorizedByPrice': [\n" +
-            "    { $match: { price: { $exists: 1 } } },\n" +
-            "    {\n" +
-            "      $bucket: {\n" +
-            "        groupBy: '$price',\n" +
-            "        boundaries: [0, 150, 200, 300, 400],\n" +
-            "        default: 'Other',\n" +
-            "        output: {\n" +
-            "          'count': { $sum: 1 },\n" +
-            "          'titles': { $push: '$title' }\n" +
-            "        }\n" +
-            "      }\n" +
-            "    }\n" +
-            "  ]\n" +
-            "}");
+        List<Document> pipeline = jsonList("""
+            $facet: {
+              'categorizedByTags': [
+                { $unwind: '$tags' },
+                { $sortByCount: '$tags' }
+              ],
+              'categorizedByPrice': [
+                { $match: { price: { $exists: 1 } } },
+                {
+                  $bucket: {
+                    groupBy: '$price',
+                    boundaries: [0, 150, 200, 300, 400],
+                    default: 'Other',
+                    output: {
+                      'count': { $sum: 1 },
+                      'titles': { $push: '$title' }
+                    }
+                  }
+                }
+              ]
+            }
+            """);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
@@ -2041,15 +2061,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
         List<Document> pipeline = jsonList(
             "$match: {price: {$gt: 300}}",
-            "$facet: {\n" +
-                "  'categorizedByTags': [\n" +
-                "    { $unwind: '$tags' },\n" +
-                "    { $sortByCount: '$tags' }\n" +
-                "  ],\n" +
-                "  'categorizedByPrice': [\n" +
-                "    {$bucket: {groupBy: '$price', boundaries: [300, 400, 500]}}\n" +
-                "  ]\n" +
-                "}");
+            """
+                $facet: {
+                  'categorizedByTags': [
+                    { $unwind: '$tags' },
+                    { $sortByCount: '$tags' }
+                  ],
+                  'categorizedByPrice': [
+                    {$bucket: {groupBy: '$price', boundaries: [300, 400, 500]}}
+                  ]
+                }
+                """);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(
