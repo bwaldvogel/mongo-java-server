@@ -26,6 +26,11 @@ allprojects {
         targetCompatibility = JavaVersion.VERSION_21
     }
 
+    tasks.withType(JavaCompile).configureEach {
+        // TODO: Address constructor this-escape warnings and re-enable this check.
+        options.compilerArgs.addAll(['-Xlint:all,-this-escape', '-Werror'])
+    }
+
     repositories {
         mavenCentral()
     }
