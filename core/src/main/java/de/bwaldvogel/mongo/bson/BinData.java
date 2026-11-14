@@ -41,19 +41,8 @@ public final class BinData implements Comparable<BinData>, Bson {
         if (bytes1.length != bytes2.length) {
             return Integer.compare(bytes1.length, bytes2.length);
         } else {
-            for (int i = 0; i < bytes1.length; i++) {
-                int compare = compareUnsigned(bytes1[i], bytes2[i]);
-                if (compare != 0) return compare;
-            }
-            return 0;
+            return Arrays.compareUnsigned(bytes1, bytes2);
         }
-    }
-
-    // lexicographic byte comparison 0x00 < 0xFF
-    private static int compareUnsigned(byte b1, byte b2) {
-        int v1 = (int) b1 & 0xFF;
-        int v2 = (int) b2 & 0xFF;
-        return Integer.compare(v1, v2);
     }
 
 }
