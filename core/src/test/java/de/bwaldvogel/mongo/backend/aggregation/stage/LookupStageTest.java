@@ -120,8 +120,9 @@ public class LookupStageTest extends AbstractLookupStageTest {
         prepareAuthorsCollectionMock();
 
         LookupStage lookupStage = buildLookupStage("from: 'authors', 'localField': 'authorsIds', foreignField: '_id', as: 'authors'");
-        configureAuthorsCollection("_id: 3", "_id: 3, name: 'Uncle Bob'");
-        configureAuthorsCollection("_id: 20", "_id: 20, name: 'Martin Fowler'");
+        configureAuthorsCollection("_id: {$in: [3, 20, 22]}",
+            "_id: 3, name: 'Uncle Bob'", "_id: 20, name: 'Martin Fowler'");
+        configureAuthorsCollection("_id: {$in: [3]}", "_id: 3, name: 'Uncle Bob'");
         Document document1 = json("title: 'Agile Manifesto', authorsIds: [3, 20, 22]");
         Document document2 = json("title: 'Clean Code', authorsIds: [3]");
 
@@ -145,6 +146,22 @@ public class LookupStageTest extends AbstractLookupStageTest {
 
         assertThat(result).containsExactly(
             json("title: 'Clean Code', author: { id: 3 }, author: [{_id: 3, name: 'Uncle Bob'}]")
+        );
+    }
+
+    @Test
+    public void testLookupWithNestedFieldArray() throws Exception {
+        prepareAuthorsCollectionMock();
+
+        LookupStage lookupStage = buildLookupStage("from: 'authors', 'localField': 'author.id', foreignField: '_id', as: 'author'");
+        configureAuthorsCollection("_id: {$in: [3, 4]}",
+            "_id: 3, name: 'Uncle Bob'", "_id: 4, name: 'Aunt Bobby'");
+        Document document = json("title: 'Clean Code', author: [{ id: 3 }, {id: 4}]");
+
+        Stream<Document> result = lookupStage.apply(Stream.of(document));
+
+        assertThat(result).containsExactly(
+            json("title: 'Clean Code', author: [{_id: 3, name: 'Uncle Bob'}, {_id: 4, name: 'Aunt Bobby'}]")
         );
     }
 
