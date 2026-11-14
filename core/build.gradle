@@ -1,10 +1,10 @@
 dependencies {
-    implementation 'io.netty:netty-transport:latest.release'
-    implementation 'io.netty:netty-codec:latest.release'
-    implementation 'io.netty:netty-handler:latest.release'
+    implementation libs.netty.transport
+    implementation libs.netty.codec
+    implementation libs.netty.handler
 
-    testImplementation 'org.mongodb:mongo-java-driver:latest.release'
-    testImplementation "org.mockito:mockito-core:latest.release"
-    testImplementation "org.mockito:mockito-junit-jupiter:latest.release"
-    testImplementation "nl.jqno.equalsverifier:equalsverifier:latest.release"
+    testImplementation libs.mongodb.legacy.driver
+    testImplementation libs.mockito.core
+    testImplementation libs.mockito.junit.jupiter
+    testImplementation libs.equalsverifier
 }

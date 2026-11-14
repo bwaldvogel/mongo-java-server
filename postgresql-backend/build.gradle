@@ -1,12 +1,12 @@
 dependencies {
     api project(':mongo-java-server-core')
 
-    implementation "com.fasterxml.jackson.core:jackson-core:latest.release"
-    implementation "com.fasterxml.jackson.core:jackson-databind:latest.release"
-    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:latest.release"
+    implementation libs.jackson.core
+    implementation libs.jackson.databind
+    implementation libs.jackson.datatype.jsr310
 
-    testRuntimeOnly "org.postgresql:postgresql:latest.release"
-    testImplementation "com.zaxxer:HikariCP:latest.release"
-    testImplementation 'org.testcontainers:testcontainers:latest.release'
+    testRuntimeOnly libs.postgresql
+    testImplementation libs.hikaricp
+    testImplementation libs.testcontainers
     testImplementation project(':mongo-java-server-test-common')
 }

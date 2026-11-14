@@ -1,24 +1,24 @@
 dependencies {
     api project(':mongo-java-server-core')
-    api 'org.mongodb:mongodb-driver-sync:latest.release'
-    api 'org.mongodb:mongodb-driver-reactivestreams:latest.release'
+    api libs.mongodb.driver.sync
+    api libs.mongodb.driver.reactivestreams
 
-    api "org.springframework:spring-core:latest.release"
-    api "org.springframework:spring-beans:latest.release"
-    api "org.springframework:spring-context:latest.release"
-    api "org.springframework:spring-test:latest.release"
-    api "org.springframework.data:spring-data-mongodb:latest.release"
+    api libs.spring.core
+    api libs.spring.beans
+    api libs.spring.context
+    api libs.spring.test
+    api libs.spring.data.mongodb
 
-    implementation platform('org.junit:junit-bom:latest.release')
+    implementation platform(libs.junit.bom)
 
     api 'org.junit.jupiter:junit-jupiter-api'
     api 'org.junit.jupiter:junit-jupiter-params'
 
-    api 'org.assertj:assertj-core:latest.release'
-    api "org.mockito:mockito-core:latest.release"
-    api "org.mockito:mockito-junit-jupiter:latest.release"
+    api libs.assertj.core
+    api libs.mockito.core
+    api libs.mockito.junit.jupiter
 
-    runtimeOnly 'ch.qos.logback:logback-classic:latest.release'
+    runtimeOnly libs.logback.classic
 
-    testImplementation "org.testcontainers:testcontainers:latest.release"
+    testImplementation libs.testcontainers
 }

@@ -1,13 +1,13 @@
 dependencies {
     api project(':mongo-java-server-memory-backend')
 
-    api 'org.mongodb:mongo-java-driver:latest.release'
+    api libs.mongodb.legacy.driver
 
-    api 'org.junit.jupiter:junit-jupiter-api:latest.release'
-    api 'org.junit.jupiter:junit-jupiter-params:latest.release'
-    api 'org.assertj:assertj-core:latest.release'
+    api libs.junit.jupiter.api
+    api libs.junit.jupiter.params
+    api libs.assertj.core
 
-    runtimeOnly 'ch.qos.logback:logback-classic:latest.release'
+    runtimeOnly libs.logback.classic
 }
 
 sourceSets {

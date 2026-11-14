@@ -8,8 +8,8 @@ buildscript {
 }
 
 plugins {
-    id 'com.gradleup.shadow' version 'latest.release'
-    id 'org.sonarqube' version 'latest.release'
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.sonarqube)
     id 'jacoco-report-aggregation'
 }
 
@@ -30,14 +30,6 @@ allprojects {
         mavenCentral()
     }
 
-    dependencies {
-        components.all { ComponentMetadataDetails details ->
-            if (details.id.version =~ /(?i).+(-|\.)(CANDIDATE|RC|BETA|ALPHA|PR|M\d+).*/) {
-                details.status = 'milestone'
-            }
-        }
-    }
-
     dependencyLocking {
         lockAllConfigurations()
     }
@@ -45,18 +37,18 @@ allprojects {
 
 subprojects {
     dependencies {
-        implementation 'org.slf4j:slf4j-api:latest.release'
+        implementation libs.slf4j.api
 
-        testImplementation platform('org.junit:junit-bom:latest.release')
+        testImplementation platform(libs.junit.bom)
 
         testImplementation 'org.junit.jupiter:junit-jupiter-api'
         testImplementation 'org.junit.jupiter:junit-jupiter-params'
         testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
-        testImplementation 'org.assertj:assertj-core:latest.release'
-        testRuntimeOnly 'ch.qos.logback:logback-classic:latest.release'
-        testRuntimeOnly 'org.slf4j:jcl-over-slf4j:latest.release'
+        testImplementation libs.assertj.core
+        testRuntimeOnly libs.logback.classic
+        testRuntimeOnly libs.slf4j.jcl.over.slf4j
     }
 
     test {
