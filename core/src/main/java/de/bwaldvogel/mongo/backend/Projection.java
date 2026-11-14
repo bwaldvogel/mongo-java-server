@@ -114,6 +114,8 @@ class Projection {
                 Document newsubDocument = (Document) newDocument.computeIfAbsent(mainKey, k -> new Document());
                 projectField((Document) object, newsubDocument, subKey, projectionValue);
             } else if (object instanceof List<?> values) {
+                // This list is created and populated only by this projection.
+                @SuppressWarnings("unchecked")
                 List<Object> newprojectedValues = (List<Object>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
 
                 if ("$".equals(subKey) && !values.isEmpty()) {

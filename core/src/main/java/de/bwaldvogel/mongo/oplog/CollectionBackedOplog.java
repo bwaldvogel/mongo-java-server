@@ -27,12 +27,12 @@ public class CollectionBackedOplog implements Oplog {
     private static final String DOCUMENT_KEY = "documentKey";
 
     private final OplogClock oplogClock;
-    private final MongoCollection<Document> collection;
+    private final MongoCollection<?> collection;
     private final MongoBackend backend;
     private final CursorRegistry cursorRegistry;
     private final UUID ui = UUID.randomUUID();
 
-    public CollectionBackedOplog(MongoBackend backend, MongoCollection<Document> collection, CursorRegistry cursorRegistry) {
+    public CollectionBackedOplog(MongoBackend backend, MongoCollection<?> collection, CursorRegistry cursorRegistry) {
         this.oplogClock = new OplogClock(backend.getClock());
         this.collection = collection;
         this.backend = backend;

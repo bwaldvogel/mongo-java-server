@@ -72,7 +72,10 @@ class DocumentTest {
         Utils.changeSubdocumentValue(deepClone, "sub.sub.1", 25);
         Utils.changeSubdocumentValue(deepClone, "subDocument._id", 2);
         deepClone.remove("null-value");
-        ((Collection<Object>) deepClone.get("set")).add("more");
+        // The original set and its deep clone both hold Objects.
+        @SuppressWarnings("unchecked")
+        Collection<Object> clonedSet = (Collection<Object>) deepClone.get("set");
+        clonedSet.add("more");
 
         assertThat(deepClone).hasToString("{\"subDocument\" : {\"_id\" : 2}, \"sub\" : {\"sub\" : [ 1, 25, 3 ]}, \"set\" : [ \"more\" ]}");
         assertThat(original).hasToString(originalToString);

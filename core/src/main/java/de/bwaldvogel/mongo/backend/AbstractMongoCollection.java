@@ -678,15 +678,15 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             Object value = entry.getValue();
 
             if (key.equals("$and")) {
-                List<Document> andValues = (List<Document>) value;
-                for (Document andValue : andValues) {
-                    convertSelectorToDocument(andValue, document);
+                List<?> andValues = (List<?>) value;
+                for (Object andValue : andValues) {
+                    convertSelectorToDocument((Document) andValue, document);
                 }
                 continue;
             } else if (key.equals("$or")) {
-                List<Document> orValues = (List<Document>) value;
+                List<?> orValues = (List<?>) value;
                 if (orValues.size() == 1) {
-                    convertSelectorToDocument(orValues.get(0), document);
+                    convertSelectorToDocument((Document) orValues.get(0), document);
                 }
                 continue;
             } else if (key.startsWith("$")) {

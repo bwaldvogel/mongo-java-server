@@ -3,6 +3,8 @@ package de.bwaldvogel.mongo.backend.aggregation;
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.InstanceOfAssertFactories.COLLECTION;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -362,14 +364,16 @@ class ExpressionTest {
 
     @Test
     void testEvaluateMap() throws Exception {
-        assertThat((Collection<Object>) Expression.evaluate(
+        assertThat(Expression.evaluate(
             json("$map: {input: '$quizzes', as: 'grade', in: {$add: ['$$grade', 2]}}"),
             json("quizzes: [5, 6, 7]")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(7, 8, 9);
 
-        assertThat((Collection<Object>) Expression.evaluate(
+        assertThat(Expression.evaluate(
             json("$map: {input: '$quizzes', as: 'grade', in: {$add: ['$$grade', 2]}}"),
             json("quizzes: []")))
+            .asInstanceOf(COLLECTION)
             .isEmpty();
 
         assertThat(Expression.evaluate(json("$map: {input: '$q', in: '$this'}"), json(""))).isNull();
@@ -421,17 +425,19 @@ class ExpressionTest {
             json("quizzes: [ 1, 2, 3, 4 ]")))
             .isEqualTo(expectedDocument);
 
-        assertThat((Collection<Object>) Expression.evaluate(
+        assertThat(Expression.evaluate(
             json("$reduce: {input: '$quizzes',initialValue: [ 1, 2 ],in: {$concatArrays : ['$$value', '$$this']}}"),
             json("quizzes: [ [ 3, 4 ], [ 5, 6 ] ]")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(1, 2, 3, 4, 5, 6);
 
-        assertThat((Collection<Object>) Expression.evaluate(
+        assertThat(Expression.evaluate(
             json("$reduce: {input: '$quizzes',initialValue: [],in: {$concatArrays : ['$$value', '$$this']}}"),
             json("quizzes: []")))
+            .asInstanceOf(COLLECTION)
             .isEmpty();
 
-        assertThat((Collection<Object>) Expression.evaluate(
+        assertThat(Expression.evaluate(
             json("$reduce: {input: '$quizzes', initialValue: [ 1, 2 ], in: '$$this'}"),
             json("")))
             .isNull();
@@ -624,7 +630,8 @@ class ExpressionTest {
 
     @Test
     void testEvaluateObjectToArray() throws Exception {
-        assertThat((List<Document>) Expression.evaluate(json("$objectToArray: '$v'"), json("v: {a: 1, b: 2}")))
+        assertThat(Expression.evaluate(json("$objectToArray: '$v'"), json("v: {a: 1, b: 2}")))
+            .asInstanceOf(LIST)
             .containsExactly(
                 json("{k: 'a', v: 1}"),
                 json("{k: 'b', v: 2}")
@@ -864,19 +871,24 @@ class ExpressionTest {
         assertThat(Expression.evaluate(json("$setDifference: [[], null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setDifference: [null, []]"), json(""))).isNull();
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [['a', 'b', 'a'], ['b']]"), json("")))
+        assertThat(Expression.evaluate(json("$setDifference: [['a', 'b', 'a'], ['b']]"), json("")))
+            .asInstanceOf(COLLECTION)
             .containsExactly("a");
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [['a', 'b', 'a'], ['c', 'b', 'a']]"), json("")))
+        assertThat(Expression.evaluate(json("$setDifference: [['a', 'b', 'a'], ['c', 'b', 'a']]"), json("")))
+            .asInstanceOf(COLLECTION)
             .isEmpty();
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [['a', 'b'], [['a', 'b']]]"), json("")))
+        assertThat(Expression.evaluate(json("$setDifference: [['a', 'b'], [['a', 'b']]]"), json("")))
+            .asInstanceOf(COLLECTION)
             .containsExactly("a", "b");
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [[1.0, 0, 2], [-0.0]]"), json("")))
+        assertThat(Expression.evaluate(json("$setDifference: [[1.0, 0, 2], [-0.0]]"), json("")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(1.0, 2);
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setDifference: [[1.0, -0.0, 2], [1, 0]]"), json("")))
+        assertThat(Expression.evaluate(json("$setDifference: [[1.0, -0.0, 2], [1, 0]]"), json("")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(2);
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -939,22 +951,28 @@ class ExpressionTest {
         assertThat(Expression.evaluate(json("$setIntersection: [['a'], null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setIntersection: ['$a', null]"), json(""))).isNull();
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: [['a', 'b', 'a'], ['b']]"), json("")))
+        assertThat(Expression.evaluate(json("$setIntersection: [['a', 'b', 'a'], ['b']]"), json("")))
+            .asInstanceOf(COLLECTION)
             .containsExactly("b");
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: [['a', 'b', 'a'], ['b', 'a']]"), json("")))
+        assertThat(Expression.evaluate(json("$setIntersection: [['a', 'b', 'a'], ['b', 'a']]"), json("")))
+            .asInstanceOf(COLLECTION)
             .containsExactly("a", "b");
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: ['$one', '$other']"), json("one: [1, 2, 3], other: [2, 3, 5]")))
+        assertThat(Expression.evaluate(json("$setIntersection: ['$one', '$other']"), json("one: [1, 2, 3], other: [2, 3, 5]")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(2, 3);
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: ['$one', '$other', [2]]"), json("one: [1, 2], other: [2, 1]")))
+        assertThat(Expression.evaluate(json("$setIntersection: ['$one', '$other', [2]]"), json("one: [1, 2], other: [2, 1]")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(2);
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: ['$one', '$other']"), json("one: [1, 2.0], other: [2, 1]")))
+        assertThat(Expression.evaluate(json("$setIntersection: ['$one', '$other']"), json("one: [1, 2.0], other: [2, 1]")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(1, 2.0);
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setIntersection: ['$one', '$other', [2, 2, 1]]"), json("one: [], other: [2, 1]")))
+        assertThat(Expression.evaluate(json("$setIntersection: ['$one', '$other', [2, 2, 1]]"), json("one: [], other: [2, 1]")))
+            .asInstanceOf(COLLECTION)
             .isEmpty();
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -1003,10 +1021,12 @@ class ExpressionTest {
         assertThat(Expression.evaluate(json("$setUnion: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setUnion: '$a'"), json(""))).isNull();
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setUnion: [['a', 1], ['c', 'a']]"), json("")))
+        assertThat(Expression.evaluate(json("$setUnion: [['a', 1], ['c', 'a']]"), json("")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(1, "a", "c");
 
-        assertThat((Collection<Object>) Expression.evaluate(json("$setUnion: ['$a', '$b']"), json("a: [1, 2, 3], b: [3.0, 4]")))
+        assertThat(Expression.evaluate(json("$setUnion: ['$a', '$b']"), json("a: [1, 2, 3], b: [3.0, 4]")))
+            .asInstanceOf(COLLECTION)
             .containsExactly(1, 2, 3, 4);
 
         assertThatExceptionOfType(MongoServerError.class)
@@ -1100,8 +1120,12 @@ class ExpressionTest {
 
     @Test
     void testEvaluateSplit() throws Exception {
-        assertThat((List<String>) Expression.evaluate(json("$split: ['June-15-2013', '-']"), json(""))).containsExactly("June", "15", "2013");
-        assertThat((List<String>) Expression.evaluate(json("$split: ['$a', '$b']"), json("a: 'foo bar', b: ' '"))).containsExactly("foo", "bar");
+        assertThat(Expression.evaluate(json("$split: ['June-15-2013', '-']"), json("")))
+            .asInstanceOf(LIST)
+            .containsExactly("June", "15", "2013");
+        assertThat(Expression.evaluate(json("$split: ['$a', '$b']"), json("a: 'foo bar', b: ' '")))
+            .asInstanceOf(LIST)
+            .containsExactly("foo", "bar");
         assertThat(Expression.evaluate(json("$split: [null, ' ']"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$split: ['$doesNotExist', ' ']"), json(""))).isNull();
 

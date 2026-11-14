@@ -64,9 +64,9 @@ public abstract class Index<P> {
             valuesPerKey.replaceAll((key, value) -> Utils.normalizeValue(value));
         }
 
-        List<Collection<Object>> collectionValues = valuesPerKey.values().stream()
+        List<Collection<?>> collectionValues = valuesPerKey.values().stream()
             .filter(value -> value instanceof Collection)
-            .map(value -> (Collection<Object>) value)
+            .map(value -> (Collection<?>) value)
             .collect(Collectors.toList());
 
         if (collectionValues.size() > 0) {

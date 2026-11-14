@@ -39,7 +39,9 @@ class AbstractMongoDatabaseTest {
 
             @Override
             protected MongoCollection<Object> openOrCreateCollection(String collectionName, CollectionOptions options) {
-                MongoCollection<Object> collection = (MongoCollection<Object>) Mockito.mock(MongoCollection.class);
+                // Class literals cannot retain the mock's collection position type.
+                @SuppressWarnings("unchecked")
+                MongoCollection<Object> collection = Mockito.mock(MongoCollection.class);
                 when(collection.getCollectionName()).thenReturn("mockCollection");
 
                 QueryResult queryResult = new QueryResult(List.of(new Document("_id", 1)));

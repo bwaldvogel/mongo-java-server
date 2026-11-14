@@ -18,8 +18,7 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 public class LookupStageTest extends AbstractLookupStageTest {
 
     @Mock
-    @SuppressWarnings("rawtypes")
-    private MongoCollection authorsCollection;
+    private MongoCollection<?> authorsCollection;
 
     @Test
     void testMissingFromField() {
@@ -170,7 +169,7 @@ public class LookupStageTest extends AbstractLookupStageTest {
     }
 
     private void prepareAuthorsCollectionMock() {
-        when(database.resolveCollection("authors", false)).thenReturn(authorsCollection);
+        when(database.resolveCollection("authors", false)).thenAnswer(invocation -> authorsCollection);
     }
 
     private void configureAuthorsCollection(String expectedJsonQuery, String... authors) {
