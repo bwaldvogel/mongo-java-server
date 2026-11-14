@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 
+import de.bwaldvogel.mongo.backend.DatabaseCommand;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
@@ -14,7 +15,7 @@ public interface MongoBackend {
 
     void handleClose(Channel channel);
 
-    Document handleCommand(Channel channel, String database, String command, Document query);
+    Document handleCommand(Channel channel, String database, DatabaseCommand command, Document query);
 
     QueryResult handleQuery(MongoQuery query);
 

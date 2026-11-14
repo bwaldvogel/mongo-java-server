@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.bwaldvogel.mongo.MongoBackend;
+import de.bwaldvogel.mongo.backend.DatabaseCommand;
 import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.bson.Document;
@@ -127,23 +128,23 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
         } else if ("$cmd".equals(collectionName)) {
             String command = query.getQuery().keySet().iterator().next();
-
-            switch (command) {
-                case "serverStatus":
+            if ("$query".equals(command)) {
+                Document actualQuery = (Document) query.getQuery().get("$query");
+                command = actualQuery.keySet().iterator().next();
+                return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), DatabaseCommand.of(command), actualQuery);
+            }
+            DatabaseCommand cmd = DatabaseCommand.of(command);
+            switch (cmd.getCommand()) {
+                case SERVER_STATUS:
                     return mongoBackend.getServerStatus();
 
-                case "ping":
+                case PING:
                     Document response = new Document();
                     Utils.markOkay(response);
                     return response;
 
                 default:
-                    Document actualQuery = query.getQuery();
-                    if ("$query".equals(command)) {
-                        command = ((Document) query.getQuery().get("$query")).keySet().iterator().next();
-                        actualQuery = (Document) actualQuery.get("$query");
-                    }
-                    return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), command, actualQuery);
+                    return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), cmd, query.getQuery());
             }
         }
 
