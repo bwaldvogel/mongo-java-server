@@ -146,8 +146,8 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            Object firstValue = parameters.getFirst();
-            Object secondValue = parameters.getSecond();
+            Object firstValue = parameters.first();
+            Object secondValue = parameters.second();
             if (!(firstValue instanceof List<?>)) {
                 throw new MongoServerError(28689,
                     name() + "'s first argument must be an array, but is " + describeType(firstValue));
@@ -557,8 +557,8 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            double a = parameters.getFirstAsDouble();
-            double b = parameters.getSecondAsDouble();
+            double a = parameters.firstAsDouble();
+            double b = parameters.secondAsDouble();
             if (Double.compare(b, 0.0) == 0) {
                 throw new MongoServerError(16608, "can't " + name() + " by zero");
             }
@@ -664,11 +664,11 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
-            Object expression = parameters.getFirst();
+            Object expression = parameters.first();
             if (isNeitherNullNorMissing(expression)) {
                 return expression;
             } else {
-                return parameters.getSecond();
+                return parameters.second();
             }
         }
     },
@@ -677,8 +677,8 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
-            Object needle = parameters.getFirst();
-            Object haystack = parameters.getSecond();
+            Object needle = parameters.first();
+            Object haystack = parameters.second();
 
             if (!(haystack instanceof Collection)) {
                 throw new MongoServerError(40081, name() + " requires an array as a second argument, found: " + describeType(haystack));
@@ -970,8 +970,8 @@ public enum Expression implements ExpressionTraits {
             if (parameters == null) {
                 return null;
             }
-            double a = parameters.getFirstAsDouble();
-            double b = parameters.getSecondAsDouble();
+            double a = parameters.firstAsDouble();
+            double b = parameters.secondAsDouble();
             return a % b;
         }
     },
@@ -992,8 +992,8 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            Number first = parameters.getFirst();
-            Number second = parameters.getSecond();
+            Number first = parameters.first();
+            Number second = parameters.second();
             return NumericUtils.multiplyNumbers(first, second);
         }
 
@@ -1053,8 +1053,8 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            Object base = parameters.getFirst();
-            Object exponent = parameters.getSecond();
+            Object base = parameters.first();
+            Object exponent = parameters.second();
 
             if (!(base instanceof Number)) {
                 throw new MongoServerError(28762,
@@ -1176,8 +1176,8 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            Object first = parameters.getFirst();
-            Object second = parameters.getSecond();
+            Object first = parameters.first();
+            Object second = parameters.second();
 
             if (!(first instanceof Collection)) {
                 throw new MongoServerError(17048,
@@ -1250,8 +1250,8 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
-            Object first = parameters.getFirst();
-            Object second = parameters.getSecond();
+            Object first = parameters.first();
+            Object second = parameters.second();
 
             if (!(first instanceof Collection<?>)) {
                 throw new MongoServerError(17046, "both operands of " + name() + " must be arrays. First argument is of type: " + describeType(first));
@@ -1353,8 +1353,8 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
-            Object string = parameters.getFirst();
-            Object delimiter = parameters.getSecond();
+            Object string = parameters.first();
+            Object delimiter = parameters.second();
 
             if (isNullOrMissing(string)) {
                 return null;
@@ -1378,8 +1378,8 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             TwoParameters parameters = requireTwoParameters(expressionValue);
-            Object first = parameters.getFirst();
-            Object second = parameters.getSecond();
+            Object first = parameters.first();
+            Object second = parameters.second();
 
             if (isNullOrMissing(first) || isNullOrMissing(second)) {
                 return null;
