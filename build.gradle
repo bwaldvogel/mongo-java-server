@@ -187,6 +187,12 @@ dependencies {
     }
 }
 
+tasks.named('testCodeCoverageReport', JacocoReport) {
+    reports {
+        xml.required = true
+    }
+}
+
 tasks.named('check') {
     dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
 }
