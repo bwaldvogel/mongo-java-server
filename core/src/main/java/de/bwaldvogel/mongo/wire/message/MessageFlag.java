@@ -1,4 +1,4 @@
-package de.bwaldvogel.mongo.wire;
+package de.bwaldvogel.mongo.wire.message;
 
 public enum MessageFlag {
     CHECKSUM_PRESENT(0),
@@ -10,6 +10,10 @@ public enum MessageFlag {
 
     MessageFlag(int bit) {
         this.value = 1 << bit;
+    }
+
+    int getValue() {
+        return value;
     }
 
     public boolean isSet(int flags) {

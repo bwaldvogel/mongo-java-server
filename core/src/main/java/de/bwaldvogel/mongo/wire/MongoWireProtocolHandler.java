@@ -14,6 +14,7 @@ import de.bwaldvogel.mongo.backend.Assert;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.bson.BsonDecoder;
 import de.bwaldvogel.mongo.wire.message.ClientRequest;
+import de.bwaldvogel.mongo.wire.message.MessageFlag;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -184,7 +185,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             Assert.isNull(old);
         }
 
-        return new MongoMessage(channel, header, body, flags.contains(MessageFlag.MORE_TO_COME));
+        return new MongoMessage(channel, header, body, flags);
     }
 
     private void decodeKindDocumentSequence(ByteBuf buffer, Document documentSequence) {
