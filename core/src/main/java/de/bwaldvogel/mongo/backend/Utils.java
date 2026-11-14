@@ -602,7 +602,7 @@ public class Utils {
 
     static String getLastFragment(String path) {
         List<String> fragments = splitPath(path);
-        return fragments.get(fragments.size() - 1);
+        return fragments.getLast();
     }
 
     public static String getHostName() {

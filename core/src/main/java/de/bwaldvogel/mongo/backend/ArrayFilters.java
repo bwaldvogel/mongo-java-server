@@ -38,7 +38,7 @@ public class ArrayFilters {
             List<String> topLevelFieldNames = arrayFilter.keySet().stream()
                 .map(Utils::firstFragment)
                 .distinct()
-                .collect(Collectors.toList());
+                .toList();
 
             if (topLevelFieldNames.size() > 1) {
                 throw new FailedToParseException("Error parsing array filter :: caused by ::" +

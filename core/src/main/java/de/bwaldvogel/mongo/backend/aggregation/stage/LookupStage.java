@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -19,14 +18,8 @@ public class LookupStage extends AbstractLookupStage {
     private static final String LOCAL_FIELD = "localField";
     private static final String FOREIGN_FIELD = "foreignField";
 
-    private static final Set<String> CONFIGURATION_KEYS;
-    static {
-        CONFIGURATION_KEYS = new HashSet<>();
-        CONFIGURATION_KEYS.add(FROM);
-        CONFIGURATION_KEYS.add(LOCAL_FIELD);
-        CONFIGURATION_KEYS.add(FOREIGN_FIELD);
-        CONFIGURATION_KEYS.add(AS);
-    }
+    private static final Set<String> CONFIGURATION_KEYS = Set.of(
+        FROM, LOCAL_FIELD, FOREIGN_FIELD, AS);
 
     private final String localField;
     private final String foreignField;

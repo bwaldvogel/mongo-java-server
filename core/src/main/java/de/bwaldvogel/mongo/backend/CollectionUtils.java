@@ -22,7 +22,7 @@ public final class CollectionUtils {
 
     public static <T> T getLastElement(List<T> list) {
         Assert.notEmpty(list);
-        return list.get(list.size() - 1);
+        return list.getLast();
     }
 
     public static <T> T getSingleElement(Iterable<T> iterable, Supplier<? extends RuntimeException> exceptionSupplier) {

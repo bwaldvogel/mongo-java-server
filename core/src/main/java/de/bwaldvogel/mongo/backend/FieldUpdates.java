@@ -325,9 +325,9 @@ class FieldUpdates {
 
         if (!list.isEmpty()) {
             if (Utils.nullAwareEquals(normalizedValue, -1)) {
-                list.remove(0);
+                list.removeFirst();
             } else {
-                list.remove(list.size() - 1);
+                list.removeLast();
             }
         }
     }

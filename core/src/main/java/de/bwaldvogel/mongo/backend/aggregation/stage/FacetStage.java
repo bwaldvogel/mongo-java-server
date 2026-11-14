@@ -4,7 +4,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import de.bwaldvogel.mongo.MongoCollection;
@@ -33,7 +32,7 @@ public class FacetStage implements AggregationStage {
 
     @Override
     public Stream<Document> apply(Stream<Document> stream) {
-        List<Document> allDocuments = stream.collect(Collectors.toList());
+        List<Document> allDocuments = stream.toList();
         Document result = new Document();
         for (Entry<String, Aggregation> entry : facets.entrySet()) {
             Aggregation aggregation = entry.getValue();

@@ -24,7 +24,6 @@ import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -1776,7 +1775,7 @@ public enum Expression implements ExpressionTraits {
         }
     };
 
-    private static final Set<String> KEYWORD_EXPRESSIONS = new HashSet<>(asList("$$PRUNE", "$$KEEP", "$$DESCEND"));
+    private static final Set<String> KEYWORD_EXPRESSIONS = Set.of("$$PRUNE", "$$KEEP", "$$DESCEND");
 
     private static final SecureRandom random = new SecureRandom();
 
