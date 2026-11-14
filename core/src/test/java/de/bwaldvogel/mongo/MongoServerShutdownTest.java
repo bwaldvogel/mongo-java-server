@@ -47,6 +47,7 @@ class MongoServerShutdownTest {
             assertThat(workerHeld.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue();
 
             try (Socket secondClient = new Socket(address.getHostString(), address.getPort())) {
+                assertThat(secondClient.isConnected()).isTrue();
                 assertThat(secondClientQueued.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)).isTrue();
 
                 // the second client is registered after its event loop started to shut down, and stays open
