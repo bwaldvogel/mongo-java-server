@@ -65,6 +65,7 @@ import org.bson.types.MinKey;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -2095,6 +2096,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         assertMongoWriteException(() -> collection.withWriteConcern(WriteConcern.ACKNOWLEDGED).insertOne(json("_id: 1")),
             11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index: _id_ dup key: { _id: 1 }");
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @Timeout(10)
+    void testUnacknowledgedWrites(boolean insertDuplicates) {
+        // a single connection, so the count is read after the unacknowledged writes were processed
+        MongoClientSettings clientSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
+            .applyToConnectionPoolSettings(pool -> pool.maxSize(1))
+            .build();
+        try (MongoClient client = MongoClients.create(clientSettings)) {
+            MongoCollection<Document> acknowledged = client.getDatabase(TEST_DATABASE_NAME).getCollection(getCollectionName());
+            MongoCollection<Document> unacknowledged = acknowledged.withWriteConcern(WriteConcern.UNACKNOWLEDGED);
+
+            for (int i = 0; i < 3; i++) {
+                assertThat(unacknowledged.insertOne(new Document("_id", i)).wasAcknowledged()).isFalse();
+                if (insertDuplicates) {
+                    assertThat(unacknowledged.insertOne(new Document("_id", i)).wasAcknowledged()).isFalse();
+                }
+            }
+
+            assertThat(acknowledged.countDocuments()).isEqualTo(3);
+        }
     }
 
     @Test

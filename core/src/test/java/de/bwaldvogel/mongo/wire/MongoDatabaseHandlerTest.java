@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Set;
+
 import de.bwaldvogel.mongo.backend.Command;
 
 import de.bwaldvogel.mongo.backend.DatabaseCommand;
@@ -16,6 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.MongoBackend;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.wire.message.MessageFlag;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
@@ -86,7 +89,8 @@ class MongoDatabaseHandlerTest {
         when(ctx.channel()).thenReturn(channel);
 
         MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
-        MongoMessage requestMessage = new MongoMessage(channel, new MessageHeader(0, 0), json("insert: 'coll'"), true);
+        MongoMessage requestMessage = new MongoMessage(channel, new MessageHeader(0, 0), json("insert: 'coll'"),
+            Set.of(MessageFlag.MORE_TO_COME));
 
         handler.channelRead0(ctx, requestMessage);
 

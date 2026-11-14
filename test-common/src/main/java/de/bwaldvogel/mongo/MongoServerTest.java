@@ -24,10 +24,8 @@ import org.junit.jupiter.api.Timeout;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoException;
-import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoCollection;
 
 import de.bwaldvogel.mongo.backend.CollectionUtils;
 
@@ -73,26 +71,6 @@ public abstract class MongoServerTest {
             mongoClient.getDatabase("abc").createCollection("def");
             assertThat(mongoClient.listDatabaseNames())
                 .containsExactly("abc");
-        }
-    }
-
-    @Test
-    @Timeout(TEST_TIMEOUT_SECONDS)
-    void testUnacknowledgedWrites() throws Exception {
-        // a single connection, so the count is read after the unacknowledged writes were processed
-        MongoClientSettings clientSettings = MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(server.bindAndGetConnectionString()))
-            .applyToConnectionPoolSettings(pool -> pool.maxSize(1))
-            .build();
-        try (MongoClient client = MongoClients.create(clientSettings)) {
-            MongoCollection<Document> collection = client.getDatabase("testdb").getCollection("testcoll");
-            MongoCollection<Document> unacknowledged = collection.withWriteConcern(WriteConcern.UNACKNOWLEDGED);
-
-            for (int i = 0; i < 3; i++) {
-                assertThat(unacknowledged.insertOne(new Document("_id", i)).wasAcknowledged()).isFalse();
-            }
-
-            assertThat(collection.countDocuments()).isEqualTo(3);
         }
     }
 
