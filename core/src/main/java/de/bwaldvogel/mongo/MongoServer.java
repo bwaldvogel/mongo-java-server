@@ -23,9 +23,10 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.ssl.SslContext;
@@ -76,8 +77,10 @@ public class MongoServer {
 
     public void bind(SocketAddress socketAddress, int numberOfBossThreads, int numberOfWorkerThreads) {
 
-        bossGroup = new NioEventLoopGroup(numberOfBossThreads, new MongoThreadFactory("mongo-server-boss"));
-        workerGroup = new NioEventLoopGroup(numberOfWorkerThreads, new MongoThreadFactory("mongo-server-worker"));
+        bossGroup = new MultiThreadIoEventLoopGroup(numberOfBossThreads,
+            new MongoThreadFactory("mongo-server-boss"), NioIoHandler.newFactory());
+        workerGroup = new MultiThreadIoEventLoopGroup(numberOfWorkerThreads,
+            new MongoThreadFactory("mongo-server-worker"), NioIoHandler.newFactory());
         channelGroup = new DefaultChannelGroup("mongodb-channels", workerGroup.next());
 
         try {
