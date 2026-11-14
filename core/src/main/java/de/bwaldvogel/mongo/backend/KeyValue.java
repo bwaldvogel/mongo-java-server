@@ -16,6 +16,8 @@ public final class KeyValue implements Serializable, Iterable<Object> {
 
     private static final long serialVersionUID = 1L;
 
+    // Every constructor stores a serializable ArrayList here.
+    @SuppressWarnings("serial")
     private final List<Object> values;
 
     public KeyValue(Object... values) {
