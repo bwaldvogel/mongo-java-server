@@ -5,8 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -787,9 +785,8 @@ class ExpressionTest {
     @Test
     void testEvaluateHour() throws Exception {
         assertThat(Expression.evaluate(json("$hour: '$a'"), json(""))).isNull();
-        int expectedHour = ZonedDateTime.ofInstant(Instant.parse("2018-07-03T14:10:00Z"), ZoneId.systemDefault()).toLocalTime().getHour();
-        assertThat(Expression.evaluate(json("$hour: '$a'"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(expectedHour);
-        assertThat(Expression.evaluate(json("$hour: {date: '$a'}"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(expectedHour);
+        assertThat(Expression.evaluate(json("$hour: '$a'"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(14);
+        assertThat(Expression.evaluate(json("$hour: {date: '$a'}"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(14);
         assertThat(Expression.evaluate(json("$hour: {date: '$a', timezone: 'UTC'}"), new Document("a", toDate("2018-07-03T14:10:00Z")))).isEqualTo(14);
         assertThat(Expression.evaluate(json("$hour: {date: '$a', timezone: '$TZ'}"), new Document("a", toDate("2018-07-03T14:10:00Z")).append("TZ", "Europe/Berlin"))).isEqualTo(16);
 
@@ -800,6 +797,22 @@ class ExpressionTest {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> Expression.evaluate(json("$hour: {}"), json("")))
             .withMessage("[Error 40539] missing 'date' argument to $hour, provided: {}");
+    }
+
+    @Test
+    void testDateExpressionsDefaultToUtc() {
+        Document document = new Document("a", toDate("2018-12-31T22:10:23Z"));
+
+        assertThat(Expression.evaluate(json("$year: '$a'"), document)).isEqualTo(2018);
+        assertThat(Expression.evaluate(json("$month: '$a'"), document)).isEqualTo(12);
+        assertThat(Expression.evaluate(json("$dayOfMonth: '$a'"), document)).isEqualTo(31);
+        assertThat(Expression.evaluate(json("$dayOfYear: '$a'"), document)).isEqualTo(365);
+        assertThat(Expression.evaluate(json("$hour: '$a'"), document)).isEqualTo(22);
+        assertThat(Expression.evaluate(json("$minute: '$a'"), document)).isEqualTo(10);
+        assertThat(Expression.evaluate(json("$second: '$a'"), document)).isEqualTo(23);
+        assertThat(Expression.evaluate(json("$hour: {date: '$a'}"), document)).isEqualTo(22);
+        assertThat(Expression.evaluate(json("$hour: {date: '$a', timezone: 'Asia/Tokyo'}"), document)).isEqualTo(7);
+        assertThat(Expression.evaluate(json("$dayOfMonth: {date: '$a', timezone: 'Asia/Tokyo'}"), document)).isEqualTo(1);
     }
 
     @Test
