@@ -33,10 +33,10 @@ interface ExpressionTraits {
 
     default String requireSingleStringValue(List<?> expressionValue) {
         Object value = requireSingleValue(expressionValue);
-        if (!(value instanceof String)) {
+        if (!(value instanceof String string)) {
             throw new MongoServerError(ErrorCode._34471, name() + " requires a string argument, found: " + describeType(value));
         }
-        return (String) value;
+        return string;
     }
 
     default Number evaluateNumericValue(List<?> expressionValue, Function<Double, ? extends Number> function) {
@@ -44,11 +44,10 @@ interface ExpressionTraits {
         if (isNullOrMissing(value)) {
             return null;
         }
-        if (!(value instanceof Number)) {
+        if (!(value instanceof Number number)) {
             throw new MongoServerError(28765,
                 name() + " only supports numeric types, not " + describeType(value));
         }
-        Number number = (Number) value;
         if (Double.isNaN(number.doubleValue())) {
             return number;
         }
@@ -103,12 +102,12 @@ interface ExpressionTraits {
             return null;
         }
 
-        if (!(one instanceof Number && other instanceof Number)) {
+        if (!(one instanceof Number firstNumber && other instanceof Number secondNumber)) {
             throw new MongoServerError(errorCode,
                 name() + " only supports numeric types, not " + describeType(one) + " and " + describeType(other));
         }
 
-        return new TwoNumericParameters((Number) one, (Number) other);
+        return new TwoNumericParameters(firstNumber, secondNumber);
     }
 
     default ZonedDateTime getZonedDateTime(Object value, Document document) {
@@ -124,20 +123,18 @@ interface ExpressionTraits {
                 timezone = ZoneId.of(timezoneExpression.toString());
             }
         }
-        if (!(value instanceof Instant)) {
+        if (!(value instanceof Instant instant)) {
             throw new MongoServerError(16006, "can't convert from " + describeType(value) + " to Date");
         }
 
-        Instant instant = (Instant) value;
         return ZonedDateTime.ofInstant(instant, timezone);
     }
 
     default int requireIntegral(Object value, String name) {
-        if (!(value instanceof Number)) {
+        if (!(value instanceof Number number)) {
             throw new MongoServerError(40096,
                 name() + " requires an integral " + name + ", found a value of type: " + describeType(value) + ", with value: \"" + value + "\"");
         }
-        Number number = (Number) value;
         int intValue = number.intValue();
         if (intValue < 0) {
             throw new MongoServerError(40097, name() + " requires a nonnegative " + name + ", found: " + intValue);
@@ -166,18 +163,18 @@ interface ExpressionTraits {
         if (first == null) {
             return null;
         }
-        if (!(first instanceof String)) {
+        if (!(first instanceof String firstString)) {
             throw new MongoServerError(errorCodeFirstParameterTypeMismatch,
                 name() + " requires a string as the first argument, found: " + describeType(first));
         }
-        List<T> elementsToSearchIn = toList.apply((String) first);
+        List<T> elementsToSearchIn = toList.apply(firstString);
 
         Object searchValue = expressionValue.get(1);
-        if (!(searchValue instanceof String)) {
+        if (!(searchValue instanceof String searchString)) {
             throw new MongoServerError(errorCodeSecondParameterTypeMismatch,
                 name() + " requires a string as the second argument, found: " + describeType(searchValue));
         }
-        List<T> search = toList.apply((String) searchValue);
+        List<T> search = toList.apply(searchString);
 
         Range range = indexOf(expressionValue, elementsToSearchIn.size());
 
@@ -207,18 +204,18 @@ interface ExpressionTraits {
     }
 
     default Collection<?> requireArray(int errorCode, Object value) {
-        if (!(value instanceof Collection)) {
+        if (!(value instanceof Collection<?> collection)) {
             throw new MongoServerError(errorCode,
                 "The argument to " + name() + " must be an array, but was of type: " + describeType(value));
         }
-        return (Collection<?>) value;
+        return collection;
     }
 
     default Document requireDocument(Object expressionValue, int errorCode) {
-        if (!(expressionValue instanceof Document)) {
+        if (!(expressionValue instanceof Document document)) {
             throw new MongoServerError(errorCode, name() + " only supports an object as its argument");
         }
-        return (Document) expressionValue;
+        return document;
     }
 
     default String evaluateString(List<?> expressionValue, Function<String, String> function) {
@@ -231,12 +228,12 @@ interface ExpressionTraits {
     default String convertToString(Object value) {
         if (isNullOrMissing(value)) {
             return null;
-        } else if (value instanceof String) {
-            return (String) value;
+        } else if (value instanceof String string) {
+            return string;
         } else if (value instanceof Number) {
             return value.toString();
-        } else if (value instanceof ObjectId) {
-            return ((ObjectId) value).getHexData();
+        } else if (value instanceof ObjectId objectId) {
+            return objectId.getHexData();
         }
         throw new MongoServerError(16007, "can't convert from BSON type " + describeType(value) + " to String");
     }

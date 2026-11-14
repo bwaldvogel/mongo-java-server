@@ -51,47 +51,28 @@ public final class BsonDecoder {
     }
 
     public static Object decodeValue(byte type, ByteBuf buffer) {
-        switch (type) {
-            case BsonConstants.TYPE_DOUBLE:
-                return Double.valueOf(Double.longBitsToDouble(buffer.readLongLE()));
-            case BsonConstants.TYPE_UTF8_STRING:
-                return decodeString(buffer);
-            case BsonConstants.TYPE_EMBEDDED_DOCUMENT:
-                return decodeBson(buffer);
-            case BsonConstants.TYPE_ARRAY:
-                return decodeArray(buffer);
-            case BsonConstants.TYPE_DATA:
-                return decodeBinary(buffer);
-            case BsonConstants.TYPE_UNDEFINED:
-            case BsonConstants.TYPE_NULL:
-                return null;
-            case BsonConstants.TYPE_OBJECT_ID:
-                return decodeObjectId(buffer);
-            case BsonConstants.TYPE_BOOLEAN:
-                return decodeBoolean(buffer);
-            case BsonConstants.TYPE_UTC_DATETIME:
-                return Instant.ofEpochMilli(buffer.readLongLE());
-            case BsonConstants.TYPE_REGEX:
-                return decodePattern(buffer);
-            case BsonConstants.TYPE_INT32:
-                return Integer.valueOf(buffer.readIntLE());
-            case BsonConstants.TYPE_TIMESTAMP:
-                return new BsonTimestamp(buffer.readLongLE());
-            case BsonConstants.TYPE_INT64:
-                return Long.valueOf(buffer.readLongLE());
-            case BsonConstants.TYPE_DECIMAL128:
-                return new Decimal128(buffer.readLongLE(), buffer.readLongLE());
-            case BsonConstants.TYPE_MAX_KEY:
-                return MaxKey.getInstance();
-            case BsonConstants.TYPE_MIN_KEY:
-                return MinKey.getInstance();
-            case BsonConstants.TYPE_JAVASCRIPT_CODE:
-                return new BsonJavaScript(decodeString(buffer));
-            case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE:
+        return switch (type) {
+            case BsonConstants.TYPE_DOUBLE -> Double.valueOf(Double.longBitsToDouble(buffer.readLongLE()));
+            case BsonConstants.TYPE_UTF8_STRING -> decodeString(buffer);
+            case BsonConstants.TYPE_EMBEDDED_DOCUMENT -> decodeBson(buffer);
+            case BsonConstants.TYPE_ARRAY -> decodeArray(buffer);
+            case BsonConstants.TYPE_DATA -> decodeBinary(buffer);
+            case BsonConstants.TYPE_UNDEFINED, BsonConstants.TYPE_NULL -> null;
+            case BsonConstants.TYPE_OBJECT_ID -> decodeObjectId(buffer);
+            case BsonConstants.TYPE_BOOLEAN -> decodeBoolean(buffer);
+            case BsonConstants.TYPE_UTC_DATETIME -> Instant.ofEpochMilli(buffer.readLongLE());
+            case BsonConstants.TYPE_REGEX -> decodePattern(buffer);
+            case BsonConstants.TYPE_INT32 -> Integer.valueOf(buffer.readIntLE());
+            case BsonConstants.TYPE_TIMESTAMP -> new BsonTimestamp(buffer.readLongLE());
+            case BsonConstants.TYPE_INT64 -> Long.valueOf(buffer.readLongLE());
+            case BsonConstants.TYPE_DECIMAL128 -> new Decimal128(buffer.readLongLE(), buffer.readLongLE());
+            case BsonConstants.TYPE_MAX_KEY -> MaxKey.getInstance();
+            case BsonConstants.TYPE_MIN_KEY -> MinKey.getInstance();
+            case BsonConstants.TYPE_JAVASCRIPT_CODE -> new BsonJavaScript(decodeString(buffer));
+            case BsonConstants.TYPE_JAVASCRIPT_CODE_WITH_SCOPE ->
                 throw new IllegalArgumentException("unhandled type: 0x" + Integer.toHexString(type));
-            default:
-                throw new IllegalArgumentException("unknown type: 0x" + Integer.toHexString(type));
-        }
+            default -> throw new IllegalArgumentException("unknown type: 0x" + Integer.toHexString(type));
+        };
     }
 
     private static BsonRegularExpression decodePattern(ByteBuf buffer) {

@@ -99,10 +99,9 @@ public class LinkedTreeSet<E> extends AbstractSet<E> {
         if (o == null) {
             return false;
         }
-        if (!(o instanceof LinkedTreeSet)) {
+        if (!(o instanceof LinkedTreeSet<?> otherSet)) {
             return false;
         }
-        LinkedTreeSet<?> otherSet = (LinkedTreeSet<?>) o;
         return orderedElements.equals(otherSet.orderedElements);
     }
 
