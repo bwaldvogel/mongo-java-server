@@ -70,7 +70,8 @@ class FieldUpdates {
                     // no upsert → ignore
                     return;
                 }
-                //$FALL-THROUGH$
+                handleSet(key, value);
+                break;
             case SET:
                 handleSet(key, value);
                 break;
