@@ -9,6 +9,8 @@ Fake implementation of the core [MongoDB][mongodb] server in Java that can be us
 
 Think of H2/HSQLDB/SQLite but for MongoDB.
 
+Java 21 or newer is required.
+
 The [MongoDB Wire Protocol][wire-protocol] is implemented with [Netty][netty].
 Different backends are possible and can be extended.
 
