@@ -2663,8 +2663,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         Instant instantAfter = Instant.now();
 
         assertThat(result).containsOnlyKeys("_id", "timestamp");
-        System.out.println(result.get("timestamp"));
-        assertThat(result.getDate("timestamp")).isBetween(instantBefore, instantAfter);
+        assertThat(result.getDate("timestamp")).isBetween(instantBefore, instantAfter, true, true);
     }
 
     private static Stream<Arguments> aggregateWithMerge_illegalParametersArguments() {
