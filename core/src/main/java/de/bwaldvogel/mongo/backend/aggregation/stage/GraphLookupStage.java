@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -22,17 +21,8 @@ public class GraphLookupStage extends AbstractLookupStage {
     private static final String MAX_DEPTH = "maxDepth";
     private static final String DEPTH_FIELD = "depthField";
 
-    private static final Set<String> CONFIGURATION_KEYS;
-    static {
-        CONFIGURATION_KEYS = new HashSet<>();
-        CONFIGURATION_KEYS.add(FROM);
-        CONFIGURATION_KEYS.add(START_WITH);
-        CONFIGURATION_KEYS.add(CONNECT_FROM_FIELD);
-        CONFIGURATION_KEYS.add(CONNECT_TO_FIELD);
-        CONFIGURATION_KEYS.add(AS);
-        CONFIGURATION_KEYS.add(MAX_DEPTH);
-        CONFIGURATION_KEYS.add(DEPTH_FIELD);
-    }
+    private static final Set<String> CONFIGURATION_KEYS = Set.of(
+        FROM, START_WITH, CONNECT_FROM_FIELD, CONNECT_TO_FIELD, AS, MAX_DEPTH, DEPTH_FIELD);
 
     private final String connectFromField;
     private final String connectToField;

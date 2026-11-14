@@ -1,16 +1,15 @@
 package de.bwaldvogel.mongo.backend.aggregation.accumulator;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.SequencedSet;
 
 import de.bwaldvogel.mongo.backend.Missing;
 
 public class AddToSetAccumulator extends Accumulator {
 
-    private final Set<Object> result = new LinkedHashSet<>();
+    private final SequencedSet<Object> result = new LinkedHashSet<>();
 
     public AddToSetAccumulator(String field, Object expression) {
         super(field, expression);
@@ -26,8 +25,6 @@ public class AddToSetAccumulator extends Accumulator {
 
     @Override
     public List<Object> getResult() {
-        List<Object> list = new ArrayList<>(result);
-        Collections.reverse(list);
-        return list;
+        return new ArrayList<>(result.reversed());
     }
 }

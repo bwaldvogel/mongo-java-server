@@ -89,7 +89,7 @@ public abstract class Index<P> {
         }
         if (arrayPaths.size() > 1) {
             List<String> parallelArraysPaths = arrayPaths.stream()
-                .map(path -> path.get(path.size() - 1))
+                .map(List::getLast)
                 .collect(Collectors.toList());
             throw new CannotIndexParallelArraysError(parallelArraysPaths);
         }

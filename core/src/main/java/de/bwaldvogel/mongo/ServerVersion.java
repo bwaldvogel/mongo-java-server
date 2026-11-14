@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo;
 
-import java.util.Collections;
 import java.util.List;
 
 public enum ServerVersion implements MongoVersion {
@@ -32,7 +31,7 @@ public enum ServerVersion implements MongoVersion {
 
     @Override
     public List<Integer> getVersionArray() {
-        return Collections.unmodifiableList(versionArray);
+        return versionArray;
     }
 
     @Override

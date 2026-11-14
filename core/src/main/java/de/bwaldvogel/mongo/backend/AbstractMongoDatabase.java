@@ -553,7 +553,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         Document result;
         if (results != null && !results.isEmpty()) {
-            result = results.get(results.size() - 1);
+            result = results.getLast();
             if (result == null) {
                 result = new Document();
             }
@@ -891,7 +891,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     protected void putLastResult(Channel channel, Document result) {
         List<Document> results = lastResults.get(channel);
         // list must not be empty
-        Document last = results.get(results.size() - 1);
+        Document last = results.getLast();
         Assert.isNull(last, () -> "last result already set: " + last);
         results.set(results.size() - 1, result);
     }

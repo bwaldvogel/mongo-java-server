@@ -19,7 +19,22 @@ import de.bwaldvogel.mongo.bson.ObjectId;
 
 public class ValueComparator implements Comparator<Object> {
 
-    private static final List<Class<?>> SORT_PRIORITY = new ArrayList<>();
+    // https://docs.mongodb.com/manual/reference/bson-type-comparison-order/
+    private static final List<Class<?>> SORT_PRIORITY = List.of(
+        MinKey.class,
+        Number.class,
+        String.class,
+        Document.class,
+        List.class,
+        BinData.class,
+        LegacyUUID.class,
+        UUID.class,
+        ObjectId.class,
+        Boolean.class,
+        Instant.class,
+        BsonTimestamp.class,
+        BsonRegularExpression.class,
+        MaxKey.class);
 
     private static final ValueComparator ASCENDING = new ValueComparator(true);
     private static final ValueComparator DESCENDING = new ValueComparator(false);
@@ -38,26 +53,6 @@ public class ValueComparator implements Comparator<Object> {
 
     public static ValueComparator desc() {
         return DESCENDING;
-    }
-
-    static {
-        /*
-         * https://docs.mongodb.com/manual/reference/bson-type-comparison-order/
-         */
-        SORT_PRIORITY.add(MinKey.class);
-        SORT_PRIORITY.add(Number.class);
-        SORT_PRIORITY.add(String.class);
-        SORT_PRIORITY.add(Document.class);
-        SORT_PRIORITY.add(List.class);
-        SORT_PRIORITY.add(BinData.class);
-        SORT_PRIORITY.add(LegacyUUID.class);
-        SORT_PRIORITY.add(UUID.class);
-        SORT_PRIORITY.add(ObjectId.class);
-        SORT_PRIORITY.add(Boolean.class);
-        SORT_PRIORITY.add(Instant.class);
-        SORT_PRIORITY.add(BsonTimestamp.class);
-        SORT_PRIORITY.add(BsonRegularExpression.class);
-        SORT_PRIORITY.add(MaxKey.class);
     }
 
     private ValueComparator(boolean ascending) {

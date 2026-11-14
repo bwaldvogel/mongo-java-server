@@ -1,6 +1,5 @@
 package de.bwaldvogel.mongo.backend.aggregation.stage;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -20,15 +19,8 @@ public class LookupWithPipelineStage extends AbstractLookupStage {
     private static final String LET_FIELD = "let";
     public static final String PIPELINE_FIELD = "pipeline";
 
-    private static final Set<String> CONFIGURATION_KEYS;
-
-    static {
-        CONFIGURATION_KEYS = new HashSet<>();
-        CONFIGURATION_KEYS.add(FROM);
-        CONFIGURATION_KEYS.add(LET_FIELD);
-        CONFIGURATION_KEYS.add(PIPELINE_FIELD);
-        CONFIGURATION_KEYS.add(AS);
-    }
+    private static final Set<String> CONFIGURATION_KEYS = Set.of(
+        FROM, LET_FIELD, PIPELINE_FIELD, AS);
 
     private final MongoDatabase mongoDatabase;
     private final DatabaseResolver databaseResolver;

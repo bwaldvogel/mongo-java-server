@@ -71,7 +71,7 @@ public final class KeyValue implements Serializable, Iterable<Object> {
     public KeyValue normalized() {
         return new KeyValue(values.stream()
             .map(Utils::normalizeValue)
-            .collect(Collectors.toList()));
+            .toList());
     }
 
 }
