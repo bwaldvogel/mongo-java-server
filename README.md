@@ -2,7 +2,6 @@
 [![Maven Central](https://img.shields.io/maven-central/v/de.bwaldvogel/mongo-java-server)](https://central.sonatype.com/artifact/de.bwaldvogel/mongo-java-server)
 [![codecov](https://codecov.io/gh/bwaldvogel/mongo-java-server/branch/main/graph/badge.svg?token=jZ7zBT4niu)](https://codecov.io/gh/bwaldvogel/mongo-java-server)
 [![BSD 3-Clause License](https://img.shields.io/github/license/bwaldvogel/mongo-java-server.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/BenediktWaldvogel)
 
 # MongoDB Java Server #
 
@@ -201,10 +200,6 @@ If you want to build a version that is not on Maven Central you can do the follo
 ## Contributing ##
 
 Please read the [contributing guidelines](CONTRIBUTING.md) if you want to contribute code to the project.
-
-If you want to thank the author for this library or want to support the maintenance work, we are happy to receive a donation.
-
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.me/BenediktWaldvogel)
 
 ## Ideas for other backends ##
 
