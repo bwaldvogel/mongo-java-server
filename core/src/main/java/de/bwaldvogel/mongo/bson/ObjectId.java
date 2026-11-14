@@ -4,6 +4,7 @@ import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.regex.Pattern;
 
 import de.bwaldvogel.mongo.backend.Assert;
@@ -26,13 +27,8 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
         if (!PATTERN.matcher(hexString).matches()) {
             throw new IllegalArgumentException("Failed to parse '" + hexString + "'");
         }
-        int len = hexString.length();
-        Assert.equals(hexString.length(), data.length * 2L);
-        for (int i = 0; i < len; i += 2) {
-            int first = Character.digit(hexString.charAt(i), 16) << 4;
-            int second = Character.digit(hexString.charAt(i + 1), 16);
-            data[i / 2] = (byte) (first + second);
-        }
+        byte[] parsed = HexFormat.of().parseHex(hexString);
+        System.arraycopy(parsed, 0, data, 0, data.length);
     }
 
     public ObjectId(byte[] data) {
@@ -46,16 +42,7 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
 
     @Override
     public int compareTo(final ObjectId other) {
-        byte[] byteArray = toByteArray();
-        byte[] otherByteArray = other.toByteArray();
-        for (int i = 0; i < LENGTH_OBJECTID; i++) {
-            if (byteArray[i] != otherByteArray[i]) {
-                int thisByte = byteArray[i] & 0xFF;
-                int otherByte = otherByteArray[i] & 0xFF;
-                return (thisByte < otherByte) ? -1 : 1;
-            }
-        }
-        return 0;
+        return Arrays.compareUnsigned(toByteArray(), other.toByteArray());
     }
 
     @Override
@@ -84,11 +71,7 @@ public class ObjectId implements Bson, Comparable<ObjectId> {
     }
 
     public String getHexData() {
-        StringBuilder sb = new StringBuilder();
-        for (byte b : data) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
+        return HexFormat.of().formatHex(data);
     }
 
 }

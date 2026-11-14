@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.bson;
 
-import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HexFormat;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -76,28 +76,17 @@ public final class Json {
         return escaped;
     }
 
-    private static StringBuilder toHex(UUID uuid) {
-        byte[] bytes = toBytes(uuid);
-        StringBuilder hex = new StringBuilder();
-        for (int i = bytes.length; i > 0; i--) {
-            hex.append(String.format("%02X", bytes[i - 1]));
-        }
-        return hex;
+    private static String toHex(UUID uuid) {
+        return toLittleEndianHex(uuid.getMostSignificantBits())
+            + toLittleEndianHex(uuid.getLeastSignificantBits());
     }
 
-    private static StringBuilder toHex(byte[] bytes) {
-        StringBuilder hex = new StringBuilder();
-        for (byte aByte : bytes) {
-            hex.append(String.format("%02X", aByte));
-        }
-        return hex;
+    private static String toLittleEndianHex(long value) {
+        return HexFormat.of().withUpperCase().toHexDigits(Long.reverseBytes(value));
     }
 
-    private static byte[] toBytes(UUID uuid) {
-        ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[16]);
-        byteBuffer.putLong(uuid.getLeastSignificantBits());
-        byteBuffer.putLong(uuid.getMostSignificantBits());
-        return byteBuffer.array();
+    private static String toHex(byte[] bytes) {
+        return HexFormat.of().withUpperCase().formatHex(bytes);
     }
 
 }
