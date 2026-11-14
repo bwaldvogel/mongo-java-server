@@ -6,42 +6,51 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - java: '17'
-            timezone: 'UTC'
           - java: '21'
             timezone: 'Asia/Tokyo'
           - java: '25'
+            timezone: 'UTC'
+          - java: '27'
             timezone: 'UTC'
     env:
       TZ: ${{ matrix.timezone }}
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup Java
-      uses: actions/setup-java@v1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        persist-credentials: false
+    - name: Setup Java
+      uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+      with:
+        distribution: temurin
         java-version: ${{ matrix.java }}
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
     - name: Build with Gradle
-      run: ./gradlew build
-
-  publishCoverage:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Setup Java
-      uses: actions/setup-java@v1
+      run: ./gradlew build --warning-mode all
+    - name: Upload test reports
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
-        java-version: 17
-    - name: Publish coverage
-      run: ./gradlew build
+        name: test-reports-java-${{ matrix.java }}
+        path: |
+          **/build/reports/tests/
+          **/build/test-results/
+        retention-days: 7
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+      if: matrix.java == '25'
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
       with:
         files: ./build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml
+        disable_search: true
+        token: ${{ secrets.CODECOV_TOKEN }}
