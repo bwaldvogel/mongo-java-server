@@ -1386,6 +1386,25 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/231
+    @Test
+    void testAggregateWithLookupNestedForeignArrayField() {
+        db.getCollection("authors").insertMany(List.of(
+            json("_id: 1, nestedKeyCollection: [{nestedKey: 'a'}, {nestedKey: 'b'}]"),
+            json("_id: 2, nestedKeyCollection: [{nestedKey: 'c'}]")
+        ));
+        collection.insertOne(json("_id: 1, someKey: 'b'"));
+
+        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: 'someKey'," +
+            " foreignField: 'nestedKeyCollection.nestedKey', as: 'matches'}");
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(json("""
+                _id: 1, someKey: 'b',
+                matches: [{_id: 1, nestedKeyCollection: [{nestedKey: 'a'}, {nestedKey: 'b'}]}]
+                """));
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/123
     @Test
     void testAggregateWithLookup_collectionDoesNotExist() {
