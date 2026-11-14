@@ -93,7 +93,7 @@ public class ReadOnlyProxy implements MongoBackend {
     @Override
     public Document handleMessage(MongoMessage message) {
         Document document = message.getDocument();
-        String command = document.keySet().iterator().next().toLowerCase();
+        String command = document.keySet().iterator().next();
         if (isAllowed(Command.parseString(command), document)) {
             return backend.handleMessage(message);
         }

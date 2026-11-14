@@ -128,6 +128,11 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
         } else if ("$cmd".equals(collectionName)) {
             String command = query.getQuery().keySet().iterator().next();
+            if ("$query".equals(command)) {
+                Document actualQuery = (Document) query.getQuery().get("$query");
+                command = actualQuery.keySet().iterator().next();
+                return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), DatabaseCommand.of(command), actualQuery);
+            }
             DatabaseCommand cmd = DatabaseCommand.of(command);
             switch (cmd.getCommand()) {
                 case SERVER_STATUS:
@@ -139,13 +144,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
                     return response;
 
                 default:
-                    Document actualQuery = query.getQuery();
-                    if ("$query".equals(command)) {
-                        command = ((Document) query.getQuery().get("$query")).keySet().iterator().next();
-                        cmd = DatabaseCommand.of(command);
-                        actualQuery = (Document) actualQuery.get("$query");
-                    }
-                    return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), cmd, actualQuery);
+                    return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), cmd, query.getQuery());
             }
         }
 

@@ -1,9 +1,12 @@
 package de.bwaldvogel.mongo.backend;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 
 public enum Command {
     // User
@@ -57,8 +60,7 @@ public enum Command {
     GET_FREE_MONITORING_STATUS("getFreeMonitoringStatus"),
 
     // internal use
-    TRIGGER_INTERNAL_EXCEPTION("triggerInternalException"),
-    UNKNOWN("unknown");
+    TRIGGER_INTERNAL_EXCEPTION("triggerInternalException");
 
     private final String name;
     private static final Map<String, Command> LOOKUP;
@@ -66,7 +68,7 @@ public enum Command {
     static {
         LOOKUP = Arrays.stream(Command.values())
             .collect(Collectors.toMap(
-                c -> c.name.toLowerCase(),
+                c -> c.name.toLowerCase(Locale.ROOT),
                 Function.identity()
             ));
     }
@@ -80,6 +82,10 @@ public enum Command {
     }
 
     public static Command parseString(String commandName) {
-        return LOOKUP.getOrDefault(commandName.toLowerCase(), UNKNOWN);
+        Command command = LOOKUP.get(commandName.toLowerCase(Locale.ROOT));
+        if (command == null) {
+            throw new NoSuchCommandException(commandName);
+        }
+        return command;
     }
 }
