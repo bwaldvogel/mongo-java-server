@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
@@ -111,7 +112,7 @@ interface ExpressionTraits {
     }
 
     default ZonedDateTime getZonedDateTime(Object value, Document document) {
-        ZoneId timezone = ZoneId.systemDefault();
+        ZoneId timezone = ZoneOffset.UTC;
         if (value instanceof Document valueAsDocument) {
             if (!valueAsDocument.containsKey("date")) {
                 throw new MongoServerError(40539, "missing 'date' argument to " + name() + ", provided: " + value);

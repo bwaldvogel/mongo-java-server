@@ -11,7 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17', '21', '25' ]
+        include:
+          - java: '17'
+            timezone: 'UTC'
+          - java: '21'
+            timezone: 'Asia/Tokyo'
+          - java: '25'
+            timezone: 'UTC'
+    env:
+      TZ: ${{ matrix.timezone }}
 
     steps:
     - uses: actions/checkout@v2
