@@ -89,48 +89,42 @@ public class Utils {
     }
 
     public static boolean isTrue(Object value) {
-        if (Missing.isNullOrMissing(value)) {
-            return false;
-        }
-
-        if (value instanceof Boolean bool) {
-            return bool.booleanValue();
-        }
-
-        if (value instanceof Number number) {
-            return number.doubleValue() != 0.0;
-        }
-
-        return true;
+        return switch (value) {
+            case null -> false;
+            case Missing ignored -> false;
+            case Boolean bool -> bool.booleanValue();
+            case Number number -> number.doubleValue() != 0.0;
+            default -> true;
+        };
     }
 
     static Object normalizeValue(Object value) {
         if (Missing.isNullOrMissing(value)) {
             return null;
         }
-        if (value instanceof Long && cannotBeRepresentedAsDouble((Long) value)) {
-            return value;
-        } else if (value instanceof Number number) {
-            double doubleValue = number.doubleValue();
-            if (doubleValue == -0.0) {
-                doubleValue = 0.0;
+        return switch (value) {
+            case Long longValue when cannotBeRepresentedAsDouble(longValue) -> longValue;
+            case Number number -> {
+                double doubleValue = number.doubleValue();
+                if (doubleValue == -0.0) {
+                    doubleValue = 0.0;
+                }
+                yield Double.valueOf(doubleValue);
             }
-            return Double.valueOf(doubleValue);
-        } else if (value instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) value;
-            Document result = new Document();
-            for (Entry<String, Object> entry : map.entrySet()) {
-                result.put(entry.getKey(), normalizeValue(entry.getValue()));
+            case Map<?, ?> mapValue -> {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) mapValue;
+                Document result = new Document();
+                for (Entry<String, Object> entry : map.entrySet()) {
+                    result.put(entry.getKey(), normalizeValue(entry.getValue()));
+                }
+                yield result;
             }
-            return result;
-        } else if (value instanceof Collection<?> collection) {
-            return collection.stream()
+            case Collection<?> collection -> collection.stream()
                 .map(Utils::normalizeValue)
                 .collect(Collectors.toList());
-        } else {
-            return value;
-        }
+            default -> value;
+        };
     }
 
     private static boolean cannotBeRepresentedAsDouble(Long value) {

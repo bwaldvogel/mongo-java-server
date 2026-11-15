@@ -228,14 +228,13 @@ interface ExpressionTraits {
     default String convertToString(Object value) {
         if (isNullOrMissing(value)) {
             return null;
-        } else if (value instanceof String string) {
-            return string;
-        } else if (value instanceof Number) {
-            return value.toString();
-        } else if (value instanceof ObjectId objectId) {
-            return objectId.getHexData();
         }
-        throw new MongoServerError(16007, "can't convert from BSON type " + describeType(value) + " to String");
+        return switch (value) {
+            case String string -> string;
+            case Number number -> number.toString();
+            case ObjectId objectId -> objectId.getHexData();
+            default -> throw new MongoServerError(16007, "can't convert from BSON type " + describeType(value) + " to String");
+        };
     }
 
 }

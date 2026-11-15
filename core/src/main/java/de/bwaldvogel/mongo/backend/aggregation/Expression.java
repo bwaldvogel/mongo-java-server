@@ -369,15 +369,12 @@ public enum Expression implements ExpressionTraits {
 
         private BsonType getBsonType(Object to) {
             try {
-                if (to instanceof String toString) {
-                    return BsonType.forString(toString);
-                } else if (to instanceof Integer toNumber) {
-                    return BsonType.forNumber(toNumber);
-                } else if (to instanceof Number) {
-                    throw new IllegalArgumentException("In $convert, numeric 'to' argument is not an integer");
-                } else {
-                    throw new IllegalArgumentException("$convert's 'to' argument must be a string or number, but is " + describeType(to));
-                }
+                return switch (to) {
+                    case String toString -> BsonType.forString(toString);
+                    case Integer toNumber -> BsonType.forNumber(toNumber);
+                    case Number ignored -> throw new IllegalArgumentException("In $convert, numeric 'to' argument is not an integer");
+                    case null, default -> throw new IllegalArgumentException("$convert's 'to' argument must be a string or number, but is " + describeType(to));
+                };
             } catch (BadValueException e) {
                 throw new FailedToOptimizePipelineError(ErrorCode.BadValue, "Unknown type name: " + to);
             } catch (IllegalArgumentException e) {
@@ -1597,13 +1594,12 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number number) {
-                return number.doubleValue() != 0.0;
-            } else if (value instanceof Boolean) {
-                return (Boolean) value;
-            } else {
-                return true;
             }
+            return switch (value) {
+                case Number number -> number.doubleValue() != 0.0;
+                case Boolean booleanValue -> booleanValue;
+                default -> true;
+            };
         }
     },
 
@@ -1616,35 +1612,35 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Long || value instanceof Double) {
-                Number number = (Number) value;
-                return Instant.ofEpochMilli(number.longValue());
-            } else if (value instanceof Instant) {
-                return (Instant) value;
-            } else if (value instanceof String dateString) {
-                try {
-                    return Instant.parse(dateString);
-                } catch (DateTimeParseException e1) {
+            }
+            return switch (value) {
+                case Long millis -> Instant.ofEpochMilli(millis);
+                case Double millis -> Instant.ofEpochMilli(millis.longValue());
+                case Instant instant -> instant;
+                case String dateString -> {
                     try {
-                        return LocalDate.parse(dateString).atStartOfDay(ZoneOffset.UTC).toInstant();
-                    } catch (DateTimeParseException e2) {
+                        yield Instant.parse(dateString);
+                    } catch (DateTimeParseException e1) {
                         try {
-                            return ZonedDateTime.parse(dateString, OFFSET_DATE_TIME).toInstant();
-                        } catch (DateTimeParseException e3) {
+                            yield LocalDate.parse(dateString).atStartOfDay(ZoneOffset.UTC).toInstant();
+                        } catch (DateTimeParseException e2) {
                             try {
-                                TemporalAccessor temporalAccessor = YEAR_MONTH.parse(dateString);
-                                int year = temporalAccessor.get(ChronoField.YEAR);
-                                int month = temporalAccessor.get(ChronoField.MONTH_OF_YEAR);
-                                return LocalDate.of(year, month, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
-                            } catch (DateTimeParseException e) {
-                                throw new ConversionFailureException("Error parsing date string '" + dateString + "';");
+                                yield ZonedDateTime.parse(dateString, OFFSET_DATE_TIME).toInstant();
+                            } catch (DateTimeParseException e3) {
+                                try {
+                                    TemporalAccessor temporalAccessor = YEAR_MONTH.parse(dateString);
+                                    int year = temporalAccessor.get(ChronoField.YEAR);
+                                    int month = temporalAccessor.get(ChronoField.MONTH_OF_YEAR);
+                                    yield LocalDate.of(year, month, 1).atStartOfDay(ZoneOffset.UTC).toInstant();
+                                } catch (DateTimeParseException e) {
+                                    throw new ConversionFailureException("Error parsing date string '" + dateString + "';");
+                                }
                             }
                         }
                     }
                 }
-            } else {
-                throw new UnsupportedConversionError(value, Instant.class);
-            }
+                default -> throw new UnsupportedConversionError(value, Instant.class);
+            };
         }
     },
 
@@ -1654,22 +1650,21 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number number) {
-                return number.doubleValue();
-            } else if (value instanceof Boolean booleanValue) {
-                return booleanValue.booleanValue() ? 1.0 : 0.0;
-            } else if (value instanceof Instant instant) {
-                return (double) instant.toEpochMilli();
-            } else if (value instanceof String string) {
-                try {
-                    return Double.valueOf(string);
-                } catch (NumberFormatException e) {
-                    throw new ConversionFailureException("Failed to parse number '" + value
-                        + "' in $convert with no onError value: Did not consume whole number.");
-                }
-            } else {
-                throw new UnsupportedConversionError(value, Double.class);
             }
+            return switch (value) {
+                case Number number -> number.doubleValue();
+                case Boolean booleanValue -> booleanValue.booleanValue() ? 1.0 : 0.0;
+                case Instant instant -> (double) instant.toEpochMilli();
+                case String string -> {
+                    try {
+                        yield Double.valueOf(string);
+                    } catch (NumberFormatException e) {
+                        throw new ConversionFailureException("Failed to parse number '" + value
+                            + "' in $convert with no onError value: Did not consume whole number.");
+                    }
+                }
+                default -> throw new UnsupportedConversionError(value, Double.class);
+            };
         }
     },
 
@@ -1679,20 +1674,20 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number number) {
-                return number.intValue();
-            } else if (value instanceof Boolean booleanValue) {
-                return booleanValue.booleanValue() ? 1 : 0;
-            } else if (value instanceof String string) {
-                try {
-                    return Integer.valueOf(string);
-                } catch (NumberFormatException e) {
-                    throw new ConversionFailureException("Failed to parse number '" + value
-                        + "' in $convert with no onError value.");
-                }
-            } else {
-                throw new UnsupportedConversionError(value, Integer.class);
             }
+            return switch (value) {
+                case Number number -> number.intValue();
+                case Boolean booleanValue -> booleanValue.booleanValue() ? 1 : 0;
+                case String string -> {
+                    try {
+                        yield Integer.valueOf(string);
+                    } catch (NumberFormatException e) {
+                        throw new ConversionFailureException("Failed to parse number '" + value
+                            + "' in $convert with no onError value.");
+                    }
+                }
+                default -> throw new UnsupportedConversionError(value, Integer.class);
+            };
         }
     },
 
@@ -1702,22 +1697,21 @@ public enum Expression implements ExpressionTraits {
             Object value = requireSingleValue(expressionValue);
             if (Missing.isNullOrMissing(value)) {
                 return null;
-            } else if (value instanceof Number number) {
-                return number.longValue();
-            } else if (value instanceof Boolean booleanValue) {
-                return booleanValue.booleanValue() ? 1L : 0L;
-            } else if (value instanceof Instant instant) {
-                return instant.toEpochMilli();
-            } else if (value instanceof String string) {
-                try {
-                    return Long.valueOf(string);
-                } catch (NumberFormatException e) {
-                    throw new ConversionFailureException("Failed to parse number '" + value
-                        + "' in $convert with no onError value.");
-                }
-            } else {
-                throw new UnsupportedConversionError(value, Long.class);
             }
+            return switch (value) {
+                case Number number -> number.longValue();
+                case Boolean booleanValue -> booleanValue.booleanValue() ? 1L : 0L;
+                case Instant instant -> instant.toEpochMilli();
+                case String string -> {
+                    try {
+                        yield Long.valueOf(string);
+                    } catch (NumberFormatException e) {
+                        throw new ConversionFailureException("Failed to parse number '" + value
+                            + "' in $convert with no onError value.");
+                    }
+                }
+                default -> throw new UnsupportedConversionError(value, Long.class);
+            };
         }
     },
 
@@ -1822,49 +1816,49 @@ public enum Expression implements ExpressionTraits {
     }
 
     static Object evaluate(Object expression, Document document) {
-        if (expression instanceof String expressionString && expressionString.startsWith("$")) {
-            if (KEYWORD_EXPRESSIONS.contains(expression)) {
-                return expression;
-            }
-            String value = expressionString.substring(1);
-            if (value.startsWith("$")) {
-                final String variableName;
-                if (value.contains(".")) {
-                    variableName = value.substring(0, value.indexOf('.'));
-                } else {
-                    variableName = value;
+        return switch (expression) {
+            case String expressionString when expressionString.startsWith("$") -> {
+                if (KEYWORD_EXPRESSIONS.contains(expression)) {
+                    yield expression;
                 }
-
-                Object variableValue = Utils.getSubdocumentValue(document, variableName);
-                if (variableValue instanceof Missing) {
-                    if (variableName.equals("$ROOT")) {
-                        variableValue = document;
-                    } else if (variableName.equals("$NOW")) {
-                        variableValue = Instant.now();
+                String value = expressionString.substring(1);
+                if (value.startsWith("$")) {
+                    final String variableName;
+                    if (value.contains(".")) {
+                        variableName = value.substring(0, value.indexOf('.'));
                     } else {
-                        throw new MongoServerError(17276, "Use of undefined variable: " + variableName.substring(1));
+                        variableName = value;
+                    }
+
+                    Object variableValue = Utils.getSubdocumentValue(document, variableName);
+                    if (variableValue instanceof Missing) {
+                        if (variableName.equals("$ROOT")) {
+                            variableValue = document;
+                        } else if (variableName.equals("$NOW")) {
+                            variableValue = Instant.now();
+                        } else {
+                            throw new MongoServerError(17276, "Use of undefined variable: " + variableName.substring(1));
+                        }
+                    }
+
+                    if (variableValue instanceof String variableValueString) {
+                        if (variableValueString.startsWith("$")) {
+                            variableValue = evaluate(variableValue, document);
+                        }
+                    }
+
+                    if (!value.equals(variableName)) {
+                        String path = value.substring(variableName.length() + 1);
+                        yield Utils.getSubdocumentValue((Document) variableValue, path);
+                    } else {
+                        yield variableValue;
                     }
                 }
-
-                if (variableValue instanceof String variableValueString) {
-                    if (variableValueString.startsWith("$")) {
-                        variableValue = evaluate(variableValue, document);
-                    }
-                }
-
-                if (!value.equals(variableName)) {
-                    String path = value.substring(variableName.length() + 1);
-                    return Utils.getSubdocumentValue((Document) variableValue, path);
-                } else {
-                    return variableValue;
-                }
+                yield Utils.getSubdocumentValueCollectionAware(document, value);
             }
-            return Utils.getSubdocumentValueCollectionAware(document, value);
-        } else if (expression instanceof Document expressionDoc) {
-            return evaluateDocumentExpression(expressionDoc, document);
-        } else {
-            return expression;
-        }
+            case Document expressionDoc -> evaluateDocumentExpression(expressionDoc, document);
+            case null, default -> expression;
+        };
     }
 
     private static Object evaluateDocumentExpression(Document expression, Document document) {
