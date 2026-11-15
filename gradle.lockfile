@@ -41,7 +41,6 @@ org.mockito:mockito-core:5.24.0=aggregateCodeCoverageReportResults
 org.mockito:mockito-junit-jupiter:5.24.0=aggregateCodeCoverageReportResults
 org.mongodb:bson-record-codec:5.14.0=aggregateCodeCoverageReportResults
 org.mongodb:bson:5.14.0=aggregateCodeCoverageReportResults
-org.mongodb:mongo-java-driver:3.12.14=aggregateCodeCoverageReportResults
 org.mongodb:mongodb-driver-core:5.14.0=aggregateCodeCoverageReportResults
 org.mongodb:mongodb-driver-reactivestreams:5.14.0=aggregateCodeCoverageReportResults
 org.mongodb:mongodb-driver-sync:5.14.0=aggregateCodeCoverageReportResults

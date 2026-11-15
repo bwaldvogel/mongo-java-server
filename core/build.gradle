@@ -3,7 +3,7 @@ dependencies {
     implementation 'io.netty:netty-codec:latest.release'
     implementation 'io.netty:netty-handler:latest.release'
 
-    testImplementation 'org.mongodb:mongo-java-driver:latest.release'
+    testImplementation 'org.mongodb:bson:latest.release'
     testImplementation "org.mockito:mockito-core:latest.release"
     testImplementation "org.mockito:mockito-junit-jupiter:latest.release"
     testImplementation "nl.jqno.equalsverifier:equalsverifier:latest.release"
