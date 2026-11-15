@@ -54,9 +54,6 @@ public enum Command {
     VALIDATE("validate"),
     WHATS_MY_URI("whatsmyuri"),
 
-    // Monitoring
-    GET_FREE_MONITORING_STATUS("getFreeMonitoringStatus"),
-
     // internal use
     TRIGGER_INTERNAL_EXCEPTION("triggerInternalException");
 

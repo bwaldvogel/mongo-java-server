@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 
+import com.github.dockerjava.api.model.Ulimit;
 import com.mongodb.ConnectionString;
 
 import de.bwaldvogel.mongo.backend.Assert;
@@ -52,7 +53,10 @@ public class RealMongoContainer implements BeforeAllCallback, AfterAllCallback {
     }
 
     static GenericContainer<?> start() {
-        GenericContainer<?> mongoContainer = new GenericContainer<>("mongo:5.0.18").withExposedPorts(27017);
+        GenericContainer<?> mongoContainer = new GenericContainer<>("mongo:7.0.48")
+            .withExposedPorts(27017)
+            .withCreateContainerCmdModifier(cmd -> cmd.getHostConfig()
+                .withUlimits(new Ulimit[] { new Ulimit("nofile", 2048L, 2048L) }));
         mongoContainer.start();
         return mongoContainer;
     }

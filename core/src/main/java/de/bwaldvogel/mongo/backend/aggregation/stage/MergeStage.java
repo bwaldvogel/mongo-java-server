@@ -23,6 +23,8 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.DuplicateKeyError;
+import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.InvalidOptionsException;
 import de.bwaldvogel.mongo.exception.MergeStageNoMatchingDocumentException;
@@ -66,7 +68,7 @@ public class MergeStage extends TerminalStage {
         Document paramsDocument = (Document) params;
         for (String key : paramsDocument.keySet()) {
             if (!KNOWN_KEYS.contains(key)) {
-                throw new MongoServerError(40415, "BSON field '$merge." + key + "' is an unknown field.");
+                throw new MongoServerError(ErrorCode.IDLUnknownField, "BSON field '$merge." + key + "' is an unknown field.");
             }
         }
 
@@ -118,7 +120,7 @@ public class MergeStage extends TerminalStage {
         } else if (into instanceof Document intoDocument) {
             for (String intoKey : intoDocument.keySet()) {
                 if (!intoKey.equals("db") && !intoKey.equals("coll")) {
-                    throw new MongoServerError(40415, "BSON field 'into." + intoKey + "' is an unknown field.");
+                    throw new MongoServerError(ErrorCode.IDLUnknownField, "BSON field 'into." + intoKey + "' is an unknown field.");
                 }
             }
             String collectionName = (String) intoDocument.get("coll");
@@ -240,7 +242,13 @@ public class MergeStage extends TerminalStage {
                             break;
                         case fail:
                             // this triggers a DuplicateKeyError
-                            collection.addDocument(document);
+                            try {
+                                collection.addDocument(document);
+                            } catch (DuplicateKeyError e) {
+                                throw new MongoServerError(ErrorCode.DuplicateKey,
+                                    "$merge with whenMatched: fail found an existing document with the same values for the 'on' fields :: caused by :: "
+                                        + e.getMessageWithoutErrorCode(), e);
+                            }
                             break;
                         case keepExisting:
                             break;

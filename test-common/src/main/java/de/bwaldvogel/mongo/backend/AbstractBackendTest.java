@@ -339,10 +339,13 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     void testCreateCollectionAlreadyExists() {
         db.createCollection("some-collection", new CreateCollectionOptions());
+        MongoCollection<Document> existingCollection = db.getCollection("some-collection");
+        existingCollection.insertOne(json("_id: 1, value: 'preserved'"));
 
-        assertThatExceptionOfType(MongoCommandException.class)
-            .isThrownBy(() -> db.createCollection("some-collection", new CreateCollectionOptions()))
-            .withMessageStartingWith("Command execution failed on MongoDB server with error 48 (NamespaceExists): 'Collection already exists. NS: testdb.some-collection'");
+        db.createCollection("some-collection", new CreateCollectionOptions());
+
+        assertThat(db.listCollectionNames()).containsExactly("some-collection");
+        assertThat(existingCollection.find()).containsExactly(json("_id: 1, value: 'preserved'"));
     }
 
     @Test
@@ -415,7 +418,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testGetLogWhichDoesNotExist() {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> runCommand(json("getLog: 'illegal'")))
-            .withMessageStartingWith("Command execution failed on MongoDB server with error -1: 'no RamLog named: illegal'");
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 96 (OperationFailed): 'No log named 'illegal''");
     }
 
     @Test
@@ -878,10 +881,10 @@ public abstract class AbstractBackendTest extends AbstractTest {
     void testDatabaseStats() {
         Document stats = db.runCommand(new Document("dbStats", 1).append("scale", 1));
         assertThat(stats.getDouble("ok")).isEqualTo(1.0);
-        assertThat(stats.getInteger("objects")).isZero();
-        assertThat(stats.getInteger("collections")).isZero();
-        assertThat(stats.getInteger("indexes")).isZero();
-        assertThat(stats.getInteger("dataSize")).isZero();
+        assertThat(stats.getLong("objects")).isZero();
+        assertThat(stats.getLong("collections")).isZero();
+        assertThat(stats.getLong("indexes")).isZero();
+        assertThat(stats.getDouble("dataSize")).isZero();
 
         getCollection("foo").insertOne(json(""));
         getCollection("foo").insertOne(json(""));
@@ -889,9 +892,9 @@ public abstract class AbstractBackendTest extends AbstractTest {
 
         stats = db.runCommand(new Document("dbStats", 1).append("scale", 1));
         assertThat(stats.getDouble("ok")).isEqualTo(1.0);
-        assertThat(stats.getInteger("objects")).isEqualTo(3);
-        assertThat(stats.getInteger("collections")).isEqualTo(2);
-        assertThat(stats.getInteger("indexes")).isEqualTo(2);
+        assertThat(stats.getLong("objects")).isEqualTo(3);
+        assertThat(stats.getLong("collections")).isEqualTo(2);
+        assertThat(stats.getLong("indexes")).isEqualTo(2);
         assertThat(stats.getDouble("dataSize")).isEqualTo(66.0);
     }
 
@@ -5328,7 +5331,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"getLastError", "getlasterror", "resetError", "reseterror"})
+    @ValueSource(strings = {"getLastError", "getlasterror", "resetError", "reseterror", "getFreeMonitoringStatus"})
     void testRemovedCommands(String command) {
         for (String databaseName : List.of(TEST_DATABASE_NAME, ADMIN_DB_NAME)) {
             assertThatExceptionOfType(MongoCommandException.class)
@@ -6722,13 +6725,6 @@ public abstract class AbstractBackendTest extends AbstractTest {
         Document result = runCommand(Command.GET_CMD_LINE_OPTS);
         assertThat(result.get("ok")).isEqualTo(1.0);
         assertThat(result).containsOnlyKeys("ok", "argv", "parsed");
-    }
-
-    @Test
-    void testGetFreeMonitoringStatus() {
-        Document result = runCommand(Command.GET_FREE_MONITORING_STATUS);
-        assertThat(result).isEqualTo(json("ok: 1.0, state: 'disabled', debug: {state: 'undecided'}," +
-            " message: 'Free monitoring is deprecated, refer to \\'debug\\' field for actual status'"));
     }
 
     @Test

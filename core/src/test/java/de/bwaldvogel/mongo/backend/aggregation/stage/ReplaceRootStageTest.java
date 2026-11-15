@@ -30,19 +30,19 @@ public class ReplaceRootStageTest {
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ReplaceRootStage(json("newRoot: 1")).replaceRoot(json("a: { b: {} }")))
-            .withMessage("[Error 40228] 'newRoot' expression must evaluate to an object, but resulting value was: 1. Type of resulting value: 'int'. Input document: {a: {b: {}}}");
+            .withMessage("[Error 40228] 'newRoot' expression  must evaluate to an object, but resulting value was: 1. Type of resulting value: 'int'. Input document: {a: {b: {}}}");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ReplaceRootStage(json("newRoot: 'x'")).replaceRoot(json("a: { b: {} }")))
-            .withMessage("[Error 40228] 'newRoot' expression must evaluate to an object, but resulting value was: \"x\". Type of resulting value: 'string'. Input document: {a: {b: {}}}");
+            .withMessage("[Error 40228] 'newRoot' expression  must evaluate to an object, but resulting value was: \"x\". Type of resulting value: 'string'. Input document: {a: {b: {}}}");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ReplaceRootStage(json("newRoot: '$c'")).replaceRoot(json("a: { b: {} }")))
-            .withMessage("[Error 40228] 'newRoot' expression must evaluate to an object, but resulting value was: null. Type of resulting value: 'missing'. Input document: {a: {b: {}}}");
+            .withMessage("[Error 40228] 'newRoot' expression  must evaluate to an object, but resulting value was: null. Type of resulting value: 'missing'. Input document: {a: {b: {}}}");
 
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ReplaceRootStage(json("newRoot: '$a.c'")).replaceRoot(json("a: { b: {} }")))
-            .withMessage("[Error 40228] 'newRoot' expression must evaluate to an object, but resulting value was: null. Type of resulting value: 'missing'. Input document: {a: {b: {}}}");
+            .withMessage("[Error 40228] 'newRoot' expression  must evaluate to an object, but resulting value was: null. Type of resulting value: 'missing'. Input document: {a: {b: {}}}");
     }
 
 }
