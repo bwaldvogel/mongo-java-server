@@ -476,6 +476,8 @@ public class Utils {
             return "long";
         } else if (Double.class.isAssignableFrom(type)) {
             return "double";
+        } else if (Boolean.class.isAssignableFrom(type)) {
+            return "bool";
         } else if (ObjectId.class.isAssignableFrom(type)) {
             return "objectId";
         } else if (Instant.class.isAssignableFrom(type)) {
