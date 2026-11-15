@@ -1,20 +1,18 @@
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.InetSocketAddress;
-
 import org.bson.Document;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.mongodb.MongoClient;
-import com.mongodb.ServerAddress;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 
-class SimpleJUnit5WithLegacyClientTest {
+class SimpleJUnit5Test {
 
     private MongoCollection<Document> collection;
     private MongoClient client;
@@ -25,9 +23,9 @@ class SimpleJUnit5WithLegacyClientTest {
         server = new MongoServer(new MemoryBackend());
 
         // bind on a random local port
-        InetSocketAddress serverAddress = server.bind();
+        String connectionString = server.bindAndGetConnectionString();
 
-        client = new MongoClient(new ServerAddress(serverAddress));
+        client = MongoClients.create(connectionString);
         collection = client.getDatabase("testdb").getCollection("testcollection");
     }
 
