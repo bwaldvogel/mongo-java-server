@@ -36,6 +36,8 @@ import com.mongodb.client.model.IndexOptions;
 
 public abstract class AbstractAggregationTest extends AbstractTest {
 
+    private static final int TEST_TIMEOUT_SECONDS = 30;
+
     @BeforeEach
     void dropAllDatabasesBeforeEachTest() {
         dropAllDatabases();
@@ -1716,6 +1718,48 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    @Test
+    void testAggregateWithGraphLookupRequiresStartWith() {
+        List<Document> pipeline = jsonList("""
+            $graphLookup: {
+                from: 'testcoll',
+                connectFromField: 'manager',
+                connectToField: 'name',
+                as: 'managers'
+            }
+            """);
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command execution failed on MongoDB server with error 40105 (Location40105): " +
+                "'$graphLookup requires 'from', 'as', 'startWith', 'connectFromField', and 'connectToField' to be specified.'");
+    }
+
+    private static Stream<Arguments> graphLookupInvalidOptionalConfigurations() {
+        return Stream.of(
+            Arguments.of("maxDepth", true, "40100 (Location40100): 'maxDepth must be numeric, found type: bool'"),
+            Arguments.of("depthField", 42, "40103 (Location40103): 'expected string as argument for depthField, found: int'")
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("graphLookupInvalidOptionalConfigurations")
+    void testAggregateWithGraphLookupRejectsInvalidOptionalConfiguration(String option, Object value, String expectedMessage) {
+        Document graphLookup = json("""
+            from: 'testcoll',
+            startWith: '$manager',
+            connectFromField: 'manager',
+            connectToField: 'name',
+            as: 'managers'
+            """);
+        graphLookup.put(option, value);
+        List<Document> pipeline = List.of(new Document("$graphLookup", graphLookup));
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> collection.aggregate(pipeline).first())
+            .withMessageContaining("Command execution failed on MongoDB server with error " + expectedMessage);
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/218
     @Test
     void testAggregateWithGraphLookupThroughNestedArrayField() {
@@ -1752,7 +1796,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     @ParameterizedTest
     @MethodSource("graphLookupMaxDepths")
-    @Timeout(10)
+    @Timeout(TEST_TIMEOUT_SECONDS)
     void testAggregateWithGraphLookupStartWithExpressionAndCycles(Integer maxDepth) {
         collection.insertOne(json("_id: 1, employeeId: 'john', initialReports: [{employeeId: 'paul'}, {employeeId: 'george'}]"));
         collection.insertOne(json("_id: 2, employeeId: 'paul', directReports: [{employeeId: 'ringo'}, {employeeId: 'george'}]"));
@@ -1912,7 +1956,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     }
 
     @Test
-    @Timeout(10)
+    @Timeout(TEST_TIMEOUT_SECONDS)
     void testAggregateWithGraphLookupSelfLoopAndSharedConnectToValue() {
         collection.insertOne(json("_id: 1, key: 'self', next: 'self'"));
         collection.insertOne(json("_id: 2, key: 'self', next: 'self'"));

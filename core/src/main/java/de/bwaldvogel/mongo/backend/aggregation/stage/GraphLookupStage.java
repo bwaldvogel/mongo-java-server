@@ -18,7 +18,7 @@ import de.bwaldvogel.mongo.backend.Utils;
 import de.bwaldvogel.mongo.backend.ValueComparator;
 import de.bwaldvogel.mongo.backend.aggregation.Expression;
 import de.bwaldvogel.mongo.bson.Document;
-import de.bwaldvogel.mongo.exception.FailedToParseException;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 
 public class GraphLookupStage extends AbstractLookupStage {
 
@@ -44,7 +44,7 @@ public class GraphLookupStage extends AbstractLookupStage {
         String from = readStringConfigurationProperty(configuration, FROM);
         collection = mongoDatabase.resolveCollection(from, false);
         if (!configuration.containsKey(START_WITH)) {
-            throw new FailedToParseException("missing '" + START_WITH + "' option to $graphLookup stage specification: " + configuration);
+            throw new MongoServerError(40105, "$graphLookup requires 'from', 'as', 'startWith', 'connectFromField', and 'connectToField' to be specified.");
         }
         startWith = configuration.get(START_WITH);
         connectFromField = readStringConfigurationProperty(configuration, CONNECT_FROM_FIELD);
@@ -65,7 +65,7 @@ public class GraphLookupStage extends AbstractLookupStage {
         return switch (value) {
             case null -> null;
             case Integer integer -> integer;
-            default -> throw new FailedToParseException("'" + name + "' option to " + name() + " must be an integer, but was type " + Utils.describeType(value));
+            default -> throw new MongoServerError(40100, name + " must be numeric, found type: " + Utils.describeType(value));
         };
     }
 
@@ -74,7 +74,7 @@ public class GraphLookupStage extends AbstractLookupStage {
         return switch (value) {
             case null -> null;
             case String string -> string;
-            default -> throw new FailedToParseException("'" + name + "' option to " + name() + " must be a string, but was type " + Utils.describeType(value));
+            default -> throw new MongoServerError(40103, "expected string as argument for " + name + ", found: " + Utils.describeType(value));
         };
     }
 
