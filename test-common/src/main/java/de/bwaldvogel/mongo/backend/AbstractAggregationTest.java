@@ -571,6 +571,17 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             );
     }
 
+    // https://github.com/bwaldvogel/mongo-java-server/issues/218
+    @Test
+    void testAggregateWithProjectionOfUserIdsFromArray() {
+        collection.insertOne(json("_id: 1, user: [{_id: 10, name: 'Alice'}, {_id: 20, name: 'Bob'}], other: 'excluded'"));
+
+        List<Document> pipeline = jsonList("$project: {user: '$user._id'}");
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(json("_id: 1, user: [10, 20]"));
+    }
+
     // https://github.com/bwaldvogel/mongo-java-server/issues/121
     @Test
     void testAggregateWithNestedExclusiveProjection() {
