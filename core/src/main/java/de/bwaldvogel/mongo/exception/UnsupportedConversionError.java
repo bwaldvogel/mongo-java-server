@@ -1,8 +1,8 @@
 package de.bwaldvogel.mongo.exception;
 
-import java.io.Serial;
-
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
+
+import java.io.Serial;
 
 public class UnsupportedConversionError extends ConversionFailureException {
 
