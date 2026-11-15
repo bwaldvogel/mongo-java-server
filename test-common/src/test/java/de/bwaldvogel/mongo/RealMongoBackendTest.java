@@ -5,8 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.util.Date;
 
-import de.bwaldvogel.mongo.backend.Command;
-
 import org.bson.Document;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +15,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import com.mongodb.MongoCommandException;
 
 import de.bwaldvogel.mongo.backend.AbstractBackendTest;
+import de.bwaldvogel.mongo.backend.Command;
 
 public class RealMongoBackendTest extends AbstractBackendTest {
 

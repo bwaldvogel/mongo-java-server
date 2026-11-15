@@ -12,13 +12,11 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Set;
 
-import de.bwaldvogel.mongo.backend.Command;
-
-import de.bwaldvogel.mongo.backend.DatabaseCommand;
-
 import org.junit.jupiter.api.Test;
 
 import de.bwaldvogel.mongo.MongoBackend;
+import de.bwaldvogel.mongo.backend.Command;
+import de.bwaldvogel.mongo.backend.DatabaseCommand;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MessageFlag;
 import de.bwaldvogel.mongo.wire.message.MessageHeader;

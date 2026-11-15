@@ -19,11 +19,11 @@ import de.bwaldvogel.mongo.bson.BsonTimestamp;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.bson.Json;
 import de.bwaldvogel.mongo.exception.BadValueException;
+import de.bwaldvogel.mongo.exception.CannotTraverseElementException;
 import de.bwaldvogel.mongo.exception.ConflictingUpdateOperatorsException;
 import de.bwaldvogel.mongo.exception.FailedToParseException;
 import de.bwaldvogel.mongo.exception.ImmutableFieldException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
-import de.bwaldvogel.mongo.exception.CannotTraverseElementException;
 import de.bwaldvogel.mongo.exception.TypeMismatchException;
 
 class FieldUpdates {
