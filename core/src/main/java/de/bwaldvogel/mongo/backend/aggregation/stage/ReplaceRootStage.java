@@ -36,7 +36,7 @@ public class ReplaceRootStage implements AggregationStage {
         Object evaluatedNewRoot = Expression.evaluateDocument(newRoot, document);
 
         if (!(evaluatedNewRoot instanceof Document)) {
-            throw new MongoServerError(40228, "'newRoot' expression must evaluate to an object, but resulting value was: " + Json.toJsonValue(evaluatedNewRoot, true, "{", "}")
+            throw new MongoServerError(40228, "'newRoot' expression  must evaluate to an object, but resulting value was: " + Json.toJsonValue(evaluatedNewRoot, true, "{", "}")
                 + ". Type of resulting value: '" + describeType(evaluatedNewRoot)
                 + "'. Input document: " + document.toString(true));
         }

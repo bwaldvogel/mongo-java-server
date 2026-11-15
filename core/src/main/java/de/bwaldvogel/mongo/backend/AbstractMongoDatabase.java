@@ -305,12 +305,14 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         return response;
     }
 
-    private Document commandCreate(String command, Document query) {
+    private synchronized Document commandCreate(String command, Document query) {
         String collectionName = query.get(command).toString();
 
         CollectionOptions collectionOptions = CollectionOptions.fromQuery(query);
         collectionOptions.validate();
-        createCollectionOrThrowIfExists(collectionName, collectionOptions);
+        if (resolveCollection(collectionName, false) == null) {
+            createCollection(collectionName, collectionOptions);
+        }
 
         Document response = new Document();
         Utils.markOkay(response);
@@ -416,18 +418,18 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
     private Document commandDatabaseStats() {
         Document response = new Document("db", getDatabaseName());
-        response.put("collections", Integer.valueOf(collections().size()));
+        response.put("collections", Long.valueOf(collections().size()));
 
         long storageSize = getStorageSize();
         long fileSize = getFileSize();
         long indexSize = 0;
-        int objects = 0;
+        long objects = 0;
         double dataSize = 0;
         double averageObjectSize = 0;
 
         for (MongoCollection<P> collection : collections()) {
             Document stats = collection.getStats();
-            objects += ((Number) stats.get("count")).intValue();
+            objects += ((Number) stats.get("count")).longValue();
             dataSize += ((Number) stats.get("size")).doubleValue();
 
             Document indexSizes = (Document) stats.get("indexSize");
@@ -439,16 +441,12 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         if (objects > 0) {
             averageObjectSize = dataSize / ((double) objects);
         }
-        response.put("objects", Integer.valueOf(objects));
+        response.put("objects", Long.valueOf(objects));
         response.put("avgObjSize", Double.valueOf(averageObjectSize));
-        if (dataSize == 0.0) {
-            response.put("dataSize", Integer.valueOf(0));
-        } else {
-            response.put("dataSize", Double.valueOf(dataSize));
-        }
+        response.put("dataSize", Double.valueOf(dataSize));
         response.put("storageSize", Long.valueOf(storageSize));
         response.put("numExtents", Integer.valueOf(0));
-        response.put("indexes", Integer.valueOf(countIndexes()));
+        response.put("indexes", Long.valueOf(countIndexes()));
         response.put("indexSize", Long.valueOf(indexSize));
         response.put("fileSize", Long.valueOf(fileSize));
         response.put("nsSizeMB", Integer.valueOf(0));

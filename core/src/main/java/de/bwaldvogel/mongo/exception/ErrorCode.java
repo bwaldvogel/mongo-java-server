@@ -18,9 +18,11 @@ public enum ErrorCode {
     InvalidOptions(72),
     InvalidNamespace(73),
     IndexKeySpecsConflict(86),
+    OperationFailed(96),
     CannotIndexParallelArrays(171),
     ConversionFailure(241),
     DuplicateKey(11000),
+    IDLUnknownField(40415),
     MergeStageNoMatchingDocument(13113),
 
     _15998(15998) {

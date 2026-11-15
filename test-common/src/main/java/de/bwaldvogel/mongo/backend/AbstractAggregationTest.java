@@ -1615,7 +1615,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         assertThatExceptionOfType(MongoCommandException.class)
             .isThrownBy(() -> collection.aggregate(pipeline).first())
             .withMessageContaining("Command execution failed on MongoDB server with error 40228 (Location40228): " +
-                "'PlanExecutor error during aggregation :: caused by :: 'newRoot' expression must evaluate to an object, but resulting value was: 10." +
+                "'PlanExecutor error during aggregation :: caused by :: 'newRoot' expression  must evaluate to an object, but resulting value was: 10." +
                 " Type of resulting value: 'int'.")
             .withMessageContaining("a: {b: 10}");
     }
@@ -2450,6 +2450,7 @@ public abstract class AbstractAggregationTest extends AbstractTest {
             .isThrownBy(() -> collection.aggregate(jsonList("$merge: { into: 'other', whenMatched: 'fail' }")).first())
             .withMessageStartingWith("Command execution failed on MongoDB server with error 11000 (DuplicateKey): " +
                 "'PlanExecutor error during aggregation :: caused by :: " +
+                "$merge with whenMatched: fail found an existing document with the same values for the 'on' fields :: caused by :: " +
                 "E11000 duplicate key error collection: testdb.other index: _id_ dup key: { _id: 1 }'");
     }
 
@@ -2678,13 +2679,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "Cannot return a cursor when the value for $merge stage is not a string or a document"),
 
             Arguments.of("$merge: { otherParam: 1 }", MongoCommandException.class,
-                "Command execution failed on MongoDB server with error 40415 (Location40415): 'BSON field '$merge.otherParam' is an unknown field.'"),
+                "Command execution failed on MongoDB server with error 40415 (IDLUnknownField): 'BSON field '$merge.otherParam' is an unknown field.'"),
 
             Arguments.of("$merge: { into: {} }", BsonInvalidOperationException.class,
                 "Document does not contain key coll"),
 
             Arguments.of("$merge: { into: { coll: 'abc', other: 1} }", MongoCommandException.class,
-                "Command execution failed on MongoDB server with error 40415 (Location40415): 'BSON field 'into.other' is an unknown field.'"),
+                "Command execution failed on MongoDB server with error 40415 (IDLUnknownField): 'BSON field 'into.other' is an unknown field.'"),
 
             Arguments.of("$merge: { into: { coll: 1} }", BsonInvalidOperationException.class,
                 "Value expected to be of type STRING is of unexpected type INT32"),

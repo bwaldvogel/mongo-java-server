@@ -23,8 +23,9 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.MongoVersion;
 import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.ErrorCode;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
-import de.bwaldvogel.mongo.exception.MongoSilentServerException;
 import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoReplicationEnabledException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
@@ -144,7 +145,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
                 Utils.markOkay(response);
                 break;
             default:
-                throw new MongoSilentServerException("no RamLog named: " + argument);
+                throw new MongoServerError(ErrorCode.OperationFailed, "No log named '" + argument + "'");
         }
         return response;
     }
@@ -162,7 +163,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             case CONNECTION_STATUS -> handleConnectionStatus();
             case HOST_INFO -> handleHostInfo();
             case GET_CMD_LINE_OPTS -> handleGetCmdLineOpts();
-            case GET_FREE_MONITORING_STATUS -> handleGetFreeMonitoringStatus();
             case END_SESSIONS -> {
                 log.debug("endSessions on admin database");
                 yield successResponse();
@@ -237,15 +237,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         Document response = new Document();
         response.append("argv", Collections.emptyList());
         response.append("parsed", new Document());
-        Utils.markOkay(response);
-        return response;
-    }
-
-    private Document handleGetFreeMonitoringStatus() {
-        Document response = new Document();
-        response.append("state", "disabled");
-        response.append("debug", Map.of("state", "undecided"));
-        response.append("message", "Free monitoring is deprecated, refer to 'debug' field for actual status");
         Utils.markOkay(response);
         return response;
     }
