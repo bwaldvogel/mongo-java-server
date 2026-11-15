@@ -19,12 +19,12 @@ public class RealMongoContainer implements BeforeAllCallback, AfterAllCallback {
     private GenericContainer<?> mongoContainer;
 
     @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) {
         mongoContainer = startIfNecessary();
     }
 
     @Override
-    public void afterAll(ExtensionContext context) throws Exception {
+    public void afterAll(ExtensionContext context) {
         if (mongoContainer != null) {
             mongoContainer.stop();
         }

@@ -19,14 +19,14 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 class DocumentTest {
 
     @Test
-    void testEqualsAndHashCodeContract() throws Exception {
+    void testEqualsAndHashCodeContract() {
         EqualsVerifier.forClass(Document.class)
             .withNonnullFields("documentAsMap")
             .verify();
     }
 
     @Test
-    void testEquals() throws Exception {
+    void testEquals() {
         assertThat(new Document()).isNotEqualTo(Collections.emptyMap());
         assertThat(new Document()).isNotEqualTo(null);
         assertThat(new Document()).isEqualTo(new Document());
@@ -35,7 +35,7 @@ class DocumentTest {
     }
 
     @Test
-    void testClone() throws Exception {
+    void testClone() {
         Document original = json("abc: 123");
         Document clone = original.clone();
         assertThat(clone)
@@ -44,14 +44,14 @@ class DocumentTest {
     }
 
     @Test
-    void testConstructor() throws Exception {
+    void testConstructor() {
         Map<String, Long> data = Collections.singletonMap("key", 123L);
         Document document = new Document(data);
         assertThat(document).containsExactly(entry("key", 123L));
     }
 
     @Test
-    void testCloneDeeply() throws Exception {
+    void testCloneDeeply() {
         Document original = new Document();
         original.put("subDocument", new Document("_id", 1));
         original.put("sub", new Document("sub", List.of(1, new Document("key", "value"), 3)));
@@ -82,27 +82,27 @@ class DocumentTest {
     }
 
     @Test
-    void testClear() throws Exception {
+    void testClear() {
         Document document = json("abc: 123");
         document.clear();
         assertThat(document).isEqualTo(json(""));
     }
 
     @Test
-    void testContainsValue() throws Exception {
+    void testContainsValue() {
         Document document = json("abc: 123");
         assertThat(document.containsValue(123)).isTrue();
         assertThat(document.containsValue(42)).isFalse();
     }
 
     @Test
-    void testValues() throws Exception {
+    void testValues() {
         Document document = json("abc: 123, efg: 456");
         assertThat(document.values()).containsExactly(123, 456);
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(new Document()).hasToString("{}");
         assertThat(new Document("key", "value")).hasToString("{\"key\" : \"value\"}");
         assertThat(new Document("key", new Document("value", 12345L))).hasToString("{\"key\" : {\"value\" : 12345}}");
@@ -110,7 +110,7 @@ class DocumentTest {
     }
 
     @Test
-    void testToString_compactKey() throws Exception {
+    void testToString_compactKey() {
         assertThat(new Document().toString(true))
             .isEqualTo("{}");
 
@@ -125,7 +125,7 @@ class DocumentTest {
     }
 
     @Test
-    void testGetOrMissing() throws Exception {
+    void testGetOrMissing() {
         Document document = new Document().append("a", 1);
         assertThat(document.getOrMissing("b")).isInstanceOf(Missing.class);
         assertThat(document.getOrMissing("a")).isEqualTo(1);

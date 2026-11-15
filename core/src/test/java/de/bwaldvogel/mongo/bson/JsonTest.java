@@ -14,7 +14,7 @@ import de.bwaldvogel.mongo.backend.Missing;
 class JsonTest {
 
     @Test
-    void testToJsonValue() throws Exception {
+    void testToJsonValue() {
         assertThat(Json.toJsonValue(null)).isEqualTo("null");
         assertThat(Json.toJsonValue(Missing.getInstance())).isEqualTo("null");
         assertThat(Json.toJsonValue(true)).isEqualTo("true");
@@ -49,7 +49,7 @@ class JsonTest {
     }
 
     @Test
-    void testToJsonValueWithCompactKey() throws Exception {
+    void testToJsonValueWithCompactKey() {
         assertThat(Json.toJsonValue(new Document().append("a", 1), true, "{", "}")).isEqualTo("{a: 1}");
         assertThat(Json.toJsonValue(new Document().append("a", new Document().append("b", 1)), true, "{", "}")).isEqualTo("{a: {b: 1}}");
     }

@@ -11,13 +11,13 @@ import org.junit.jupiter.api.Test;
 class BsonRegularExpressionTest {
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(new BsonRegularExpression(".*")).hasToString("{\"$regex\" : \".*\"}");
         assertThat(new BsonRegularExpression(".*", "im")).hasToString("{\"$regex\" : \".*\", \"$options\" : \"im\"}");
     }
 
     @Test
-    void testConvertToRegularExpressionWithoutOptions() throws Exception {
+    void testConvertToRegularExpressionWithoutOptions() {
         BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(json("$regex: 'a.*z'"));
         assertThat(regularExpression.getPattern()).isEqualTo("a.*z");
         assertThat(regularExpression.getOptions()).isEqualTo("");
@@ -28,7 +28,7 @@ class BsonRegularExpressionTest {
     }
 
     @Test
-    void testConvertToRegularExpressionWithOptions() throws Exception {
+    void testConvertToRegularExpressionWithOptions() {
         BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(new Document("$regex", "a.*z").append("$options", "usxmi"));
         assertThat(regularExpression.getPattern()).isEqualTo("a.*z");
         assertThat(regularExpression.getOptions()).isEqualTo("usxmi");
@@ -39,7 +39,7 @@ class BsonRegularExpressionTest {
     }
 
     @Test
-    void testConvertToRegularExpressionWithIllegalArgument() throws Exception {
+    void testConvertToRegularExpressionWithIllegalArgument() {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> BsonRegularExpression.convertToRegularExpression("abc"))
             .withMessage("'abc' is not a regular expression");

@@ -79,7 +79,7 @@ public class AbstractMongoCollectionTest {
     }
 
     @Test
-    void testConvertSelector() throws Exception {
+    void testConvertSelector() {
         assertThat(collection.convertSelectorToDocument(json("")))
             .isEqualTo(json(""));
 
@@ -97,7 +97,7 @@ public class AbstractMongoCollectionTest {
     }
 
     @Test
-    void testDeriveDocumentId() throws Exception {
+    void testDeriveDocumentId() {
         assertThat(collection.deriveDocumentId(json(""))).isInstanceOf(ObjectId.class);
         assertThat(collection.deriveDocumentId(json("a: 1"))).isInstanceOf(ObjectId.class);
         assertThat(collection.deriveDocumentId(json("_id: 1"))).isEqualTo(1);
@@ -106,7 +106,7 @@ public class AbstractMongoCollectionTest {
     }
 
     @Test
-    void testValidateUpdateQuery() throws Exception {
+    void testValidateUpdateQuery() {
         AbstractMongoCollection.validateUpdateQuery(new Document());
         AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}"));
         AbstractMongoCollection.validateUpdateQuery(json("$set: {a: 1, b: 1}, $inc: {c: 1}"));

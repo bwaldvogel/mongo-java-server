@@ -36,7 +36,7 @@ class SimpleJUnit5Test {
     }
 
     @Test
-    void testSimpleInsertQuery() throws Exception {
+    void testSimpleInsertQuery() {
         assertThat(collection.countDocuments()).isZero();
 
         // creates the database and collection in memory and insert the object

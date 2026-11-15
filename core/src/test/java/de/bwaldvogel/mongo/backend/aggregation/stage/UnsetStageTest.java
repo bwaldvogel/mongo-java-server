@@ -16,7 +16,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 class UnsetStageTest {
 
     @Test
-    void testUnset() throws Exception {
+    void testUnset() {
         assertThat(unset("field1",
             json("_id: 1, field1: 'value1'"),
             json("_id: 2, field1: 'value1', field2: 'value2'"),
@@ -31,7 +31,7 @@ class UnsetStageTest {
     }
 
     @Test
-    void testUnsetMultipleFields() throws Exception {
+    void testUnsetMultipleFields() {
         assertThat(unset(List.of("field1", "field2"),
             json("_id: 1, field1: 'value1'"),
             json("_id: 2, field1: 'value1', field2: 'value2'"),
@@ -48,7 +48,7 @@ class UnsetStageTest {
     }
 
     @Test
-    void testUnsetWithSubdocument() throws Exception {
+    void testUnsetWithSubdocument() {
         assertThat(unset("fields.field1",
             json("_id: 1, fields: { field1: 'value1' }"),
             json("_id: 2, fields: { field1: 'value1', field2: 'value2' }"),
@@ -65,7 +65,7 @@ class UnsetStageTest {
     }
 
     @Test
-    void testIllegalUnset() throws Exception {
+    void testIllegalUnset() {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new UnsetStage(""))
             .withMessage("[Error 40352] Invalid $unset :: caused by :: FieldPath cannot be constructed with empty string");

@@ -7,7 +7,7 @@ import de.bwaldvogel.mongo.backend.h2.H2Backend;
 class H2BackendTest extends AbstractBackendTest {
 
     @Override
-    protected MongoBackend createBackend() throws Exception {
+    protected MongoBackend createBackend() {
         return H2Backend.inMemory(clock);
     }
 

@@ -89,14 +89,14 @@ public abstract class AbstractBackendSpringDataTest {
     private MongoTemplate mongoTemplate;
 
     @BeforeEach
-    void deleteAll() throws Exception {
+    void deleteAll() {
         accountRepository.deleteAll();
         personRepository.deleteAll();
         testRepository.deleteAll();
     }
 
     @Test
-    public void testSaveFindModifyAndUpdate() throws Exception {
+    public void testSaveFindModifyAndUpdate() {
         Person billy = personRepository.save(new Person("Billy", 123));
         personRepository.save(new Person("Joe", 456));
 
@@ -132,7 +132,7 @@ public abstract class AbstractBackendSpringDataTest {
     }
 
     @Test
-    public void testInsertDuplicateThrows() throws Exception {
+    public void testInsertDuplicateThrows() {
         personRepository.save(new Person("Billy", 1));
         personRepository.save(new Person("Alice", 2));
 
@@ -150,7 +150,7 @@ public abstract class AbstractBackendSpringDataTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/39
     @Test
-    public void testDeleteWithUniqueIndexes() throws Exception {
+    public void testDeleteWithUniqueIndexes() {
         TestEntity document = testRepository.save(new TestEntity("DOC_1", "Text1"));
 
         // update value of indexed property
@@ -168,7 +168,7 @@ public abstract class AbstractBackendSpringDataTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/66
     @Test
-    public void testCountByValueData() throws Exception {
+    public void testCountByValueData() {
         testRepository.save(new TestEntity("DOC_1", "Text1")
             .withValue(new SubEntity("v1")));
 
@@ -185,7 +185,7 @@ public abstract class AbstractBackendSpringDataTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/148
     @Test
-    void testAggregation() throws Exception {
+    void testAggregation() {
         testRepository.save(new TestEntity("1", "text"));
 
         Aggregation agg = Aggregation.newAggregation(

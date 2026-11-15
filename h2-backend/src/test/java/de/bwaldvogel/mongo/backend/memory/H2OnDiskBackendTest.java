@@ -30,7 +30,7 @@ class H2OnDiskBackendTest extends AbstractBackendTest {
     private static Path tempFile;
 
     @Override
-    protected void setUpBackend() throws Exception {
+    protected void setUpBackend() {
         if (tempFile == null) {
             tempFile = tempFolder.resolve(getClass().getSimpleName() + ".mv");
             log.debug("created {} for testing", tempFile);
@@ -39,14 +39,14 @@ class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    protected MongoBackend createBackend() throws Exception {
+    protected MongoBackend createBackend() {
         backend = new H2Backend(tempFile.toString(), clock);
         backend.getMvStore().setAutoCommitDelay(0);
         return backend;
     }
 
     @Test
-    void testShutdownAndRestart() throws Exception {
+    void testShutdownAndRestart() {
         collection.insertOne(json("_id: 1"));
         collection.insertOne(json("_id: 2"));
 
@@ -64,7 +64,7 @@ class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Test
-    void testShutdownAndRestartOpensDatabasesAndCollections() throws Exception {
+    void testShutdownAndRestartOpensDatabasesAndCollections() {
         List<String> dbs = List.of("local", "testdb1", "testdb2");
         for (String db : dbs) {
             for (String coll : new String[] { "collection1", "collection2" }) {
@@ -81,7 +81,7 @@ class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Test
-    void testShutdownAndRestartOpensIndexes() throws Exception {
+    void testShutdownAndRestartOpensIndexes() {
         collection.createIndex(json("a: 1"));
         collection.createIndex(json("b: 1"));
         assertThat(collection.listIndexes()).hasSize(3);
@@ -100,7 +100,7 @@ class H2OnDiskBackendTest extends AbstractBackendTest {
     }
 
     @Test
-    void testShutdownAndRestartKeepsStatistics() throws Exception {
+    void testShutdownAndRestartKeepsStatistics() {
         collection.createIndex(json("a: 1"), new IndexOptions().unique(true));
         collection.createIndex(json("b: 1"), new IndexOptions().unique(true));
 

@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class ReplaceRootStageTest {
 
     @Test
-    void testReplaceRoot() throws Exception {
+    void testReplaceRoot() {
         assertThat(replaceRoot(json("newRoot: '$a'"), json("a: { b: { c: 1 } }"))).isEqualTo(json("b: { c: 1 }"));
         assertThat(replaceRoot(json("newRoot: '$a.b'"), json("a: { b: { c: 1 } }"))).isEqualTo(json("c: 1"));
         assertThat(replaceRoot(json("newRoot: { x: '$a.b' }"), json("a: { b: { c: 1 } }"))).isEqualTo(json("x: { c: 1 }"));
@@ -23,7 +23,7 @@ public class ReplaceRootStageTest {
     }
 
     @Test
-    void testIllegalReplaceRoot() throws Exception {
+    void testIllegalReplaceRoot() {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ReplaceRootStage(json("")))
             .withMessage("[Error 40231] no newRoot specified for the $replaceRoot stage");

@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 class ProjectionTest {
 
     @Test
-    void testProjectDocument() throws Exception {
+    void testProjectDocument() {
         assertThat(projectDocument(null, new Document(), null)).isNull();
 
         assertThat(projectDocument(json("_id: 100"), json("_id: 1"), "_id"))
@@ -50,7 +50,7 @@ class ProjectionTest {
     }
 
     @Test
-    void testInvalidMixedProjections() throws Exception {
+    void testInvalidMixedProjections() {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> projectDocument(json("{}"), json("_id: 1, foo: 0"), "_id"))
             .withMessage("[Error 31253] Cannot do inclusion on field _id in exclusion projection");
@@ -105,7 +105,7 @@ class ProjectionTest {
 
 
     @Test
-    void testProjectMissingValue() throws Exception {
+    void testProjectMissingValue() {
         assertThat(projectDocument(json("_id: 1"), json("'a.b': 1"), "_id"))
             .isEqualTo(json("_id: 1"));
 
@@ -120,7 +120,7 @@ class ProjectionTest {
     }
 
     @Test
-    void testProjectListValues() throws Exception {
+    void testProjectListValues() {
         assertThat(projectDocument(json("_id: 1, a: [1, 2, 3]"), json("'a.c': 1"), "_id"))
             .isEqualTo(json("_id: 1, a: []"));
 
@@ -144,7 +144,7 @@ class ProjectionTest {
     }
 
     @Test
-    void testProjectListValuesWithPositionalOperator() throws Exception {
+    void testProjectListValuesWithPositionalOperator() {
         Document document = json("""
             _id: 1, students: [
                 {name: 'john', school: 'A', age: 10},
@@ -161,7 +161,7 @@ class ProjectionTest {
     }
 
     @Test
-    void testProjectWithElemMatch() throws Exception {
+    void testProjectWithElemMatch() {
         Document document = json("""
             _id: 1, students: [
                 {name: 'john', school: 'A', age: 10},
@@ -191,7 +191,7 @@ class ProjectionTest {
 
 
     @Test
-    void testProjectWithSlice() throws Exception {
+    void testProjectWithSlice() {
         Document document = json("_id: 1, values: [1, 2, 3, 4], value: 'other'");
 
         assertThat(projectDocument(document, json("values: {$slice: 2}"), "_id"))

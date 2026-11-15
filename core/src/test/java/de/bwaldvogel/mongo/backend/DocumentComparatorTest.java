@@ -64,7 +64,7 @@ class DocumentComparatorTest {
     }
 
     @Test
-    void testCompareCompoundKey() throws Exception {
+    void testCompareCompoundKey() {
         DocumentComparator comparator = new DocumentComparator(json("'a.b': 1, c: -1"));
 
         Document a = json("a: {b: 10}");

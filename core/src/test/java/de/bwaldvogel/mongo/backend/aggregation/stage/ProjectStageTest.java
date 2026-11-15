@@ -14,7 +14,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 class ProjectStageTest {
 
     @Test
-    void testProject() throws Exception {
+    void testProject() {
         assertThat(project(json("a: 'value'"), json("a: true"))).isEqualTo(json("a: 'value'"));
         assertThat(project(json("_id: 1"), json("a: 1"))).isEqualTo(json("_id: 1"));
         assertThat(project(json("_id: 1, a: 'value'"), json("a: 1"))).isEqualTo(json("_id: 1, a: 'value'"));
@@ -29,19 +29,19 @@ class ProjectStageTest {
     }
 
     @Test
-    void testProject_withNestedExclusion() throws Exception {
+    void testProject_withNestedExclusion() {
         assertThat(project(json("_id: 1, x: {a: 1, b: 2, c: 3}"), json("'x.b': 0")))
             .isEqualTo(json("_id: 1, x: {a: 1, c: 3}"));
     }
 
     @Test
-    void testProject_withNestedExclusion_array() throws Exception {
+    void testProject_withNestedExclusion_array() {
         assertThat(project(json("_id: 1, x: [{a: 1, b: 2, c: 3}, {a: 2}]"), json("'x.b': 0")))
             .isEqualTo(json("_id: 1, x: [{a: 1, c: 3}, {a: 2}]"));
     }
 
     @Test
-    void testProject_withNestedInclusion() throws Exception {
+    void testProject_withNestedInclusion() {
         assertThat(project(json("_id: 1, x: {a: 1, b: 2, c: 3}"), json("'x.b': 1, 'x.c': 1, 'y': 1, 'x.d': 1")))
             .isEqualTo(json("_id: 1, x: {b: 2, c: 3}"));
     }
@@ -69,7 +69,7 @@ class ProjectStageTest {
     }
 
     @Test
-    void testIllegalProject() throws Exception {
+    void testIllegalProject() {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new ProjectStage(json("")))
             .withMessage("[Error 40177] specification must have at least one field");

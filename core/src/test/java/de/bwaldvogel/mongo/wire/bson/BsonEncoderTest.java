@@ -16,7 +16,7 @@ import io.netty.buffer.Unpooled;
 public class BsonEncoderTest {
 
     @Test
-    void testEncodeEmptyDocument() throws Exception {
+    void testEncodeEmptyDocument() {
         Document document = new Document();
 
         ByteBuf buffer = Unpooled.buffer();
@@ -32,7 +32,7 @@ public class BsonEncoderTest {
     }
 
     @Test
-    void testEncodeDecodeRoundtrip() throws Exception {
+    void testEncodeDecodeRoundtrip() {
         Document document = new Document();
         document.put("key1", "value");
         document.put("key2", 123.0);

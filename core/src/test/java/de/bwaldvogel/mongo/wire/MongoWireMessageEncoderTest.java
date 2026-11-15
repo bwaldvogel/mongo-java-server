@@ -28,12 +28,12 @@ public class MongoWireMessageEncoderTest {
     private Channel channel;
 
     @BeforeEach
-    void setUpContext() throws Exception {
+    void setUpContext() {
         when(ctx.channel()).thenReturn(channel);
     }
 
     @Test
-    void testExceptionHandling() throws Exception {
+    void testExceptionHandling() {
         MongoWireMessageEncoder mongoWireEncoder = new MongoWireMessageEncoder();
 
         MessageHeader header = new MessageHeader(0, 0);

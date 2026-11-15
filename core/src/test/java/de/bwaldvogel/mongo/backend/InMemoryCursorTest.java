@@ -54,7 +54,7 @@ class InMemoryCursorTest {
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(new InMemoryCursor(123L, List.of(new Document())))
             .hasToString("InMemoryCursor(id: 123)");
     }

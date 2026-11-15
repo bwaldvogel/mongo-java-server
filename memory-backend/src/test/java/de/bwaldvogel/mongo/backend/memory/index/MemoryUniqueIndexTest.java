@@ -18,7 +18,7 @@ import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 class MemoryUniqueIndexTest {
 
     @Test
-    void testGetKeyValues_multiKey_simpleCase() throws Exception {
+    void testGetKeyValues_multiKey_simpleCase() {
         Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("a", true),
             new IndexKey("b", true)
@@ -29,7 +29,7 @@ class MemoryUniqueIndexTest {
     }
 
     @Test
-    void testGetKeyValues_multiKey_cannotIndexParallelArrays() throws Exception {
+    void testGetKeyValues_multiKey_cannotIndexParallelArrays() {
         Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("a", true),
             new IndexKey("b", true)
@@ -42,7 +42,7 @@ class MemoryUniqueIndexTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
     @Test
-    void testGetKeyValues_multiKey_document_nested_objects_cannotIndexParallelArrays() throws Exception {
+    void testGetKeyValues_multiKey_document_nested_objects_cannotIndexParallelArrays() {
         Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("stock.size", true),
             new IndexKey("stock.quantity", true)
@@ -55,7 +55,7 @@ class MemoryUniqueIndexTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/98
     @Test
-    void testGetKeyValues_multiKey_document_nested_objects() throws Exception {
+    void testGetKeyValues_multiKey_document_nested_objects() {
         Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("stock.size", true),
             new IndexKey("stock.quantity", true)
@@ -73,7 +73,7 @@ class MemoryUniqueIndexTest {
     }
 
     @Test
-    void testGetKeyValues_multiKey_nested_objects_multiple_keys() throws Exception {
+    void testGetKeyValues_multiKey_nested_objects_multiple_keys() {
         Index<?> index = new MemoryUniqueIndex("name", List.of(
             new IndexKey("item", true),
             new IndexKey("stock.size", true),

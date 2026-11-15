@@ -64,7 +64,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    void testListDatabaseNames() throws Exception {
+    void testListDatabaseNames() {
         assertThat(listDatabaseNames()).contains(LOCAL_DATABASE);
         collection.insertOne(json(""));
         assertThat(listDatabaseNames()).containsExactlyInAnyOrder(db.getName(), LOCAL_DATABASE);
@@ -124,7 +124,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
     }
 
     @Test
-    void testQueryOplogWhenOplogIsDisabled() throws Exception {
+    void testQueryOplogWhenOplogIsDisabled() {
         backend.disableOplog();
         collection.insertOne(json("_id: 1"));
         assertThat(getOplogCollection().find()).isEmpty();

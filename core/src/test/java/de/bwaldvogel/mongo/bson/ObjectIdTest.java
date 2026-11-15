@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.wire.BsonConstants;
 class ObjectIdTest {
 
     @Test
-    void testHashCodeEquals() throws Exception {
+    void testHashCodeEquals() {
         ObjectId objectId = new ObjectId();
         ObjectId other = new ObjectId();
         assertThat(objectId).isEqualTo(objectId);
@@ -24,13 +24,13 @@ class ObjectIdTest {
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         String expectedPattern = "^ObjectId\\[[a-f0-9]{" + 2 * BsonConstants.LENGTH_OBJECTID + "}\\]$";
         assertThat(new ObjectId().toString()).matches(expectedPattern);
     }
 
     @Test
-    void testToHexStringAndBack() throws Exception {
+    void testToHexStringAndBack() {
         ObjectId objectId = new ObjectId();
         ObjectId clone = new ObjectId(objectId.getHexData());
         assertThat(clone).isEqualTo(objectId);
@@ -42,7 +42,7 @@ class ObjectIdTest {
         "abcdef123456789abcdef000",
         "deadbeefcafebabedeadbeef",
     })
-    void testFromValidHexString(String hexString) throws Exception {
+    void testFromValidHexString(String hexString) {
         ObjectId objectId = new ObjectId(hexString);
         assertThat(objectId.getHexData()).isEqualTo(hexString);
     }
@@ -57,7 +57,7 @@ class ObjectIdTest {
         "abcdefabcdefabcdefabcde",
         "abcdefabcdefabcdefabcdeff"
     })
-    void testFromIllegalHexString(String hexString) throws Exception {
+    void testFromIllegalHexString(String hexString) {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> new ObjectId(hexString))
             .withMessage("Failed to parse '" + hexString + "'");

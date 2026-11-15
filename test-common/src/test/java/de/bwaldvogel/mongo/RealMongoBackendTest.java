@@ -24,7 +24,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
 
     @Override
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         super.setUp();
         dropAllDatabases();
     }
@@ -35,7 +35,7 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     }
 
     @Override
-    protected void restart() throws Exception {
+    protected void restart() {
         tearDown();
         realMongoContainer.restart();
         setUp();

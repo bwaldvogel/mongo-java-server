@@ -11,7 +11,7 @@ import de.bwaldvogel.mongo.bson.Document;
 class PostgresqlCollectionTest {
 
     @Test
-    void testConvertOrderByToSql() throws Exception {
+    void testConvertOrderByToSql() {
         assertThat(PostgresqlCollection.convertOrderByToSql(json(""))).isEqualTo("");
 
         assertThat(PostgresqlCollection.convertOrderByToSql(json("key: 1")))

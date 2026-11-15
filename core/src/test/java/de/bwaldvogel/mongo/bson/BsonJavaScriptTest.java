@@ -7,7 +7,7 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 class BsonJavaScriptTest {
 
     @Test
-    void testEqualsAndHashCode() throws Exception {
+    void testEqualsAndHashCode() {
         EqualsVerifier.forClass(BsonJavaScript.class).verify();
     }
 

@@ -12,19 +12,19 @@ public class RealMongoAggregationTest extends AbstractAggregationTest {
     static RealMongoContainer realMongoContainer = new RealMongoContainer();
 
     @Override
-    protected void setUpBackend() throws Exception {
+    protected void setUpBackend() {
         connectionString = realMongoContainer.getConnectionString();
     }
 
     @Override
-    protected MongoBackend createBackend() throws Exception {
+    protected MongoBackend createBackend() {
         throw new UnsupportedOperationException();
     }
 
     @Test
     @Override
     @Disabled
-    public void testAggregateWithGeoNear() throws Exception {
+    public void testAggregateWithGeoNear() {
         super.testAggregateWithGeoNear();
     }
 }

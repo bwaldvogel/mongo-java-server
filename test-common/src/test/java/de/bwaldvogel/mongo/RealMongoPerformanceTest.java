@@ -16,7 +16,7 @@ public class RealMongoPerformanceTest extends AbstractPerformanceTest {
     }
 
     @Override
-    protected void setUpBackend() throws Exception {
+    protected void setUpBackend() {
         connectionString = RealMongoContainer.getConnectionString(mongoContainer);
     }
 
@@ -27,14 +27,14 @@ public class RealMongoPerformanceTest extends AbstractPerformanceTest {
     }
 
     @Override
-    protected void restart() throws Exception {
+    protected void restart() {
         tearDown();
         tearDownServer();
         setUp();
     }
 
     @Override
-    protected MongoBackend createBackend() throws Exception {
+    protected MongoBackend createBackend() {
         throw new UnsupportedOperationException();
     }
 

@@ -28,7 +28,7 @@ class EmptyCursorTest {
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(EmptyCursor.get()).hasToString("EmptyCursor()");
     }
 

@@ -35,10 +35,10 @@ public abstract class AbstractReadOnlyProxyTest {
     private MongoServer writeableServer;
     private MongoClient writeClient;
 
-    protected abstract MongoBackend createBackend() throws Exception;
+    protected abstract MongoBackend createBackend();
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         MongoBackend mongoBackend = createBackend();
         writeableServer = new MongoServer(mongoBackend);
         writeClient = MongoClients.create(writeableServer.bindAndGetConnectionString());
@@ -56,30 +56,30 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testMaxDocumentSize() throws Exception {
+    void testMaxDocumentSize() {
         ServerDescription serverDescription = CollectionUtils.getOnlyElement(readOnlyClient.getClusterDescription().getServerDescriptions());
         assertThat(serverDescription.getMaxDocumentSize()).isEqualTo(16777216);
     }
 
     @Test
-    void testServerStatus() throws Exception {
+    void testServerStatus() {
         readOnlyClient.getDatabase("admin").runCommand(new Document("serverStatus", 1));
     }
 
     @Test
-    void testCurrentOperations() throws Exception {
+    void testCurrentOperations() {
         Document currentOperations = readOnlyClient.getDatabase("admin").getCollection("$cmd.sys.inprog").find().first();
         assertThat(currentOperations).isNotNull();
     }
 
     @Test
-    void testStats() throws Exception {
+    void testStats() {
         Document stats = readOnlyClient.getDatabase("testdb").runCommand(json("dbStats:1"));
         assertThat(((Number) stats.get("objects")).longValue()).isZero();
     }
 
     @Test
-    void testListDatabaseNames() throws Exception {
+    void testListDatabaseNames() {
         assertThat(readOnlyClient.listDatabaseNames()).isEmpty();
         writeClient.getDatabase("testdb").getCollection("testcollection").insertOne(new Document());
         assertThat(readOnlyClient.listDatabaseNames()).containsExactly("testdb");
@@ -88,7 +88,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testIllegalCommand() throws Exception {
+    void testIllegalCommand() {
         assertThatExceptionOfType(MongoException.class)
             .isThrownBy(() -> readOnlyClient.getDatabase("testdb").runCommand(json("foo:1")))
             .withMessageContaining("Command execution failed on MongoDB server with error 59 (CommandNotFound): 'no such command: 'foo'");
@@ -99,7 +99,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testQuery() throws Exception {
+    void testQuery() {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
         Document obj = collection.find(json("_id: 1")).first();
         assertThat(obj).isNull();
@@ -117,7 +117,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testInsert() throws Exception {
+    void testInsert() {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
         assertThat(collection.countDocuments()).isZero();
 
@@ -126,7 +126,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testUpdate() throws Exception {
+    void testUpdate() {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
         Document object = new Document("_id", 1);
         Document newObject = new Document("_id", 1);
@@ -137,7 +137,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testUpsert() throws Exception {
+    void testUpsert() {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");
 
         assertThatExceptionOfType(MongoException.class)
@@ -146,7 +146,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testDropDatabase() throws Exception {
+    void testDropDatabase() {
         MongoDatabase database = readOnlyClient.getDatabase("testdb");
 
         assertThatExceptionOfType(MongoException.class)
@@ -154,7 +154,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testDropCollection() throws Exception {
+    void testDropCollection() {
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("foo");
 
         assertThatExceptionOfType(MongoException.class)
@@ -176,7 +176,7 @@ public abstract class AbstractReadOnlyProxyTest {
     }
 
     @Test
-    void testAggregateWithExpressionProjection() throws Exception {
+    void testAggregateWithExpressionProjection() {
         List<Document> pipeline = jsonList("$project: {_id: 0, idHex: {$toString: '$_id'}}");
 
         MongoCollection<Document> collection = readOnlyClient.getDatabase("testdb").getCollection("testcollection");

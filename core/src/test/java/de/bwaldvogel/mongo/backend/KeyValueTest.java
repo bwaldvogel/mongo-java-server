@@ -9,12 +9,12 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 public class KeyValueTest {
 
     @Test
-    void testEqualsAndHashCodeContract() throws Exception {
+    void testEqualsAndHashCodeContract() {
         EqualsVerifier.forClass(KeyValue.class).verify();
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(new KeyValue(1, 2)).hasToString("{ : 1, : 2 }");
     }
 

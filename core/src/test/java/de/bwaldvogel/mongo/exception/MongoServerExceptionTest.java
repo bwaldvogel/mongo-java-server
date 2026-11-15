@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 public class MongoServerExceptionTest {
 
     @Test
-    void testIllegalMessage() throws Exception {
+    void testIllegalMessage() {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> new MongoServerException(null))
             .withMessage("Illegal error message");

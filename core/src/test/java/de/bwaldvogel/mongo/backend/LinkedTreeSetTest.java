@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 public class LinkedTreeSetTest {
 
     @Test
-    void testAddContainsRemove() throws Exception {
+    void testAddContainsRemove() {
         Set<Object> set = new LinkedTreeSet<>();
         assertThat(set.add(1)).isTrue();
         assertThat(set.add(-0.0)).isTrue();
@@ -39,7 +39,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testSize() throws Exception {
+    void testSize() {
         Set<Object> set = new LinkedTreeSet<>();
         assertThat(set).isEmpty();
         assertThat(set).hasSize(0);
@@ -52,7 +52,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         Set<Object> set = new LinkedTreeSet<>();
         assertThat(set).hasToString("[]");
 
@@ -63,7 +63,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testEqualsAndHashCode() throws Exception {
+    void testEqualsAndHashCode() {
         Set<Object> set1 = new LinkedTreeSet<>();
         Set<Object> set2 = new LinkedTreeSet<>();
 
@@ -89,7 +89,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testIterator() throws Exception {
+    void testIterator() {
         Set<Object> set = new LinkedTreeSet<>();
         set.add(null);
         set.add("abc");
@@ -117,7 +117,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testListValues() throws Exception {
+    void testListValues() {
         Set<Object> set = new LinkedTreeSet<>();
         assertThat(set.add(List.of(1, 2, 3))).isTrue();
         assertThat(set.add(List.of(2, 3))).isTrue();
@@ -132,7 +132,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testRemoveAll() throws Exception {
+    void testRemoveAll() {
         Set<Object> set = new LinkedTreeSet<>();
 
         assertThat(set.removeAll(List.of(2, -0.0))).isFalse();
@@ -158,7 +158,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testRetainAll() throws Exception {
+    void testRetainAll() {
         Set<Object> set = new LinkedTreeSet<>();
 
         set.add(1.0);
@@ -171,7 +171,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testContains() throws Exception {
+    void testContains() {
         Set<Object> set1 = new LinkedTreeSet<>();
 
         assertThat(set1.contains(0)).isFalse();
@@ -188,7 +188,7 @@ public class LinkedTreeSetTest {
     }
 
     @Test
-    void testContainsAll() throws Exception {
+    void testContainsAll() {
         Set<Object> set1 = new LinkedTreeSet<>();
         Set<Object> set2 = new LinkedTreeSet<>();
 
@@ -208,7 +208,7 @@ public class LinkedTreeSetTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/109
     @Test
-    void testSizeAfterRemoveAll() throws Exception {
+    void testSizeAfterRemoveAll() {
         Set<Object> set = new LinkedTreeSet<>(List.of("A", "B"));
 
         set.removeAll(List.of("B", "C", "D"));
@@ -219,7 +219,7 @@ public class LinkedTreeSetTest {
 
     // https://github.com/bwaldvogel/mongo-java-server/issues/109
     @Test
-    void testSizeAfterRetainAll() throws Exception {
+    void testSizeAfterRetainAll() {
         Set<Object> set = new LinkedTreeSet<>(List.of("A", "B", "C"));
 
         set.retainAll(List.of("B", "C"));
