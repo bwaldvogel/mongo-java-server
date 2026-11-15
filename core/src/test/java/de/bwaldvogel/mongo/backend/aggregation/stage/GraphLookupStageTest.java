@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 
 import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.mockito.Mockito.when;
 
 import java.util.stream.Stream;
@@ -33,11 +34,35 @@ class GraphLookupStageTest extends AbstractLookupStageTest {
         configureEmployeesCollection("name: 'Mike'", "_id: 1, name: 'Mike'");
         Document document = json("name: 'Bob', manager: 'Dave'");
 
-        Stream<Document> result = graphLookupStage.apply(Stream.of(document));
+        Document result = graphLookupStage.apply(Stream.of(document)).findFirst().orElseThrow();
 
-        assertThat(result).containsExactly(
-            json("name: 'Bob', manager: 'Dave', managers: [{_id: 1, name: 'Mike', 'order': NumberLong(1)}, {_id: 2, name: 'Dave', 'manager': 'Mike', 'order': NumberLong(0)}]")
+        assertThat(result).containsEntry("name", "Bob").containsEntry("manager", "Dave");
+        assertThat(result.get("managers")).asInstanceOf(list(Document.class)).containsExactlyInAnyOrder(
+            json("_id: 1, name: 'Mike', order: NumberLong(1)"),
+            json("_id: 2, name: 'Dave', manager: 'Mike', order: NumberLong(0)")
         );
+    }
+
+    @Test
+    void testGraphLookupDoesNotModifyInputOrLinkedDocuments() {
+        GraphLookupStage graphLookupStage = buildGraphLookupStage("""
+            from: 'employees',
+            startWith: '$manager',
+            connectFromField: 'manager',
+            connectToField: 'name',
+            as: 'managers',
+            depthField: 'order'
+            """);
+        Document employee = json("_id: 2, name: 'Dave', order: 42");
+        when(employeesCollection.handleQueryAsStream(json("name: 'Dave'")))
+            .thenAnswer(invocation -> Stream.of(employee));
+        Document input = json("name: 'Bob', manager: 'Dave', managers: ['previous value']");
+
+        assertThat(graphLookupStage.apply(Stream.of(input))).containsExactly(
+            json("name: 'Bob', manager: 'Dave', managers: [{_id: 2, name: 'Dave', order: NumberLong(0)}]")
+        );
+        assertThat(input).isEqualTo(json("name: 'Bob', manager: 'Dave', managers: ['previous value']"));
+        assertThat(employee).isEqualTo(json("_id: 2, name: 'Dave', order: 42"));
     }
 
     private GraphLookupStage buildGraphLookupStage(String jsonDocument) {

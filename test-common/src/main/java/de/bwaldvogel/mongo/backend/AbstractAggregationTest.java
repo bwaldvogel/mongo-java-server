@@ -23,6 +23,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -1713,6 +1714,227 @@ public abstract class AbstractAggregationTest extends AbstractTest {
                 "{\"_id\": 3, \"name\": \"File A11\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": 1}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": 0}]}",
                 "{\"_id\": 4, \"name\": \"File A12\", \"parent\": 2, \"hierarchy\": [{\"_id\": 1, \"name\": \"folderA\", \"depth\": 1}, {\"_id\": 2, \"name\": \"subfolderA1\", \"parent\": 1, \"depth\": 0}]}"
             );
+    }
+
+    // https://github.com/bwaldvogel/mongo-java-server/issues/218
+    @Test
+    void testAggregateWithGraphLookupThroughNestedArrayField() {
+        collection.insertOne(json("_id: 1, employeeId: 'john', directReports: [{employeeId: 'paul'}, {employeeId: 'george'}]"));
+        collection.insertOne(json("_id: 2, employeeId: 'paul', directReports: [{employeeId: 'ringo'}]"));
+        collection.insertOne(json("_id: 3, employeeId: 'george', directReports: []"));
+        collection.insertOne(json("_id: 4, employeeId: 'ringo', directReports: []"));
+        collection.insertOne(json("_id: 5, employeeId: 'unrelated', directReports: []"));
+
+        List<Document> pipeline = jsonList("$match: {employeeId: 'john'}",
+            """
+            $graphLookup: {
+                from: 'testcoll',
+                startWith: '$directReports.employeeId',
+                connectFromField: 'directReports.employeeId',
+                connectToField: 'employeeId',
+                as: 'allReports'
+            }
+            """);
+
+        Document result = collection.aggregate(pipeline).first();
+
+        assertThat(result).isNotNull();
+        assertThat(result.getList("allReports", Document.class)).containsExactlyInAnyOrder(
+            json("_id: 2, employeeId: 'paul', directReports: [{employeeId: 'ringo'}]"),
+            json("_id: 3, employeeId: 'george', directReports: []"),
+            json("_id: 4, employeeId: 'ringo', directReports: []")
+        );
+    }
+
+    private static Stream<Integer> graphLookupMaxDepths() {
+        return Stream.of(null, 0, 1, 2);
+    }
+
+    @ParameterizedTest
+    @MethodSource("graphLookupMaxDepths")
+    @Timeout(10)
+    void testAggregateWithGraphLookupStartWithExpressionAndCycles(Integer maxDepth) {
+        collection.insertOne(json("_id: 1, employeeId: 'john', initialReports: [{employeeId: 'paul'}, {employeeId: 'george'}]"));
+        collection.insertOne(json("_id: 2, employeeId: 'paul', directReports: [{employeeId: 'ringo'}, {employeeId: 'george'}]"));
+        collection.insertOne(json("_id: 3, employeeId: 'george', directReports: [{employeeId: 'ringo'}]"));
+        collection.insertOne(json("_id: 4, employeeId: 'ringo', directReports: [{employeeId: 'paul'}]"));
+        collection.insertOne(json("_id: 5, employeeId: 'unrelated', directReports: []"));
+
+        Document graphLookup = json("""
+            from: 'testcoll',
+            startWith: {$ifNull: ['$initialReports.employeeId', []]},
+            connectFromField: 'directReports.employeeId',
+            connectToField: 'employeeId',
+            as: 'allReports',
+            depthField: 'depth'
+            """);
+        if (maxDepth != null) {
+            graphLookup.put("maxDepth", maxDepth);
+        }
+        List<Document> pipeline = List.of(
+            json("$match: {employeeId: 'john'}"),
+            new Document("$graphLookup", graphLookup)
+        );
+
+        List<Document> expectedReports = new ArrayList<>();
+        expectedReports.add(json("_id: 2, employeeId: 'paul', directReports: [{employeeId: 'ringo'}, {employeeId: 'george'}], depth: NumberLong(0)"));
+        expectedReports.add(json("_id: 3, employeeId: 'george', directReports: [{employeeId: 'ringo'}], depth: NumberLong(0)"));
+        if (maxDepth == null || maxDepth >= 1) {
+            expectedReports.add(json("_id: 4, employeeId: 'ringo', directReports: [{employeeId: 'paul'}], depth: NumberLong(1)"));
+        }
+
+        Document result = collection.aggregate(pipeline).first();
+
+        assertThat(result).isNotNull();
+        assertThat(result.getList("allReports", Document.class))
+            .containsExactlyInAnyOrderElementsOf(expectedReports);
+    }
+
+    private static Stream<String> graphLookupEmptyStartDocuments() {
+        return Stream.of(
+            "_id: 1, employeeId: 'john'",
+            "_id: 1, employeeId: 'john', directReports: []",
+            "_id: 1, employeeId: 'john', directReports: [{name: 'no employeeId'}]",
+            "_id: 1, employeeId: 'john', directReports: [{employeeId: 'unknown'}]"
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("graphLookupEmptyStartDocuments")
+    void testAggregateWithGraphLookupWithoutMatchingStartValues(String input) {
+        Document employee = json(input);
+        collection.insertOne(employee);
+        collection.insertOne(json("_id: 2, employeeId: null"));
+        collection.insertOne(json("_id: 3, name: 'missing employeeId'"));
+
+        List<Document> pipeline = jsonList("$match: {_id: 1}", """
+            $graphLookup: {
+                from: 'testcoll',
+                startWith: '$directReports.employeeId',
+                connectFromField: 'directReports.employeeId',
+                connectToField: 'employeeId',
+                as: 'allReports'
+            }
+            """);
+
+        assertThat(collection.aggregate(pipeline))
+            .containsExactly(new Document(employee).append("allReports", List.of()));
+    }
+
+    private static Stream<Arguments> graphLookupStartExpressions() {
+        return Stream.of(
+            Arguments.of(2, 3),
+            Arguments.of(List.of(2, 2), 3),
+            Arguments.of(json("$literal: 2"), 3),
+            Arguments.of(json("$add: [1, 1]"), 3),
+            Arguments.of(json("$literal: '$literalValue'"), 4),
+            Arguments.of(null, 2)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("graphLookupStartExpressions")
+    void testAggregateWithGraphLookupLiteralAndComputedStartValues(Object startWith, int expectedId) {
+        collection.insertOne(json("_id: 1, key: 'root'"));
+        collection.insertOne(json("_id: 2, key: null, next: []"));
+        collection.insertOne(json("_id: 3, key: 2, next: []"));
+        collection.insertOne(json("_id: 4, key: '$literalValue', next: []"));
+        collection.insertOne(json("_id: 5, next: []"));
+
+        Document graphLookup = json("""
+            from: 'testcoll',
+            connectFromField: 'next',
+            connectToField: 'key',
+            as: 'matches'
+            """);
+        graphLookup.put("startWith", startWith);
+        List<Document> pipeline = List.of(json("$match: {_id: 1}"), new Document("$graphLookup", graphLookup));
+
+        Document result = collection.aggregate(pipeline).first();
+
+        assertThat(result).isNotNull();
+        assertThat(result.getList("matches", Document.class))
+            .containsExactly(collection.find(new Document("_id", expectedId)).first());
+    }
+
+    @Test
+    void testAggregateWithGraphLookupThroughSparseArrays() {
+        collection.insertOne(json("_id: 1, employeeId: 'john', directReports: [{}, null, 17, {employeeId: 'paul'}]"));
+        collection.insertOne(json("_id: 2, employeeId: 'paul', directReports: [{}, {employeeId: 'george'}, null]"));
+        collection.insertOne(json("_id: 3, employeeId: 'george'"));
+        collection.insertOne(json("_id: 4, employeeId: null"));
+        collection.insertOne(json("_id: 5, name: 'missing employeeId'"));
+
+        List<Document> pipeline = jsonList("$match: {_id: 1}", """
+            $graphLookup: {
+                from: 'testcoll',
+                startWith: '$directReports.employeeId',
+                connectFromField: 'directReports.employeeId',
+                connectToField: 'employeeId',
+                as: 'allReports'
+            }
+            """);
+
+        Document result = collection.aggregate(pipeline).first();
+
+        assertThat(result).isNotNull();
+        assertThat(result.getList("allReports", Document.class)).containsExactlyInAnyOrder(
+            json("_id: 2, employeeId: 'paul', directReports: [{}, {employeeId: 'george'}, null]"),
+            json("_id: 3, employeeId: 'george'")
+        );
+    }
+
+    @Test
+    void testAggregateWithGraphLookupTracksDepthSeparatelyForEachInput() {
+        collection.insertOne(json("_id: 1, start: 10"));
+        collection.insertOne(json("_id: 2, start: 20"));
+        collection.insertOne(json("_id: 10, next: []"));
+        collection.insertOne(json("_id: 20, next: 10"));
+
+        List<Document> pipeline = jsonList("$match: {_id: {$in: [1, 2]}}", "$sort: {_id: 1}", """
+            $graphLookup: {
+                from: 'testcoll',
+                startWith: '$start',
+                connectFromField: 'next',
+                connectToField: '_id',
+                as: 'matches',
+                depthField: 'depth'
+            }
+            """);
+
+        assertThat(collection.aggregate(pipeline).map(withSortedDocuments("matches")))
+            .containsExactly(
+                json("_id: 1, start: 10, matches: [{_id: 10, next: [], depth: NumberLong(0)}]"),
+                json("_id: 2, start: 20, matches: [{_id: 10, next: [], depth: NumberLong(1)}, {_id: 20, next: 10, depth: NumberLong(0)}]")
+            );
+        assertThat(collection.find(json("_id: {$in: [10, 20]}")))
+            .containsExactlyInAnyOrder(json("_id: 10, next: []"), json("_id: 20, next: 10"));
+    }
+
+    @Test
+    @Timeout(10)
+    void testAggregateWithGraphLookupSelfLoopAndSharedConnectToValue() {
+        collection.insertOne(json("_id: 1, key: 'self', next: 'self'"));
+        collection.insertOne(json("_id: 2, key: 'self', next: 'self'"));
+
+        List<Document> pipeline = jsonList("$match: {_id: 1}", """
+            $graphLookup: {
+                from: 'testcoll',
+                startWith: '$next',
+                connectFromField: 'next',
+                connectToField: 'key',
+                as: 'matches',
+                depthField: 'depth'
+            }
+            """);
+
+        Document result = collection.aggregate(pipeline).first();
+
+        assertThat(result).isNotNull();
+        assertThat(result.getList("matches", Document.class)).containsExactlyInAnyOrder(
+            json("_id: 1, key: 'self', next: 'self', depth: NumberLong(0)"),
+            json("_id: 2, key: 'self', next: 'self', depth: NumberLong(0)")
+        );
     }
 
     @Test
