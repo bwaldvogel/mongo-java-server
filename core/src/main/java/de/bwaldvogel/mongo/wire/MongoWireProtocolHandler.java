@@ -19,7 +19,6 @@ import de.bwaldvogel.mongo.wire.message.MessageHeader;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 
@@ -78,15 +77,14 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new IOException("opCode " + opCodeId + " not supported");
         }
 
-        final Channel channel = ctx.channel();
         final ClientRequest request;
 
         switch (opCode) {
             case OP_QUERY:
-                request = handleQuery(channel, header, in);
+                request = handleQuery(header, in);
                 break;
             case OP_MSG:
-                request = handleMessage(channel, header, in);
+                request = handleMessage(header, in);
                 break;
             default:
                 throw new UnsupportedOperationException("unsupported opcode: " + opCode);
@@ -101,7 +99,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return request;
     }
 
-    private ClientRequest handleQuery(Channel channel, MessageHeader header, ByteBuf buffer) {
+    private ClientRequest handleQuery(MessageHeader header, ByteBuf buffer) {
         int flags = buffer.readIntLE();
 
         final String fullCollectionName = BsonDecoder.decodeCString(buffer);
@@ -114,7 +112,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             returnFieldSelector = BsonDecoder.decodeBson(buffer);
         }
 
-        MongoQuery mongoQuery = new MongoQuery(channel, header, fullCollectionName, numberToSkip, numberToReturn,
+        MongoQuery mongoQuery = new MongoQuery(header, fullCollectionName, numberToSkip, numberToReturn,
             query, returnFieldSelector);
 
         if (QueryFlag.SLAVE_OK.isSet(flags)) {
@@ -134,7 +132,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
         return mongoQuery;
     }
 
-    private ClientRequest handleMessage(Channel channel, MessageHeader header, ByteBuf buffer) {
+    private ClientRequest handleMessage(MessageHeader header, ByteBuf buffer) {
         int flagBits = buffer.readIntLE();
 
         Set<MessageFlag> flags = EnumSet.noneOf(MessageFlag.class);
@@ -185,7 +183,7 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             Assert.isNull(old);
         }
 
-        return new MongoMessage(channel, header, body, flags);
+        return new MongoMessage(header, body, flags);
     }
 
     private void decodeKindDocumentSequence(ByteBuf buffer, Document documentSequence) {

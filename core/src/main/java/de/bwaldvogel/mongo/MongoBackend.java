@@ -9,13 +9,12 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import io.netty.channel.Channel;
 
 public interface MongoBackend {
 
-    void handleClose(Channel channel);
+    void handleClose();
 
-    Document handleCommand(Channel channel, String database, DatabaseCommand command, Document query);
+    Document handleCommand(String database, DatabaseCommand command, Document query);
 
     QueryResult handleQuery(MongoQuery query);
 

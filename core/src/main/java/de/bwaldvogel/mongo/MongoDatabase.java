@@ -7,15 +7,12 @@ import de.bwaldvogel.mongo.backend.QueryResult;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.oplog.Oplog;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import io.netty.channel.Channel;
 
 public interface MongoDatabase {
 
     String getDatabaseName();
 
-    void handleClose(Channel channel);
-
-    Document handleCommand(Channel channel, DatabaseCommand command, Document query, DatabaseResolver databaseResolver, Oplog oplog);
+    Document handleCommand(DatabaseCommand command, Document query, DatabaseResolver databaseResolver, Oplog oplog);
 
     QueryResult handleQuery(MongoQuery query);
 

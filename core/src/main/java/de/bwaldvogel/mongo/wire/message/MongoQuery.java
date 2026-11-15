@@ -1,7 +1,6 @@
 package de.bwaldvogel.mongo.wire.message;
 
 import de.bwaldvogel.mongo.bson.Document;
-import io.netty.channel.Channel;
 
 public class MongoQuery extends ClientRequest {
 
@@ -10,9 +9,9 @@ public class MongoQuery extends ClientRequest {
     private final int numberToSkip;
     private final int numberToReturn;
 
-    public MongoQuery(Channel channel, MessageHeader header, String fullCollectionName, int numberToSkip,
+    public MongoQuery(MessageHeader header, String fullCollectionName, int numberToSkip,
             int numberToReturn, Document query, Document returnFieldSelector) {
-        super(channel, header, fullCollectionName);
+        super(header, fullCollectionName);
         this.numberToSkip = numberToSkip;
         this.numberToReturn = numberToReturn;
         this.query = query;

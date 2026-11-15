@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.wire.message;
 import java.util.Set;
 
 import de.bwaldvogel.mongo.bson.Document;
-import io.netty.channel.Channel;
 
 public class MongoMessage extends ClientRequest {
 
@@ -13,12 +12,12 @@ public class MongoMessage extends ClientRequest {
     private final Document document;
     private final Set<MessageFlag> flags;
 
-    public MongoMessage(Channel channel, MessageHeader header, Document document) {
-        this(channel, header, document, Set.of());
+    public MongoMessage(MessageHeader header, Document document) {
+        this(header, document, Set.of());
     }
 
-    public MongoMessage(Channel channel, MessageHeader header, Document document, Set<MessageFlag> flags) {
-        super(channel, header, null);
+    public MongoMessage(MessageHeader header, Document document, Set<MessageFlag> flags) {
+        super(header, null);
         this.document = document;
         this.flags = Set.copyOf(flags);
     }

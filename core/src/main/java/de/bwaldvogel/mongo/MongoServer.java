@@ -93,14 +93,7 @@ public class MongoServer {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(SocketChannel ch) throws Exception {
-                        if (sslContext != null) {
-                            ch.pipeline().addLast(sslContext.newHandler(ch.alloc()));
-                        }
-                        ch.pipeline().addLast(new MongoWireReplyEncoder());
-                        ch.pipeline().addLast(new MongoWireMessageEncoder());
-                        ch.pipeline().addLast(new MongoWireProtocolHandler());
-                        ch.pipeline().addLast(new MongoDatabaseHandler(backend, channelGroup));
-                        ch.pipeline().addLast(new MongoExceptionHandler());
+                        MongoServer.this.initChannel(ch);
                     }
                 });
 
@@ -111,6 +104,17 @@ public class MongoServer {
             shutdownNow();
             throw e;
         }
+    }
+
+    void initChannel(SocketChannel channel) {
+        if (sslContext != null) {
+            channel.pipeline().addLast(sslContext.newHandler(channel.alloc()));
+        }
+        channel.pipeline().addLast(new MongoWireReplyEncoder());
+        channel.pipeline().addLast(new MongoWireMessageEncoder());
+        channel.pipeline().addLast(new MongoWireProtocolHandler());
+        channel.pipeline().addLast(new MongoDatabaseHandler(backend, channelGroup));
+        channel.pipeline().addLast(new MongoExceptionHandler());
     }
 
     /**
