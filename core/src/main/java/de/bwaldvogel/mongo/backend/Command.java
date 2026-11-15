@@ -23,6 +23,7 @@ public enum Command {
     UPDATE("update"),
 
     // Replication
+    HELLO("hello"),
     IS_MASTER("isMaster"),
     REPL_SET_GET_STATUS("replSetGetStatus"),
 
