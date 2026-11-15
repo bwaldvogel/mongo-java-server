@@ -12,12 +12,12 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 class Decimal128Test {
 
     @Test
-    void testEqualsAndHashCodeContract() throws Exception {
+    void testEqualsAndHashCodeContract() {
         EqualsVerifier.forClass(Decimal128.class).verify();
     }
 
     @Test
-    void testFromAndToBigDecimal() throws Exception {
+    void testFromAndToBigDecimal() {
         assertThat(new Decimal128(new BigDecimal("1.2345")).toBigDecimal().toString()).isEqualTo("1.2345");
         assertThat(new Decimal128(new BigDecimal("1.2345678901234567890123465789")).toBigDecimal().toString()).isEqualTo("1.2345678901234567890123465789");
         assertThat(new Decimal128(new BigDecimal("12345678901234567890123465789")).toBigDecimal().toString()).isEqualTo("12345678901234567890123465789");
@@ -43,7 +43,7 @@ class Decimal128Test {
     }
 
     @Test
-    void testToInt() throws Exception {
+    void testToInt() {
         assertThat(Decimal128.ONE.intValue()).isEqualTo(1);
         assertThat(Decimal128.POSITIVE_ZERO.intValue()).isEqualTo(0);
         assertThat(Decimal128.NEGATIVE_ZERO.intValue()).isEqualTo(0);
@@ -62,7 +62,7 @@ class Decimal128Test {
     }
 
     @Test
-    void testToLong() throws Exception {
+    void testToLong() {
         assertThat(Decimal128.ONE.longValue()).isEqualTo(1L);
         assertThat(Decimal128.POSITIVE_ZERO.longValue()).isEqualTo(0L);
         assertThat(Decimal128.NEGATIVE_ZERO.longValue()).isEqualTo(0L);
@@ -81,7 +81,7 @@ class Decimal128Test {
     }
 
     @Test
-    void testToFloat() throws Exception {
+    void testToFloat() {
         assertThat(Decimal128.ONE.floatValue()).isEqualTo(1.0f);
         assertThat(Decimal128.POSITIVE_ZERO.floatValue()).isEqualTo(0.0f);
         assertThat(Decimal128.NEGATIVE_ZERO.floatValue()).isEqualTo(0.0f);
@@ -91,7 +91,7 @@ class Decimal128Test {
     }
 
     @Test
-    void testToDouble() throws Exception {
+    void testToDouble() {
         assertThat(Decimal128.ONE.doubleValue()).isEqualTo(1.0);
         assertThat(Decimal128.POSITIVE_ZERO.doubleValue()).isEqualTo(0.0);
         assertThat(Decimal128.NEGATIVE_ZERO.doubleValue()).isEqualTo(0.0);
@@ -101,7 +101,7 @@ class Decimal128Test {
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(new Decimal128(new BigDecimal("1e1000"))).hasToString("1E+1000");
         assertThat(new Decimal128(new BigDecimal("1000"))).hasToString("1000");
         assertThat(new Decimal128(new BigDecimal("1000.987654321"))).hasToString("1000.987654321");

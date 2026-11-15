@@ -6,7 +6,7 @@ import de.bwaldvogel.mongo.backend.AbstractAggregationTest;
 class MemoryBackendAggregationTest extends AbstractAggregationTest {
 
     @Override
-    protected MongoBackend createBackend() throws Exception {
+    protected MongoBackend createBackend() {
         return new MemoryBackend(clock);
     }
 

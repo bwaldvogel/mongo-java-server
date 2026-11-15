@@ -16,14 +16,14 @@ import de.bwaldvogel.mongo.bson.ObjectId;
 class PostgresqlUtilsTest {
 
     @Test
-    void testToDataKey() throws Exception {
+    void testToDataKey() {
         assertThat(PostgresqlUtils.toDataKey("foo")).isEqualTo("data ->> 'foo'");
         assertThat(PostgresqlUtils.toDataKey("foo.bar")).isEqualTo("data -> 'foo' ->> 'bar'");
         assertThat(PostgresqlUtils.toDataKey("foo.bar.bla")).isEqualTo("data -> 'foo' -> 'bar' ->> 'bla'");
     }
 
     @Test
-    void testToQueryValue() throws Exception {
+    void testToQueryValue() {
         assertThat(PostgresqlUtils.toQueryValue(123)).isEqualTo("123");
         assertThat(PostgresqlUtils.toQueryValue(123.0)).isEqualTo("123");
         assertThat(PostgresqlUtils.toQueryValue(123.1)).isEqualTo("123.1");

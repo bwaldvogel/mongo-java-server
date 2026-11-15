@@ -11,14 +11,14 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 class LegacyUUIDTest {
 
     @Test
-    void testEqualsAndHashCode() throws Exception {
+    void testEqualsAndHashCode() {
         EqualsVerifier.forClass(LegacyUUID.class)
             .withNonnullFields("uuid")
             .verify();
     }
 
     @Test
-    void testCompare() throws Exception {
+    void testCompare() {
         UUID uuid0 = UUID.fromString("00000000-0000-0000-0000-000000000000");
         UUID uuid1 = UUID.fromString("48fe9251-9502-4d43-bd81-b8861eb69dc5");
         UUID uuid2 = UUID.fromString("cb6bdaa5-d134-4244-9383-ccded62a7bb3");

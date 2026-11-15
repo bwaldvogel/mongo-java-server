@@ -14,7 +14,7 @@ import de.bwaldvogel.mongo.backend.IndexKey;
 class PostgresUniqueIndexTest {
 
     @Test
-    void testCreateSelectStatement() throws Exception {
+    void testCreateSelectStatement() {
         List<IndexKey> keys = new ArrayList<>();
         keys.add(new IndexKey("a", true));
         keys.add(new IndexKey("b", true));
@@ -27,7 +27,7 @@ class PostgresUniqueIndexTest {
     }
 
     @Test
-    void testCreateSelectStatement_SparseIndex() throws Exception {
+    void testCreateSelectStatement_SparseIndex() {
         List<IndexKey> keys = new ArrayList<>();
         keys.add(new IndexKey("a", true));
         keys.add(new IndexKey("b", true));

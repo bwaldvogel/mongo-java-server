@@ -16,7 +16,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class UnwindStageTest {
 
     @Test
-    void testUnwind() throws Exception {
+    void testUnwind() {
         assertThat(unwind("$field",
             json("_id: 1, field: [1, 2, 3]"),
             json("_id: 2, field: [2, 3]"),
@@ -37,7 +37,7 @@ public class UnwindStageTest {
     }
 
     @Test
-    void testUnwindWithSubdocument() throws Exception {
+    void testUnwindWithSubdocument() {
         assertThat(unwind("$field.values",
             json("_id: 1, field: {values: [1, 2, 3]}"),
             json("_id: 2, field: {values: [2, 3]}")))
@@ -66,7 +66,7 @@ public class UnwindStageTest {
     }
 
     @Test
-    void testIllegalParameter() throws Exception {
+    void testIllegalParameter() {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new UnwindStage("illegalField"))
             .withMessage("[Error 28818] path option to $unwind stage should be prefixed with a '$': illegalField");

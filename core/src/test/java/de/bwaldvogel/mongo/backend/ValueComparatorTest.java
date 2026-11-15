@@ -38,7 +38,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testReverse() throws Exception {
+    void testReverse() {
         assertThat(ValueComparator.asc().reversed()).isSameAs(ValueComparator.desc());
         assertThat(ValueComparator.desc().reversed()).isSameAs(ValueComparator.asc());
     }
@@ -65,19 +65,19 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareNullWithValue() throws Exception {
+    void testCompareNullWithValue() {
         assertFirstValueBeforeSecondValue(null, 1.0);
     }
 
     @Test
-    void testCompareList() throws Exception {
+    void testCompareList() {
         assertThat(ValueComparator.ascWithoutListHandling().compare(List.of(1, 2), List.of(1))).isGreaterThan(0);
         assertThat(ValueComparator.ascWithoutListHandling().compare(List.of(1, 2), List.of(1, 2))).isZero();
         assertThat(ValueComparator.ascWithoutListHandling().compare(List.of(1, 2.0), List.of(1.0, 2))).isZero();
     }
 
     @Test
-    void testCompareListsInAscendingOrder() throws Exception {
+    void testCompareListsInAscendingOrder() {
         assertComparesTheSame(1, List.of(1, 2));
         assertFirstValueBeforeSecondValue(List.of(1, 2), "abc");
         assertFirstValueBeforeSecondValue(List.of(1, 2), json("a: 1"));
@@ -100,7 +100,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareListsInDescendingOrder() throws Exception {
+    void testCompareListsInDescendingOrder() {
         assertThat(ValueComparator.desc().compare(List.of(2, 3), List.of(1, 2))).isLessThan(0);
 
         assertThat(ValueComparator.desc().compare(List.of(1, "abc", 2), List.of(3))).isLessThan(0);
@@ -108,7 +108,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareMissingWithValue() throws Exception {
+    void testCompareMissingWithValue() {
         assertFirstValueBeforeSecondValue(Missing.getInstance(), 1.0);
     }
 
@@ -159,7 +159,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareDocuments() throws Exception {
+    void testCompareDocuments() {
         assertComparesTheSame(json("a: 1"), json("a: 1.0"));
         assertComparesTheSame(json("a: 0"), json("a: -0.0"));
         assertComparesTheSame(json("a: {b: 1}"), json("a: {b: 1.0}"));
@@ -177,7 +177,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareUuids() throws Exception {
+    void testCompareUuids() {
         assertComparesTheSame(new UUID(1, 1), new UUID(1, 1));
         assertFirstValueBeforeSecondValue(null, new UUID(1, 2));
         assertFirstValueBeforeSecondValue(new UUID(0, 1), new UUID(1, 1));
@@ -189,7 +189,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareLegacyUuids() throws Exception {
+    void testCompareLegacyUuids() {
         assertComparesTheSame(new LegacyUUID(1, 1), new LegacyUUID(1, 1));
         assertFirstValueBeforeSecondValue(null, new LegacyUUID(1, 2));
         assertFirstValueBeforeSecondValue(new LegacyUUID(0, 1), new LegacyUUID(1, 1));
@@ -201,7 +201,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareDecimal128() throws Exception {
+    void testCompareDecimal128() {
         assertComparesTheSame(Decimal128.ONE, Decimal128.ONE);
         assertComparesTheSame(Decimal128.ONE, 1);
         assertComparesTheSame(Decimal128.ONE, 1L);
@@ -217,7 +217,7 @@ class ValueComparatorTest {
     }
 
     @Test
-    void testCompareNumbers() throws Exception {
+    void testCompareNumbers() {
         assertFirstValueBeforeSecondValue(223372036854775806L, 223372036854775807L);
         assertFirstValueBeforeSecondValue(223372036854775807L, 223372036854775808L);
         assertFirstValueBeforeSecondValue(10.0, 223372036854775807L);

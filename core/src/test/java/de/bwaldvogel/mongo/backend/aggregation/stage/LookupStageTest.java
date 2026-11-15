@@ -134,7 +134,7 @@ public class LookupStageTest extends AbstractLookupStageTest {
     }
 
     @Test
-    public void testLookupWithNestedField() throws Exception {
+    public void testLookupWithNestedField() {
         prepareAuthorsCollectionMock();
 
         LookupStage lookupStage = buildLookupStage("from: 'authors', 'localField': 'author.id', foreignField: '_id', as: 'author'");
@@ -149,7 +149,7 @@ public class LookupStageTest extends AbstractLookupStageTest {
     }
 
     @Test
-    public void testLookupWithNestedFieldArray() throws Exception {
+    public void testLookupWithNestedFieldArray() {
         prepareAuthorsCollectionMock();
 
         LookupStage lookupStage = buildLookupStage("from: 'authors', 'localField': 'author.id', foreignField: '_id', as: 'author'");

@@ -16,14 +16,14 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 class UtilsTest {
 
     @Test
-    void testMarkOkay() throws Exception {
+    void testMarkOkay() {
         Document obj = new Document();
         Utils.markOkay(obj);
         assertThat(obj.get("ok")).isEqualTo(Double.valueOf(1.0));
     }
 
     @Test
-    void testIsTrue() throws Exception {
+    void testIsTrue() {
         assertThat(Utils.isTrue("foo")).isTrue();
         assertThat(Utils.isTrue(null)).isFalse();
         assertThat(Utils.isTrue(true)).isTrue();
@@ -63,7 +63,7 @@ class UtilsTest {
     }
 
     @Test
-    void testNormalizeNumber() throws Exception {
+    void testNormalizeNumber() {
         assertThat(Utils.normalizeNumber(null)).isNull();
         assertThat(Utils.normalizeNumber(0)).isEqualTo(0);
         assertThat(Utils.normalizeNumber(1.0)).isEqualTo(1);
@@ -93,13 +93,13 @@ class UtilsTest {
     }
 
     @Test
-    void testCalculateSize() throws Exception {
+    void testCalculateSize() {
         assertThat(Utils.calculateSize(new Document())).isEqualTo(5);
         assertThat(Utils.calculateSize(new Document("_id", 7))).isEqualTo(14);
     }
 
     @Test
-    void testGetSubdocumentValue() throws Exception {
+    void testGetSubdocumentValue() {
         Document document = json("foo: 25");
         assertThat(Utils.getSubdocumentValue(document, "foo")).isEqualTo(25);
         assertThat(Utils.getSubdocumentValue(document, "foo.bar")).isInstanceOf(Missing.class);
@@ -127,7 +127,7 @@ class UtilsTest {
     }
 
     @Test
-    void testGetFieldValueListSafe() throws Exception {
+    void testGetFieldValueListSafe() {
         assertThat(Utils.getFieldValueListSafe(Missing.getInstance(), "foo")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(null, "foo")).isInstanceOf(Missing.class);
         assertThat(Utils.getFieldValueListSafe(json(""), "foo")).isInstanceOf(Missing.class);
@@ -149,7 +149,7 @@ class UtilsTest {
     }
 
     @Test
-    void testHasFieldValueListSafe() throws Exception {
+    void testHasFieldValueListSafe() {
         assertThat(Utils.hasFieldValueListSafe(null, "foo")).isFalse();
         Document document = json("foo: 25");
         assertThat(Utils.hasFieldValueListSafe(document, "foo")).isTrue();
@@ -163,19 +163,19 @@ class UtilsTest {
     }
 
     @Test
-    void testGetDatabaseNameFromFullName() throws Exception {
+    void testGetDatabaseNameFromFullName() {
         assertThat(Utils.getDatabaseNameFromFullName("foo.bar")).isEqualTo("foo");
         assertThat(Utils.getDatabaseNameFromFullName("foo.bar.bla")).isEqualTo("foo");
     }
 
     @Test
-    void testGetCollectionNameFromFullName() throws Exception {
+    void testGetCollectionNameFromFullName() {
         assertThat(Utils.getCollectionNameFromFullName("foo.bar")).isEqualTo("bar");
         assertThat(Utils.getCollectionNameFromFullName("foo.bar.bla")).isEqualTo("bar.bla");
     }
 
     @Test
-    void testChangeSubdocumentValue() throws Exception {
+    void testChangeSubdocumentValue() {
         Document document = json("_id: 1, foo: {bar: 1, bla: 2}");
 
         Utils.changeSubdocumentValue(document, "foo.bar", 3);
@@ -195,7 +195,7 @@ class UtilsTest {
     }
 
     @Test
-    void testCopySubdocumentValue() throws Exception {
+    void testCopySubdocumentValue() {
         Document document = json("_id: 1, foo: {bar: 1, bla: 2}, x: null, y: {a: 1, b: [1, 2, 3]}");
         Document result = new Document();
 
@@ -219,7 +219,7 @@ class UtilsTest {
     }
 
     @Test
-    void testRemoveSubdocumentValue() throws Exception {
+    void testRemoveSubdocumentValue() {
         Document document = json("_id: 1, foo: {bar: 1, bla: 2}, baz: { bar: { a: 1, b: 2 } }");
 
         Object removedValue = Utils.removeSubdocumentValue(document, "foo.bar");
@@ -248,7 +248,7 @@ class UtilsTest {
     }
 
     @Test
-    void testRemoveSubdocumentValue_array() throws Exception {
+    void testRemoveSubdocumentValue_array() {
         Document document = json("_id: 1, x: [{a: 1, b: 2, c: 3}, {b: 3}]");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "x.b");
@@ -257,7 +257,7 @@ class UtilsTest {
     }
 
     @Test
-    void testRemoveSubdocumentValue_arrayOnLevel1() throws Exception {
+    void testRemoveSubdocumentValue_arrayOnLevel1() {
         Document document = json("a: [{b: [{c: 1}, {c: 2, d: 3}, 'abc']}]");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
@@ -266,7 +266,7 @@ class UtilsTest {
     }
 
     @Test
-    void testRemoveSubdocumentValue_arrayOnLevel2() throws Exception {
+    void testRemoveSubdocumentValue_arrayOnLevel2() {
         Document document = json("a: {b: [{c: 1}, {c: 2, d: 3}, 'abc']}");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
@@ -275,7 +275,7 @@ class UtilsTest {
     }
 
     @Test
-    void testRemoveSubdocumentValue_arrayValue() throws Exception {
+    void testRemoveSubdocumentValue_arrayValue() {
         Document document = json("a: {b: {c: [1, 2, 3]}}");
 
         Object removedValues = Utils.removeSubdocumentValue(document, "a.b.c");
@@ -316,7 +316,7 @@ class UtilsTest {
     }
 
     @Test
-    void testShorterPathIfPrefix() throws Exception {
+    void testShorterPathIfPrefix() {
         assertThat(Utils.getShorterPathIfPrefix("a", "b")).isNull();
         assertThat(Utils.getShorterPathIfPrefix("a.b", "b.c")).isNull();
         assertThat(Utils.getShorterPathIfPrefix("a.b.c", "a.b.d")).isNull();
@@ -330,7 +330,7 @@ class UtilsTest {
     }
 
     @Test
-    void testJoinTail() throws Exception {
+    void testJoinTail() {
         assertThat(Utils.joinTail(List.of("a"))).isEqualTo("");
         assertThat(Utils.joinTail(Collections.emptyList())).isEqualTo("");
         assertThat(Utils.joinTail(List.of("a", "b"))).isEqualTo("b");
@@ -339,7 +339,7 @@ class UtilsTest {
     }
 
     @Test
-    void testCollectCommonPathFragments() throws Exception {
+    void testCollectCommonPathFragments() {
         assertThat(Utils.collectCommonPathFragments("a", "b")).isEmpty();
         assertThat(Utils.collectCommonPathFragments("aaa", "a.aab")).isEmpty();
         assertThat(Utils.collectCommonPathFragments("a.a", "a.b")).containsExactly("a");

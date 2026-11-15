@@ -17,7 +17,7 @@ public abstract class AbstractPerformanceTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/84
     @Test
     @EnabledIfSystemProperty(named = "run-mongo-java-server-performance-tests", matches = "true")
-    public void testComplexUpsert() throws Exception {
+    public void testComplexUpsert() {
         Document incUpdate = new Document();
         Document updateQuery = new Document("$inc", incUpdate);
         incUpdate.put("version", 1);

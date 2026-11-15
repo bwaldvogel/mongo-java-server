@@ -58,10 +58,10 @@ public abstract class AbstractTest {
     protected static ConnectionString connectionString;
     protected static MongoBackend backend;
 
-    protected abstract MongoBackend createBackend() throws Exception;
+    protected abstract MongoBackend createBackend();
 
     @BeforeEach
-    public void setUp() throws Exception {
+    public void setUp() {
         clock.reset();
         if (connectionString == null) {
             setUpBackend();
@@ -103,7 +103,7 @@ public abstract class AbstractTest {
         tearDownBackend();
     }
 
-    private static void setUpClients() throws Exception {
+    private static void setUpClients() {
         MongoClientSettings mongoClientSettings = MongoClientSettings.builder()
             .applyConnectionString(connectionString)
             .uuidRepresentation(UuidRepresentation.STANDARD)
@@ -118,7 +118,7 @@ public abstract class AbstractTest {
         asyncCollection = asyncDb.getCollection(namespace.getCollectionName());
     }
 
-    protected void setUpBackend() throws Exception {
+    protected void setUpBackend() {
         backend = createBackend();
         mongoServer = new MongoServer(backend);
         connectionString = new ConnectionString(mongoServer.bindAndGetConnectionString());
@@ -141,7 +141,7 @@ public abstract class AbstractTest {
         connectionString = null;
     }
 
-    protected void restart() throws Exception {
+    protected void restart() {
         tearDown();
         setUp();
     }

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 public class StreamUtilsTest {
 
     @Test
-    void testToLinkedHashMap() throws Exception {
+    void testToLinkedHashMap() {
         Map<String, String> result = Stream.of("a", "b", "c")
             .map(value -> new SimpleEntry<>(value, value))
             .collect(StreamUtils.toLinkedHashMap());
@@ -27,7 +27,7 @@ public class StreamUtilsTest {
     }
 
     @Test
-    void testToLinkedHashMap_duplicates() throws Exception {
+    void testToLinkedHashMap_duplicates() {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> Stream.of("a", "b", "c", "b")
                 .map(value -> new SimpleEntry<>(value, value))
@@ -36,7 +36,7 @@ public class StreamUtilsTest {
     }
 
     @Test
-    void testToLinkedHashSet() throws Exception {
+    void testToLinkedHashSet() {
         Set<String> result = Stream.of("a", "b", "c", "b")
             .collect(StreamUtils.toLinkedHashSet());
         assertThat(result).containsExactly("a", "b", "c");

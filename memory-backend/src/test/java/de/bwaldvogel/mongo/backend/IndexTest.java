@@ -14,7 +14,7 @@ import de.bwaldvogel.mongo.exception.CannotIndexParallelArraysError;
 class IndexTest {
 
     @Test
-    void testGetKeyValues_simple() throws Exception {
+    void testGetKeyValues_simple() {
         Index<?> index = new MemoryUniqueIndex("index", List.of(new IndexKey("x", true)), false);
 
         assertThat(index.getKeyValues(new Document("x", 1))).containsExactly(new KeyValue(1.0));
@@ -22,7 +22,7 @@ class IndexTest {
     }
 
     @Test
-    void testGetKeyValues_compound() throws Exception {
+    void testGetKeyValues_compound() {
         Index<?> index = new MemoryUniqueIndex("index", List.of(
             new IndexKey("a", true),
             new IndexKey("b", true)), false);
@@ -33,7 +33,7 @@ class IndexTest {
     }
 
     @Test
-    void testGetKeyValues_Subdocument() throws Exception {
+    void testGetKeyValues_Subdocument() {
         Index<?> index = new MemoryUniqueIndex("index", List.of(new IndexKey("a.b", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", 1))).containsExactly(new KeyValue((Object) null));
@@ -43,7 +43,7 @@ class IndexTest {
     }
 
     @Test
-    void testGetKeyValues_multiKey() throws Exception {
+    void testGetKeyValues_multiKey() {
         Index<?> index = new MemoryUniqueIndex("index", List.of(new IndexKey("a", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", List.of(1, 2, 3, 2))))
@@ -54,7 +54,7 @@ class IndexTest {
     }
 
     @Test
-    void testGetKeyValues_compoundMultiKey() throws Exception {
+    void testGetKeyValues_compoundMultiKey() {
         Index<?> index = new MemoryUniqueIndex("index", List.of(
             new IndexKey("a", true),
             new IndexKey("b", true),
@@ -69,7 +69,7 @@ class IndexTest {
     }
 
     @Test
-    void testGetKeyValues_compoundMultiKey_tooManyCollections() throws Exception {
+    void testGetKeyValues_compoundMultiKey_tooManyCollections() {
         Index<?> index = new MemoryUniqueIndex("index", List.of(
             new IndexKey("a", true),
             new IndexKey("b", true)
@@ -81,7 +81,7 @@ class IndexTest {
     }
 
     @Test
-    void testGetKeyValues_multiKey_document() throws Exception {
+    void testGetKeyValues_multiKey_document() {
         Index<?> index = new MemoryUniqueIndex("index", List.of(new IndexKey("a.b", true)), false);
 
         assertThat(index.getKeyValues(new Document("a", List.of(new Document("b", 1), new Document("b", 2)))))

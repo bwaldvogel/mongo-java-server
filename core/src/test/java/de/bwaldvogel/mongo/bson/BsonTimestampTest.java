@@ -11,12 +11,12 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 class BsonTimestampTest {
 
     @Test
-    void testEqualsHashCodeContract() throws Exception {
+    void testEqualsHashCodeContract() {
         EqualsVerifier.forClass(BsonTimestamp.class).verify();
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(new BsonTimestamp(Instant.ofEpochSecond(123), 456))
             .hasToString("BsonTimestamp[value=528280977864, seconds=123, inc=456]");
     }

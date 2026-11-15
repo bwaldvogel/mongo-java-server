@@ -11,7 +11,7 @@ public class MinAccumulatorTest {
     private final ComparingAccumulator accumulator = new MinAccumulator(null, null);
 
     @Test
-    void testAccumulateNumbers() throws Exception {
+    void testAccumulateNumbers() {
         accumulator.aggregate(5);
         accumulator.aggregate(1);
         accumulator.aggregate(3);
@@ -21,7 +21,7 @@ public class MinAccumulatorTest {
     }
 
     @Test
-    void testAccumulateArrays() throws Exception {
+    void testAccumulateArrays() {
         accumulator.aggregate(List.of(10, 20, 30));
         accumulator.aggregate(List.of(3, 40));
         accumulator.aggregate(List.of(11, 25));
@@ -31,7 +31,7 @@ public class MinAccumulatorTest {
     }
 
     @Test
-    void testAccumulateArraysAndNonArray() throws Exception {
+    void testAccumulateArraysAndNonArray() {
         accumulator.aggregate(List.of(3, 40));
         accumulator.aggregate(List.of(10, 20, 30));
         accumulator.aggregate(50);
@@ -41,7 +41,7 @@ public class MinAccumulatorTest {
     }
 
     @Test
-    void testAccumulateNothing() throws Exception {
+    void testAccumulateNothing() {
         Object result = accumulator.getResult();
         assertThat(result).isNull();
     }

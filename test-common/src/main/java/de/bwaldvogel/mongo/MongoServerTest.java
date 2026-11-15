@@ -35,10 +35,10 @@ public abstract class MongoServerTest {
 
     private MongoServer server;
 
-    protected abstract MongoBackend createBackend() throws Exception;
+    protected abstract MongoBackend createBackend();
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         server = new MongoServer(createBackend());
     }
 
@@ -48,14 +48,14 @@ public abstract class MongoServerTest {
     }
 
     @Test
-    void testToString() throws Exception {
+    void testToString() {
         assertThat(server).hasToString("MongoServer()");
         InetSocketAddress inetSocketAddress = server.bind();
         assertThat(server).hasToString("MongoServer(port: " + inetSocketAddress.getPort() + ", ssl: false)");
     }
 
     @Test
-    void testBindAndConnect() throws Exception {
+    void testBindAndConnect() {
         InetSocketAddress inetSocketAddress = server.bind();
         try (MongoClient mongoClient = MongoClients.create("mongodb://" + inetSocketAddress.getHostString() + ":" + inetSocketAddress.getPort())) {
             mongoClient.getDatabase("abc").createCollection("def");
@@ -65,7 +65,7 @@ public abstract class MongoServerTest {
     }
 
     @Test
-    void testBindAndGetConnectionStringThenConnect() throws Exception {
+    void testBindAndGetConnectionStringThenConnect() {
         String connectionString = server.bindAndGetConnectionString();
         try (MongoClient mongoClient = MongoClients.create(connectionString)) {
             mongoClient.getDatabase("abc").createCollection("def");
@@ -76,7 +76,7 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    void testStopListening() throws Exception {
+    void testStopListening() {
         String connectionString = server.bindAndGetConnectionString();
 
         try (MongoClient client = MongoClients.create(connectionString)) {
@@ -101,7 +101,7 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    void testShutdownNow() throws Exception {
+    void testShutdownNow() {
         String connectionString = server.bindAndGetConnectionString();
         MongoClient client = MongoClients.create(connectionString);
 
@@ -113,7 +113,7 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    void testGetLocalAddress() throws Exception {
+    void testGetLocalAddress() {
         assertThat(server.getLocalAddress()).isNull();
         InetSocketAddress serverAddress = server.bind();
         InetSocketAddress localAddress = server.getLocalAddress();
@@ -124,7 +124,7 @@ public abstract class MongoServerTest {
 
     @Test
     @Timeout(TEST_TIMEOUT_SECONDS)
-    void testShutdownAndRestart() throws Exception {
+    void testShutdownAndRestart() {
         String connectionString = server.bindAndGetConnectionString();
         InetSocketAddress serverAddress = server.getLocalAddress();
 
@@ -170,7 +170,7 @@ public abstract class MongoServerTest {
     }
 
     @Test
-    void testEnableSslAfterAlreadyStarted() throws Exception {
+    void testEnableSslAfterAlreadyStarted() {
         server.bindAndGetConnectionString();
 
         assertThatExceptionOfType(IllegalArgumentException.class)
@@ -179,7 +179,7 @@ public abstract class MongoServerTest {
     }
 
     @Test
-    void testEnableSslWithEmptyKeyCertChain() throws Exception {
+    void testEnableSslWithEmptyKeyCertChain() {
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> server.enableSsl(null, null))
             .withMessage("Param 'keyCertChain' must not be empty");

@@ -12,7 +12,7 @@ import de.bwaldvogel.mongo.exception.MongoServerError;
 public class AddFieldsStageTest {
 
     @Test
-    void testAddFields() throws Exception {
+    void testAddFields() {
         assertThat(addFields(json("a: 'value'"), json("a: true"))).isEqualTo(json("a: true"));
         assertThat(addFields(json("_id: 1"), json("a: 10"))).isEqualTo(json("_id: 1, a: 10"));
         assertThat(addFields(json("_id: 1, a: 'value'"), json("b: '$a'"))).isEqualTo(json("_id: 1, a: 'value', b: 'value'"));
@@ -29,7 +29,7 @@ public class AddFieldsStageTest {
     }
 
     @Test
-    void testIllegalSpecification() throws Exception {
+    void testIllegalSpecification() {
         assertThatExceptionOfType(MongoServerError.class)
             .isThrownBy(() -> new AddFieldsStage(json("")))
             .withMessage("[Error 40177] Invalid $addFields :: caused by :: specification must have at least one field");

@@ -28,7 +28,7 @@ import io.netty.channel.ChannelHandlerContext;
 class MongoDatabaseHandlerTest {
 
     @Test
-    void testWrappedCommand() throws Exception {
+    void testWrappedCommand() {
         MongoBackend backend = mock(MongoBackend.class);
 
         Document queryDoc = json("'$query': { 'count': 'collectionName' }, '$readPreference': { 'mode': 'secondaryPreferred' }");
@@ -43,7 +43,7 @@ class MongoDatabaseHandlerTest {
     }
 
     @Test
-    void testNonWrappedCommand() throws Exception {
+    void testNonWrappedCommand() {
         MongoBackend backend = mock(MongoBackend.class);
 
         Document queryDoc = json("'count': 'collectionName'");
@@ -57,7 +57,7 @@ class MongoDatabaseHandlerTest {
     }
 
     @Test
-    void testHandleMessageUnknownError() throws Exception {
+    void testHandleMessageUnknownError() {
         MongoBackend backend = mock(MongoBackend.class);
         when(backend.handleMessage(any())).thenThrow(new RuntimeException("unexpected"));
 
@@ -78,7 +78,7 @@ class MongoDatabaseHandlerTest {
     }
 
     @Test
-    void testMessageWithMoreToComeIsHandledWithoutReply() throws Exception {
+    void testMessageWithMoreToComeIsHandledWithoutReply() {
         MongoBackend backend = mock(MongoBackend.class);
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
@@ -95,7 +95,7 @@ class MongoDatabaseHandlerTest {
     }
 
     @Test
-    void testMessageWithoutMoreToComeIsReplied() throws Exception {
+    void testMessageWithoutMoreToComeIsReplied() {
         MongoBackend backend = mock(MongoBackend.class);
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
