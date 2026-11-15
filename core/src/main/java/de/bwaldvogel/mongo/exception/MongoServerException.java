@@ -1,9 +1,12 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
+
 import de.bwaldvogel.mongo.backend.Assert;
 
 public class MongoServerException extends RuntimeException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private boolean logError = true;

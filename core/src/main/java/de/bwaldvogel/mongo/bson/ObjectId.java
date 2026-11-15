@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.bson;
 
 import static de.bwaldvogel.mongo.wire.BsonConstants.LENGTH_OBJECTID;
 
+import java.io.Serial;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HexFormat;
@@ -11,6 +12,7 @@ import de.bwaldvogel.mongo.backend.Assert;
 
 public class ObjectId implements Bson, Comparable<ObjectId> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final Pattern PATTERN = Pattern.compile("^[a-f0-9]{24}$");

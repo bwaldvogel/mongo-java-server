@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.stream.Collectors;
 
 public class CannotIndexParallelArraysError extends KeyConstraintError {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public CannotIndexParallelArraysError(Collection<String> paths) {

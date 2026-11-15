@@ -1,9 +1,12 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
+
 import de.bwaldvogel.mongo.bson.Document;
 
 public class IndexNotFoundException extends MongoServerError {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public IndexNotFoundException(String message) {

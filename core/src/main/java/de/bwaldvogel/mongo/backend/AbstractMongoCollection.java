@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend;
 
 import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -462,6 +463,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     public static class FindAndModifyPlanExecutorError extends MongoServerError {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private static final String PREFIX = "Plan executor error during findAndModify :: caused by :: ";

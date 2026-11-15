@@ -1,10 +1,12 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
 import java.util.UUID;
 
 import de.bwaldvogel.mongo.MongoCollection;
 
 public class IndexBuildFailedException extends MongoServerError {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public IndexBuildFailedException(MongoServerError e, MongoCollection<?> collection) {

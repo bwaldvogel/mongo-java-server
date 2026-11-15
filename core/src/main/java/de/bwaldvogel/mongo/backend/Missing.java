@@ -1,9 +1,12 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.io.Serial;
+
 import de.bwaldvogel.mongo.bson.Bson;
 
 public class Missing implements Bson {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final Missing INSTANCE = new Missing();

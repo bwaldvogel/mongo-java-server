@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.aggregation;
 
 import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -280,6 +281,7 @@ public class Aggregation {
 
     private static class PlanExecutorError extends MongoServerError {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private static final String MESSAGE_PREFIX = "PlanExecutor error during aggregation :: caused by :: ";

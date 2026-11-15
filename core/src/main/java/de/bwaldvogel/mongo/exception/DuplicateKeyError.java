@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -12,6 +13,7 @@ import de.bwaldvogel.mongo.bson.Json;
 
 public class DuplicateKeyError extends KeyConstraintError {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public DuplicateKeyError(Index<?> index, MongoCollection<?> collection, List<IndexKey> keys, KeyValue keyValue) {

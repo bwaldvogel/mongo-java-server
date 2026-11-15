@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.backend.aggregation.stage;
 
 import static de.bwaldvogel.mongo.backend.Constants.ID_FIELD;
 
+import java.io.Serial;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -98,6 +99,7 @@ public class ProjectStage implements AggregationStage {
 
     public static class InvalidProjectException extends MongoServerError {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private static final String MESSAGE_PREFIX = "Invalid $project :: caused by :: ";

@@ -1,10 +1,12 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.io.Serial;
 import java.time.Instant;
 import java.util.Objects;
 
 public final class BsonTimestamp implements Bson, Comparable<BsonTimestamp> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final long value;

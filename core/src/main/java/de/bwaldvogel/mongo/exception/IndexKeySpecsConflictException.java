@@ -1,10 +1,13 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
+
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.bson.Json;
 
 public class IndexKeySpecsConflictException extends MongoServerError {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public IndexKeySpecsConflictException(Index<?> requestedIndex, Index<?> existingIndex) {

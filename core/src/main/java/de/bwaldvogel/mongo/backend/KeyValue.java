@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +15,7 @@ import de.bwaldvogel.mongo.bson.Json;
 
 public final class KeyValue implements Serializable, Iterable<Object> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     // Every constructor stores a serializable ArrayList here.
