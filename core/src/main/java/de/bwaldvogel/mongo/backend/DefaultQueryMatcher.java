@@ -3,7 +3,6 @@ package de.bwaldvogel.mongo.backend;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -514,25 +513,18 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     static boolean matchTypes(Object value, Object expressionValue) {
-        if (Objects.equals(expressionValue, "number")) {
-            List<String> types = Stream.of(BsonType.INT, BsonType.LONG, BsonType.DOUBLE, BsonType.DECIMAL128)
-                .map(BsonType::getAlias)
-                .collect(Collectors.toList());
-            return matchTypes(value, types);
-        } else if (expressionValue instanceof String stringValue) {
-            return matchTypes(value, BsonType.forString(stringValue));
-        } else if (expressionValue instanceof Number numberValue) {
-            return matchTypes(value, BsonType.forNumber(numberValue));
-        } else if (expressionValue instanceof Collection<?> values) {
-            for (Object type : values) {
-                if (matchTypes(value, type)) {
-                    return true;
-                }
+        return switch (expressionValue) {
+            case String stringValue when stringValue.equals("number") -> {
+                List<String> types = Stream.of(BsonType.INT, BsonType.LONG, BsonType.DOUBLE, BsonType.DECIMAL128)
+                    .map(BsonType::getAlias)
+                    .collect(Collectors.toList());
+                yield matchTypes(value, types);
             }
-            return false;
-        } else {
-            throw new MongoServerError(ErrorCode.TypeMismatch, "type must be represented as a number or a string");
-        }
+            case String stringValue -> matchTypes(value, BsonType.forString(stringValue));
+            case Number numberValue -> matchTypes(value, BsonType.forNumber(numberValue));
+            case Collection<?> values -> values.stream().anyMatch(type -> matchTypes(value, type));
+            case null, default -> throw new MongoServerError(ErrorCode.TypeMismatch, "type must be represented as a number or a string");
+        };
     }
 
     private static boolean matchTypes(Object value, BsonType type) {

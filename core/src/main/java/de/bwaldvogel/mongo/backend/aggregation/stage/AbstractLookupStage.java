@@ -19,24 +19,20 @@ abstract class AbstractLookupStage implements AggregationStage {
 
     String readStringConfigurationProperty(Document configuration, String name) {
         Object value = configuration.get(name);
-        if (value == null) {
-            throw new FailedToParseException("missing '" + name + "' option to " + name() + " stage specification: " + configuration);
-        }
-        if (value instanceof String string) {
-            return string;
-        }
-        throw new FailedToParseException("'" + name + "' option to " + name() + " must be a string, but was type " + Utils.describeType(value));
+        return switch (value) {
+            case null -> throw new FailedToParseException("missing '" + name + "' option to " + name() + " stage specification: " + configuration);
+            case String string -> string;
+            default -> throw new FailedToParseException("'" + name + "' option to " + name() + " must be a string, but was type " + Utils.describeType(value));
+        };
     }
 
     Document readOptionalDocumentArgument(Document configuration, String name) {
         Object value = configuration.get(name);
-        if (value == null) {
-            return new Document();
-        }
-        if (value instanceof Document document) {
-            return document;
-        }
-        throw new FailedToParseException(name() + " argument '" + name + ": " + Json.toJsonValue(value) + "' must be an object, is type " + Utils.describeType(value));
+        return switch (value) {
+            case null -> new Document();
+            case Document document -> document;
+            default -> throw new FailedToParseException(name() + " argument '" + name + ": " + Json.toJsonValue(value) + "' must be an object, is type " + Utils.describeType(value));
+        };
     }
 
     void ensureAllConfigurationPropertiesAreKnown(Document configuration, Set<String> configurationKeys) {

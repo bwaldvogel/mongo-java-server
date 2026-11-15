@@ -42,26 +42,25 @@ public final class PostgresqlUtils {
 
     public static String toQueryValue(Object queryValue) {
         Objects.requireNonNull(queryValue);
-        if (queryValue instanceof String) {
-            return (String) queryValue;
-        } else if (queryValue instanceof Number) {
-            if (((Number) queryValue).doubleValue() == -0.0) {
-                return "0";
+        return switch (queryValue) {
+            case String string -> string;
+            case Number number -> {
+                if (number.doubleValue() == -0.0) {
+                    yield "0";
+                }
+                String numberString = number.toString();
+                yield numberString.replaceAll("^(\\d+)\\.0+$", "$1");
             }
-            String numberString = queryValue.toString();
-            return numberString.replaceAll("^(\\d+)\\.0+$", "$1");
-        } else if (queryValue instanceof Document) {
-            return toJsonWithClass(queryValue);
-        } else if (queryValue instanceof Map) {
-            return toJson(queryValue);
-        } else if (queryValue instanceof List) {
-            List<?> values = ((List<?>) queryValue).stream()
-                .map(value -> value instanceof Missing ? null : value)
-                .collect(Collectors.toList());
-            return toJson(values);
-        } else {
-            return toJsonWithClass(queryValue);
-        }
+            case Document document -> toJsonWithClass(document);
+            case Map<?, ?> map -> toJson(map);
+            case List<?> list -> {
+                List<?> values = list.stream()
+                    .map(value -> value instanceof Missing ? null : value)
+                    .collect(Collectors.toList());
+                yield toJson(values);
+            }
+            default -> toJsonWithClass(queryValue);
+        };
     }
 
     private static String toJsonWithClass(Object queryValue) {

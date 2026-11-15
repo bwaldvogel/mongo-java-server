@@ -44,27 +44,23 @@ public final class Document implements Map<String, Object>, Bson {
 
     @SuppressWarnings("unchecked")
     private static <T> T cloneDeeply(T object) {
-        if (object == null) {
-            return null;
-        } else if (object instanceof Document document) {
-            Document clone = document.clone();
-            for (String key : document.keySet()) {
-                clone.put(key, cloneDeeply(clone.get(key)));
+        return switch (object) {
+            case null -> null;
+            case Document document -> {
+                Document clone = document.clone();
+                for (String key : document.keySet()) {
+                    clone.put(key, cloneDeeply(clone.get(key)));
+                }
+                yield (T) clone;
             }
-            return (T) clone;
-        } else if (object instanceof List<?> list) {
-            List<?> result = list.stream()
+            case List<?> list -> (T) list.stream()
                 .map(Document::cloneDeeply)
                 .collect(Collectors.toList());
-            return (T) result;
-        } else if (object instanceof Set<?> set) {
-            Set<?> result = set.stream()
+            case Set<?> set -> (T) set.stream()
                 .map(Document::cloneDeeply)
                 .collect(Collectors.toCollection(LinkedHashSet::new));
-            return (T) result;
-        } else {
-            return object;
-        }
+            default -> object;
+        };
     }
 
     public Document append(String key, Object value) {
