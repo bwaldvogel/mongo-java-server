@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,11 +25,13 @@ import de.bwaldvogel.mongo.MongoVersion;
 import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.ErrorCode;
+import de.bwaldvogel.mongo.exception.InvalidOptionsException;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NamespaceExistsException;
 import de.bwaldvogel.mongo.exception.NoReplicationEnabledException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
+import de.bwaldvogel.mongo.exception.TypeMismatchException;
 import de.bwaldvogel.mongo.oplog.CollectionBackedOplog;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 import de.bwaldvogel.mongo.oplog.Oplog;
@@ -163,6 +166,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
             case CONNECTION_STATUS -> handleConnectionStatus();
             case HOST_INFO -> handleHostInfo();
             case GET_CMD_LINE_OPTS -> handleGetCmdLineOpts();
+            case GET_PARAMETER -> handleGetParameter(query);
             case END_SESSIONS -> {
                 log.debug("endSessions on admin database");
                 yield successResponse();
@@ -239,6 +243,65 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         response.append("parsed", new Document());
         Utils.markOkay(response);
         return response;
+    }
+
+    private Document handleGetParameter(Document query) {
+        Object value = query.get("getParameter");
+        boolean getAllParameters = "*".equals(value);
+        boolean showDetails = false;
+        if (value instanceof Document options) {
+            getAllParameters = getGetParameterOption(options, "allParameters");
+            showDetails = getGetParameterOption(options, "showDetails");
+        }
+
+        Document response = new Document();
+        // like a real server, names that are not a known parameter are ignored
+        for (Map.Entry<String, ServerParameter> entry : getAllServerParameters().entrySet()) {
+            String name = entry.getKey();
+            if (getAllParameters || query.containsKey(name)) {
+                ServerParameter parameter = entry.getValue();
+                response.put(name, showDetails ? parameter.toDetails() : parameter.value());
+            }
+        }
+        if (response.isEmpty()) {
+            throw new InvalidOptionsException("no option found to get");
+        }
+        Utils.markOkay(response);
+        return response;
+    }
+
+    // like a real server, numbers are accepted as a boolean as well
+    private static boolean getGetParameterOption(Document options, String name) {
+        Object value = options.get(name);
+        if (value != null && !(value instanceof Boolean) && !(value instanceof Number)) {
+            throw new TypeMismatchException("BSON field 'getParameter." + name + "' is the wrong type '"
+                + Utils.describeType(value) + "', expected types '[bool, long, int, decimal, double']");
+        }
+        return Utils.isTrue(value);
+    }
+
+    private record ServerParameter(Object value, boolean settableAtRuntime, boolean settableAtStartup) {
+        private Document toDetails() {
+            return new Document("value", value)
+                .append("settableAtRuntime", Boolean.valueOf(settableAtRuntime))
+                .append("settableAtStartup", Boolean.valueOf(settableAtStartup));
+        }
+    }
+
+    private Map<String, ServerParameter> getAllServerParameters() {
+        Map<String, ServerParameter> parameters = new LinkedHashMap<>();
+        parameters.put("featureCompatibilityVersion",
+            new ServerParameter(new Document("version", version.toMajorMinorVersionString()), false, false));
+        parameters.put("quiet", new ServerParameter(Boolean.FALSE, true, true));
+        parameters.put("logLevel", new ServerParameter(Integer.valueOf(0), true, true));
+        parameters.put("notablescan", new ServerParameter(Boolean.FALSE, true, true));
+        parameters.put("maxIndexBuildMemoryUsageMegabytes", new ServerParameter(Integer.valueOf(200), true, true));
+        parameters.put("enableLocalhostAuthBypass", new ServerParameter(Boolean.TRUE, false, true));
+        // the values a default mongod reports; this server does not implement authentication
+        parameters.put("authenticationMechanisms",
+            new ServerParameter(List.of("MONGODB-X509", "SCRAM-SHA-1", "SCRAM-SHA-256"), false, true));
+        parameters.put("clusterAuthMode", new ServerParameter("undefined", true, false));
+        return parameters;
     }
 
     @VisibleForExternalBackends
