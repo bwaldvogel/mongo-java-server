@@ -1,22 +1,15 @@
 package de.bwaldvogel.mongo.wire.message;
 
 import de.bwaldvogel.mongo.backend.Utils;
-import io.netty.channel.Channel;
 
 public abstract class ClientRequest implements Message {
 
     private final MessageHeader header;
     private final String fullCollectionName;
-    private final Channel channel;
 
-    protected ClientRequest(Channel channel, MessageHeader header, String fullCollectionName) {
-        this.channel = channel;
+    protected ClientRequest(MessageHeader header, String fullCollectionName) {
         this.header = header;
         this.fullCollectionName = fullCollectionName;
-    }
-
-    public Channel getChannel() {
-        return channel;
     }
 
     public MessageHeader getHeader() {

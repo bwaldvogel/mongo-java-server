@@ -1,9 +1,8 @@
 package de.bwaldvogel.mongo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
 import java.net.InetSocketAddress;
@@ -11,12 +10,13 @@ import java.net.Socket;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.util.concurrent.SingleThreadEventExecutor;
 
 class MongoServerShutdownTest {
@@ -30,14 +30,21 @@ class MongoServerShutdownTest {
         CountDownLatch secondClientQueued = new CountDownLatch(1);
 
         MongoBackend backend = mock(MongoBackend.class);
-        doAnswer(invocation -> {
-            if (workerHeld.getCount() > 0) {
-                holdWorker(invocation.getArgument(0), workerHeld, secondClientQueued);
+        MongoServer server = new MongoServer(backend) {
+            @Override
+            void initChannel(SocketChannel channel) {
+                super.initChannel(channel);
+                channel.pipeline().addLast(new ChannelInboundHandlerAdapter() {
+                    @Override
+                    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+                        super.channelInactive(ctx);
+                        if (workerHeld.getCount() > 0) {
+                            holdWorker((SingleThreadEventExecutor) ctx.executor(), workerHeld, secondClientQueued);
+                        }
+                    }
+                });
             }
-            return null;
-        }).when(backend).handleClose(any());
-
-        MongoServer server = new MongoServer(backend);
+        };
         try {
             // a single worker thread, so that the second client is registered only after the first client's close
             server.bind(new InetSocketAddress("localhost", 0), 1, 1);
@@ -64,28 +71,14 @@ class MongoServerShutdownTest {
      * Keeps the only worker thread in the first client's close until the second client's registration is queued
      * behind it and the server has started to shut down.
      */
-    private static void holdWorker(Channel channel, CountDownLatch workerHeld, CountDownLatch secondClientQueued) {
-        SingleThreadEventExecutor worker = (SingleThreadEventExecutor) channel.eventLoop();
+    private static void holdWorker(SingleThreadEventExecutor worker, CountDownLatch workerHeld, CountDownLatch secondClientQueued) {
         int pendingTasks = worker.pendingTasks();
         workerHeld.countDown();
-        awaitCondition(() -> worker.pendingTasks() > pendingTasks);
+        await().pollInSameThread().pollDelay(Duration.ZERO).pollInterval(Duration.ofMillis(1))
+            .atMost(Duration.ofSeconds(TIMEOUT_SECONDS)).until(() -> worker.pendingTasks() > pendingTasks);
         secondClientQueued.countDown();
-        awaitCondition(worker::isShuttingDown);
-    }
-
-    private static void awaitCondition(BooleanSupplier condition) {
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS);
-        while (!condition.getAsBoolean()) {
-            if (System.nanoTime() > deadline) {
-                throw new IllegalStateException("Condition not met within " + TIMEOUT_SECONDS + " seconds");
-            }
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException(e);
-            }
-        }
+        await().pollInSameThread().pollDelay(Duration.ZERO).pollInterval(Duration.ofMillis(1))
+            .atMost(Duration.ofSeconds(TIMEOUT_SECONDS)).until(worker::isShuttingDown);
     }
 
 }

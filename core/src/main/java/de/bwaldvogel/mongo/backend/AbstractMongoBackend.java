@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.backend;
 
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.time.Clock;
 import java.time.Duration;
@@ -37,7 +36,6 @@ import de.bwaldvogel.mongo.wire.MongoWireProtocolHandler;
 import de.bwaldvogel.mongo.wire.message.Message;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import io.netty.channel.Channel;
 
 public abstract class AbstractMongoBackend implements MongoBackend {
 
@@ -161,10 +159,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
                 yield getLog(argument == null ? null : argument.toString());
             }
             case RENAME_COLLECTION -> handleRenameCollection(command.getQueryValue(), query);
-            case GET_LAST_ERROR -> {
-                log.debug("getLastError on admin database");
-                yield successResponse();
-            }
             case CONNECTION_STATUS -> handleConnectionStatus();
             case HOST_INFO -> handleHostInfo();
             case GET_CMD_LINE_OPTS -> handleGetCmdLineOpts();
@@ -307,9 +301,8 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     protected abstract MongoDatabase openOrCreateDatabase(String databaseName);
 
     @Override
-    public Document handleCommand(Channel channel, String databaseName, DatabaseCommand command, Document query) {
+    public Document handleCommand(String databaseName, DatabaseCommand command, Document query) {
         return switch (command.getCommand()) {
-            case WHATS_MY_URI -> handleWhatsMyUri(channel);
             case IS_MASTER -> handleIsMaster();
             case BUILD_INFO -> handleBuildInfo();
             case DROP_DATABASE -> handleDropDatabase(databaseName);
@@ -322,7 +315,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
                     yield handleAdminCommand(command, query);
                 }
                 MongoDatabase mongoDatabase = resolveDatabase(databaseName);
-                yield mongoDatabase.handleCommand(channel, command, query, this::resolveDatabase, oplog);
+                yield mongoDatabase.handleCommand(command, query, this::resolveDatabase, oplog);
             }
         };
     }
@@ -341,14 +334,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     @Override
     public void closeCursors(List<Long> cursorIds) {
         cursorIds.forEach(cursorRegistry::remove);
-    }
-
-    private static Document handleWhatsMyUri(Channel channel) {
-        Document response = new Document();
-        InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
-        response.put("you", remoteAddress.getAddress().getHostAddress() + ":" + remoteAddress.getPort());
-        Utils.markOkay(response);
-        return response;
     }
 
     private Document handleIsMaster() {
@@ -422,11 +407,10 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     @Override
     public Document handleMessage(MongoMessage message) {
-        Channel channel = message.getChannel();
         String databaseName = message.getDatabaseName();
         Document query = message.getDocument();
         DatabaseCommand command = DatabaseCommand.of(query.keySet().iterator().next());
-        return handleCommand(channel, databaseName, command, query);
+        return handleCommand(databaseName, command, query);
     }
 
     @Override
@@ -438,10 +422,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     @Override
-    public void handleClose(Channel channel) {
-        for (MongoDatabase db : databases.values()) {
-            db.handleClose(channel);
-        }
+    public void handleClose() {
     }
 
     @Override

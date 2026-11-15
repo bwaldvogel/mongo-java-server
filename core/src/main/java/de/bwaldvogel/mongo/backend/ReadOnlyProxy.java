@@ -6,7 +6,6 @@ import static de.bwaldvogel.mongo.backend.Command.COUNT;
 import static de.bwaldvogel.mongo.backend.Command.DB_STATS;
 import static de.bwaldvogel.mongo.backend.Command.DISTINCT;
 import static de.bwaldvogel.mongo.backend.Command.FIND;
-import static de.bwaldvogel.mongo.backend.Command.GET_LAST_ERROR;
 import static de.bwaldvogel.mongo.backend.Command.GET_MORE;
 import static de.bwaldvogel.mongo.backend.Command.IS_MASTER;
 import static de.bwaldvogel.mongo.backend.Command.LIST_DATABASES;
@@ -27,7 +26,6 @@ import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.exception.NoSuchCommandException;
 import de.bwaldvogel.mongo.wire.message.MongoMessage;
 import de.bwaldvogel.mongo.wire.message.MongoQuery;
-import io.netty.channel.Channel;
 
 public class ReadOnlyProxy implements MongoBackend {
 
@@ -41,7 +39,6 @@ public class ReadOnlyProxy implements MongoBackend {
         COLL_STATS,
         SERVER_STATUS,
         BUILD_INFO,
-        GET_LAST_ERROR,
         GET_MORE
     );
 
@@ -63,14 +60,14 @@ public class ReadOnlyProxy implements MongoBackend {
     }
 
     @Override
-    public void handleClose(Channel channel) {
-        backend.handleClose(channel);
+    public void handleClose() {
+        backend.handleClose();
     }
 
     @Override
-    public Document handleCommand(Channel channel, String database, DatabaseCommand command, Document query) {
+    public Document handleCommand(String database, DatabaseCommand command, Document query) {
         if (isAllowed(command.getCommand(), query)) {
-            return backend.handleCommand(channel, database, command, query);
+            return backend.handleCommand(database, command, query);
         }
         throw new NoSuchCommandException(command.getQueryValue());
     }

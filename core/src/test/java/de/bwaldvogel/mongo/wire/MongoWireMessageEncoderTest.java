@@ -37,7 +37,7 @@ public class MongoWireMessageEncoderTest {
         MongoWireMessageEncoder mongoWireEncoder = new MongoWireMessageEncoder();
 
         MessageHeader header = new MessageHeader(0, 0);
-        MongoMessage reply = new MongoMessage(channel, header, new Document("key", Missing.getInstance()));
+        MongoMessage reply = new MongoMessage(header, new Document("key", Missing.getInstance()));
 
         assertThatExceptionOfType(IllegalArgumentException.class)
             .isThrownBy(() -> mongoWireEncoder.encode(ctx, reply, Unpooled.buffer()))

@@ -1,5 +1,7 @@
 package de.bwaldvogel.mongo.wire;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -50,17 +52,17 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         log.info("channel {} closed", ctx.channel());
         channelGroup.remove(ctx.channel());
-        mongoBackend.handleClose(ctx.channel());
+        mongoBackend.handleClose();
         super.channelInactive(ctx);
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ClientRequest object) {
         if (object instanceof MongoQuery mongoQuery) {
-            MongoReply mongoReply = handleQuery(mongoQuery);
+            MongoReply mongoReply = handleQuery(mongoQuery, ctx.channel().remoteAddress());
             ctx.channel().writeAndFlush(mongoReply);
         } else if (object instanceof MongoMessage mongoMessage) {
-            MongoMessage response = handleMessage(mongoMessage);
+            MongoMessage response = handleMessage(mongoMessage, ctx.channel().remoteAddress());
             if (mongoMessage.isMoreToCome()) {
                 // the client does not read a reply, so sending one would desynchronize the connection
                 log.debug("not replying to {} with moreToCome set", mongoMessage);
@@ -73,10 +75,15 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     }
 
     // visible for testing
-    MongoMessage handleMessage(MongoMessage message) {
+    MongoMessage handleMessage(MongoMessage message, SocketAddress remoteAddress) {
         Document document = null;
         try {
-            document = mongoBackend.handleMessage(message);
+            String command = message.getDocument().keySet().iterator().next();
+            if ("whatsmyuri".equalsIgnoreCase(command)) {
+                document = handleWhatsMyUri(remoteAddress);
+            } else {
+                document = mongoBackend.handleMessage(message);
+            }
         } catch (MongoServerException e) {
             log.error("failed to handle {}", message.getDocument(), e);
             document = errorResponse(e, Collections.emptyMap());
@@ -85,12 +92,12 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             MongoServerException e = new MongoServerException("Unknown error: " + ex.getMessage(), ex);
             document = errorResponse(e, Collections.emptyMap());
         }
-        return new MongoMessage(message.getChannel(), createResponseHeader(message), document);
+        return new MongoMessage(createResponseHeader(message), document);
     }
 
-    private MongoReply handleQuery(MongoQuery query) {
+    private MongoReply handleQuery(MongoQuery query, SocketAddress remoteAddress) {
         if (query.getCollectionName().startsWith("$cmd")) {
-            Document document = handleCommand(query);
+            Document document = handleCommand(query, remoteAddress);
             MessageHeader header = createResponseHeader(query);
 
             return new MongoReply(header,
@@ -124,7 +131,7 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
     }
 
     // visible for testing
-    Document handleCommand(MongoQuery query) {
+    Document handleCommand(MongoQuery query, SocketAddress remoteAddress) {
         String collectionName = query.getCollectionName();
 
         if ("$cmd.sys.inprog".equals(collectionName)) {
@@ -136,24 +143,32 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             if ("$query".equals(command)) {
                 Document actualQuery = (Document) query.getQuery().get("$query");
                 command = actualQuery.keySet().iterator().next();
-                return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), DatabaseCommand.of(command), actualQuery);
+                return handleCommand(query.getDatabaseName(), DatabaseCommand.of(command), actualQuery, remoteAddress);
             }
-            DatabaseCommand cmd = DatabaseCommand.of(command);
-            switch (cmd.getCommand()) {
-                case SERVER_STATUS:
-                    return mongoBackend.getServerStatus();
-
-                case PING:
-                    Document response = new Document();
-                    Utils.markOkay(response);
-                    return response;
-
-                default:
-                    return mongoBackend.handleCommand(query.getChannel(), query.getDatabaseName(), cmd, query.getQuery());
-            }
+            return handleCommand(query.getDatabaseName(), DatabaseCommand.of(command), query.getQuery(), remoteAddress);
         }
 
         throw new MongoServerException("unknown collection: " + collectionName);
+    }
+
+    private Document handleCommand(String databaseName, DatabaseCommand command, Document query, SocketAddress remoteAddress) {
+        return switch (command.getCommand()) {
+            case WHATS_MY_URI -> handleWhatsMyUri(remoteAddress);
+            case SERVER_STATUS -> mongoBackend.getServerStatus();
+            case PING -> {
+                Document response = new Document();
+                Utils.markOkay(response);
+                yield response;
+            }
+            default -> mongoBackend.handleCommand(databaseName, command, query);
+        };
+    }
+
+    private static Document handleWhatsMyUri(SocketAddress remoteAddress) {
+        InetSocketAddress address = (InetSocketAddress) remoteAddress;
+        Document response = new Document("you", address.getAddress().getHostAddress() + ":" + address.getPort());
+        Utils.markOkay(response);
+        return response;
     }
 
 }

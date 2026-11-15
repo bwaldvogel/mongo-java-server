@@ -2,7 +2,6 @@ package de.bwaldvogel.mongo.backend;
 
 import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.bson.Document;
-import io.netty.channel.Channel;
 
 public abstract class AbstractSynchronizedMongoDatabase<P> extends AbstractMongoDatabase<P> {
 
@@ -13,11 +12,6 @@ public abstract class AbstractSynchronizedMongoDatabase<P> extends AbstractMongo
     @Override
     protected synchronized MongoCollection<P> resolveOrCreateCollection(String collectionName) {
         return super.resolveOrCreateCollection(collectionName);
-    }
-
-    @Override
-    protected synchronized void clearLastStatus(Channel channel) {
-        super.clearLastStatus(channel);
     }
 
     @Override
@@ -35,11 +29,6 @@ public abstract class AbstractSynchronizedMongoDatabase<P> extends AbstractMongo
         synchronized (indexes) {
             return super.getOrCreateIndexesCollection();
         }
-    }
-
-    @Override
-    protected synchronized void putLastResult(Channel channel, Document result) {
-        super.putLastResult(channel, result);
     }
 
     @Override

@@ -4,6 +4,7 @@ dependencies {
     implementation 'io.netty:netty-handler:latest.release'
 
     testImplementation 'org.mongodb:bson:latest.release'
+    testImplementation 'org.awaitility:awaitility:latest.release'
     testImplementation "org.mockito:mockito-core:latest.release"
     testImplementation "org.mockito:mockito-junit-jupiter:latest.release"
     testImplementation "nl.jqno.equalsverifier:equalsverifier:latest.release"

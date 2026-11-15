@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.Set;
 
 import de.bwaldvogel.mongo.backend.Command;
@@ -30,32 +32,30 @@ class MongoDatabaseHandlerTest {
     @Test
     void testWrappedCommand() throws Exception {
         MongoBackend backend = mock(MongoBackend.class);
-        Channel channel = mock(Channel.class);
 
         Document queryDoc = json("'$query': { 'count': 'collectionName' }, '$readPreference': { 'mode': 'secondaryPreferred' }");
         Document subQueryDoc = json("'count': 'collectionName'");
-        MongoQuery query = new MongoQuery(channel, null, "dbName.$cmd", 0, 0, queryDoc, null);
+        MongoQuery query = new MongoQuery(null, "dbName.$cmd", 0, 0, queryDoc, null);
 
         MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
 
-        handler.handleCommand(query);
+        handler.handleCommand(query, null);
 
-        verify(backend).handleCommand(channel, "dbName", DatabaseCommand.of(Command.COUNT), subQueryDoc);
+        verify(backend).handleCommand("dbName", DatabaseCommand.of(Command.COUNT), subQueryDoc);
     }
 
     @Test
     void testNonWrappedCommand() throws Exception {
         MongoBackend backend = mock(MongoBackend.class);
-        Channel channel = mock(Channel.class);
 
         Document queryDoc = json("'count': 'collectionName'");
-        MongoQuery query = new MongoQuery(channel, null, "dbName.$cmd", 0, 0, queryDoc, null);
+        MongoQuery query = new MongoQuery(null, "dbName.$cmd", 0, 0, queryDoc, null);
 
         MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
 
-        handler.handleCommand(query);
+        handler.handleCommand(query, null);
 
-        verify(backend).handleCommand(channel, "dbName", DatabaseCommand.of(Command.COUNT), queryDoc);
+        verify(backend).handleCommand("dbName", DatabaseCommand.of(Command.COUNT), queryDoc);
     }
 
     @Test
@@ -63,15 +63,13 @@ class MongoDatabaseHandlerTest {
         MongoBackend backend = mock(MongoBackend.class);
         when(backend.handleMessage(any())).thenThrow(new RuntimeException("unexpected"));
 
-        Channel channel = mock(Channel.class);
-
         MessageHeader header = new MessageHeader(0, 0);
 
         MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
 
-        MongoMessage requestMessage = new MongoMessage(channel, header, new Document("key", "1"));
+        MongoMessage requestMessage = new MongoMessage(header, new Document("key", "1"));
 
-        MongoMessage responseMessage = handler.handleMessage(requestMessage);
+        MongoMessage responseMessage = handler.handleMessage(requestMessage, null);
 
         assertThat(responseMessage).isNotNull();
         Document responseMessageDoc = responseMessage.getDocument();
@@ -89,7 +87,7 @@ class MongoDatabaseHandlerTest {
         when(ctx.channel()).thenReturn(channel);
 
         MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
-        MongoMessage requestMessage = new MongoMessage(channel, new MessageHeader(0, 0), json("insert: 'coll'"),
+        MongoMessage requestMessage = new MongoMessage(new MessageHeader(0, 0), json("insert: 'coll'"),
             Set.of(MessageFlag.MORE_TO_COME));
 
         handler.channelRead0(ctx, requestMessage);
@@ -106,11 +104,36 @@ class MongoDatabaseHandlerTest {
         when(ctx.channel()).thenReturn(channel);
 
         MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
-        MongoMessage requestMessage = new MongoMessage(channel, new MessageHeader(0, 0), json("insert: 'coll'"));
+        MongoMessage requestMessage = new MongoMessage(new MessageHeader(0, 0), json("insert: 'coll'"));
 
         handler.channelRead0(ctx, requestMessage);
 
         verify(channel).writeAndFlush(any(MongoMessage.class));
+    }
+
+    @Test
+    void testWhatsMyUriMessage() {
+        MongoBackend backend = mock(MongoBackend.class);
+        MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
+        MongoMessage request = new MongoMessage(new MessageHeader(1, 0), json("whatsmyuri: 1, $db: 'admin'"));
+
+        MongoMessage response = handler.handleMessage(request, new InetSocketAddress("127.0.1.254", 27017));
+
+        assertThat(response.getDocument()).isEqualTo(json("you: '127.0.1.254:27017', ok: 1.0"));
+        verify(backend, never()).handleMessage(any());
+    }
+
+    @Test
+    void testWhatsMyUriQuery() {
+        MongoBackend backend = mock(MongoBackend.class);
+        MongoDatabaseHandler handler = new MongoDatabaseHandler(backend, null);
+        for (Document document : List.of(json("whatsmyuri: 1"), json("$query: {whatsmyuri: 1}"))) {
+            MongoQuery query = new MongoQuery(null, "admin.$cmd", 0, 0, document, null);
+
+            Document response = handler.handleCommand(query, new InetSocketAddress("127.0.1.254", 27017));
+
+            assertThat(response).isEqualTo(json("you: '127.0.1.254:27017', ok: 1.0"));
+        }
     }
 
 }

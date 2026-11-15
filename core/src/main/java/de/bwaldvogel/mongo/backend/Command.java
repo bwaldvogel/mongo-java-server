@@ -18,10 +18,8 @@ public enum Command {
     DELETE("delete"),
     FIND("find"),
     FIND_AND_MODIFY("findAndModify"),
-    GET_LAST_ERROR("getLastError"), // removed in 5.1
     GET_MORE("getMore"),
     INSERT("insert"),
-    RESET_ERROR("resetError"),
     UPDATE("update"),
 
     // Replication

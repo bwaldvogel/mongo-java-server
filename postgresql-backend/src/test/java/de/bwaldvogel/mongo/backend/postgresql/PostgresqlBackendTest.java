@@ -390,7 +390,7 @@ class PostgresqlBackendTest extends AbstractBackendTest {
         collection.insertOne(document1);
 
         assertMongoWriteException(() -> collection.insertOne(document1),
-            11000, "DuplicateKey", "E11000 duplicate key error collection: testdb.testcoll index:" +
+            11000, "E11000 duplicate key error collection: testdb.testcoll index:" +
                 " ERROR: duplicate key value violates unique constraint \"testcoll__id_\"\n" +
                 "  Detail: Key ((data ->> '_id'::text))=([\"java.util.UUID\",\"5542cbb9-7833-96a2-b456-f13b6ae1bc80\"]) already exists.");
 
