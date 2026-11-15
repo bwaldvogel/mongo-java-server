@@ -12,6 +12,7 @@ import static de.bwaldvogel.mongo.backend.Command.IS_MASTER;
 import static de.bwaldvogel.mongo.backend.Command.LIST_DATABASES;
 import static de.bwaldvogel.mongo.backend.Command.SERVER_STATUS;
 
+import java.io.Serial;
 import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
@@ -52,6 +53,7 @@ public class ReadOnlyProxy implements MongoBackend {
 
     public static class ReadOnlyException extends MongoServerException {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         ReadOnlyException(String message) {

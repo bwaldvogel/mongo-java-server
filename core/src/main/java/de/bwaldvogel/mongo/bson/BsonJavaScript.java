@@ -1,9 +1,11 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.io.Serial;
 import java.util.Objects;
 
 public final class BsonJavaScript implements Bson {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final String code;

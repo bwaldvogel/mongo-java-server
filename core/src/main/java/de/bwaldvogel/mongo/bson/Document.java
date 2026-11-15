@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -13,6 +14,7 @@ import de.bwaldvogel.mongo.backend.Missing;
 
 public final class Document implements Map<String, Object>, Bson {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final LinkedHashMap<String, Object> documentAsMap = new LinkedHashMap<>();

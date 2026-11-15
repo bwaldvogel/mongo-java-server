@@ -1,10 +1,12 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.io.Serial;
 import java.util.Objects;
 import java.util.UUID;
 
 public final class LegacyUUID implements Comparable<LegacyUUID>, Bson {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final UUID uuid;

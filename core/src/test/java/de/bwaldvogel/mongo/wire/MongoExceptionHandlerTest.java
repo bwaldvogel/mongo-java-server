@@ -5,6 +5,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.Serial;
+
 import org.junit.jupiter.api.Test;
 
 import io.netty.channel.Channel;
@@ -32,6 +34,7 @@ class MongoExceptionHandlerTest {
 
     static class MockChannelId implements ChannelId {
 
+        @Serial
         private static final long serialVersionUID = 1L;
 
         private final String id;

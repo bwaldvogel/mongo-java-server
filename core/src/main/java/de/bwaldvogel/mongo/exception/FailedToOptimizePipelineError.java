@@ -1,7 +1,10 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
+
 public class FailedToOptimizePipelineError extends MongoServerError {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final String FAILED_TO_OPTIMIZE_MESSAGE = "Failed to optimize pipeline :: caused by :: ";

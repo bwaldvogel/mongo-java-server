@@ -1,9 +1,11 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.io.Serial;
 import java.util.ArrayList;
 
 public class LimitedList<E> extends ArrayList<E> {
 
+    @Serial
     private static final long serialVersionUID = -4265811949513159615L;
 
     private final int limit;

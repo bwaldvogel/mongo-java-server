@@ -1,7 +1,10 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
+
 public class BadValueException extends MongoServerError {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final boolean shouldPrefixCommandContext;

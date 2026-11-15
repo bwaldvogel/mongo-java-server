@@ -1,10 +1,12 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Objects;
 
 public final class BinData implements Comparable<BinData>, Bson {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private final byte[] data;

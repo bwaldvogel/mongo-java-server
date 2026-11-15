@@ -1,5 +1,6 @@
 package de.bwaldvogel.mongo.bson;
 
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -8,6 +9,7 @@ import de.bwaldvogel.mongo.backend.Assert;
 
 public class BsonRegularExpression implements Bson {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private static final String REGEX = "$regex";

@@ -2,6 +2,7 @@ package de.bwaldvogel.mongo.bson;
 
 import static java.math.MathContext.DECIMAL128;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -11,6 +12,7 @@ import de.bwaldvogel.mongo.backend.Assert;
 
 public final class Decimal128 extends Number implements Serializable, Comparable<Decimal128> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final Decimal128 ONE = new Decimal128(1, 3476778912330022912L);

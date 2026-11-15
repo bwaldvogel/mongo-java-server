@@ -1,9 +1,12 @@
 package de.bwaldvogel.mongo.exception;
 
+import java.io.Serial;
+
 import static de.bwaldvogel.mongo.backend.Utils.describeType;
 
 public class UnsupportedConversionError extends ConversionFailureException {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public UnsupportedConversionError(Object value, Class<?> targetType) {
