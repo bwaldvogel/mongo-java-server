@@ -1380,7 +1380,14 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         authorsCollection.insertOne(json("_id: 2, name: 'Martin Fowler'"));
         authorsCollection.insertOne(json("_id: null, name: 'Null Author'"));
 
-        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: 'authorId', foreignField: '_id', as: 'author'}");
+        List<Document> pipeline = jsonList("""
+            $lookup: {
+                from: 'authors',
+                localField: 'authorId',
+                foreignField: '_id',
+                as: 'author'
+            }
+            """);
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -1433,8 +1440,14 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         authorsCollection.insertMany(jsonList("_id: 1, key: 3", "_id: 2, key: null", "_id: 3"));
         collection.insertOne(json(input).append("_id", 1));
 
-        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: '" + localField +
-            "', foreignField: 'key', as: 'matches'}");
+        List<Document> pipeline = jsonList("""
+            $lookup: {
+                from: 'authors',
+                localField: '%s',
+                foreignField: 'key',
+                as: 'matches'
+            }
+            """.formatted(localField));
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(json(input).append("_id", 1).append("matches", expectedMatches));
@@ -1446,8 +1459,14 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         authorsCollection.insertOne(json("_id: 1, keys: [3, 4]"));
         collection.insertOne(json("_id: 1, author: [{id: 3}, {id: 4}]"));
 
-        List<Document> pipeline = jsonList(
-            "$lookup: {from: 'authors', localField: 'author.id', foreignField: 'keys', as: 'matches'}");
+        List<Document> pipeline = jsonList("""
+            $lookup: {
+                from: 'authors',
+                localField: 'author.id',
+                foreignField: 'keys',
+                as: 'matches'
+            }
+            """);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(json("_id: 1, author: [{id: 3}, {id: 4}], matches: [{_id: 1, keys: [3, 4]}]"));
@@ -1462,8 +1481,14 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         ));
         collection.insertOne(json("_id: 1, someKey: 'b'"));
 
-        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: 'someKey'," +
-            " foreignField: 'nestedKeyCollection.nestedKey', as: 'matches'}");
+        List<Document> pipeline = jsonList("""
+            $lookup: {
+                from: 'authors',
+                localField: 'someKey',
+                foreignField: 'nestedKeyCollection.nestedKey',
+                as: 'matches'
+            }
+            """);
 
         assertThat(collection.aggregate(pipeline))
             .containsExactly(json("""
@@ -1475,7 +1500,14 @@ public abstract class AbstractAggregationTest extends AbstractTest {
     // https://github.com/bwaldvogel/mongo-java-server/issues/123
     @Test
     void testAggregateWithLookup_collectionDoesNotExist() {
-        List<Document> pipeline = jsonList("$lookup: {from: 'authors', localField: 'authorId', foreignField: '_id', as: 'author'}");
+        List<Document> pipeline = jsonList("""
+            $lookup: {
+                from: 'authors',
+                localField: 'authorId',
+                foreignField: '_id',
+                as: 'author'
+            }
+            """);
 
         assertThat(collection.aggregate(pipeline)).isEmpty();
 
@@ -1509,9 +1541,13 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         MongoCollection<Document> ordersCollection = db.getCollection("orders");
         MongoCollection<Document> itemsCollection = db.getCollection("items");
 
-        List<Document> pipeline = jsonList("$lookup: {from: 'items'," +
-            " pipeline: [{$project: {item: 1, _id: 0}}]," +
-            " as: 'items'}");
+        List<Document> pipeline = jsonList("""
+            $lookup: {
+                from: 'items',
+                pipeline: [{$project: {item: 1, _id: 0}}],
+                as: 'items'
+            }
+            """);
 
         assertThat(ordersCollection.aggregate(pipeline)).isEmpty();
 
@@ -1659,8 +1695,19 @@ public abstract class AbstractAggregationTest extends AbstractTest {
         items.insertOne(json("_id: 3, item: 'jkl', description: 'product 3', instock: 60"));
 
         List<Document> pipeline = jsonList(
-            "$lookup: {from: 'items', localField: 'item', foreignField: 'item', as: 'fromItems'}",
-            "$replaceRoot: {newRoot: {$mergeObjects: [{$arrayElemAt: ['$fromItems', 0 ]}, '$$ROOT']}}",
+            """
+            $lookup: {
+                from: 'items',
+                localField: 'item',
+                foreignField: 'item',
+                as: 'fromItems'
+            }
+            """,
+            """
+            $replaceRoot: {
+                newRoot: {$mergeObjects: [{$arrayElemAt: ['$fromItems', 0 ]}, '$$ROOT']}
+            }
+            """,
             "$project: { fromItems: 0 }"
         );
 

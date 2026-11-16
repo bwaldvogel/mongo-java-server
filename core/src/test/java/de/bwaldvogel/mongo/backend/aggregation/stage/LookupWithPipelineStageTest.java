@@ -9,11 +9,16 @@ import de.bwaldvogel.mongo.backend.DatabaseResolver;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 import de.bwaldvogel.mongo.oplog.NoopOplog;
 
-public class LookupWithPipelineStageTest extends AbstractLookupStageTest {
+class LookupWithPipelineStageTest extends AbstractLookupStageTest {
 
     @Test
     void testUnexpectedConfigurationField() {
-        assertThatThrownBy(() -> buildLookupStage("from: 'authors', pipeline: [], as: 'author', unknown: 'hello'"))
+        assertThatThrownBy(() -> buildLookupStage("""
+            from: 'authors',
+            pipeline: [],
+            as: 'author',
+            unknown: 'hello'
+            """))
             .isInstanceOf(MongoServerException.class)
             .hasMessage("[Error 9] unknown argument to $lookup: unknown");
     }

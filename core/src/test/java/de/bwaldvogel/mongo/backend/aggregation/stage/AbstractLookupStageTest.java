@@ -7,7 +7,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import de.bwaldvogel.mongo.MongoDatabase;
 
 @ExtendWith(MockitoExtension.class)
-public abstract class AbstractLookupStageTest {
+abstract class AbstractLookupStageTest {
 
     @Mock
     MongoDatabase database;
