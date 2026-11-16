@@ -29,7 +29,14 @@ class GraphLookupStageTest extends AbstractLookupStageTest {
 
     @Test
     void testGraphLookupObjectThatHasLinkedDocuments() {
-        GraphLookupStage graphLookupStage = buildGraphLookupStage("from: 'employees', 'startWith': '$manager', 'connectFromField': 'manager', 'connectToField': 'name', 'as': 'managers', 'depthField': 'order'");
+        GraphLookupStage graphLookupStage = buildGraphLookupStage("""
+            from: 'employees',
+            'startWith': '$manager',
+            'connectFromField': 'manager',
+            'connectToField': 'name',
+            'as': 'managers',
+            'depthField': 'order'
+            """);
         configureEmployeesCollection("name: 'Dave'", "_id: 2, name: 'Dave', manager: 'Mike'");
         configureEmployeesCollection("name: 'Mike'", "_id: 1, name: 'Mike'");
         Document document = json("name: 'Bob', manager: 'Dave'");
