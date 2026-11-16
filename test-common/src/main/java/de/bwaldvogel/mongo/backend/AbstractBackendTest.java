@@ -18,6 +18,7 @@ import static de.bwaldvogel.mongo.backend.TestUtils.getCollectionStatistics;
 import static de.bwaldvogel.mongo.backend.TestUtils.instant;
 import static de.bwaldvogel.mongo.backend.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.time.Duration;
@@ -28,13 +29,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -818,8 +817,7 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(cursor.keySet()).containsExactly("id", "ns", "firstBatch");
         assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
         assertThat(cursor.get("ns")).isEqualTo(db.getName() + ".$cmd.listCollections");
-        List<?> firstBatch = (List<?>) cursor.get("firstBatch");
-        assertThat(firstBatch).isEmpty();
+        assertThat(cursor.get("firstBatch")).asInstanceOf(list(Document.class)).isEmpty();
     }
 
     @Test
@@ -835,25 +833,18 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(cursor.keySet()).containsExactly("id", "ns", "firstBatch");
         assertThat(cursor.get("id")).isEqualTo(Long.valueOf(0));
         assertThat(cursor.get("ns")).isEqualTo(db.getName() + ".$cmd.listCollections");
-        assertThat(cursor.get("firstBatch")).isInstanceOf(List.class);
-        @SuppressWarnings("unchecked")
-        List<Document> firstBatch = (List<Document>) cursor.get("firstBatch");
-
-        assertThat(firstBatch).hasSameSizeAs(collections);
-
-        Set<String> collectionNames = new HashSet<>();
-        for (Document collection : firstBatch) {
-            assertThat(collection).containsOnlyKeys("name", "options", "type", "idIndex", "info");
-            String name = (String) collection.get("name");
-            assertThat(collection.get("options")).isEqualTo(json(""));
-            assertThat(collection.get("name")).isInstanceOf(String.class);
-            assertThat(collection.get("type")).isEqualTo("collection");
-            assertThat(collection.get("idIndex")).isEqualTo(json("key: {_id: 1}, name: '_id_', v: 2"));
-            assertThat(collection.get("info")).isInstanceOf(Document.class);
-            collectionNames.add(name);
-        }
-
-        assertThat(collectionNames).containsExactlyInAnyOrderElementsOf(collections);
+        assertThat(cursor.get("firstBatch")).asInstanceOf(list(Document.class))
+            .hasSameSizeAs(collections)
+            .allSatisfy(collection -> {
+                assertThat(collection).containsOnlyKeys("name", "options", "type", "idIndex", "info");
+                assertThat(collection.get("options")).isEqualTo(json(""));
+                assertThat(collection.get("name")).isInstanceOf(String.class);
+                assertThat(collection.get("type")).isEqualTo("collection");
+                assertThat(collection.get("idIndex")).isEqualTo(json("key: {_id: 1}, name: '_id_', v: 2"));
+                assertThat(collection.get("info")).isInstanceOf(Document.class);
+            })
+            .extracting(collection -> collection.get("name"))
+            .containsExactlyInAnyOrderElementsOf(collections);
     }
 
     @Test

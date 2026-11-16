@@ -4,10 +4,9 @@ import static de.bwaldvogel.mongo.TestUtils.json;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.InstanceOfAssertFactories.COLLECTION;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.assertj.core.api.InstanceOfAssertFactories.list;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -631,7 +630,7 @@ class ExpressionTest {
     @Test
     void testEvaluateObjectToArray() {
         assertThat(Expression.evaluate(json("$objectToArray: '$v'"), json("v: {a: 1, b: 2}")))
-            .asInstanceOf(LIST)
+            .asInstanceOf(list(Document.class))
             .containsExactly(
                 json("{k: 'a', v: 1}"),
                 json("{k: 'b', v: 2}")
@@ -945,8 +944,8 @@ class ExpressionTest {
     void testEvaluateSetIntersection() {
         assertThat(Expression.evaluate(json("$setIntersection: null"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setIntersection: '$field'"), json(""))).isNull();
-        assertThat((Collection<?>) Expression.evaluate(json("$setIntersection: []"), json(""))).isEmpty();
-        assertThat((Collection<?>) Expression.evaluate(json("$setIntersection: [[]]"), json(""))).isEmpty();
+        assertThat(Expression.evaluate(json("$setIntersection: []"), json(""))).asInstanceOf(COLLECTION).isEmpty();
+        assertThat(Expression.evaluate(json("$setIntersection: [[]]"), json(""))).asInstanceOf(COLLECTION).isEmpty();
         assertThat(Expression.evaluate(json("$setIntersection: [null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setIntersection: [['a'], null]"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$setIntersection: ['$a', null]"), json(""))).isNull();
@@ -1121,10 +1120,10 @@ class ExpressionTest {
     @Test
     void testEvaluateSplit() {
         assertThat(Expression.evaluate(json("$split: ['June-15-2013', '-']"), json("")))
-            .asInstanceOf(LIST)
+            .asInstanceOf(list(String.class))
             .containsExactly("June", "15", "2013");
         assertThat(Expression.evaluate(json("$split: ['$a', '$b']"), json("a: 'foo bar', b: ' '")))
-            .asInstanceOf(LIST)
+            .asInstanceOf(list(String.class))
             .containsExactly("foo", "bar");
         assertThat(Expression.evaluate(json("$split: [null, ' ']"), json(""))).isNull();
         assertThat(Expression.evaluate(json("$split: ['$doesNotExist', ' ']"), json(""))).isNull();
