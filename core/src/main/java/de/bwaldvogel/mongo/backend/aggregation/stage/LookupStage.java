@@ -64,6 +64,8 @@ public class LookupStage extends AbstractLookupStage {
             value = null;
         }
         Document query = new Document(foreignField, value);
-        return collection.handleQueryAsStream(query).collect(toList());
+        return collection.handleQueryAsStream(query)
+            .map(Document::cloneDeeply)
+            .toList();
     }
 }
