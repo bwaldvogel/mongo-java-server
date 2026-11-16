@@ -107,7 +107,7 @@ public class GraphLookupStage extends AbstractLookupStage {
                 }
                 Object newValue = Utils.getSubdocumentValueCollectionAware(newDocument, connectFromField);
                 enqueueValues(pending, newValue, current.depth() + 1);
-                Document result = newDocument.clone();
+                Document result = newDocument.cloneDeeply();
                 if (depthField != null) {
                     result.put(depthField, current.depth());
                 }

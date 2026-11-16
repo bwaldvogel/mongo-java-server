@@ -38,6 +38,155 @@ public abstract class AbstractAggregationTest extends AbstractTest {
 
     private static final int TEST_TIMEOUT_SECONDS = 30;
 
+    @ParameterizedTest
+    @MethodSource("pipelinesWithSharedNestedDocuments")
+    void testAggregationDoesNotModifyStoredDocuments(List<Document> stages) {
+        Document original = json("_id: 1, nested: {value: 1}, items: [{nested: {value: 1}}]");
+        Document foreign = json("_id: 1, nested: {value: 1}");
+        MongoCollection<Document> foreignCollection = db.getCollection("foreign");
+        collection.insertOne(original);
+        foreignCollection.insertOne(foreign);
+
+        List<Document> pipeline = new ArrayList<>(stages);
+        pipeline.add(json("$addFields: {nested: {value: 2}}"));
+
+        List<Document> results = collection.aggregate(pipeline).into(new ArrayList<>());
+        assertThat(results).hasSize(1);
+        assertThat(results.getFirst().get("nested")).isEqualTo(json("value: 2"));
+        assertThat(collection.find().first()).isEqualTo(original);
+        assertThat(foreignCollection.find().first()).isEqualTo(foreign);
+    }
+
+    private static Stream<List<Document>> pipelinesWithSharedNestedDocuments() {
+        return Stream.of(
+            List.of(),
+            jsonList("$project: {nested: 1}"),
+            jsonList("$replaceRoot: {newRoot: {nested: '$nested'}}"),
+            jsonList("$unwind: '$items'", "$replaceRoot: {newRoot: '$items'}"),
+            jsonList("$group: {_id: null, nested: {$first: '$nested'}}"),
+            jsonList("$group: {_id: null, nested: {$last: '$nested'}}"),
+            jsonList("$group: {_id: null, nested: {$min: '$nested'}}"),
+            jsonList("$group: {_id: null, nested: {$max: '$nested'}}"),
+            jsonList("$group: {_id: null, nested: {$push: '$nested'}}", "$unwind: '$nested'"),
+            jsonList("$group: {_id: null, nested: {$addToSet: '$nested'}}", "$unwind: '$nested'"),
+            jsonList("$group: {_id: '$nested'}", "$replaceRoot: {newRoot: {nested: '$_id'}}"),
+            jsonList("""
+                $bucket: {
+                    groupBy: '$_id',
+                    boundaries: [0, 2],
+                    output: {nested: {$first: '$nested'}}
+                }
+                """),
+            jsonList(
+                """
+                $lookup: {
+                    from: 'foreign',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'joined'
+                }
+                """,
+                "$unwind: '$joined'", "$replaceRoot: {newRoot: '$joined'}"),
+            jsonList(
+                "$lookup: {from: 'foreign', pipeline: [], as: 'joined'}",
+                "$unwind: '$joined'", "$replaceRoot: {newRoot: '$joined'}"),
+            jsonList(
+                """
+                $lookup: {
+                    from: 'foreign',
+                    pipeline: [{$addFields: {nested: {value: 2}}}],
+                    as: 'joined'
+                }
+                """,
+                "$unwind: '$joined'", "$replaceRoot: {newRoot: '$joined'}"),
+            jsonList(
+                """
+                $graphLookup: {
+                    from: 'foreign',
+                    startWith: '$_id',
+                    connectFromField: 'next',
+                    connectToField: '_id',
+                    as: 'joined'
+                }
+                """,
+                "$unwind: '$joined'", "$replaceRoot: {newRoot: '$joined'}")
+        );
+    }
+
+    @Test
+    void testFacetDoesNotModifyOtherBranchesOrStoredDocuments() {
+        Document original = json("_id: 1, nested: {value: 1}");
+        collection.insertOne(original);
+
+        List<Document> results = collection.aggregate(jsonList(
+            """
+            $facet: {
+                modified: [{$addFields: {nested: {value: 2}}}],
+                original: []
+            }
+            """
+        )).into(new ArrayList<>());
+
+        assertThat(results).containsExactly(new Document("modified", List.of(json("_id: 1, nested: {value: 2}")))
+            .append("original", List.of(original)));
+        assertThat(collection.find().first()).isEqualTo(original);
+    }
+
+    @ParameterizedTest
+    @MethodSource("lookupPipelinesWithVariables")
+    void testLookupVariablesDoNotModifyOuterDocument(List<Document> lookupPipeline, List<Document> expectedJoined) {
+        Document original = json("_id: 1, items: [{value: 1}]");
+        List<Document> foreign = List.of(json("_id: 10"), json("_id: 11"));
+        MongoCollection<Document> foreignCollection = db.getCollection("foreign");
+        collection.insertOne(original);
+        foreignCollection.insertMany(foreign);
+
+        Document lookup = new Document("from", "foreign")
+            .append("let", json("items: '$items'"))
+            .append("pipeline", lookupPipeline)
+            .append("as", "joined");
+
+        assertThat(collection.aggregate(List.of(new Document("$lookup", lookup))))
+            .containsExactly(new Document(original).append("joined", expectedJoined));
+        assertThat(collection.find().first()).isEqualTo(original);
+        assertThat(foreignCollection.find().sort(json("_id: 1"))).containsExactlyElementsOf(foreign);
+    }
+
+    private static Stream<Arguments> lookupPipelinesWithVariables() {
+        return Stream.of(
+            Arguments.of(List.<Document>of(), List.of(json("_id: 10"), json("_id: 11"))),
+            Arguments.of(jsonList(
+                "$sort: {_id: 1}",
+                "$project: {items: '$$items'}",
+                "$unwind: {path: '$items', includeArrayIndex: 'items.index'}"),
+                List.of(
+                    json("_id: 10, items: {value: 1, index: NumberLong(0)}"),
+                    json("_id: 11, items: {value: 1, index: NumberLong(0)}")))
+        );
+    }
+
+    @Test
+    void testUnwindArrayIndexDoesNotModifyStoredDocuments() {
+        Document original = json("_id: 1, items: [{value: 1}, {value: 2}]");
+        collection.insertOne(original);
+
+        assertThat(collection.aggregate(jsonList("$unwind: {path: '$items', includeArrayIndex: 'items.index'}")))
+            .containsExactly(
+                json("_id: 1, items: {value: 1, index: NumberLong(0)}"),
+                json("_id: 1, items: {value: 2, index: NumberLong(1)}"));
+        assertThat(collection.find().first()).isEqualTo(original);
+    }
+
+    @Test
+    void testNestedIdProjectionDoesNotModifyStoredDocuments() {
+        Document original = json("_id: {value: 1}, flag: 1");
+        collection.insertOne(original);
+
+        assertThat(collection.aggregate(jsonList("$project: {flag: 1, '_id.value': {$literal: 2}}")))
+            .containsExactly(json("_id: {value: 2}, flag: 1"));
+        assertThat(collection.find().first()).isEqualTo(original);
+    }
+
     @BeforeEach
     void dropAllDatabasesBeforeEachTest() {
         dropAllDatabases();

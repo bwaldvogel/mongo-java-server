@@ -56,7 +56,7 @@ public class Aggregation {
     private final MongoCollection<?> collection;
 
     private final List<AggregationStage> stages = new ArrayList<>();
-    private Map<String, Object> variables = Collections.emptyMap();
+    private Document variables = new Document();
 
     private Aggregation(MongoCollection<?> collection) {
         this.collection = collection;
@@ -198,6 +198,7 @@ public class Aggregation {
     }
 
     public Stream<Document> runStagesAsStream(Stream<Document> stream) {
+        stream = stream.map(Document::cloneDeeply);
         if (hasVariables()) {
             stream = stream.map(this::addAllVariables);
         }
@@ -215,9 +216,8 @@ public class Aggregation {
     }
 
     private Document addAllVariables(Document document) {
-        Document clone = document.clone();
-        clone.putAll(variables);
-        return clone;
+        variables.cloneInto(document);
+        return document;
     }
 
     private Document removeAllVariables(Document document) {
@@ -245,7 +245,7 @@ public class Aggregation {
     }
 
     public void setVariables(Map<String, Object> variables) {
-        this.variables = Collections.unmodifiableMap(variables);
+        this.variables = new Document(variables);
     }
 
     public void validate(Document query) {
