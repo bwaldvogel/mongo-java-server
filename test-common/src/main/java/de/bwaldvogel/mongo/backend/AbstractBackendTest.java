@@ -3898,6 +3898,30 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(isMaster.getInteger("maxMessageSizeBytes")).isGreaterThan(maxBsonObjectSize);
     }
 
+    @Test
+    public void testHello() {
+        Document hello = runCommand(Command.HELLO);
+        assertThat(hello)
+            .containsOnlyKeys("topologyVersion", "isWritablePrimary", "maxBsonObjectSize", "maxMessageSizeBytes",
+                "maxWriteBatchSize", "localTime", "logicalSessionTimeoutMinutes", "connectionId", "minWireVersion",
+                "maxWireVersion", "readOnly", "ok")
+            .containsEntry("isWritablePrimary", true)
+            .containsEntry("readOnly", false)
+            .containsEntry("maxBsonObjectSize", 16777216)
+            .containsEntry("maxMessageSizeBytes", 48000000)
+            .containsEntry("minWireVersion", 0)
+            .containsEntry("ok", 1.0);
+        assertThat(hello.getDate("localTime")).isInstanceOf(Date.class);
+        assertThat(hello.getInteger("maxWireVersion")).isPositive();
+        assertThat(hello.getInteger("maxWriteBatchSize")).isPositive();
+    }
+
+    @Test
+    void testHelloOnNonAdminDatabase() {
+        Document hello = db.runCommand(new Document("hello", 1).append("comment", "test"));
+        assertThat(hello.getBoolean("isWritablePrimary")).isTrue();
+    }
+
     // https://github.com/foursquare/fongo/pull/26
     // http://stackoverflow.com/questions/12403240/storing-null-vs-not-storing-the-key-at-all-in-mongodb
     @Test
