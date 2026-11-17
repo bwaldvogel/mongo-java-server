@@ -25,6 +25,7 @@ import de.bwaldvogel.mongo.MongoCollection;
 import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.backend.aggregation.Aggregation;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.IndexNotFoundException;
 import de.bwaldvogel.mongo.exception.InvalidNamespaceError;
 import de.bwaldvogel.mongo.exception.MongoServerError;
@@ -180,6 +181,11 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     }
 
     private Document commandFind(String command, Document query) {
+        for (String option : List.of("tailable", "awaitData")) {
+            if (Utils.isTrue(query.get(option))) {
+                throw new MongoServerError(ErrorCode.IllegalOperation, "The '" + option + "' cursor option is not yet supported");
+            }
+        }
         String collectionName = query.get(command).toString();
         MongoCollection<P> collection = resolveCollection(collectionName, false);
         if (collection == null) {
