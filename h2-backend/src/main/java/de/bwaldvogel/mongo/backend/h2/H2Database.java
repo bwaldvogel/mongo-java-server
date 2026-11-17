@@ -105,8 +105,8 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
     @Override
     public void moveCollection(MongoDatabase oldDatabase, MongoCollection<?> collection, String newCollectionName) {
-        super.moveCollection(oldDatabase, collection, newCollectionName);
         String fullCollectionName = collection.getFullName();
+        super.moveCollection(oldDatabase, collection, newCollectionName);
         String newFullName = getFullCollectionNamespace(newCollectionName);
         MVMap<Object, Document> dataMap = mvStore.openMap(DATABASES_PREFIX + fullCollectionName);
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);

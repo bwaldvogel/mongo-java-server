@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.mongodb.MongoNamespace;
 import com.mongodb.client.model.IndexOptions;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -43,6 +44,28 @@ class H2OnDiskBackendTest extends AbstractBackendTest {
         backend = new H2Backend(tempFile.toString(), clock);
         backend.getMvStore().setAutoCommitDelay(0);
         return backend;
+    }
+
+    @Test
+    void testRenamedCollectionSurvivesRestart() {
+        String oldCollectionName = collection.getNamespace().getCollectionName();
+        String newCollectionName = "renamed-collection";
+        List<Document> documents = List.of(json("_id: 1, value: 'first'"), json("_id: 2, value: 'second'"));
+        collection.insertMany(documents);
+        Document statsBefore = db.runCommand(new Document("collStats", oldCollectionName));
+
+        collection.renameCollection(new MongoNamespace(db.getName(), newCollectionName));
+        restart();
+
+        assertThat(db.listCollectionNames()).contains(newCollectionName).doesNotContain(oldCollectionName);
+        var renamedCollection = db.getCollection(newCollectionName);
+        assertThat(renamedCollection.find().sort(json("_id: 1"))).containsExactlyElementsOf(documents);
+        Document statsAfter = db.runCommand(new Document("collStats", newCollectionName));
+        assertThat(statsAfter.getInteger("size")).isEqualTo(statsBefore.getInteger("size"));
+
+        renamedCollection.insertOne(json("_id: 3"));
+        assertThat(renamedCollection.find().sort(json("_id: 1")))
+            .containsExactly(documents.get(0), documents.get(1), json("_id: 3"));
     }
 
     @Test
