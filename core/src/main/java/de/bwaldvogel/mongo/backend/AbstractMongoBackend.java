@@ -403,7 +403,13 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     private QueryResult handleGetMore(long cursorId, int numberToReturn) {
         Cursor cursor = cursorRegistry.getCursor(cursorId);
-        List<Document> documents = cursor.takeDocuments(numberToReturn);
+        final List<Document> documents;
+        try {
+            documents = cursor.takeDocuments(numberToReturn);
+        } catch (MongoServerException e) {
+            cursorRegistry.remove(cursor);
+            throw e;
+        }
         if (cursor.isEmpty()) {
             log.debug("Removing empty {}", cursor);
             cursorRegistry.remove(cursor);
