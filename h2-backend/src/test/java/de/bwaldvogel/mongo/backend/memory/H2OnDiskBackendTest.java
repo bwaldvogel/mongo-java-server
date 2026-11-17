@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.mongodb.MongoNamespace;
+import com.mongodb.client.model.CreateCollectionOptions;
 import com.mongodb.client.model.IndexOptions;
 
 import de.bwaldvogel.mongo.MongoBackend;
@@ -66,6 +67,32 @@ class H2OnDiskBackendTest extends AbstractBackendTest {
         renamedCollection.insertOne(json("_id: 3"));
         assertThat(renamedCollection.find().sort(json("_id: 1")))
             .containsExactly(documents.get(0), documents.get(1), json("_id: 3"));
+    }
+
+    @Test
+    void testCappedCollectionShutdownAndRestart() {
+        db.createCollection("capped", new CreateCollectionOptions().capped(true).sizeInBytes(512).maxDocuments(3));
+        var capped = db.getCollection("capped");
+        capped.insertMany(List.of(json("_id: 30"), json("_id: 10"), json("_id: 20")));
+        capped.deleteOne(json("_id: 10"));
+        capped.insertOne(json("_id: 40"));
+        restart();
+        capped = db.getCollection("capped");
+        assertThat(capped.find()).containsExactly(json("_id: 30"), json("_id: 20"), json("_id: 40"));
+        capped.insertOne(json("_id: 50"));
+        assertThat(capped.find()).containsExactly(json("_id: 20"), json("_id: 40"), json("_id: 50"));
+        capped.renameCollection(new MongoNamespace(db.getName(), "renamed-capped"));
+        restart();
+        capped = db.getCollection("renamed-capped");
+        capped.insertOne(json("_id: 60"));
+        assertThat(capped.find()).containsExactly(json("_id: 40"), json("_id: 50"), json("_id: 60"));
+        capped.deleteMany(json("{}"));
+        restart();
+        capped = db.getCollection("renamed-capped");
+        capped.insertMany(List.of(json("_id: 90"), json("_id: 70"), json("_id: 80"), json("_id: 100")));
+        assertThat(capped.find()).containsExactly(json("_id: 70"), json("_id: 80"), json("_id: 100"));
+        capped.insertOne(new Document("_id", 110).append("data", "x".repeat(490)));
+        assertThat(capped.find().projection(json("_id: 1"))).containsExactly(json("_id: 110"));
     }
 
     @Test

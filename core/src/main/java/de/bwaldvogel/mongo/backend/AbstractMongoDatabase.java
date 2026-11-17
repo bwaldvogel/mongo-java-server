@@ -65,10 +65,13 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         this.collections.put(namespaces.getCollectionName(), namespaces);
 
         if (!namespaces.isEmpty()) {
-            for (String name : listCollectionNamespaces()) {
+            for (Document namespace : namespaces.queryAll()) {
+                String name = namespace.get("name").toString();
                 log.debug("opening {}", name);
                 String collectionName = extractCollectionNameFromNamespace(name);
-                MongoCollection<P> collection = openOrCreateCollection(collectionName, CollectionOptions.withDefaults());
+                Document storedOptions = (Document) namespace.get("options");
+                CollectionOptions options = storedOptions == null ? CollectionOptions.withDefaults() : CollectionOptions.fromQuery(storedOptions);
+                MongoCollection<P> collection = openOrCreateCollection(collectionName, options);
                 collections.put(collectionName, collection);
                 log.debug("opened collection '{}'", collectionName);
             }
@@ -125,8 +128,8 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
                 continue;
             }
             Document collectionDescription = new Document();
-            Document collectionOptions = new Document();
             String collectionName = extractCollectionNameFromNamespace(namespace);
+            Document collectionOptions = collections.get(collectionName).getOptions().toDocument();
             collectionDescription.put("name", collectionName);
             collectionDescription.put("options", collectionOptions);
             collectionDescription.put("info", new Document("readOnly", false));
@@ -316,9 +319,6 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         CollectionOptions collectionOptions = CollectionOptions.fromQuery(query);
         collectionOptions.validate();
-        if (collectionOptions.isCapped()) {
-            throw new MongoServerException("Creating capped collections is not yet implemented");
-        }
         if (resolveCollection(collectionName, false) == null) {
             createCollection(collectionName, collectionOptions);
         }
@@ -631,8 +631,17 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
     private void addNamespace(MongoCollection<P> collection) {
         collections.put(collection.getCollectionName(), collection);
         if (!isSystemCollection(collection.getCollectionName())) {
-            namespaces.addDocument(new Document("name", collection.getFullName()));
+            namespaces.addDocument(namespaceDocument(collection));
         }
+    }
+
+    private Document namespaceDocument(MongoCollection<?> collection) {
+        Document namespace = new Document("name", collection.getFullName());
+        Document options = collection.getOptions().toDocument();
+        if (!options.isEmpty()) {
+            namespace.put("options", options);
+        }
+        return namespace;
     }
 
     protected void addIndex(Document indexDescription) {
@@ -843,7 +852,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Assert.isNull(oldCollection,
             () -> "Failed to register renamed collection. Another collection still existed: " + oldCollection);
         List<Document> newDocuments = new ArrayList<>();
-        newDocuments.add(new Document("name", collection.getFullName()));
+        newDocuments.add(namespaceDocument(collection));
 
         indexes.get().updateDocuments(new Document("ns", oldFullName),
             new Document("$set", new Document("ns", newCollection.getFullName())),

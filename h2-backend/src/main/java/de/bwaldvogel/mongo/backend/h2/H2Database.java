@@ -61,6 +61,7 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
             .filter(name -> name.startsWith(databaseName + ".")
                 || name.startsWith(DATABASES_PREFIX + databaseName)
                 || name.startsWith(META_PREFIX + databaseName)
+                || name.startsWith(H2Collection.CAPPED_ORDER_PREFIX + databaseName + ".")
             )
             .map(mvStore::openMap)
             .collect(Collectors.toList());
@@ -101,6 +102,10 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
         MVMap<String, Object> metaMap = mvStore.openMap(META_PREFIX + fullCollectionName);
         mvStore.removeMap(dataMap);
         mvStore.removeMap(metaMap);
+        String orderMapName = H2Collection.CAPPED_ORDER_PREFIX + fullCollectionName;
+        if (mvStore.hasMap(orderMapName)) {
+            mvStore.removeMap(orderMapName);
+        }
     }
 
     @Override
@@ -113,6 +118,10 @@ public class H2Database extends AbstractSynchronizedMongoDatabase<Object> {
 
         mvStore.renameMap(dataMap, DATABASES_PREFIX + newFullName);
         mvStore.renameMap(metaMap, META_PREFIX + newFullName);
+        String orderMapName = H2Collection.CAPPED_ORDER_PREFIX + fullCollectionName;
+        if (mvStore.hasMap(orderMapName)) {
+            mvStore.renameMap(mvStore.openMap(orderMapName), H2Collection.CAPPED_ORDER_PREFIX + newFullName);
+        }
     }
 
 }
