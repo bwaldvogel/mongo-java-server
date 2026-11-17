@@ -193,7 +193,7 @@ public abstract class AbstractBackendSpringDataTest {
             Aggregation.group("id").last("value").as("value"));
         List<TestEntity> results = mongoTemplate.aggregate(agg, TestEntity.class, TestEntity.class).getMappedResults();
         assertThat(results).hasSize(1);
-        assertThat(results.get(0).getId()).isEqualTo("1");
+        assertThat(results.getFirst().getId()).isEqualTo("1");
     }
 
 }

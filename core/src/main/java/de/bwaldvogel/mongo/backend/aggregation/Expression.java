@@ -105,11 +105,10 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             Object valueInCollection = requireSingleValue(expressionValue);
-            if (!(valueInCollection instanceof Collection)) {
+            if (!(valueInCollection instanceof Collection<?> collectionInCollection)) {
                 throw new MongoServerError(17041,
                     name() + "'s argument must be an array, but is " + describeType(valueInCollection));
             }
-            Collection<?> collectionInCollection = (Collection<?>) valueInCollection;
             for (Object value : collectionInCollection) {
                 if (Utils.isTrue(value)) {
                     return true;
@@ -123,11 +122,10 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             Object parameter = requireSingleValue(expressionValue);
-            if (!(parameter instanceof Collection)) {
+            if (!(parameter instanceof Collection<?> collectionInCollection)) {
                 throw new MongoServerError(17040,
                     name() + "'s argument must be an array, but is " + describeType(parameter));
             }
-            Collection<?> collectionInCollection = (Collection<?>) parameter;
             for (Object value : collectionInCollection) {
                 if (!Utils.isTrue(value)) {
                     return false;
@@ -148,16 +146,15 @@ public enum Expression implements ExpressionTraits {
 
             Object firstValue = parameters.first();
             Object secondValue = parameters.second();
-            if (!(firstValue instanceof List<?>)) {
+            if (!(firstValue instanceof List<?> collection)) {
                 throw new MongoServerError(28689,
                     name() + "'s first argument must be an array, but is " + describeType(firstValue));
             }
-            if (!(secondValue instanceof Number)) {
+            if (!(secondValue instanceof Number secondNumber)) {
                 throw new MongoServerError(28690,
                     name() + "'s second argument must be a numeric value, but is " + describeType(secondValue));
             }
-            List<?> collection = (List<?>) firstValue;
-            int index = ((Number) secondValue).intValue();
+            int index = secondNumber.intValue();
             if (index < 0) {
                 index = collection.size() + index;
             }
@@ -182,11 +179,9 @@ public enum Expression implements ExpressionTraits {
                     if (keyValue.size() != 2) {
                         throw new FailedToOptimizePipelineError(40397, name() + " requires an array of size 2 arrays,found array of size: " + keyValue.size());
                     }
-                    Object keyObject = keyValue.get(0);
-                    if (!(keyObject instanceof String)) {
-                        throw new FailedToOptimizePipelineError(40395, name() + " requires an array of key-value pairs, where the key must be of type string. Found key type: " + describeType(keyObject));
+                    if (!(keyValue.get(0) instanceof String key)) {
+                        throw new FailedToOptimizePipelineError(40395, name() + " requires an array of key-value pairs, where the key must be of type string. Found key type: " + describeType(keyValue.getFirst()));
                     }
-                    String key = (String) keyObject;
                     Object value = keyValue.get(1);
                     result.put(key, value);
                 } else if (keyValueObject instanceof Document keyValue) {
@@ -197,10 +192,9 @@ public enum Expression implements ExpressionTraits {
                         throw new FailedToOptimizePipelineError(40393, name() + " requires an object with keys 'k' and 'v'. Missing either or both keys from: " + keyValue.toString(true));
                     }
                     Object keyObject = keyValue.get("k");
-                    if (!(keyObject instanceof String)) {
+                    if (!(keyObject instanceof String key)) {
                         throw new FailedToOptimizePipelineError(40394, name() + " requires an object with keys 'k' and 'v', where the value of 'k' must be of type string. Found type: " + describeType(keyObject));
                     }
-                    String key = (String) keyObject;
                     Object value = keyValue.get("v");
                     result.put(key, value);
                 } else {
@@ -332,10 +326,9 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expression, Document document) {
             Object expressionValue = CollectionUtils.getSingleElement(expression);
-            if (!(expressionValue instanceof Document)) {
+            if (!(expressionValue instanceof Document convertDocument)) {
                 throw new FailedToParseException(name() + " expects an object of named arguments but found: " + describeType(expressionValue));
             }
-            Document convertDocument = (Document) expressionValue;
 
             List<String> supportedKeys = asList("input", "to", "onError", "onNull");
             for (String key : convertDocument.keySet()) {
@@ -449,7 +442,7 @@ public enum Expression implements ExpressionTraits {
             Object formatDocument = dateToStringDocument.get("format");
             if (formatDocument != null) {
                 if (!(formatDocument instanceof String)) {
-                    throw new MongoServerError(18533, name() + " requires that 'format' be a string, found: " + describeType(formatDocument) + " with value " + formatDocument.toString());
+                    throw new MongoServerError(18533, name() + " requires that 'format' be a string, found: " + describeType(formatDocument) + " with value " + formatDocument);
                 }
                 format = (String) formatDocument;
             }
@@ -603,11 +596,9 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            if (!(input instanceof Collection)) {
+            if (!(input instanceof Collection<?> inputCollection)) {
                 throw new MongoServerError(28651, "input to " + name() + " must be an array not " + describeType(input));
             }
-
-            Collection<?> inputCollection = (Collection<?>) input;
 
             String key = "$" + as;
             Document documentForCondition = document.clone();
@@ -692,11 +683,10 @@ public enum Expression implements ExpressionTraits {
             if (first == null) {
                 return null;
             }
-            if (!(first instanceof List<?>)) {
+            if (!(first instanceof List<?> elementsToSearchIn)) {
                 throw new MongoServerError(40090,
                     name() + " requires an array as a first argument, found: " + describeType(first));
             }
-            List<?> elementsToSearchIn = (List<?>) first;
 
             Range range = indexOf(expressionValue, elementsToSearchIn.size());
 
@@ -837,11 +827,9 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            if (!(input instanceof Collection)) {
+            if (!(input instanceof Collection<?> inputCollection)) {
                 throw new MongoServerError(16883, "input to " + name() + " must be an array not " + describeType(input));
             }
-
-            Collection<?> inputCollection = (Collection<?>) input;
 
             String key = "$" + as;
             Document documentForCondition = document.clone();
@@ -885,11 +873,9 @@ public enum Expression implements ExpressionTraits {
                 return null;
             }
 
-            if (!(input instanceof Collection)) {
+            if (!(input instanceof Collection<?> inputCollection)) {
                 throw new MongoServerError(40080, "input to " + name() + " must be an array not " + describeType(input));
             }
-
-            Collection<?> inputCollection = (Collection<?>) input;
 
             final String thisKey = "$this";
             final String valueKey = "$value";
@@ -1075,11 +1061,10 @@ public enum Expression implements ExpressionTraits {
             if (expressionValue.size() > 1) {
                 throw new MongoServerError(3040501, name() + " does not currently accept arguments");
             } else if (expressionValue.size() == 1) {
-                Object parameter = expressionValue.get(0);
-                if (!(parameter instanceof Document)) {
+                Object parameter = expressionValue.getFirst();
+                if (!(parameter instanceof Document params)) {
                     throw new MongoServerError(10065, "invalid parameter: expected an object (" + name() + ")");
                 }
-                Document params = (Document) parameter;
                 if (!params.isEmpty()) {
                     throw new MongoServerError(3040501, name() + " does not currently accept arguments");
                 }
@@ -1126,10 +1111,9 @@ public enum Expression implements ExpressionTraits {
         }
 
         private int toInt(Object object, int errorCodeIfNotANumber, int errorCodeIfNonInt, String errorMessage) {
-            if (!(object instanceof Number)) {
+            if (!(object instanceof Number number)) {
                 throw new MongoServerError(errorCodeIfNotANumber, name() + " requires a numeric " + errorMessage + ", found value of type: " + describeType(object));
             }
-            Number number = (Number) object;
             int value = number.intValue();
             if (number.doubleValue() != value) {
                 throw new MongoServerError(errorCodeIfNonInt,
@@ -1226,10 +1210,9 @@ public enum Expression implements ExpressionTraits {
                 if (isNullOrMissing(value)) {
                     return null;
                 }
-                if (!(value instanceof Collection)) {
+                if (!(value instanceof Collection<?> values)) {
                     throw new MongoServerError(17047, "All operands of " + name() + " must be arrays. One argument is of type: " + describeType(value));
                 }
-                Collection<?> values = (Collection<?>) value;
                 if (result == null) {
                     result = new LinkedTreeSet<>(values);
                 } else {
@@ -1298,14 +1281,13 @@ public enum Expression implements ExpressionTraits {
                 throw new MongoServerError(28667, "Expression " + name() + " takes at least 2 arguments, and at most 3, but " + expressionValue.size() + " were passed in.");
             }
 
-            Object first = expressionValue.get(0);
+            Object first = expressionValue.getFirst();
             if (isNullOrMissing(first)) {
                 return null;
             }
-            if (!(first instanceof List)) {
+            if (!(first instanceof List<?> list)) {
                 throw new MongoServerError(28724, "First argument to " + name() + " must be an array, but is of type: " + describeType(first));
             }
-            List<?> list = (List<?>) first;
 
             Object second = expressionValue.get(1);
             if (!(second instanceof Number)) {
@@ -1315,11 +1297,10 @@ public enum Expression implements ExpressionTraits {
             final List<?> result;
             if (expressionValue.size() > 2) {
                 Object third = expressionValue.get(2);
-                if (!(third instanceof Number)) {
+                if (!(third instanceof Number number)) {
                     throw new MongoServerError(28725, "Third argument to " + name() + " must be numeric, but is of type: " + describeType(third));
                 }
 
-                Number number = (Number) third;
                 if (number.intValue() < 0) {
                     throw new MongoServerError(28729, "Third argument to " + name() + " must be positive: " + third);
                 }
@@ -1440,22 +1421,19 @@ public enum Expression implements ExpressionTraits {
 
             // Get and validate branches
             Object branchesValue = switchDocument.get("branches");
-            if (!(branchesValue instanceof Collection<?>)) {
+            if (!(branchesValue instanceof Collection<?> branches)) {
                 throw new MongoServerError(40061, name() + " expected an array for 'branches', found: " + describeType(branchesValue));
             }
 
-            Collection<?> branches = (Collection<?>) branchesValue;
             if (branches.isEmpty()) {
                 throw new MongoServerError(40060, name() + " requires at least one branch");
             }
 
             // Evaluate each branch
             for (Object branchValue : branches) {
-                if (!(branchValue instanceof Document)) {
+                if (!(branchValue instanceof Document branch)) {
                     throw new MongoServerError(40062, name() + " expected each branch to be an object, found: " + describeType(branchValue));
                 }
-
-                Document branch = (Document) branchValue;
 
                 // Validate branch has required fields
                 if (!branch.containsKey("case")) {
@@ -1533,7 +1511,7 @@ public enum Expression implements ExpressionTraits {
         @Override
         Object apply(List<?> expressionValue, Document document) {
             requireCollectionInSize(expressionValue, 3);
-            String value = convertToString(expressionValue.get(0));
+            String value = convertToString(expressionValue.getFirst());
             if (value == null || value.isEmpty()) {
                 return "";
             }
@@ -1776,8 +1754,8 @@ public enum Expression implements ExpressionTraits {
     private static Collection<?> getValues(List<?> expressionValue) {
         Collection<?> values = expressionValue;
         if (expressionValue.size() == 1) {
-            if (expressionValue.get(0) instanceof Collection) {
-                values = (Collection<?>) expressionValue.get(0);
+            if (expressionValue.getFirst() instanceof Collection<?> first) {
+                values = first;
             }
         }
         return values;
@@ -1867,7 +1845,7 @@ public enum Expression implements ExpressionTraits {
             String expressionKey = entry.getKey();
             Object expressionValue = entry.getValue();
             if (expressionKey.startsWith("$")) {
-                if (expression.keySet().size() > 1) {
+                if (expression.size() > 1) {
                     throw new MongoServerError(15983, "An object representing an expression must have exactly one field: " + expression);
                 }
 

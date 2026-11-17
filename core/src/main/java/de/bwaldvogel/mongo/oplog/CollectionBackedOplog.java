@@ -186,15 +186,12 @@ public class CollectionBackedOplog implements Oplog {
     }
 
     private Document getFullDocument(Document changeStreamDocument, Document document, OperationType operationType) {
-        switch (operationType) {
-            case INSERT:
-                return getUpdateDocument(document);
-            case DELETE:
-                return null;
-            case UPDATE:
-                return lookUpUpdateDocument(changeStreamDocument, document);
-        }
-        throw new IllegalArgumentException("Invalid operation type");
+        return switch (operationType) {
+            case INSERT -> getUpdateDocument(document);
+            case DELETE -> null;
+            case UPDATE -> lookUpUpdateDocument(changeStreamDocument, document);
+            default -> throw new IllegalArgumentException("Invalid operation type");
+        };
     }
 
     private Document lookUpUpdateDocument(Document changeStreamDocument, Document document) {

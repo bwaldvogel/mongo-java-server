@@ -105,8 +105,8 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
         final Stream<Document> documentStream;
         if (isNaturalDescending(orderBy)) {
             documentStream = streamAllDocumentsWithPosition()
-                .sorted((o1, o2) -> ValueComparator.desc().compare(o1.getPosition(), o2.getPosition()))
-                .map(DocumentWithPosition::getDocument);
+                .sorted((o1, o2) -> ValueComparator.desc().compare(o1.position(), o2.position()))
+                .map(DocumentWithPosition::document);
         } else {
             documentStream = dataMap.values().stream();
         }

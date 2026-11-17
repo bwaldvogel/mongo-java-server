@@ -78,9 +78,9 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
 
     // visible for testing
     MongoMessage handleMessage(MongoMessage message, SocketAddress remoteAddress) {
-        Document document = null;
+        Document document;
         try {
-            String command = message.getDocument().keySet().iterator().next();
+            String command = message.getDocument().getFirstKey();
             if ("whatsmyuri".equalsIgnoreCase(command)) {
                 document = handleWhatsMyUri(remoteAddress);
             } else {
@@ -141,10 +141,10 @@ public class MongoDatabaseHandler extends SimpleChannelInboundHandler<ClientRequ
             return new Document("inprog", currentOperations);
 
         } else if ("$cmd".equals(collectionName)) {
-            String command = query.getQuery().keySet().iterator().next();
+            String command = query.getQuery().getFirstKey();
             if ("$query".equals(command)) {
                 Document actualQuery = (Document) query.getQuery().get("$query");
-                command = actualQuery.keySet().iterator().next();
+                command = actualQuery.getFirstKey();
                 return handleCommand(query.getDatabaseName(), DatabaseCommand.of(command), actualQuery, remoteAddress);
             }
             return handleCommand(query.getDatabaseName(), DatabaseCommand.of(command), query.getQuery(), remoteAddress);

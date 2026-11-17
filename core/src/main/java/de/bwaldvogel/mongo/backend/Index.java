@@ -69,7 +69,7 @@ public abstract class Index<P> {
             .map(value -> (Collection<?>) value)
             .collect(Collectors.toList());
 
-        if (collectionValues.size() > 0) {
+        if (!collectionValues.isEmpty()) {
             validateHasNoParallelArrays(document);
             return CollectionUtils.multiplyWithOtherElements(valuesPerKey.values(), collectionValues).stream()
                 .map(KeyValue::new)
@@ -98,7 +98,7 @@ public abstract class Index<P> {
     private static List<String> getPathToFirstCollection(Document document, String key) {
         List<String> fragments = Utils.splitPath(key);
         List<String> remainingFragments = Utils.getTail(fragments);
-        return getPathToFirstCollection(document, remainingFragments, List.of(fragments.get(0)));
+        return getPathToFirstCollection(document, remainingFragments, List.of(fragments.getFirst()));
     }
 
     private static List<String> getPathToFirstCollection(Document document, List<String> remainingFragments, List<String> path) {
@@ -110,7 +110,7 @@ public abstract class Index<P> {
             return null;
         }
         List<String> newPath = new ArrayList<>(path);
-        newPath.add(remainingFragments.get(0));
+        newPath.add(remainingFragments.getFirst());
         return getPathToFirstCollection(document, Utils.getTail(remainingFragments), newPath);
     }
 

@@ -191,7 +191,7 @@ public abstract class AbstractUniqueIndex<P> extends Index<P> {
                 for (Entry<KeyValue, P> entry : getIterable()) {
                     KeyValue obj = entry.getKey();
                     if (obj.size() == 1) {
-                        Object o = obj.get(0);
+                        Object o = obj.getFirst();
                         if (o instanceof String) {
                             BsonRegularExpression regularExpression = BsonRegularExpression.convertToRegularExpression(queriedValue);
                             Matcher matcher = regularExpression.matcher(o.toString());

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.bson.Document;
 
@@ -44,6 +46,10 @@ public class QueryResult implements Iterable<Document> {
     @Override
     public Iterator<Document> iterator() {
         return documents.iterator();
+    }
+
+    public Stream<Document> stream() {
+        return StreamSupport.stream(documents.spliterator(), false);
     }
 
     public long getCursorId() {

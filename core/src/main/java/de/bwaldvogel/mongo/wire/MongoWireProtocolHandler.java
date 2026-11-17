@@ -77,18 +77,11 @@ public class MongoWireProtocolHandler extends LengthFieldBasedFrameDecoder {
             throw new IOException("opCode " + opCodeId + " not supported");
         }
 
-        final ClientRequest request;
-
-        switch (opCode) {
-            case OP_QUERY:
-                request = handleQuery(header, in);
-                break;
-            case OP_MSG:
-                request = handleMessage(header, in);
-                break;
-            default:
-                throw new UnsupportedOperationException("unsupported opcode: " + opCode);
-        }
+        ClientRequest request = switch (opCode) {
+            case OP_QUERY -> handleQuery(header, in);
+            case OP_MSG -> handleMessage(header, in);
+            default -> throw new UnsupportedOperationException("unsupported opcode: " + opCode);
+        };
 
         if (in.isReadable()) {
             throw new IOException();

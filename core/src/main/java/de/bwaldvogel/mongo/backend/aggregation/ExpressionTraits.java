@@ -148,7 +148,7 @@ interface ExpressionTraits {
                 "Expression " + name() + " takes at least 2 arguments, and at most 4, but " + expressionValue.size() + " were passed in.");
         }
 
-        Object first = expressionValue.get(0);
+        Object first = expressionValue.getFirst();
         if (isNullOrMissing(first)) {
             return null;
         }

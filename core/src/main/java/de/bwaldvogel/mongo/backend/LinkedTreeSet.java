@@ -65,7 +65,7 @@ public class LinkedTreeSet<E> extends AbstractSet<E> {
 
     @Override
     public Iterator<E> iterator() {
-        return new Iterator<E>() {
+        return new Iterator<>() {
 
             private final Iterator<E> delegate = orderedElements.iterator();
             private E currentElement;

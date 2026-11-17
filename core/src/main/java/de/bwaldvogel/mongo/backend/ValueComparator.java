@@ -239,7 +239,7 @@ public class ValueComparator implements Comparator<Object> {
                 return Missing.getInstance();
             }
             values.sort(this);
-            return values.get(0);
+            return values.getFirst();
         } else {
             return value;
         }

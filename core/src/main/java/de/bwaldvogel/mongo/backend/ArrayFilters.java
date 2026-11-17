@@ -42,7 +42,7 @@ public class ArrayFilters {
 
             if (topLevelFieldNames.size() > 1) {
                 throw new FailedToParseException("Error parsing array filter :: caused by ::" +
-                    " Expected a single top-level field name, found '" + topLevelFieldNames.get(0) + "' and '" + topLevelFieldNames.get(1) + "'");
+                    " Expected a single top-level field name, found '" + topLevelFieldNames.getFirst() + "' and '" + topLevelFieldNames.get(1) + "'");
             }
 
             String topLevelFieldName = CollectionUtils.getSingleElement(topLevelFieldNames);
@@ -78,15 +78,6 @@ public class ArrayFilters {
             }
         }
         return filter;
-    }
-
-    private static Object createFilter(List<String> pathFragments, Object query) {
-        List<String> tail = Utils.getTail(pathFragments);
-        if (tail.isEmpty()) {
-            return query;
-        } else {
-            return new Document(Utils.joinPath(tail), query);
-        }
     }
 
     private static void validate(Document updateQuery, Map<String, ?> arrayFilterMap) {
@@ -153,7 +144,7 @@ public class ArrayFilters {
         if (pathFragments.isEmpty()) {
             return List.of(path);
         }
-        String fragment = pathFragments.get(0);
+        String fragment = pathFragments.getFirst();
 
         if (!isPositionalOperator(fragment)) {
             String nextPath = Utils.joinPath(path, fragment);

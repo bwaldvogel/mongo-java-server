@@ -85,7 +85,7 @@ public class BucketStage implements AggregationStage {
 
     private Object getAndValidateDefault(Object defaultValue) {
         Assert.notEmpty(boundaries);
-        if (!(compare(defaultValue, boundaries.get(0)) < 0
+        if (!(compare(defaultValue, boundaries.getFirst()) < 0
             || compare(defaultValue, CollectionUtils.getLastElement(boundaries)) >= 0)) {
             throw new MongoServerError(40199, "The $bucket 'default' field must be less than the lowest boundary or greater than or equal to the highest boundary.");
         }
@@ -151,7 +151,7 @@ public class BucketStage implements AggregationStage {
     }
 
     private Object findBucket(Object key) {
-        if (compare(key, boundaries.get(0)) < 0) {
+        if (compare(key, boundaries.getFirst()) < 0) {
             return getDefaultValue();
         }
         for (int i = 1; i < boundaries.size(); i++) {
