@@ -375,7 +375,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
             if (index instanceof String indexName) {
                 nsQuery.append("name", indexName);
             } else {
-                nsQuery.append("key", (Document) index);
+                nsQuery.append("key", index);
             }
             Document indexToDrop = CollectionUtils.getSingleElement(indexCollection.handleQuery(nsQuery),
                 () -> createIndexNotFoundException(index));
@@ -525,7 +525,7 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
         Object pipelineObject = Aggregation.parse(query.get("pipeline"));
         List<Document> pipeline = Aggregation.parse(pipelineObject);
         if (!pipeline.isEmpty()) {
-            Document changeStream = (Document) pipeline.get(0).get("$changeStream");
+            Document changeStream = (Document) pipeline.getFirst().get("$changeStream");
             if (changeStream != null) {
                 Aggregation aggregation = getAggregation(pipeline.subList(1, pipeline.size()), query, databaseResolver, collection, oplog);
                 aggregation.validate(query);

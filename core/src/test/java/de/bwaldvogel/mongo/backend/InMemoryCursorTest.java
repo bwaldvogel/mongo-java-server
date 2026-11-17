@@ -50,7 +50,7 @@ class InMemoryCursorTest {
         InMemoryCursor cursor = new InMemoryCursor(123L, List.of(new Document(), new Document()));
         List<Document> documents = cursor.takeDocuments(5);
         assertThatExceptionOfType(UnsupportedOperationException.class)
-            .isThrownBy(() -> documents.remove(0));
+            .isThrownBy(documents::removeFirst);
     }
 
     @Test

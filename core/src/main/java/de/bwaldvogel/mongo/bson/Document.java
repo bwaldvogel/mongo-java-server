@@ -87,6 +87,13 @@ public final class Document implements Map<String, Object>, Bson {
         return getOrDefault(key, Missing.getInstance());
     }
 
+    public String getFirstKey() {
+        if (isEmpty()) {
+            throw new IllegalStateException("Expected at least one key");
+        }
+        return documentAsMap.firstEntry().getKey();
+    }
+
     @Override
     public void clear() {
         documentAsMap.clear();

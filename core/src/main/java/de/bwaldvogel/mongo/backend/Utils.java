@@ -54,7 +54,7 @@ public class Utils {
         if (pathFragments.size() == 1) {
             return getFieldValueListSafe(document, CollectionUtils.getSingleElement(pathFragments));
         }
-        String mainKey = pathFragments.get(0);
+        String mainKey = pathFragments.getFirst();
         String subKey = joinTail(pathFragments);
         Assert.doesNotStartWith(subKey, "$.");
         Object subObject = getFieldValueListSafe(document, mainKey);
@@ -179,11 +179,10 @@ public class Utils {
             return false;
         }
 
-        if (!(value instanceof Document)) {
+        if (!(value instanceof Document doc)) {
             return false;
         }
 
-        Document doc = (Document) value;
         for (String key : doc.keySet()) {
             if (key.startsWith("$")) {
                 return true;
@@ -240,7 +239,7 @@ public class Utils {
 
     static boolean hasSubdocumentValue(Object document, String key) {
         List<String> pathFragments = splitPath(key);
-        String mainKey = pathFragments.get(0);
+        String mainKey = pathFragments.getFirst();
         if (pathFragments.size() == 1) {
             return hasFieldValueListSafe(document, key);
         }
@@ -255,7 +254,7 @@ public class Utils {
 
     static boolean canFullyTraverseSubkeyForRename(Object document, String key) {
         List<String> pathFragments = splitPath(key);
-        String mainKey = pathFragments.get(0);
+        String mainKey = pathFragments.getFirst();
         if (pathFragments.size() == 1) {
             return true;
         }
@@ -390,7 +389,7 @@ public class Utils {
 
     private static Object changeSubdocumentValue(Object document, String key, Object newValue, String previousKey, AtomicReference<Integer> matchPos) {
         List<String> pathFragments = splitPath(key);
-        String mainKey = pathFragments.get(0);
+        String mainKey = pathFragments.getFirst();
         if (pathFragments.size() == 1) {
             return setListSafe(document, key, previousKey, newValue);
         }
@@ -399,7 +398,7 @@ public class Utils {
         if (subObject instanceof Document || subObject instanceof List<?>) {
             return changeSubdocumentValue(subObject, subKey, newValue, mainKey, matchPos);
         } else if (Missing.isNeitherNullNorMissing(subObject)) {
-            String subKeyFirst = splitPath(subKey).get(0);
+            String subKeyFirst = splitPath(subKey).getFirst();
             throw new PathNotViableException(subKeyFirst, new Document(mainKey, subObject));
         } else {
             Document obj = new Document();
@@ -438,7 +437,7 @@ public class Utils {
 
     private static Object removeSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos) {
         List<String> pathFragments = splitPath(key);
-        String mainKey = pathFragments.get(0);
+        String mainKey = pathFragments.getFirst();
         if (pathFragments.size() == 1) {
             return removeListSafe(document, key);
         }
@@ -489,14 +488,6 @@ public class Utils {
 
     static Document firstBatchCursorResponse(String ns, Document... documents) {
         return firstBatchCursorResponse(ns, List.of(documents));
-    }
-
-    static Document firstBatchCursorResponse(String ns, Iterable<Document> documents) {
-        List<Document> firstBatch = new ArrayList<>();
-        for (Document document : documents) {
-            firstBatch.add(document);
-        }
-        return firstBatchCursorResponse(ns, firstBatch);
     }
 
     static Document firstBatchCursorResponse(String ns, Stream<Document> firstBatch) {

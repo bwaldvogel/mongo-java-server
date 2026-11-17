@@ -96,7 +96,7 @@ class Projection {
 
         if (!inclusions.isEmpty() && !exclusions.isEmpty()) {
             List<String> includedFields = nonIdInclusionsAndExclusions.get(Type.INCLUSIONS);
-            throw new MongoServerError(31253, "Cannot do inclusion on field " + includedFields.get(0) + " in exclusion projection");
+            throw new MongoServerError(31253, "Cannot do inclusion on field " + includedFields.getFirst() + " in exclusion projection");
         }
         return inclusions.isEmpty();
     }
@@ -105,7 +105,7 @@ class Projection {
         if (key.contains(Utils.PATH_DELIMITER)) {
             List<String> pathFragments = Utils.splitPath(key);
 
-            String mainKey = pathFragments.get(0);
+            String mainKey = pathFragments.getFirst();
             String subKey = Utils.joinTail(pathFragments);
 
             Object object = document.get(mainKey);
@@ -119,7 +119,7 @@ class Projection {
                 List<Object> newprojectedValues = (List<Object>) newDocument.computeIfAbsent(mainKey, k -> new ArrayList<>());
 
                 if ("$".equals(subKey) && !values.isEmpty()) {
-                    Object firstValue = values.get(0);
+                    Object firstValue = values.getFirst();
                     if (firstValue instanceof Document) {
                         newprojectedValues.add(firstValue);
                     }
@@ -188,11 +188,10 @@ class Projection {
     }
 
     private static void projectSlice(Document newDocument, Object slice, String key, Object value) {
-        if (!(value instanceof List)) {
+        if (!(value instanceof List<?> values)) {
             newDocument.put(key, value);
             return;
         }
-        List<?> values = (List<?>) value;
         int fromIndex = 0;
         int toIndex = values.size();
         if (slice instanceof Integer) {
@@ -208,7 +207,7 @@ class Projection {
             }
 
             if (!(sliceParams.get(0) instanceof Number)) {
-                throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: " + Utils.describeType(sliceParams.get(0)));
+                throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: " + Utils.describeType(sliceParams.getFirst()));
             }
             if (!(sliceParams.get(1) instanceof Number)) {
                 throw new MongoServerError(28724, "First argument to $slice must be an array, but is of type: int");

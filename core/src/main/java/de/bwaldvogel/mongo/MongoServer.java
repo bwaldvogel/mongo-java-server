@@ -92,7 +92,7 @@ public class MongoServer {
                 .childOption(ChannelOption.TCP_NODELAY, Boolean.TRUE)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
-                    public void initChannel(SocketChannel ch) throws Exception {
+                    public void initChannel(SocketChannel ch) {
                         MongoServer.this.initChannel(ch);
                     }
                 });

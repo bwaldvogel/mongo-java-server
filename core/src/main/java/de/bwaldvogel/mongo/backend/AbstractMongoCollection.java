@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +109,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             documentStream = documentStream.limit(limit);
         }
 
-        if (fieldSelector != null && !fieldSelector.keySet().isEmpty()) {
+        if (fieldSelector != null && !fieldSelector.isEmpty()) {
             Projection projection = new Projection(fieldSelector, getIdField());
             documentStream = documentStream.map(projection::projectDocument);
         }
@@ -129,8 +128,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected static boolean isNaturalDescending(Document orderBy) {
-        if (orderBy != null && !orderBy.keySet().isEmpty()) {
-            if (orderBy.keySet().iterator().next().equals("$natural")) {
+        if (orderBy != null && !orderBy.isEmpty()) {
+            if (orderBy.getFirstKey().equals("$natural")) {
                 Number sortValue = (Number) orderBy.get("$natural");
                 if (sortValue.intValue() == -1) {
                     return true;
@@ -145,8 +144,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     }
 
     protected static DocumentComparator deriveComparator(Document orderBy) {
-        if (orderBy != null && !orderBy.keySet().isEmpty()) {
-            if (orderBy.keySet().iterator().next().equals("$natural")) {
+        if (orderBy != null && !orderBy.isEmpty()) {
+            if (orderBy.getFirstKey().equals("$natural")) {
                 // already sorted
             } else {
                 return new DocumentComparator(orderBy);
@@ -218,12 +217,12 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         if (index.isEmpty()) {
             try {
                 streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
-                    Document document = documentWithPosition.getDocument();
+                    Document document = documentWithPosition.document();
                     index.checkAdd(document, this);
                 });
                 streamAllDocumentsWithPosition().forEach(documentWithPosition -> {
-                    Document document = documentWithPosition.getDocument();
-                    P position = documentWithPosition.getPosition();
+                    Document document = documentWithPosition.document();
+                    P position = documentWithPosition.position();
                     index.add(document, position, this);
                 });
             } catch (MongoServerError e) {
@@ -265,7 +264,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     private void modifyField(Document document, String modifier, Document update, ArrayFilters arrayFilters,
                              Integer matchPos, boolean isUpsert) {
         Document change = (Document) update.get(modifier);
-        UpdateOperator updateOperator = getUpdateOperator(modifier, change);
+        UpdateOperator updateOperator = getUpdateOperator(modifier);
         FieldUpdates updates = new FieldUpdates(document, updateOperator, getIdField(), isUpsert, matchPos, arrayFilters);
         updates.apply(change, modifier);
     }
@@ -274,7 +273,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return options.getIdField();
     }
 
-    private UpdateOperator getUpdateOperator(String modifier, Document change) {
+    private UpdateOperator getUpdateOperator(String modifier) {
         final UpdateOperator op;
         try {
             op = UpdateOperator.fromValue(modifier);
@@ -348,7 +347,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
         if (numStartsWithDollar == 0) {
             applyUpdate(newDocument, update);
-        } else if (numStartsWithDollar == update.keySet().size()) {
+        } else if (numStartsWithDollar == update.size()) {
             validateUpdateQuery(update);
             oldDocument.cloneInto(newDocument);
             for (String key : update.keySet()) {
@@ -482,7 +481,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     public QueryResult handleQuery(QueryParameters queryParameters) {
         final Document query;
         final Document orderBy;
-        Document querySelector = queryParameters.getQuerySelector();
+        Document querySelector = queryParameters.querySelector();
         if (querySelector.containsKey("query")) {
             query = (Document) querySelector.get("query");
             orderBy = (Document) querySelector.get("orderby");
@@ -494,8 +493,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             orderBy = null;
         }
 
-        return queryDocuments(query, orderBy, queryParameters.getNumberToSkip(), queryParameters.getLimit(),
-            queryParameters.getBatchSize(), queryParameters.getProjection());
+        return queryDocuments(query, orderBy, queryParameters.numberToSkip(), queryParameters.limit(),
+            queryParameters.batchSize(), queryParameters.projection());
     }
 
     @Override
@@ -688,7 +687,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             } else if (key.equals("$or")) {
                 List<?> orValues = (List<?>) value;
                 if (orValues.size() == 1) {
-                    convertSelectorToDocument((Document) orValues.get(0), document);
+                    convertSelectorToDocument((Document) orValues.getFirst(), document);
                 }
                 continue;
             } else if (key.startsWith("$")) {
@@ -728,7 +727,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public int count(Document query, int skip, int limit) {
-        if (query == null || query.keySet().isEmpty()) {
+        if (query == null || query.isEmpty()) {
             int count = count();
             if (skip > 0) {
                 count = Math.max(0, count - skip);
@@ -740,13 +739,9 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         int numberToReturn = Math.max(limit, 0);
-        int count = 0;
-        Iterator<?> it = queryDocuments(query, null, skip, numberToReturn, 0, new Document(getIdField(), 1)).iterator();
-        while (it.hasNext()) {
-            it.next();
-            count++;
-        }
-        return count;
+        Document fieldSelector = new Document(getIdField(), 1);
+        long count = queryDocuments(query, null, skip, numberToReturn, 0, fieldSelector).stream().count();
+        return Math.toIntExact(count);
     }
 
     @Override
@@ -846,8 +841,8 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected P findDocumentPosition(Document document) {
         return streamAllDocumentsWithPosition()
-            .filter(match -> documentMatchesQuery(match.getDocument(), document))
-            .map(DocumentWithPosition::getPosition)
+            .filter(match -> documentMatchesQuery(match.document(), document))
+            .map(DocumentWithPosition::position)
             .findFirst()
             .orElse(null);
     }

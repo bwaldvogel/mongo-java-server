@@ -228,7 +228,7 @@ class FieldUpdates {
                 "Cannot apply $addToSet to non-array field. Field named '" + key + "' has non-array type " + describeType(value)));
 
         Collection<Object> pushValues = new ArrayList<>();
-        if (changeValue instanceof Document addToSetDocument && addToSetDocument.keySet().iterator().next().equals("$each")) {
+        if (changeValue instanceof Document addToSetDocument && addToSetDocument.getFirstKey().equals("$each")) {
             for (String modifier : addToSetDocument.keySet()) {
                 if (!modifier.equals("$each")) {
                     throw new BadValueException("Found unexpected fields after $each in $addToSet: " + addToSetDocument.toString(true, "{ ", " }"));
@@ -349,11 +349,10 @@ class FieldUpdates {
                 " of non-numeric type " + describeType(value));
         }
 
-        if (!(changeObject instanceof Number)) {
+        if (!(changeObject instanceof Number changeValue)) {
             String operation = (updateOperator == UpdateOperator.INC) ? "increment" : "multiply";
             throw new TypeMismatchException("Cannot " + operation + " with non-numeric argument: " + change.toString(true));
         }
-        Number changeValue = (Number) changeObject;
         final Number newValue;
         if (updateOperator == UpdateOperator.INC) {
             newValue = NumericUtils.addNumbers(number, changeValue);
@@ -410,10 +409,9 @@ class FieldUpdates {
 
     private void handleRename(String key, Object toField) {
         assertNotKeyField(key);
-        if (!(toField instanceof String)) {
+        if (!(toField instanceof String newKey)) {
             throw new BadValueException("The 'to' field for $rename must be a string: " + key + ": " + toField);
         }
-        String newKey = (String) toField;
         assertNotKeyField(newKey);
 
         if (renames.containsKey(key) || renames.containsValue(key)) {
@@ -455,7 +453,7 @@ class FieldUpdates {
 
     private static Object getSubdocumentValue(Object document, String key, AtomicReference<Integer> matchPos) {
         List<String> pathFragments = splitPath(key);
-        String mainKey = pathFragments.get(0);
+        String mainKey = pathFragments.getFirst();
         if (pathFragments.size() == 1) {
             return Utils.getFieldValueListSafe(document, mainKey);
         }

@@ -85,7 +85,7 @@ public abstract class AbstractOplogTest extends AbstractTest {
         List<Document> oplogDocuments = toArray(getOplogCollection().find().sort(json("ts: 1")));
         assertThat(oplogDocuments).hasSize(3);
 
-        Document insertOplogDocument = oplogDocuments.get(0);
+        Document insertOplogDocument = oplogDocuments.getFirst();
         assertThat(insertOplogDocument).containsKeys("ts", "t", "h", "v", "op", "ns", "ui", "wall", "o");
         assertThat(insertOplogDocument.get("ts")).isInstanceOf(BsonTimestamp.class);
         assertThat(insertOplogDocument.get("t")).isEqualTo(1L);

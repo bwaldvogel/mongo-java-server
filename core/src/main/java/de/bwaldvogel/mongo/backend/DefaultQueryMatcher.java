@@ -49,7 +49,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
         if (BsonRegularExpression.isRegularExpression(queryValue)) {
             return;
         }
-        if (!queryObject.keySet().isEmpty() && queryObject.keySet().iterator().next().startsWith("$")) {
+        if (!queryObject.isEmpty() && queryObject.getFirstKey().startsWith("$")) {
             for (String operator : queryObject.keySet()) {
                 if (Constants.REFERENCE_KEYS.contains(operator)) {
                     continue;
@@ -99,7 +99,7 @@ public class DefaultQueryMatcher implements QueryMatcher {
             throw new MongoServerException("illegal keys: " + keys);
         }
 
-        String firstKey = keys.get(0);
+        String firstKey = keys.getFirst();
 
         if (firstKey.equals("$comment")) {
             log.debug("query comment: '{}'", queryValue);
@@ -265,26 +265,26 @@ public class DefaultQueryMatcher implements QueryMatcher {
             }
         }
 
-        switch (filter) {
-            case AND:
+        return switch (filter) {
+            case AND -> {
                 for (Object subqueryValue : list) {
                     if (!matches((Document) document, (Document) subqueryValue)) {
-                        return false;
+                        yield false;
                     }
                 }
-                return true;
-            case OR:
+                yield true;
+            }
+            case OR -> {
                 for (Object subqueryValue : list) {
                     if (matches((Document) document, (Document) subqueryValue)) {
-                        return true;
+                        yield true;
                     }
                 }
-                return false;
-            case NOR:
-                return !checkMatch(queryValue, QueryFilter.OR, document);
-            default:
-                throw new MongoServerException("illegal query filter: " + filter + ". must not happen");
-        }
+                yield false;
+            }
+            case NOR -> !checkMatch(queryValue, QueryFilter.OR, document);
+            default -> throw new MongoServerException("illegal query filter: " + filter + ". must not happen");
+        };
     }
 
     @SuppressWarnings("unchecked")
@@ -367,12 +367,11 @@ public class DefaultQueryMatcher implements QueryMatcher {
     }
 
     private boolean checkMatchesAllValues(Object queryValue, Object values) {
-        if (!(queryValue instanceof Collection)) {
+        if (!(queryValue instanceof Collection<?> queryValues)) {
             return false;
         }
 
         Collection<?> list = (Collection<?>) values;
-        Collection<?> queryValues = (Collection<?>) queryValue;
 
         if (queryValues.isEmpty()) {
             return false;

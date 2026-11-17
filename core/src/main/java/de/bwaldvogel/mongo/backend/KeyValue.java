@@ -35,6 +35,10 @@ public final class KeyValue implements Serializable, Iterable<Object> {
         return values.size();
     }
 
+    public Object getFirst() {
+        return get(0);
+    }
+
     public Object get(int index) {
         return values.get(index);
     }

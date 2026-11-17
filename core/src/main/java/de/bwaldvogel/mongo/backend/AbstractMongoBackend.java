@@ -369,7 +369,6 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     }
 
     protected Document handleGetMore(String databaseName, String command, Document query) {
-        MongoDatabase mongoDatabase = resolveDatabase(databaseName);
         String collectionName = (String) query.get("collection");
         long cursorId = ((Number) query.get(command)).longValue();
         int batchSize = ((Number) query.getOrDefault("batchSize", 0)).intValue();
@@ -400,7 +399,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     public Document handleMessage(MongoMessage message) {
         String databaseName = message.getDatabaseName();
         Document query = message.getDocument();
-        DatabaseCommand command = DatabaseCommand.of(query.keySet().iterator().next());
+        DatabaseCommand command = DatabaseCommand.of(query.getFirstKey());
         return handleCommand(databaseName, command, query);
     }
 
