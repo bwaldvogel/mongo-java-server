@@ -25,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import com.mongodb.MongoCommandException;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoChangeStreamCursor;
 import com.mongodb.client.MongoCollection;
@@ -61,6 +62,28 @@ public abstract class AbstractOplogTest extends AbstractTest {
     protected MongoCollection<Document> getOplogCollection() {
         MongoDatabase localDb = syncClient.getDatabase(LOCAL_DATABASE);
         return localDb.getCollection(OPLOG_COLLECTION_NAME);
+    }
+
+    @Test
+    void testGetMoreExecutionFailureRemovesCursor() {
+        collection.insertOne(json("_id: 1, divisor: 1"));
+        Document aggregate = new Document("aggregate", collection.getNamespace().getCollectionName())
+            .append("pipeline", List.of(json("$changeStream: {}"),
+                json("$project: {result: {$divide: [1, '$fullDocument.divisor']}}")))
+            .append("cursor", json("batchSize: 1"));
+        Document cursor = db.runCommand(aggregate).get("cursor", Document.class);
+        assertThat(cursor.getList("firstBatch", Document.class)).isEmpty();
+        long cursorId = cursor.getLong("id");
+        assertThat(cursorId).isNotZero();
+        Document getMore = new Document("getMore", cursorId)
+            .append("collection", collection.getNamespace().getCollectionName()).append("batchSize", 1);
+
+        collection.insertOne(json("_id: 2, divisor: 0"));
+
+        assertThatExceptionOfType(MongoCommandException.class).isThrownBy(() -> db.runCommand(getMore))
+            .withMessageContaining("by zero");
+        assertThatExceptionOfType(MongoCommandException.class).isThrownBy(() -> db.runCommand(getMore))
+            .extracting(MongoCommandException::getErrorCode).isEqualTo(43);
     }
 
     @Test
