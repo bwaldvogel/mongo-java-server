@@ -362,6 +362,201 @@ public abstract class AbstractBackendTest extends AbstractTest {
             .withMessageStartingWith("Command execution failed on MongoDB server with error 72 (InvalidOptions): 'the 'size' field is required when 'capped' is true'");
     }
 
+    private MongoCollection<Document> createCappedCollection(long size, long maxDocuments) {
+        db.createCollection("capped", new CreateCollectionOptions().capped(true).sizeInBytes(size).maxDocuments(maxDocuments));
+        return db.getCollection("capped");
+    }
+
+    @Test
+    void testCappedCollection_maxDocumentsAndNaturalOrder() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 3);
+        for (int id : new int[] {30, 10, 20, 50, 40, 60, 70}) {
+            capped.insertOne(new Document("_id", id));
+        }
+        assertThat(capped.find()).containsExactly(json("_id: 40"), json("_id: 60"), json("_id: 70"));
+        assertThat(capped.find().sort(json("$natural: -1")))
+            .containsExactly(json("_id: 70"), json("_id: 60"), json("_id: 40"));
+        assertThat(capped.countDocuments()).isEqualTo(3);
+    }
+
+    @Test
+    void testCappedCollection_naturalOrderWithIndexedFilter() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 3);
+        capped.insertMany(List.of(json("_id: 30"), json("_id: 10"), json("_id: 20")));
+        Document filter = json("_id: {$in: [10, 20, 30]}");
+        assertThat(capped.find(filter).sort(json("$natural: 1")))
+            .containsExactly(json("_id: 30"), json("_id: 10"), json("_id: 20"));
+        assertThat(capped.find(filter).sort(json("$natural: -1")))
+            .containsExactly(json("_id: 20"), json("_id: 10"), json("_id: 30"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testCappedCollection_deleteMiddleDocument(boolean findAndDelete) {
+        MongoCollection<Document> capped = createCappedCollection(4096, 3);
+        capped.insertMany(List.of(json("_id: 30"), json("_id: 10"), json("_id: 20")));
+        if (findAndDelete) {
+            assertThat(capped.findOneAndDelete(json("_id: 10"))).isEqualTo(json("_id: 10"));
+        } else {
+            assertThat(capped.deleteOne(json("_id: 10")).getDeletedCount()).isEqualTo(1);
+        }
+        assertThat(capped.find()).containsExactly(json("_id: 30"), json("_id: 20"));
+        assertThat(capped.find(json("_id: 10"))).isEmpty();
+        capped.insertOne(json("_id: 40"));
+        assertThat(capped.find()).containsExactly(json("_id: 30"), json("_id: 20"), json("_id: 40"));
+        capped.insertOne(json("_id: 50"));
+        assertThat(capped.find()).containsExactly(json("_id: 20"), json("_id: 40"), json("_id: 50"));
+        assertThat(capped.find().sort(json("$natural: -1")))
+            .containsExactly(json("_id: 50"), json("_id: 40"), json("_id: 20"));
+    }
+
+    @Test
+    void testCappedCollection_deleteManyAndReuseId() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 3);
+        capped.insertMany(List.of(json("_id: 30"), json("_id: 10"), json("_id: 20")));
+        assertThat(capped.deleteMany(json("_id: {$in: [30, 10]}")).getDeletedCount()).isEqualTo(2);
+        capped.insertOne(json("_id: 10"));
+        capped.insertOne(json("_id: 30"));
+        capped.insertOne(json("_id: 40"));
+        assertThat(capped.find()).containsExactly(json("_id: 10"), json("_id: 30"), json("_id: 40"));
+        assertThat(capped.deleteMany(json("{}")).getDeletedCount()).isEqualTo(3);
+        capped.insertOne(json("_id: 20"));
+        assertThat(capped.find()).containsExactly(json("_id: 20"));
+    }
+
+    @Test
+    void testCappedCollection_maxSize() {
+        MongoCollection<Document> capped = createCappedCollection(512, 0);
+        for (int i = 1; i <= 15; i++) {
+            capped.insertOne(new Document("_id", i).append("data", "data".repeat(20)));
+        }
+        assertThat(capped.find().projection(json("_id: 1")))
+            .containsExactly(json("_id: 12"), json("_id: 13"), json("_id: 14"), json("_id: 15"));
+    }
+
+    @Test
+    void testCappedCollection_largeInsertEvictsMultipleDocuments() {
+        MongoCollection<Document> capped = createCappedCollection(512, 0);
+        for (int i = 1; i <= 4; i++) {
+            capped.insertOne(new Document("_id", i).append("data", "x".repeat(80)));
+        }
+        capped.insertOne(new Document("_id", 5).append("data", "x".repeat(350)));
+        assertThat(capped.find().projection(json("_id: 1"))).containsExactly(json("_id: 4"), json("_id: 5"));
+    }
+
+    @Test
+    void testCappedCollection_sizeLimitBeforeDocumentLimit() {
+        MongoCollection<Document> capped = createCappedCollection(512, 10);
+        for (int i = 1; i <= 10; i++) {
+            capped.insertOne(new Document("_id", i).append("data", "x".repeat(200)));
+        }
+        assertThat(capped.find().projection(json("_id: 1"))).containsExactly(json("_id: 9"), json("_id: 10"));
+    }
+
+    @Test
+    void testCappedCollection_failedInsertPreservesDocuments() {
+        MongoCollection<Document> capped = createCappedCollection(512, 2);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2")));
+        assertThatExceptionOfType(MongoWriteException.class).isThrownBy(() -> capped.insertOne(json("_id: 1")));
+        assertThat(capped.find()).containsExactly(json("_id: 1"), json("_id: 2"));
+    }
+
+    @Test
+    void testCappedCollection_documentLargerThanLimit() {
+        MongoCollection<Document> capped = createCappedCollection(512, 0);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2")));
+        Document largeDocument = new Document("_id", 3).append("data", "x".repeat(1024));
+        capped.insertOne(largeDocument);
+        assertThat(capped.find()).containsExactly(largeDocument);
+        capped.insertOne(json("_id: 4"));
+        assertThat(capped.find()).containsExactly(json("_id: 4"));
+    }
+
+    @Test
+    void testCappedCollection_growingUpdate() {
+        MongoCollection<Document> capped = createCappedCollection(512, 0);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2")));
+        capped.updateOne(json("_id: 1"), new Document("$set", new Document("data", "x".repeat(1024))));
+        assertThat(capped.countDocuments()).isEqualTo(2);
+        capped.insertOne(json("_id: 3"));
+        assertThat(capped.find()).containsExactly(json("_id: 2"), json("_id: 3"));
+    }
+
+    @Test
+    void testCappedCollection_updatePreservesOrder() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 3);
+        capped.insertMany(List.of(json("_id: 30, value: 'a'"), json("_id: 10, value: 'b'"), json("_id: 20, value: 'c'")));
+        capped.updateOne(json("_id: 30"), json("$set: {value: 'z'}"));
+        capped.insertOne(json("_id: 40, value: 'd'"));
+        assertThat(capped.find()).containsExactly(json("_id: 10, value: 'b'"), json("_id: 20, value: 'c'"), json("_id: 40, value: 'd'"));
+    }
+
+    @Test
+    void testCappedCollection_dropAndRecreate() {
+        MongoCollection<Document> capped = createCappedCollection(512, 2);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2"), json("_id: 3")));
+        capped.drop();
+        capped = createCappedCollection(512, 2);
+        capped.insertMany(List.of(json("_id: 30"), json("_id: 10"), json("_id: 20")));
+        assertThat(capped.find()).containsExactly(json("_id: 10"), json("_id: 20"));
+    }
+
+    @Test
+    void testCappedCollection_exactSizeLimit() {
+        MongoCollection<Document> capped = createCappedCollection(27, 0);
+        // A BSON document containing only an int32 _id occupies 14 bytes.
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2")));
+        assertThat(capped.find()).containsExactly(json("_id: 2"));
+    }
+
+    @Test
+    void testCappedCollection_statistics() {
+        createCappedCollection(513, 3);
+        Document stats = db.runCommand(json("collStats: 'capped'"));
+        assertThat(stats.get("capped")).isEqualTo(true);
+        assertThat(((Number) stats.get("maxSize")).longValue()).isEqualTo(513);
+        assertThat(((Number) stats.get("max")).longValue()).isEqualTo(3);
+    }
+
+    @Test
+    void testCappedCollection_evictionRemovesIndexEntries() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 2);
+        capped.createIndex(json("value: 1"), new IndexOptions().unique(true));
+        capped.insertMany(List.of(json("_id: 1, value: 'a'"), json("_id: 2, value: 'b'"), json("_id: 3, value: 'c'")));
+        assertThat(capped.find(json("value: 'a'"))).isEmpty();
+        capped.insertOne(json("_id: 1, value: 'a'"));
+        assertThat(capped.find()).containsExactly(json("_id: 3, value: 'c'"), json("_id: 1, value: 'a'"));
+        assertThat(capped.find(json("value: 'b'"))).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-1, 0})
+    void testCappedCollection_invalidSize(long size) {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(new Document("create", "capped").append("capped", true).append("size", size)))
+            .extracting(MongoCommandException::getErrorCode).isEqualTo(51024);
+        assertThat(db.listCollectionNames()).doesNotContain("capped");
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {-1, 0})
+    void testCappedCollection_unlimitedDocumentCount(long max) {
+        MongoCollection<Document> capped = createCappedCollection(4096, max);
+        for (int i = 1; i <= 5; i++) {
+            capped.insertOne(new Document("_id", i));
+        }
+        assertThat(capped.countDocuments()).isEqualTo(5);
+    }
+
+    @Test
+    void testCappedCollection_options() {
+        createCappedCollection(513, 3);
+        Document options = db.listCollections().filter(json("name: 'capped'")).first().get("options", Document.class);
+        assertThat(((Number) options.get("size")).longValue()).isEqualTo(513);
+        assertThat(options.get("capped")).isEqualTo(true);
+        assertThat(((Number) options.get("max")).longValue()).isEqualTo(3);
+    }
+
     @Test
     void testCreateCollectionAlreadyExists() {
         db.createCollection("some-collection", new CreateCollectionOptions());

@@ -52,12 +52,25 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
     protected final CollectionOptions options;
     protected final CursorRegistry cursorRegistry;
 
+    /**
+     * Backends without capped collection support must reject capped options during construction,
+     * before creating or registering the collection.
+     */
     protected AbstractMongoCollection(MongoDatabase database, String collectionName, CollectionOptions options,
                                       CursorRegistry cursorRegistry) {
         this.database = Objects.requireNonNull(database);
         this.collectionName = Objects.requireNonNull(collectionName);
         this.options = Objects.requireNonNull(options);
         this.cursorRegistry = cursorRegistry;
+    }
+
+    @Override
+    public CollectionOptions getOptions() {
+        return options;
+    }
+
+    protected final boolean isCapped() {
+        return options.isCapped();
     }
 
     @Override
@@ -71,10 +84,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected QueryResult queryDocuments(Document query, Document orderBy, int numberToSkip, int limit, int batchSize,
                                          Document fieldSelector) {
-        for (Index<P> index : indexes) {
-            if (index.canHandle(query)) {
-                Iterable<P> positions = index.getPositions(query);
-                return matchDocuments(query, positions, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+        boolean requiresNaturalScan = orderBy != null && orderBy.containsKey("$natural");
+        if (!requiresNaturalScan) {
+            for (Index<P> index : indexes) {
+                if (index.canHandle(query)) {
+                    Iterable<P> positions = index.getPositions(query);
+                    return matchDocuments(query, positions, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+                }
             }
         }
 
@@ -158,6 +174,15 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract long getDataSize();
 
+    /**
+     * Removes and returns the oldest document together with its storage position.
+     *
+     * @throws IllegalStateException if there is no document to remove
+     */
+    protected DocumentWithPosition<P> removeOldestDocument() {
+        throw new UnsupportedOperationException("Capped collections are not supported");
+    }
+
     protected abstract P addDocumentInternal(Document document);
 
     @Override
@@ -185,6 +210,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         if (tracksDataSize()) {
             updateDataSize(Utils.calculateSize(document));
         }
+        CappedCollectionSupport.enforceLimits(this);
     }
 
     @Override
@@ -765,6 +791,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         }
 
         response.put("indexSize", indexSizes);
+        CappedCollectionSupport.addStats(this, response);
         Utils.markOkay(response);
         return response;
     }
@@ -804,11 +831,14 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             return;
         }
 
+        subtractDocumentSize(document);
+        removeDocument(position);
+    }
+
+    final void subtractDocumentSize(Document document) {
         if (tracksDataSize()) {
             updateDataSize(-Utils.calculateSize(document));
         }
-
-        removeDocument(position);
     }
 
     @VisibleForExternalBackends

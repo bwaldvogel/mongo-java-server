@@ -35,6 +35,25 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     }
 
     @Override
+    protected DocumentWithPosition<Long> removeOldestDocument() {
+        String sql = "DELETE FROM " + getQualifiedTablename()
+            + " WHERE id = (SELECT id FROM " + getQualifiedTablename() + " ORDER BY id ASC LIMIT 1)"
+            + " RETURNING id, data";
+        try (Connection connection = backend.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet resultSet = stmt.executeQuery()) {
+            if (!resultSet.next()) {
+                throw new IllegalStateException("No document to evict from " + getFullName());
+            }
+            long id = resultSet.getLong("id");
+            Document document = JsonConverter.fromJson(resultSet.getString("data"));
+            return new DocumentWithPosition<>(document, Long.valueOf(id));
+        } catch (SQLException | IOException e) {
+            throw new MongoServerException("failed to remove oldest document", e);
+        }
+    }
+
+    @Override
     public int count() {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(*) FROM " + getQualifiedTablename())
@@ -58,6 +77,9 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     protected QueryResult matchDocuments(Document query, Document orderBy,
                                          int numberToSkip, int numberToReturn, int batchSize,
                                          Document fieldSelector) {
+        if (isCapped() && (orderBy == null || orderBy.isEmpty())) {
+            orderBy = new Document("$natural", 1);
+        }
         String sql = "SELECT data FROM " + getQualifiedTablename() + " " + convertOrderByToSql(orderBy);
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql);

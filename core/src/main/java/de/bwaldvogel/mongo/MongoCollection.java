@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import de.bwaldvogel.mongo.backend.ArrayFilters;
+import de.bwaldvogel.mongo.backend.CollectionOptions;
 import de.bwaldvogel.mongo.backend.Index;
 import de.bwaldvogel.mongo.backend.QueryParameters;
 import de.bwaldvogel.mongo.backend.QueryResult;
@@ -46,6 +47,10 @@ public interface MongoCollection<P> {
         if (!handleQuery(document, 0, 1).iterator().hasNext()) {
             addDocument(document);
         }
+    }
+
+    default CollectionOptions getOptions() {
+        return CollectionOptions.withDefaults();
     }
 
     default Iterable<Document> queryAll() {
