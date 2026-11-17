@@ -7,7 +7,7 @@ import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.InvalidOptionsException;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public final class CollectionOptions {
+public record CollectionOptions(String idField, boolean autoIndexId, boolean capped, Long cappedSize) {
 
     private static final Logger log = LoggerFactory.getLogger(CollectionOptions.class);
 
@@ -18,16 +18,8 @@ public final class CollectionOptions {
     private static final long CAPPED_SIZE_GRANULARITY = 256;
     private static final long MIN_CAPPED_SIZE = CAPPED_SIZE_GRANULARITY;
 
-    private final String idField;
-    private final boolean autoIndexId;
-    private final boolean capped;
-    private final Long cappedSize;
-
-    private CollectionOptions(String idField, boolean autoIndexId, boolean capped, Long cappedSize) {
-        this.idField = idField;
-        this.autoIndexId = autoIndexId;
-        this.capped = capped;
-        this.cappedSize = calculateCappedSize(cappedSize);
+    public CollectionOptions {
+        cappedSize = calculateCappedSize(cappedSize);
     }
 
     static Long calculateCappedSize(Long cappedSize) {
@@ -67,11 +59,11 @@ public final class CollectionOptions {
     public static CollectionOptions fromQuery(Document query) {
         boolean autoIndexId = toBoolean(query.get("autoIndexId"), DEFAULT_AUTO_INDEX_ID);
         boolean capped = toBoolean(query.get("capped"), DEFAULT_CAPPED);
-        Long cappedSize = toInt(query.get("size"));
+        Long cappedSize = toLong(query.get("size"));
         return new CollectionOptions(DEFAULT_ID_FIELD, autoIndexId, capped, cappedSize);
     }
 
-    private static Long toInt(Object value) {
+    private static Long toLong(Object value) {
         if (value == null) {
             return null;
         }
