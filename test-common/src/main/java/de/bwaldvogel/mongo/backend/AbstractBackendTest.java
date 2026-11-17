@@ -67,6 +67,7 @@ import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -139,6 +140,32 @@ public abstract class AbstractBackendTest extends AbstractTest {
     @Test
     void testSimpleInsert() {
         collection.insertOne(json("_id: 1"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"tailable,true", "awaitData,true", "tailable,false", "awaitData,false"})
+    public void testUnsupportedCursorOptions(String option, boolean collectionExists) {
+        if (collectionExists) {
+            collection.insertOne(json("_id: 1"));
+        }
+        Document find = new Document("find", getCollectionName()).append(option, true);
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> db.runCommand(find))
+            .withMessageContaining("The '" + option + "' cursor option is not yet supported")
+            .extracting(MongoCommandException::getErrorCode).isEqualTo(20);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testFindWithDisabledTailableCursorOptions(boolean collectionExists) {
+        if (collectionExists) {
+            collection.insertOne(json("_id: 1"));
+        }
+        Document find = new Document("find", getCollectionName()).append("tailable", false).append("awaitData", false);
+        Document cursor = db.runCommand(find).get("cursor", Document.class);
+        assertThat(cursor.getList("firstBatch", Document.class))
+            .isEqualTo(collectionExists ? List.of(json("_id: 1")) : List.of());
+        assertThat(cursor.getLong("id")).isZero();
     }
 
     @Test

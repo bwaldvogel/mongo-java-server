@@ -11,6 +11,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import com.mongodb.MongoCommandException;
 
@@ -44,6 +46,26 @@ public class RealMongoBackendTest extends AbstractBackendTest {
     @Override
     protected MongoBackend createBackend() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @ParameterizedTest
+    @CsvSource({"tailable,true", "awaitData,true", "tailable,false", "awaitData,false"})
+    public void testUnsupportedCursorOptions(String option, boolean collectionExists) {
+        if (collectionExists) {
+            collection.insertOne(json("_id: 1"));
+        }
+        Document find = new Document("find", collection.getNamespace().getCollectionName()).append(option, true);
+        if (option.equals("tailable") && !collectionExists) {
+            Document cursor = db.runCommand(find).get("cursor", Document.class);
+            assertThat(cursor.getList("firstBatch", Document.class)).isEmpty();
+            assertThat(cursor.getLong("id")).isZero();
+        } else {
+            assertThatExceptionOfType(MongoCommandException.class)
+                .isThrownBy(() -> db.runCommand(find))
+                .withMessageContaining(option.equals("awaitData") ? "awaitData" : "non capped")
+                .extracting(MongoCommandException::getErrorCode).isEqualTo(option.equals("awaitData") ? 9 : 2);
+        }
     }
 
     private void assumeStrictMode() {
