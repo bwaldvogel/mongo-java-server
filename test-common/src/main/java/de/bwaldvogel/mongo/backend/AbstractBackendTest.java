@@ -421,6 +421,92 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    void testGetParameter() {
+        assertThat(runCommand(json("getParameter: 1, featureCompatibilityVersion: 1")))
+            .isEqualTo(json("featureCompatibilityVersion: {version: '7.0'}, ok: 1.0"));
+
+        assertThat(runCommand(json("getParameter: 1, quiet: 1, logLevel: 1")))
+            .isEqualTo(json("quiet: false, logLevel: 0, ok: 1.0"));
+
+        assertThat(runCommand(json("getParameter: {allParameters: false}, logLevel: 1")))
+            .isEqualTo(json("logLevel: 0, ok: 1.0"));
+    }
+
+    @Test
+    void testGetParameterIgnoresUnknownParameters() {
+        assertThat(runCommand(json("getParameter: 1, notablescan: 1, unknownParameter: 1")))
+            .isEqualTo(json("notablescan: false, ok: 1.0"));
+    }
+
+    @Test
+    void testGetParameterWithDetails() {
+        assertThat(runCommand(json("getParameter: {showDetails: true}, enableLocalhostAuthBypass: 1")))
+            .isEqualTo(json("enableLocalhostAuthBypass: {value: true, settableAtRuntime: false, settableAtStartup: true}, ok: 1.0"));
+    }
+
+    @Test
+    void testGetAllParameters() {
+        Document allParameters = runCommand(json("getParameter: {allParameters: true, showDetails: true}"));
+        assertThat(allParameters.getDouble("ok")).isEqualTo(1.0);
+        assertThat(allParameters.get("featureCompatibilityVersion"))
+            .isEqualTo(json("value: {version: '7.0'}, settableAtRuntime: false, settableAtStartup: false"));
+        assertThat(allParameters.get("quiet"))
+            .isEqualTo(json("value: false, settableAtRuntime: true, settableAtStartup: true"));
+        assertThat(allParameters.get("logLevel"))
+            .isEqualTo(json("value: 0, settableAtRuntime: true, settableAtStartup: true"));
+        assertThat(allParameters.get("notablescan"))
+            .isEqualTo(json("value: false, settableAtRuntime: true, settableAtStartup: true"));
+        assertThat(allParameters.get("maxIndexBuildMemoryUsageMegabytes"))
+            .isEqualTo(json("value: 200, settableAtRuntime: true, settableAtStartup: true"));
+        assertThat(allParameters.get("enableLocalhostAuthBypass"))
+            .isEqualTo(json("value: true, settableAtRuntime: false, settableAtStartup: true"));
+        assertThat(allParameters.get("authenticationMechanisms"))
+            .isEqualTo(json("value: ['MONGODB-X509', 'SCRAM-SHA-1', 'SCRAM-SHA-256'], settableAtRuntime: false, settableAtStartup: true"));
+        assertThat(allParameters.get("clusterAuthMode"))
+            .isEqualTo(json("value: 'undefined', settableAtRuntime: true, settableAtStartup: false"));
+
+        Document allParametersWithStar = runCommand(json("getParameter: '*'"));
+        assertThat(allParametersWithStar.getDouble("ok")).isEqualTo(1.0);
+        assertThat(allParametersWithStar.get("featureCompatibilityVersion")).isEqualTo(json("version: '7.0'"));
+        assertThat(allParametersWithStar.get("clusterAuthMode")).isEqualTo("undefined");
+    }
+
+    @Test
+    void testGetParameterWithNumericOptions() {
+        assertThat(runCommand(json("getParameter: {showDetails: 1}, logLevel: 1")))
+            .isEqualTo(json("logLevel: {value: 0, settableAtRuntime: true, settableAtStartup: true}, ok: 1.0"));
+        assertThat(runCommand(json("getParameter: {showDetails: 0}, logLevel: 1")))
+            .isEqualTo(json("logLevel: 0, ok: 1.0"));
+        assertThat(runCommand(json("getParameter: {allParameters: 1}")).get("clusterAuthMode")).isEqualTo("undefined");
+        assertThat(runCommand(json("getParameter: {allParameters: null}, logLevel: 1")))
+            .isEqualTo(json("logLevel: 0, ok: 1.0"));
+    }
+
+    @Test
+    void testGetParameterWithNonBooleanOptions() {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: {allParameters: 'true'}")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 14 (TypeMismatch):"
+                + " 'BSON field 'getParameter.allParameters' is the wrong type 'string', expected types '[bool, long, int, decimal, double']'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: {showDetails: 'yes'}, logLevel: 1")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 14 (TypeMismatch):"
+                + " 'BSON field 'getParameter.showDetails' is the wrong type 'string', expected types '[bool, long, int, decimal, double']'");
+    }
+
+    @Test
+    void testGetParameterWithoutKnownParameter() {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: 1, unknownParameter: 1")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 72 (InvalidOptions): 'no option found to get'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: 1")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 72 (InvalidOptions): 'no option found to get'");
+    }
+
+    @Test
     void testCompoundDateIdUpserts() {
         Document query = json("_id: {$lt: {n: 'a', t: 10}, $gte: {n: 'a', t: 1}}");
 

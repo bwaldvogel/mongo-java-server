@@ -27,4 +27,11 @@ class ServerVersionTest {
         assertThat(ServerVersion.MONGO_9_0.toVersionString()).isEqualTo("9.0.0");
     }
 
+    @Test
+    void testToMajorMinorVersionString() throws Exception {
+        assertThat(ServerVersion.MONGO_3_6.toMajorMinorVersionString()).isEqualTo("3.6");
+        assertThat(ServerVersion.MONGO_7_0.toMajorMinorVersionString()).isEqualTo("7.0");
+        assertThat(ServerVersion.MONGO_8_0.toMajorMinorVersionString()).isEqualTo("8.0");
+    }
+
 }
