@@ -23,6 +23,7 @@ import de.bwaldvogel.mongo.MongoDatabase;
 import de.bwaldvogel.mongo.MongoVersion;
 import de.bwaldvogel.mongo.ServerVersion;
 import de.bwaldvogel.mongo.bson.Document;
+import de.bwaldvogel.mongo.bson.ObjectId;
 import de.bwaldvogel.mongo.exception.ErrorCode;
 import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
@@ -46,12 +47,15 @@ public abstract class AbstractMongoBackend implements MongoBackend {
 
     static final String ADMIN_DB_NAME = "admin";
 
+    private static final int LOGICAL_SESSION_TIMEOUT_MINUTES = 30;
+
     private final Map<String, MongoDatabase> databases = new ConcurrentHashMap<>();
 
     private MongoVersion version = ServerVersion.MONGO_7_0;
 
     private final Clock clock;
     private final Instant started;
+    private final ObjectId processId = new ObjectId();
 
     private final CursorRegistry cursorRegistry = new CursorRegistry();
 
@@ -295,6 +299,7 @@ public abstract class AbstractMongoBackend implements MongoBackend {
     public Document handleCommand(String databaseName, DatabaseCommand command, Document query) {
         return switch (command.getCommand()) {
             case IS_MASTER -> handleIsMaster();
+            case HELLO -> handleHello();
             case BUILD_INFO -> handleBuildInfo();
             case DROP_DATABASE -> handleDropDatabase(databaseName);
             case GET_MORE -> handleGetMore(databaseName, command.getQueryValue(), query);
@@ -335,6 +340,24 @@ public abstract class AbstractMongoBackend implements MongoBackend {
         response.put("maxWireVersion", Integer.valueOf(version.getWireVersion()));
         response.put("minWireVersion", Integer.valueOf(0));
         response.put("localTime", Instant.now(clock));
+        Utils.markOkay(response);
+        return response;
+    }
+
+    private Document handleHello() {
+        Document response = new Document("isWritablePrimary", Boolean.TRUE);
+        response.put("topologyVersion", new Document()
+            .append("processId", processId)
+            .append("counter", 0L));
+        response.put("maxBsonObjectSize", Integer.valueOf(BsonConstants.MAX_BSON_OBJECT_SIZE));
+        response.put("maxWriteBatchSize", Integer.valueOf(MongoWireProtocolHandler.MAX_WRITE_BATCH_SIZE));
+        response.put("maxMessageSizeBytes", Integer.valueOf(MongoWireProtocolHandler.MAX_MESSAGE_SIZE_BYTES));
+        response.put("maxWireVersion", Integer.valueOf(version.getWireVersion()));
+        response.put("minWireVersion", Integer.valueOf(0));
+        response.put("localTime", Instant.now(clock));
+        response.put("logicalSessionTimeoutMinutes", Integer.valueOf(LOGICAL_SESSION_TIMEOUT_MINUTES));
+        response.put("connectionId", Integer.valueOf(1));
+        response.put("readOnly", false);
         Utils.markOkay(response);
         return response;
     }
