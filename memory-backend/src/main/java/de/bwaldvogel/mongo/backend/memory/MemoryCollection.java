@@ -1,11 +1,13 @@
 package de.bwaldvogel.mongo.backend.memory;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Queue;
-import java.util.SequencedSet;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -24,22 +26,26 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     private final List<Document> documents = new ArrayList<>();
     private final Queue<Integer> emptyPositions = new LinkedList<>();
     private final AtomicLong dataSize = new AtomicLong();
-    // only used for capped collections
-    private final SequencedSet<Integer> positionInsertionOrder;
+    private final NavigableMap<Long, Integer> insertionOrder;
+    private final Map<Integer, Long> insertionSequenceByPosition;
+    private long lastSequence;
 
     public MemoryCollection(MongoDatabase database, String collectionName,
                             CollectionOptions options, CursorRegistry cursorRegistry) {
         super(database, collectionName, options, cursorRegistry);
-        this.positionInsertionOrder = isCapped() ? new LinkedHashSet<>() : null;
+        this.insertionOrder = isCapped() ? new TreeMap<>() : null;
+        this.insertionSequenceByPosition = isCapped() ? new HashMap<>() : null;
     }
 
     @Override
     protected DocumentWithPosition<Integer> removeOldestDocument() {
-        if (positionInsertionOrder.isEmpty()) {
+        var oldest = insertionOrder.firstEntry();
+        if (oldest == null) {
             throw new IllegalStateException("No document to evict from " + getFullName());
         }
-        Integer position = positionInsertionOrder.getFirst();
-        Document document = removeDocumentInternal(position);
+        Integer position = oldest.getValue();
+        Document document = getDocument(position);
+        removeDocument(position);
         return new DocumentWithPosition<>(document, position);
     }
 
@@ -66,8 +72,10 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
             documents.set(position.intValue(), document);
         }
 
-        if (positionInsertionOrder != null) {
-            positionInsertionOrder.add(position);
+        if (isCapped()) {
+            long sequence = ++lastSequence;
+            insertionOrder.put(sequence, position);
+            insertionSequenceByPosition.put(position, sequence);
         }
         return position;
     }
@@ -81,20 +89,28 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     private Stream<Document> streamDocuments(Document orderBy) {
         boolean naturalDescending = isNaturalDescending(orderBy);
         if (isCapped()) {
-            Stream<Integer> positions = streamPositionsInInsertionOrder(naturalDescending);
-            return positions.map(this::getDocument);
+            return orderedPositions(naturalDescending).values().stream().map(this::getDocument);
         } else {
             Iterable<Document> documents = iterateAllDocuments(naturalDescending);
             return StreamSupport.stream(documents.spliterator(), false);
         }
     }
 
-    private Stream<Integer> streamPositionsInInsertionOrder(boolean isNaturalDescending) {
-        if (isNaturalDescending) {
-            return this.positionInsertionOrder.reversed().stream();
-        } else {
-            return this.positionInsertionOrder.stream();
+    @Override
+    protected void scanCappedDocuments(Long start, boolean descending, CappedDocumentVisitor visitor) {
+        NavigableMap<Long, Integer> positions = orderedPositions(descending);
+        if (start != null) {
+            positions = positions.tailMap(start, true);
         }
+        for (var entry : positions.entrySet()) {
+            if (!visitor.visit(entry.getKey(), getDocument(entry.getValue()))) {
+                break;
+            }
+        }
+    }
+
+    private NavigableMap<Long, Integer> orderedPositions(boolean descending) {
+        return descending ? insertionOrder.descendingMap() : insertionOrder;
     }
 
     private Iterable<Document> iterateAllDocuments(boolean naturalDescending) {
@@ -134,16 +150,14 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
 
     @Override
     protected void removeDocument(Integer position) {
-        removeDocumentInternal(position);
-    }
-
-    private Document removeDocumentInternal(Integer position) {
-        Document removed = documents.set(position.intValue(), null);
-        emptyPositions.add(position);
-        if (positionInsertionOrder != null) {
-            positionInsertionOrder.remove(position);
+        if (isCapped()) {
+            Long sequence = insertionSequenceByPosition.remove(position);
+            if (sequence != null) {
+                insertionOrder.remove(sequence);
+            }
         }
-        return removed;
+        documents.set(position.intValue(), null);
+        emptyPositions.add(position);
     }
 
     @Override

@@ -163,6 +163,17 @@ public class H2Collection extends AbstractSynchronizedMongoCollection<Object> {
     }
 
     @Override
+    protected void scanCappedDocuments(Long start, boolean descending, CappedDocumentVisitor visitor) {
+        var sequences = descending ? insertionOrder.keyIteratorReverse(start) : insertionOrder.keyIterator(start);
+        while (sequences.hasNext()) {
+            Long sequence = sequences.next();
+            if (!visitor.visit(sequence, dataMap.get(insertionOrder.get(sequence)))) {
+                break;
+            }
+        }
+    }
+
+    @Override
     protected void handleUpdate(Object position, Document oldDocument, Document newDocument) {
         dataMap.put(Missing.ofNullable(position), newDocument);
     }

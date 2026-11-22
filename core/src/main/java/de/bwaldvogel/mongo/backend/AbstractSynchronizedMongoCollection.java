@@ -31,6 +31,12 @@ public abstract class AbstractSynchronizedMongoCollection<P> extends AbstractMon
     }
 
     @Override
+    protected synchronized QueryResult matchCollectionScan(Document query, Document orderBy, int skip, int limit,
+                                                           int batchSize, Document fieldSelector) {
+        return super.matchCollectionScan(query, orderBy, skip, limit, batchSize, fieldSelector);
+    }
+
+    @Override
     public synchronized QueryResult handleQuery(QueryParameters queryParameters) {
         return super.handleQuery(queryParameters);
     }

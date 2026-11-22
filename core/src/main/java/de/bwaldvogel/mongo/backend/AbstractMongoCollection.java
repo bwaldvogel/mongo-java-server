@@ -94,7 +94,26 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
             }
         }
 
-        return matchDocuments(query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+        return matchCollectionScan(query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
+    }
+
+    protected QueryResult matchCollectionScan(Document query, Document orderBy, int skip, int limit,
+                                              int batchSize, Document fieldSelector) {
+        return CappedCollectionSupport.tryOpenCursor(this, query, orderBy, skip, limit, batchSize, fieldSelector)
+            .orElseGet(() -> matchDocuments(query, orderBy, skip, limit, batchSize, fieldSelector));
+    }
+
+    @FunctionalInterface
+    protected interface CappedDocumentVisitor {
+        boolean visit(long sequence, Document document);
+    }
+
+    /**
+     * Visit records from the given sequence (inclusive), or from the start of the scan if null.
+     * Stop when the visitor returns false. The caller holds the collection monitor.
+     */
+    protected void scanCappedDocuments(Long start, boolean descending, CappedDocumentVisitor visitor) {
+        throw new UnsupportedOperationException("Capped collection scans are not supported");
     }
 
     protected abstract QueryResult matchDocuments(Document query, Document orderBy, int numberToSkip,

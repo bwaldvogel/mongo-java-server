@@ -1,5 +1,9 @@
 package de.bwaldvogel.mongo.backend;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.function.UnaryOperator;
+
 import de.bwaldvogel.mongo.bson.Document;
 
 final class CappedCollectionSupport {
@@ -22,6 +26,29 @@ final class CappedCollectionSupport {
             collection.subtractDocumentSize(document);
             count--;
         }
+    }
+
+    static Optional<QueryResult> tryOpenCursor(AbstractMongoCollection<?> collection, Document query,
+                                               Document orderBy, int skip, int limit, int batchSize, Document fieldSelector) {
+        if (!collection.isCapped() || batchSize <= 0 || AbstractMongoCollection.hasFieldSort(orderBy)) {
+            return Optional.empty();
+        }
+
+        boolean descending = AbstractMongoCollection.isNaturalDescending(orderBy);
+        UnaryOperator<Document> project = UnaryOperator.identity();
+        if (fieldSelector != null && !fieldSelector.isEmpty()) {
+            Projection projection = new Projection(fieldSelector, collection.getIdField());
+            project = projection::projectDocument;
+        }
+        CursorRegistry registry = collection.cursorRegistry;
+        CappedCursor cursor = new CappedCursor(registry.generateCursorId(), collection, descending,
+            document -> collection.documentMatchesQuery(document, query), project, skip, limit);
+        List<Document> firstBatch = cursor.takeDocuments(batchSize);
+        if (cursor.isEmpty()) {
+            return Optional.of(new QueryResult(firstBatch));
+        }
+        registry.add(cursor);
+        return Optional.of(new QueryResult(firstBatch, cursor));
     }
 
     private static boolean exceedsLimits(CollectionOptions options, int count, long dataSize) {

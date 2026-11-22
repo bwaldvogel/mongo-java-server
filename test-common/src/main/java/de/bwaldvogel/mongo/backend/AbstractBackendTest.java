@@ -379,6 +379,123 @@ public abstract class AbstractBackendTest extends AbstractTest {
         assertThat(capped.countDocuments()).isEqualTo(3);
     }
 
+    private long openCappedCursor() {
+        return openCappedCursor(true);
+    }
+
+    private long openCappedCursor(boolean explicitNaturalOrder) {
+        Document query = json("find: 'capped', batchSize: 1");
+        if (explicitNaturalOrder) {
+            query.append("sort", json("$natural: 1"));
+        }
+        Document cursor = db.runCommand(query).get("cursor", Document.class);
+        assertThat(cursor.getList("firstBatch", Document.class)).containsExactly(json("_id: 1"));
+        long cursorId = cursor.getLong("id");
+        assertThat(cursorId).isNotZero();
+        return cursorId;
+    }
+
+    private Document getMoreCapped(long cursorId) {
+        return db.runCommand(new Document("getMore", cursorId).append("collection", "capped").append("batchSize", 10))
+            .get("cursor", Document.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testCappedCollection_cursorSkipsDeletedUnreadDocument(boolean explicitNaturalOrder) {
+        MongoCollection<Document> capped = createCappedCollection(4096, 10);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2"), json("_id: 3")));
+        long cursorId = openCappedCursor(explicitNaturalOrder);
+        capped.deleteOne(json("_id: 2"));
+        Document cursor = getMoreCapped(cursorId);
+        assertThat(cursor.getList("nextBatch", Document.class)).containsExactly(json("_id: 3"));
+        assertThat(cursor.getLong("id")).isZero();
+    }
+
+    @Test
+    void testCappedCollection_cursorSeesNewInsertsBeforeExhaustion() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 10);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2"), json("_id: 3")));
+        long cursorId = openCappedCursor();
+        capped.insertOne(json("_id: 4"));
+        assertThat(getMoreCapped(cursorId).getList("nextBatch", Document.class))
+            .containsExactly(json("_id: 2"), json("_id: 3"), json("_id: 4"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"delete", "evict", "reuse"})
+    void testCappedCollection_cursorLosesDeletedPosition(String action) {
+        MongoCollection<Document> capped = createCappedCollection(4096, 3);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2"), json("_id: 3")));
+        long cursorId = openCappedCursor();
+        if (action.equals("evict")) {
+            capped.insertOne(json("_id: 4"));
+        } else {
+            capped.deleteOne(json("_id: 1"));
+            if (action.equals("reuse")) {
+                capped.insertOne(json("_id: 1"));
+            }
+        }
+        assertThatExceptionOfType(MongoCommandException.class).isThrownBy(() -> getMoreCapped(cursorId))
+            .extracting(MongoCommandException::getErrorCode).isEqualTo(136);
+        assertThatExceptionOfType(MongoCommandException.class).isThrownBy(() -> getMoreCapped(cursorId))
+            .extracting(MongoCommandException::getErrorCode).isEqualTo(43);
+    }
+
+    @Test
+    void testCappedCollection_cursorSeesReinsertedUnreadDocumentAtEnd() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 10);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2"), json("_id: 3")));
+        long cursorId = openCappedCursor();
+        capped.deleteOne(json("_id: 2"));
+        capped.insertOne(json("_id: 2"));
+        assertThat(getMoreCapped(cursorId).getList("nextBatch", Document.class))
+            .containsExactly(json("_id: 3"), json("_id: 2"));
+    }
+
+    @Test
+    void testCappedCollection_cursorClosesAtEnd() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 10);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2"), json("_id: 3")));
+        long cursorId = openCappedCursor();
+        Document cursor = getMoreCapped(cursorId);
+        assertThat(cursor.getList("nextBatch", Document.class)).containsExactly(json("_id: 2"), json("_id: 3"));
+        assertThat(cursor.getLong("id")).isZero();
+        capped.insertOne(json("_id: 4"));
+        assertThatExceptionOfType(MongoCommandException.class).isThrownBy(() -> getMoreCapped(cursorId))
+            .extracting(MongoCommandException::getErrorCode).isEqualTo(43);
+    }
+
+    @Test
+    void testCappedCollection_cursorFilterProjectionSkipAndLimit() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 10);
+        for (int id = 1; id <= 6; id++) {
+            capped.insertOne(new Document("_id", id).append("value", id));
+        }
+        Document cursor = db.runCommand(json("find: 'capped', batchSize: 1, sort: {$natural: 1}, "
+            + "filter: {value: {$gte: 2}}, projection: {_id: 0, value: 1}, skip: 1, limit: 3"))
+            .get("cursor", Document.class);
+        assertThat(cursor.getList("firstBatch", Document.class)).containsExactly(json("value: 3"));
+        capped.deleteOne(json("_id: 4"));
+        capped.updateOne(json("_id: 3"), json("$set: {value: 0}"));
+        cursor = getMoreCapped(cursor.getLong("id"));
+        assertThat(cursor.getList("nextBatch", Document.class)).containsExactly(json("value: 5"), json("value: 6"));
+        assertThat(cursor.getLong("id")).isZero();
+    }
+
+    @Test
+    void testCappedCollection_cursorReverseNaturalOrder() {
+        MongoCollection<Document> capped = createCappedCollection(4096, 10);
+        capped.insertMany(List.of(json("_id: 1"), json("_id: 2"), json("_id: 3")));
+        Document cursor = db.runCommand(json("find: 'capped', batchSize: 1, sort: {$natural: -1}"))
+            .get("cursor", Document.class);
+        assertThat(cursor.getList("firstBatch", Document.class)).containsExactly(json("_id: 3"));
+        capped.deleteOne(json("_id: 2"));
+        capped.insertOne(json("_id: 4"));
+        assertThat(getMoreCapped(cursor.getLong("id")).getList("nextBatch", Document.class))
+            .containsExactly(json("_id: 1"));
+    }
+
     @Test
     void testCappedCollection_naturalOrderWithIndexedFilter() {
         MongoCollection<Document> capped = createCappedCollection(4096, 3);
