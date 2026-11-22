@@ -127,31 +127,29 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         return matchDocumentsFromStream(documentStream, query, orderBy, numberToSkip, limit, batchSize, fieldSelector);
     }
 
-    protected static boolean isNaturalDescending(Document orderBy) {
-        if (orderBy != null && !orderBy.isEmpty()) {
-            if (orderBy.getFirstKey().equals("$natural")) {
-                Number sortValue = (Number) orderBy.get("$natural");
-                if (sortValue.intValue() == -1) {
-                    return true;
-                }
+    private static boolean isNaturalSort(Document orderBy) {
+        return orderBy != null && !orderBy.isEmpty() && orderBy.getFirstKey().equals("$natural");
+    }
 
-                if (sortValue.intValue() != 1) {
-                    throw new IllegalArgumentException("Illegal sort value: " + sortValue);
-                }
+    static boolean hasFieldSort(Document orderBy) {
+        return orderBy != null && !orderBy.isEmpty() && !isNaturalSort(orderBy);
+    }
+
+    protected static boolean isNaturalDescending(Document orderBy) {
+        if (isNaturalSort(orderBy)) {
+            Number sortValue = (Number) orderBy.get("$natural");
+            if (sortValue.intValue() == -1) {
+                return true;
+            }
+            if (sortValue.intValue() != 1) {
+                throw new IllegalArgumentException("Illegal sort value: " + sortValue);
             }
         }
         return false;
     }
 
     protected static DocumentComparator deriveComparator(Document orderBy) {
-        if (orderBy != null && !orderBy.isEmpty()) {
-            if (orderBy.getFirstKey().equals("$natural")) {
-                // already sorted
-            } else {
-                return new DocumentComparator(orderBy);
-            }
-        }
-        return null;
+        return hasFieldSort(orderBy) ? new DocumentComparator(orderBy) : null;
     }
 
     protected abstract Document getDocument(P position);
