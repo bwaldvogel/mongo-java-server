@@ -110,6 +110,40 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
         }
     }
 
+    @Override
+    protected void scanCappedDocuments(Long start, boolean descending, CappedDocumentVisitor visitor) {
+        String bound = start == null ? "" : (descending ? " WHERE id <= ?" : " WHERE id >= ?");
+        String sql = "SELECT id, data FROM " + getQualifiedTablename() + bound + (descending ? " ORDER BY id DESC" : " ORDER BY id ASC");
+        try (Connection connection = backend.getConnection()) {
+            // PostgreSQL JDBC needs a transaction to fetch rows incrementally.
+            boolean autoCommit = connection.getAutoCommit();
+            if (autoCommit) {
+                connection.setAutoCommit(false);
+            }
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setFetchSize(64);
+                if (start != null) {
+                    statement.setLong(1, start);
+                }
+                try (ResultSet results = statement.executeQuery()) {
+                    while (results.next()) {
+                        Document document = JsonConverter.fromJson(results.getString("data"));
+                        if (!visitor.visit(results.getLong("id"), document)) {
+                            break;
+                        }
+                    }
+                }
+            } finally {
+                if (autoCommit) {
+                    connection.rollback();
+                    connection.setAutoCommit(true);
+                }
+            }
+        } catch (SQLException | IOException e) {
+            throw new MongoServerException("Failed to scan " + this, e);
+        }
+    }
+
     static String convertOrderByToSql(Document orderBy) {
         StringBuilder orderBySql = new StringBuilder();
         if (orderBy != null && !orderBy.isEmpty()) {

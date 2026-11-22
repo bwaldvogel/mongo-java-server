@@ -19,6 +19,7 @@ public enum ErrorCode {
     InvalidNamespace(73),
     IndexKeySpecsConflict(86),
     OperationFailed(96),
+    CappedPositionLost(136),
     CannotIndexParallelArrays(171),
     ConversionFailure(241),
     DuplicateKey(11000),
