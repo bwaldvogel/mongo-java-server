@@ -84,32 +84,24 @@ public class BsonRegularExpression implements Bson {
     Pattern createPattern() {
         int flags = 0;
         for (char flag : options.toCharArray()) {
-            switch (flag) {
-                case 'i':
-                    flags |= Pattern.CASE_INSENSITIVE;
-                    break;
-                case 'm':
-                    flags |= Pattern.MULTILINE;
-                    break;
-                case 'x':
-                    flags |= Pattern.COMMENTS;
-                    break;
-                case 's':
-                    flags |= Pattern.DOTALL;
-                    break;
-                case 'u':
-                    flags |= Pattern.UNICODE_CASE;
-                    break;
-                default:
-                    throw new IllegalArgumentException("unknown pattern flag: '" + flag + "'");
-            }
-
+            flags |= toFlag(flag);
         }
 
         // always enable unicode aware case matching
         flags |= Pattern.UNICODE_CASE;
 
         return Pattern.compile(pattern, flags);
+    }
+
+    private static int toFlag(char flag) {
+        return switch (flag) {
+            case 'i' -> Pattern.CASE_INSENSITIVE;
+            case 'm' -> Pattern.MULTILINE;
+            case 'x' -> Pattern.COMMENTS;
+            case 's' -> Pattern.DOTALL;
+            case 'u' -> Pattern.UNICODE_CASE;
+            default -> throw new IllegalArgumentException("unknown pattern flag: '" + flag + "'");
+        };
     }
 
     @Override
