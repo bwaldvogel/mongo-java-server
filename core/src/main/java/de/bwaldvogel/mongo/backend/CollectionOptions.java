@@ -1,43 +1,39 @@
 package de.bwaldvogel.mongo.backend;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import de.bwaldvogel.mongo.bson.Document;
 import de.bwaldvogel.mongo.exception.InvalidOptionsException;
+import de.bwaldvogel.mongo.exception.MongoServerError;
 import de.bwaldvogel.mongo.exception.MongoServerException;
 
-public record CollectionOptions(String idField, boolean autoIndexId, boolean capped, Long cappedSize) {
-
-    private static final Logger log = LoggerFactory.getLogger(CollectionOptions.class);
+public record CollectionOptions(String idField, boolean autoIndexId, boolean capped,
+                                Long cappedSize, Long cappedMaxDocuments) {
 
     private static final String DEFAULT_ID_FIELD = Constants.ID_FIELD;
     private static final boolean DEFAULT_AUTO_INDEX_ID = true;
     private static final boolean DEFAULT_CAPPED = false;
 
-    private static final long CAPPED_SIZE_GRANULARITY = 256;
-    private static final long MIN_CAPPED_SIZE = CAPPED_SIZE_GRANULARITY;
-
-    public CollectionOptions {
-        cappedSize = calculateCappedSize(cappedSize);
+    public Long getCappedMaxDocuments() {
+        return cappedMaxDocuments;
     }
 
-    static Long calculateCappedSize(Long cappedSize) {
-        if (cappedSize == null) {
-            return null;
+    public Document toDocument() {
+        Document document = new Document();
+        if (capped) {
+            document.put("capped", true);
+            document.put("size", cappedSize);
+            if (cappedMaxDocuments != null && cappedMaxDocuments > 0) {
+                document.put("max", cappedMaxDocuments);
+            }
         }
-        long value = cappedSize.longValue();
-        if (value <= MIN_CAPPED_SIZE) {
-            log.info("Using minimum capped size of {} bytes", MIN_CAPPED_SIZE);
-            return MIN_CAPPED_SIZE;
-        }
-        long mod = value % CAPPED_SIZE_GRANULARITY;
-        if (mod == 0) {
-            return value;
-        }
-        long raisedCappedSize = value + (CAPPED_SIZE_GRANULARITY - mod);
-        log.info("Raised capped size to {} bytes", raisedCappedSize);
-        return raisedCappedSize;
+        return document;
+    }
+
+    public boolean isCapped() {
+        return capped;
+    }
+
+    public Long getCappedSize() {
+        return cappedSize;
     }
 
     public String getIdField() {
@@ -49,7 +45,7 @@ public record CollectionOptions(String idField, boolean autoIndexId, boolean cap
     }
 
     public static CollectionOptions withIdField(String idField) {
-        return new CollectionOptions(idField, DEFAULT_AUTO_INDEX_ID, DEFAULT_CAPPED, null);
+        return new CollectionOptions(idField, DEFAULT_AUTO_INDEX_ID, DEFAULT_CAPPED, null, null);
     }
 
     public static CollectionOptions withoutIdField() {
@@ -60,7 +56,7 @@ public record CollectionOptions(String idField, boolean autoIndexId, boolean cap
         boolean autoIndexId = toBoolean(query.get("autoIndexId"), DEFAULT_AUTO_INDEX_ID);
         boolean capped = toBoolean(query.get("capped"), DEFAULT_CAPPED);
         Long cappedSize = toLong(query.get("size"));
-        return new CollectionOptions(DEFAULT_ID_FIELD, autoIndexId, capped, cappedSize);
+        return new CollectionOptions(DEFAULT_ID_FIELD, autoIndexId, capped, cappedSize, toLong(query.get("max")));
     }
 
     private static Long toLong(Object value) {
@@ -85,9 +81,10 @@ public record CollectionOptions(String idField, boolean autoIndexId, boolean cap
             if (cappedSize == null) {
                 throw new InvalidOptionsException("the 'size' field is required when 'capped' is true");
             }
-            throw new MongoServerException("Creating capped collections is not yet implemented");
+            if (cappedSize <= 0) {
+                throw new MongoServerError(51024, "BSON field 'create.size' value must be > 0, actual value '" + cappedSize + "'");
+            }
         }
-
     }
 
 }

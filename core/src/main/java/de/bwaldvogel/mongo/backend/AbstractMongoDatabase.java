@@ -316,6 +316,9 @@ public abstract class AbstractMongoDatabase<P> implements MongoDatabase {
 
         CollectionOptions collectionOptions = CollectionOptions.fromQuery(query);
         collectionOptions.validate();
+        if (collectionOptions.isCapped()) {
+            throw new MongoServerException("Creating capped collections is not yet implemented");
+        }
         if (resolveCollection(collectionName, false) == null) {
             createCollection(collectionName, collectionOptions);
         }
