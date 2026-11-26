@@ -156,7 +156,7 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     protected abstract void updateDataSize(int sizeDelta);
 
-    protected abstract int getDataSize();
+    protected abstract long getDataSize();
 
     protected abstract P addDocumentInternal(Document document);
 
@@ -744,18 +744,18 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
 
     @Override
     public Document getStats() {
-        int dataSize = getDataSize();
+        long dataSize = getDataSize();
         int count = count();
 
         Document response = new Document("ns", getFullName());
         response.put("count", Integer.valueOf(count));
-        response.put("size", Integer.valueOf(dataSize));
+        response.put("size", toIntOrLong(dataSize));
 
-        int averageSize = 0;
+        long averageSize = 0;
         if (count > 0) {
             averageSize = dataSize / count;
         }
-        response.put("avgObjSize", Integer.valueOf(averageSize));
+        response.put("avgObjSize", toIntOrLong(averageSize));
         response.put("storageSize", Integer.valueOf(0));
         response.put("numExtents", Integer.valueOf(0));
         response.put("nindexes", Integer.valueOf(indexes.size()));
@@ -767,6 +767,13 @@ public abstract class AbstractMongoCollection<P> implements MongoCollection<P> {
         response.put("indexSize", indexSizes);
         Utils.markOkay(response);
         return response;
+    }
+
+    private static Number toIntOrLong(long value) {
+        if (value == (int) value) {
+            return Integer.valueOf((int) value);
+        }
+        return Long.valueOf(value);
     }
 
     @Override

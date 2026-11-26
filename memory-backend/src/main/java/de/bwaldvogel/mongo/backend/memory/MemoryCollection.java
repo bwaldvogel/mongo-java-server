@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -21,7 +21,7 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
 
     private final List<Document> documents = new ArrayList<>();
     private final Queue<Integer> emptyPositions = new LinkedList<>();
-    private final AtomicInteger dataSize = new AtomicInteger();
+    private final AtomicLong dataSize = new AtomicLong();
 
     public MemoryCollection(MongoDatabase database, String collectionName,
                             CollectionOptions options, CursorRegistry cursorRegistry) {
@@ -29,13 +29,13 @@ public class MemoryCollection extends AbstractSynchronizedMongoCollection<Intege
     }
 
     @Override
-    protected void updateDataSize(int sizeDelta) {
-        dataSize.addAndGet(sizeDelta);
+    protected long getDataSize() {
+        return dataSize.get();
     }
 
     @Override
-    protected int getDataSize() {
-        return dataSize.get();
+    protected void updateDataSize(int sizeDelta) {
+        dataSize.addAndGet(sizeDelta);
     }
 
     @Override
