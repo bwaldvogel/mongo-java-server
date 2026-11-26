@@ -54,7 +54,7 @@ public class AbstractMongoCollectionTest {
         }
 
         @Override
-        protected int getDataSize() {
+        protected long getDataSize() {
             throw new UnsupportedOperationException();
         }
 
@@ -76,6 +76,19 @@ public class AbstractMongoCollectionTest {
     void setUp() {
         MongoDatabase database = Mockito.mock(MongoDatabase.class);
         this.collection = new TestCollection(database, "some collection");
+    }
+
+    @Test
+    void testStatsAndValidationWithDataSizeAboveIntRange() {
+        long dataSize = 1L << 31;
+        TestCollection largeCollection = Mockito.spy(collection);
+        Mockito.doReturn(dataSize).when(largeCollection).getDataSize();
+        Mockito.doReturn(4096).when(largeCollection).count();
+
+        assertThat(largeCollection.getStats())
+            .containsEntry("size", dataSize)
+            .containsEntry("avgObjSize", 524288);
+        assertThat(largeCollection.validate()).containsEntry("datasize", dataSize);
     }
 
     @Test

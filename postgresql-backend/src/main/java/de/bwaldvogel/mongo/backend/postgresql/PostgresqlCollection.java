@@ -153,13 +153,13 @@ public class PostgresqlCollection extends AbstractSynchronizedMongoCollection<Lo
     }
 
     @Override
-    protected int getDataSize() {
+    protected long getDataSize() {
         try (Connection connection = backend.getConnection();
              PreparedStatement stmt = connection.prepareStatement("SELECT datasize FROM " + getDatabaseName() + "._meta" +
                  " WHERE collection_name = ?")
         ) {
             stmt.setString(1, getCollectionName());
-            return Math.toIntExact(querySingleValue(stmt));
+            return querySingleValue(stmt);
         } catch (SQLException e) {
             throw new MongoServerException("failed to retrieve datasize", e);
         }
