@@ -49,6 +49,7 @@ public enum Command {
     DB_STATS("dbStats"),
     GET_CMD_LINE_OPTS("getCmdLineOpts"),
     GET_LOG("getLog"),
+    GET_PARAMETER("getParameter"),
     HOST_INFO("hostInfo"),
     PING("ping"),
     SERVER_STATUS("serverStatus"),

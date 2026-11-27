@@ -760,6 +760,117 @@ public abstract class AbstractBackendTest extends AbstractTest {
     }
 
     @Test
+    void testGetParameter() {
+        assertThat(runCommand(json("getParameter: 1, featureCompatibilityVersion: 1")))
+            .isEqualTo(json("featureCompatibilityVersion: {version: '7.0'}, ok: 1.0"));
+
+        assertThat(runCommand(json("getParameter: 1, quiet: 1, logLevel: 1")))
+            .isEqualTo(json("quiet: false, logLevel: 0, ok: 1.0"));
+
+        assertThat(runCommand(json("getParameter: {allParameters: false}, logLevel: 1")))
+            .isEqualTo(json("logLevel: 0, ok: 1.0"));
+    }
+
+    @Test
+    void testGetParameterIgnoresUnknownParameters() {
+        assertThat(runCommand(json("getParameter: 1, notablescan: 1, unknownParameter: 1")))
+            .isEqualTo(json("notablescan: false, ok: 1.0"));
+    }
+
+    @Test
+    void testGetParameterWithDetails() {
+        assertThat(runCommand(json("getParameter: {showDetails: true}, enableLocalhostAuthBypass: 1")))
+            .isEqualTo(json("enableLocalhostAuthBypass: {value: true, settableAtRuntime: false, settableAtStartup: true}, ok: 1.0"));
+    }
+
+    @Test
+    public void testGetAllParameters() {
+        Document allParameters = runCommand(json("getParameter: {allParameters: true}"));
+        assertThat(allParameters)
+            .containsKeys("featureCompatibilityVersion", "quiet", "logLevel", "notablescan",
+                "maxIndexBuildMemoryUsageMegabytes", "enableLocalhostAuthBypass", "authenticationMechanisms", "clusterAuthMode", "ok")
+            .containsEntry("ok", 1.0)
+            .containsEntry("featureCompatibilityVersion", json("version: '7.0'"))
+            .containsEntry("quiet", false)
+            .containsEntry("logLevel", 0)
+            .containsEntry("notablescan", false)
+            .containsEntry("maxIndexBuildMemoryUsageMegabytes", 200)
+            .containsEntry("enableLocalhostAuthBypass", true)
+            .containsEntry("authenticationMechanisms", List.of("MONGODB-X509", "SCRAM-SHA-1", "SCRAM-SHA-256"))
+            .containsEntry("clusterAuthMode", "undefined");
+    }
+
+    @Test
+    public void testGetAllParametersWithDetails() {
+        Document allParameters = runCommand(json("getParameter: {allParameters: true, showDetails: true}"));
+        assertThat(allParameters)
+            .containsKeys("featureCompatibilityVersion", "quiet", "logLevel", "notablescan",
+                "maxIndexBuildMemoryUsageMegabytes", "enableLocalhostAuthBypass", "authenticationMechanisms", "clusterAuthMode", "ok")
+            .containsEntry("ok", 1.0)
+            .containsEntry("featureCompatibilityVersion", json("value: {version: '7.0'}, settableAtRuntime: false, settableAtStartup: false"))
+            .containsEntry("quiet", json("value: false, settableAtRuntime: true, settableAtStartup: true"))
+            .containsEntry("logLevel", json("value: 0, settableAtRuntime: true, settableAtStartup: true"))
+            .containsEntry("notablescan", json("value: false, settableAtRuntime: true, settableAtStartup: true"))
+            .containsEntry("maxIndexBuildMemoryUsageMegabytes", json("value: 200, settableAtRuntime: true, settableAtStartup: true"))
+            .containsEntry("enableLocalhostAuthBypass", json("value: true, settableAtRuntime: false, settableAtStartup: true"))
+            .containsEntry("authenticationMechanisms",
+                json("value: ['MONGODB-X509', 'SCRAM-SHA-1', 'SCRAM-SHA-256'], settableAtRuntime: false, settableAtStartup: true"))
+            .containsEntry("clusterAuthMode", json("value: 'undefined', settableAtRuntime: true, settableAtStartup: false"));
+    }
+
+    @Test
+    public void testGetAllParametersWithStar() {
+        Document allParameters = runCommand(json("getParameter: '*'"));
+        assertThat(allParameters)
+            .containsKeys("featureCompatibilityVersion", "quiet", "logLevel", "notablescan",
+                "maxIndexBuildMemoryUsageMegabytes", "enableLocalhostAuthBypass", "authenticationMechanisms", "clusterAuthMode", "ok")
+            .containsEntry("ok", 1.0)
+            .containsEntry("featureCompatibilityVersion", json("version: '7.0'"))
+            .containsEntry("quiet", false)
+            .containsEntry("logLevel", 0)
+            .containsEntry("notablescan", false)
+            .containsEntry("maxIndexBuildMemoryUsageMegabytes", 200)
+            .containsEntry("enableLocalhostAuthBypass", true)
+            .containsEntry("authenticationMechanisms", List.of("MONGODB-X509", "SCRAM-SHA-1", "SCRAM-SHA-256"))
+            .containsEntry("clusterAuthMode", "undefined");
+    }
+
+    @Test
+    void testGetParameterWithNumericOptions() {
+        assertThat(runCommand(json("getParameter: {showDetails: 1}, logLevel: 1")))
+            .isEqualTo(json("logLevel: {value: 0, settableAtRuntime: true, settableAtStartup: true}, ok: 1.0"));
+        assertThat(runCommand(json("getParameter: {showDetails: 0}, logLevel: 1")))
+            .isEqualTo(json("logLevel: 0, ok: 1.0"));
+        assertThat(runCommand(json("getParameter: {allParameters: 1}"))).containsEntry("clusterAuthMode", "undefined");
+        assertThat(runCommand(json("getParameter: {allParameters: null}, logLevel: 1")))
+            .isEqualTo(json("logLevel: 0, ok: 1.0"));
+    }
+
+    @Test
+    void testGetParameterWithNonBooleanOptions() {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: {allParameters: 'true'}")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 14 (TypeMismatch):"
+                + " 'BSON field 'getParameter.allParameters' is the wrong type 'string', expected types '[bool, long, int, decimal, double']'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: {showDetails: 'yes'}, logLevel: 1")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 14 (TypeMismatch):"
+                + " 'BSON field 'getParameter.showDetails' is the wrong type 'string', expected types '[bool, long, int, decimal, double']'");
+    }
+
+    @Test
+    void testGetParameterWithoutKnownParameter() {
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: 1, unknownParameter: 1")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 72 (InvalidOptions): 'no option found to get'");
+
+        assertThatExceptionOfType(MongoCommandException.class)
+            .isThrownBy(() -> runCommand(json("getParameter: 1")))
+            .withMessageStartingWith("Command execution failed on MongoDB server with error 72 (InvalidOptions): 'no option found to get'");
+    }
+
+    @Test
     void testCompoundDateIdUpserts() {
         Document query = json("_id: {$lt: {n: 'a', t: 10}, $gte: {n: 'a', t: 1}}");
 

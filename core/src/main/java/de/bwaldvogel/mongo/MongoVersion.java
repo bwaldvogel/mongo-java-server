@@ -12,6 +12,10 @@ public interface MongoVersion {
         return Utils.join(getVersionArray(), ".");
     }
 
+    default String toMajorMinorVersionString() {
+        return Utils.join(getVersionArray().subList(0, 2), ".");
+    }
+
     int getWireVersion();
 
 }
